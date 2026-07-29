@@ -2,12 +2,19 @@
   "$schema": "https://wails.io/schemas/config.v2.json",
   "name": "dn-wails",
   "outputfilename": "dn-wails",
-  "frontend:install": "pnpm install",
+  "frontend:install": "pnpm install --frozen-lockfile",
   "frontend:build": "pnpm run build",
   "frontend:dev:watcher": "pnpm run dev",
   "frontend:dev:serverUrl": "auto",
+  "info": {
+    "companyName": "zxm965",
+    "productName": "dn-wails",
+    "productVersion": "1.0.0",
+    "copyright": "Copyright © 2026 zxm965",
+    "comments": "dn-wails desktop application"
+  },
   "author": {
-    "name": "10958",
-    "email": "zhangmanyi@addcn.com"
+    "name": "zxm965",
+    "email": "zxm965@qq.com"
   }
 }

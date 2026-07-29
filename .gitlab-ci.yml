@@ -1,0 +1,56 @@
+workflow:
+  rules:
+    - if: '$CI_PIPELINE_SOURCE == "push" && $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH'
+    - when: never
+
+stages:
+  - build
+  - release
+
+variables:
+  GOTOOLCHAIN: auto
+  NODE_OPTIONS: --max-old-space-size=4096
+  PNPM_VERSION: 10.33.3
+  WAILS_VERSION: v2.13.0
+  RELEASE_TAG: 0.0.${CI_PIPELINE_IID}
+  MACOS_RUNNER_TAG: saas-macos-medium-m1
+  MACOS_RUNNER_IMAGE: macos-15-xcode-16
+  WINDOWS_RUNNER_TAG: saas-windows-medium-amd64
+
+build:macos:
+  stage: build
+  tags:
+    - $MACOS_RUNNER_TAG
+  image: $MACOS_RUNNER_IMAGE
+  script:
+    - bash scripts/ci/build-macos.sh
+  artifacts:
+    name: dn-wails-macos-${CI_COMMIT_SHORT_SHA}
+    expire_in: 7 days
+    paths:
+      - dist/dn-wails-macos-universal.dmg
+
+build:windows:
+  stage: build
+  tags:
+    - $WINDOWS_RUNNER_TAG
+  script:
+    - .\scripts\ci\build-windows.ps1
+  artifacts:
+    name: dn-wails-windows-${CI_COMMIT_SHORT_SHA}
+    expire_in: 7 days
+    paths:
+      - dist/dn-wails-windows-amd64-installer.exe
+
+release:
+  stage: release
+  image: registry.gitlab.com/gitlab-org/cli:latest
+  needs:
+    - job: build:macos
+      artifacts: true
+    - job: build:windows
+      artifacts: true
+  variables:
+    GLAB_ENABLE_CI_AUTOLOGIN: "true"
+  script:
+    - sh scripts/ci/create-release.sh
