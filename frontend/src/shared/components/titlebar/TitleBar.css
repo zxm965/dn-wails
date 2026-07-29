@@ -1,0 +1,97 @@
+.titlebar {
+  --wails-draggable: drag;
+  flex: 0 0 44px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-left: 14px;
+  background: rgba(17, 27, 41, 0.86);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  user-select: none;
+}
+
+.titlebar-brand {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 9px;
+}
+
+.titlebar-macos {
+  flex-basis: 32px;
+  padding-right: 82px;
+  padding-left: 82px;
+}
+
+.titlebar-macos .titlebar-brand {
+  flex: 1;
+  justify-content: center;
+}
+
+.titlebar-logo {
+  width: 22px;
+  height: 22px;
+  object-fit: contain;
+}
+
+.titlebar-title {
+  overflow: hidden;
+  color: rgba(255, 255, 255, 0.88);
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.window-controls {
+  --wails-draggable: no-drag;
+  align-self: stretch;
+  display: flex;
+}
+
+.window-control {
+  width: 46px;
+  height: 100%;
+  display: grid;
+  place-items: center;
+  padding: 0;
+  color: rgba(255, 255, 255, 0.78);
+  background: transparent;
+  border: 0;
+  border-radius: 0;
+  cursor: default;
+}
+
+.window-control:hover {
+  color: #ffffff;
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.window-control:focus-visible {
+  outline: 2px solid rgba(98, 178, 255, 0.9);
+  outline-offset: -2px;
+}
+
+.window-control-close:hover {
+  background: #c42b1c;
+}
+
+.window-control svg {
+  width: 12px;
+  height: 12px;
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-width: 1.2;
+}
+
+@media (max-width: 640px) {
+  .titlebar:not(.titlebar-macos) {
+    flex-basis: 40px;
+  }
+
+  .window-control {
+    width: 42px;
+  }
+}

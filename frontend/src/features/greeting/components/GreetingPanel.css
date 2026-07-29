@@ -1,0 +1,115 @@
+.greeting-panel {
+  width: min(640px, 100%);
+  min-height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto;
+  padding: 48px 24px;
+  text-align: center;
+}
+
+.greeting-logo {
+  width: min(320px, 70vw);
+  max-height: 280px;
+  object-fit: contain;
+}
+
+.greeting-title {
+  margin: 24px 0 0;
+  font-size: clamp(24px, 4vw, 36px);
+  line-height: 1.2;
+}
+
+.greeting-message {
+  min-height: 24px;
+  margin: 16px 0 24px;
+  color: rgba(255, 255, 255, 0.82);
+  line-height: 24px;
+}
+
+.greeting-message.is-error {
+  color: #ff9b92;
+}
+
+.greeting-form {
+  width: min(420px, 100%);
+  text-align: left;
+}
+
+.greeting-label {
+  display: block;
+  margin-bottom: 8px;
+  color: rgba(255, 255, 255, 0.72);
+  font-size: 13px;
+}
+
+.greeting-fields {
+  display: flex;
+  gap: 12px;
+}
+
+.greeting-input {
+  min-width: 0;
+  height: 38px;
+  flex: 1;
+  padding: 0 12px;
+  color: #1b2636;
+  background: rgba(255, 255, 255, 0.92);
+  border: 1px solid transparent;
+  border-radius: 6px;
+  outline: none;
+}
+
+.greeting-input:hover {
+  background: #ffffff;
+}
+
+.greeting-input:focus {
+  background: #ffffff;
+  border-color: #62b2ff;
+  box-shadow: 0 0 0 3px rgba(98, 178, 255, 0.18);
+}
+
+.greeting-submit {
+  min-width: 88px;
+  height: 38px;
+  padding: 0 16px;
+  color: #152234;
+  font-weight: 600;
+  background: #ffffff;
+  border: 0;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.greeting-submit:hover:not(:disabled) {
+  background: #e5f2ff;
+}
+
+.greeting-submit:focus-visible {
+  outline: 2px solid #62b2ff;
+  outline-offset: 2px;
+}
+
+.greeting-input:disabled,
+.greeting-submit:disabled {
+  cursor: not-allowed;
+  opacity: 0.62;
+}
+
+@media (max-width: 480px) {
+  .greeting-panel {
+    justify-content: flex-start;
+    padding-top: 40px;
+  }
+
+  .greeting-fields {
+    flex-direction: column;
+  }
+
+  .greeting-submit {
+    width: 100%;
+  }
+}
