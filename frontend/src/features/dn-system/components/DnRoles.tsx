@@ -1,0 +1,422 @@
+import { LayoutGrid, Pencil, Plus, RefreshCw, Search, Table2, Trash2 } from 'lucide-react'
+import { type FormEvent, type ReactNode, useCallback, useEffect, useState } from 'react'
+
+import { AppButton } from '@/shared/components/button'
+import {
+  Badge,
+  Card,
+  CardContent,
+  CardFooter,
+  CardHeader,
+  Dialog,
+  DialogBody,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  Input,
+  Label,
+  ListState,
+  PageHeader,
+  Pagination,
+  Select,
+  Textarea,
+} from '@/shared/components/ui'
+import { useFeedback } from '@/shared/feedback'
+
+import {
+  deleteRole,
+  getErrorMessage,
+  listRoles,
+  saveRole,
+  type ListMeta,
+  type RoleProfession,
+  type RoleProfessionInput,
+} from '../api/dnSystemApi'
+import { PRIORITY_OPTIONS, PROFESSION_OPTIONS, priorityMeta } from '../model/dnSystem'
+
+const emptyMeta: ListMeta = { total: 0, totalPages: 0, page: 1, pageSize: 15 }
+const emptyFilters = { roleName: '', profession: '', priority: -1 }
+const emptyForm: RoleProfessionInput = { id: 0, roleName: '', profession: '', priority: 0, remark: '', sortOrder: 0 }
+
+export function DnRoles() {
+  const { notify, confirm } = useFeedback()
+  const [items, setItems] = useState<RoleProfession[]>([])
+  const [meta, setMeta] = useState<ListMeta>(emptyMeta)
+  const [filters, setFilters] = useState(emptyFilters)
+  const [appliedFilters, setAppliedFilters] = useState(emptyFilters)
+  const [loading, setLoading] = useState(true)
+  const [saving, setSaving] = useState(false)
+  const [view, setView] = useState<'table' | 'card'>('table')
+  const [editorOpen, setEditorOpen] = useState(false)
+  const [form, setForm] = useState<RoleProfessionInput>(emptyForm)
+
+  const load = useCallback(
+    async (page: number) => {
+      setLoading(true)
+      try {
+        const data = await listRoles({ ...appliedFilters, page, pageSize: 15 })
+        setItems(data.items)
+        setMeta(data.meta)
+      } catch (error) {
+        notify({ title: '角色加载失败', message: getErrorMessage(error, '请稍后重试。'), tone: 'error' })
+      } finally {
+        setLoading(false)
+      }
+    },
+    [appliedFilters, notify],
+  )
+
+  useEffect(() => {
+    void load(1)
+  }, [load])
+
+  function openCreate() {
+    setForm({ ...emptyForm })
+    setEditorOpen(true)
+  }
+
+  function openEdit(item: RoleProfession) {
+    setForm({
+      id: item.id,
+      roleName: item.roleName,
+      profession: item.profession,
+      priority: item.priority,
+      remark: item.remark,
+      sortOrder: item.sortOrder,
+    })
+    setEditorOpen(true)
+  }
+
+  async function submit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault()
+    if (!form.roleName.trim() || !form.profession.trim()) {
+      notify({ title: '角色名和职业不能为空', tone: 'warning' })
+      return
+    }
+    setSaving(true)
+    try {
+      await saveRole(form)
+      setEditorOpen(false)
+      notify({ title: '角色已保存', tone: 'success' })
+      await load(meta.page)
+    } catch (error) {
+      notify({ title: '角色保存失败', message: getErrorMessage(error, '请检查输入。'), tone: 'error' })
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  async function remove(item: RoleProfession) {
+    const accepted = await confirm({
+      title: '删除角色',
+      message: `确定删除「${item.roleName}」吗？关联周计划也会删除。`,
+      confirmLabel: '删除',
+      tone: 'danger',
+    })
+    if (!accepted) return
+    setLoading(true)
+    try {
+      await deleteRole(item.id)
+      notify({ title: '角色已删除', tone: 'success' })
+      await load(meta.page)
+    } catch (error) {
+      notify({ title: '删除失败', message: getErrorMessage(error, '请稍后重试。'), tone: 'error' })
+      setLoading(false)
+    }
+  }
+
+  function applyFilters() {
+    setAppliedFilters({ ...filters })
+  }
+
+  function resetFilters() {
+    setFilters({ ...emptyFilters })
+    setAppliedFilters({ ...emptyFilters })
+  }
+
+  return (
+    <div className='dn-page'>
+      <PageHeader
+        title='角色'
+        subtitle='维护周计划所使用的角色和职业。'
+        actions={
+          <>
+            <AppButton variant='outline' disabled={loading} onClick={() => void load(meta.page)}>
+              <RefreshCw className={loading ? 'ui-spin' : undefined} aria-hidden='true' /> 刷新
+            </AppButton>
+            <AppButton onClick={openCreate}>
+              <Plus aria-hidden='true' />
+              新增角色
+            </AppButton>
+          </>
+        }
+      />
+
+      <Card>
+        <CardHeader>
+          <div className='dn-filter-grid dn-role-filter-grid'>
+            <Field label='角色'>
+              <Input
+                value={filters.roleName}
+                placeholder='角色名'
+                onChange={(event) => setFilters((current) => ({ ...current, roleName: event.target.value }))}
+              />
+            </Field>
+            <Field label='职业'>
+              <Select
+                value={filters.profession}
+                onChange={(event) => setFilters((current) => ({ ...current, profession: event.target.value }))}
+              >
+                <option value=''>全部</option>
+                {PROFESSION_OPTIONS.map((item) => (
+                  <option key={item.id} value={item.label}>
+                    {item.label}（{item.group}）
+                  </option>
+                ))}
+              </Select>
+            </Field>
+            <Field label='角色权重'>
+              <Select
+                value={filters.priority}
+                onChange={(event) => setFilters((current) => ({ ...current, priority: Number(event.target.value) }))}
+              >
+                <option value={-1}>全部</option>
+                {PRIORITY_OPTIONS.map((item) => (
+                  <option key={item.value} value={item.value}>
+                    {item.label}
+                  </option>
+                ))}
+              </Select>
+            </Field>
+            <div className='dn-filter-actions'>
+              <AppButton variant='secondary' disabled={loading} onClick={applyFilters}>
+                <Search aria-hidden='true' />
+                搜索
+              </AppButton>
+              <AppButton variant='outline' onClick={resetFilters}>
+                重置
+              </AppButton>
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent>
+          <div className='dn-view-switch' role='group' aria-label='切换角色展示方式'>
+            <AppButton
+              size='sm'
+              variant={view === 'table' ? 'secondary' : 'ghost'}
+              aria-pressed={view === 'table'}
+              onClick={() => setView('table')}
+            >
+              <Table2 aria-hidden='true' />
+              表格
+            </AppButton>
+            <AppButton
+              size='sm'
+              variant={view === 'card' ? 'secondary' : 'ghost'}
+              aria-pressed={view === 'card'}
+              onClick={() => setView('card')}
+            >
+              <LayoutGrid aria-hidden='true' />
+              卡片
+            </AppButton>
+          </div>
+          {items.length ? (
+            view === 'table' ? (
+              <RoleTable items={items} onEdit={openEdit} onDelete={(item) => void remove(item)} />
+            ) : (
+              <RoleCards items={items} onEdit={openEdit} onDelete={(item) => void remove(item)} />
+            )
+          ) : (
+            <ListState loading={loading} emptyText='暂无角色记录' />
+          )}
+        </CardContent>
+        <CardFooter>
+          <Pagination meta={meta} loading={loading} totalLabel='个角色' onPageChange={(page) => void load(page)} />
+        </CardFooter>
+      </Card>
+
+      <Dialog open={editorOpen} onOpenChange={(open) => !saving && setEditorOpen(open)}>
+        <DialogContent size='lg'>
+          <form onSubmit={submit}>
+            <DialogHeader>
+              <DialogTitle>{form.id ? '编辑角色' : '新增角色'}</DialogTitle>
+              <DialogDescription>角色名在本地工作区内不能重复。</DialogDescription>
+            </DialogHeader>
+            <DialogBody className='dn-form-grid'>
+              <Field label='角色名'>
+                <Input
+                  autoFocus
+                  value={form.roleName}
+                  onChange={(event) => setForm((current) => ({ ...current, roleName: event.target.value }))}
+                />
+              </Field>
+              <Field label='职业'>
+                <Select
+                  value={form.profession}
+                  onChange={(event) => setForm((current) => ({ ...current, profession: event.target.value }))}
+                >
+                  <option value=''>请选择职业</option>
+                  {PROFESSION_OPTIONS.map((item) => (
+                    <option key={item.id} value={item.label}>
+                      {item.label}（{item.group}）
+                    </option>
+                  ))}
+                </Select>
+              </Field>
+              <Field label='角色权重'>
+                <Select
+                  value={form.priority}
+                  onChange={(event) => setForm((current) => ({ ...current, priority: Number(event.target.value) }))}
+                >
+                  {PRIORITY_OPTIONS.map((item) => (
+                    <option key={item.value} value={item.value}>
+                      {item.label}
+                    </option>
+                  ))}
+                </Select>
+              </Field>
+              <Field label='排序'>
+                <Input
+                  type='number'
+                  min={0}
+                  value={form.sortOrder}
+                  onChange={(event) =>
+                    setForm((current) => ({ ...current, sortOrder: Number(event.target.value || 0) }))
+                  }
+                />
+              </Field>
+              <Field label='备注' className='dn-form-full'>
+                <Textarea
+                  value={form.remark}
+                  onChange={(event) => setForm((current) => ({ ...current, remark: event.target.value }))}
+                />
+              </Field>
+            </DialogBody>
+            <DialogFooter>
+              <AppButton type='button' variant='outline' disabled={saving} onClick={() => setEditorOpen(false)}>
+                取消
+              </AppButton>
+              <AppButton type='submit' disabled={saving}>
+                {saving ? '保存中…' : '保存'}
+              </AppButton>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
+    </div>
+  )
+}
+
+function Field({ label, className, children }: { label: string; className?: string; children: ReactNode }) {
+  return (
+    <label className={`dn-field${className ? ` ${className}` : ''}`}>
+      <Label>{label}</Label>
+      {children}
+    </label>
+  )
+}
+
+function RoleTable({
+  items,
+  onEdit,
+  onDelete,
+}: {
+  items: RoleProfession[]
+  onEdit: (item: RoleProfession) => void
+  onDelete: (item: RoleProfession) => void
+}) {
+  return (
+    <div className='dn-table-wrap'>
+      <table className='dn-table'>
+        <thead>
+          <tr>
+            <th>序号</th>
+            <th>角色</th>
+            <th>职业</th>
+            <th>权重</th>
+            <th>周计划</th>
+            <th>备注</th>
+            <th>操作</th>
+          </tr>
+        </thead>
+        <tbody>
+          {items.map((item) => (
+            <tr key={item.id}>
+              <td>{item.sortOrder}</td>
+              <td>
+                <strong>{item.roleName}</strong>
+              </td>
+              <td>{item.profession}</td>
+              <td>
+                <Badge tone={priorityMeta(item.priority).tone}>{priorityMeta(item.priority).label}</Badge>
+              </td>
+              <td>
+                <Badge>{item.weeklyPlanCount} 条</Badge>
+              </td>
+              <td className='dn-table-remark'>{item.remark || '无备注'}</td>
+              <td>
+                <div className='dn-row-actions'>
+                  <AppButton size='sm' variant='ghost' onClick={() => onEdit(item)}>
+                    <Pencil aria-hidden='true' />
+                    编辑
+                  </AppButton>
+                  <AppButton size='sm' variant='ghost' className='dn-danger-action' onClick={() => onDelete(item)}>
+                    <Trash2 aria-hidden='true' />
+                    删除
+                  </AppButton>
+                </div>
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  )
+}
+
+function RoleCards({
+  items,
+  onEdit,
+  onDelete,
+}: {
+  items: RoleProfession[]
+  onEdit: (item: RoleProfession) => void
+  onDelete: (item: RoleProfession) => void
+}) {
+  return (
+    <div className='dn-role-cards'>
+      {items.map((item) => (
+        <article key={item.id} className='dn-role-card'>
+          <div className='dn-card-heading-row'>
+            <div>
+              <strong>{item.roleName}</strong>
+              <span>{item.profession}</span>
+            </div>
+            <Badge tone={priorityMeta(item.priority).tone}>{priorityMeta(item.priority).label}</Badge>
+          </div>
+          <div className='dn-role-stats'>
+            <span>
+              排序<strong>{item.sortOrder}</strong>
+            </span>
+            <span>
+              周计划<strong>{item.weeklyPlanCount} 条</strong>
+            </span>
+          </div>
+          <p>{item.remark || '无备注'}</p>
+          <div className='dn-row-actions'>
+            <AppButton size='sm' variant='ghost' onClick={() => onEdit(item)}>
+              <Pencil aria-hidden='true' />
+              编辑
+            </AppButton>
+            <AppButton size='sm' variant='ghost' className='dn-danger-action' onClick={() => onDelete(item)}>
+              <Trash2 aria-hidden='true' />
+              删除
+            </AppButton>
+          </div>
+        </article>
+      ))}
+    </div>
+  )
+}
