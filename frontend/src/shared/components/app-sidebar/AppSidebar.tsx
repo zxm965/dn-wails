@@ -1,4 +1,16 @@
 import {
+  CalendarCheck,
+  ChevronDown,
+  CircleUserRound,
+  Gauge,
+  Home,
+  Mails,
+  Settings,
+  Sparkles,
+  UsersRound,
+  Wrench,
+} from 'lucide-react'
+import {
   type CSSProperties,
   type KeyboardEvent as ReactKeyboardEvent,
   type PointerEvent as ReactPointerEvent,
@@ -13,25 +25,51 @@ import { AppButton } from '@/shared/components/button'
 
 import './AppSidebar.css'
 
-export type AppView = 'overview' | 'settings' | 'test-tools'
+export type AppView =
+  | 'overview'
+  | 'dn-dashboard'
+  | 'dn-weekly'
+  | 'dn-roles'
+  | 'dn-messages'
+  | 'dn-account'
+  | 'settings'
+  | 'test-tools'
 
 interface NavigationItem {
   id: AppView
   label: string
-  description: string
-  icon: 'home' | 'settings' | 'tools'
+  icon: 'home' | 'dashboard' | 'weekly' | 'roles' | 'messages' | 'account' | 'settings' | 'tools'
 }
 
-const NAVIGATION_GROUPS: Array<{ label: string; items: NavigationItem[] }> = [
+interface NavigationGroup {
+  label: string
+  parent?: { label: string }
+  items: NavigationItem[]
+}
+
+const DN_VIEWS: AppView[] = ['dn-dashboard', 'dn-weekly', 'dn-roles', 'dn-messages', 'dn-account']
+
+const NAVIGATION_GROUPS: NavigationGroup[] = [
   {
     label: '主菜单',
-    items: [{ id: 'overview', label: '应用概览', description: '运行状态与能力概览', icon: 'home' }],
+    items: [{ id: 'overview', label: '应用概览', icon: 'home' }],
+  },
+  {
+    label: '业务系统',
+    parent: { label: 'DN 周常管理' },
+    items: [
+      { id: 'dn-dashboard', label: '仪表盘', icon: 'dashboard' },
+      { id: 'dn-weekly', label: '周计划', icon: 'weekly' },
+      { id: 'dn-roles', label: '角色', icon: 'roles' },
+      { id: 'dn-messages', label: '站内消息', icon: 'messages' },
+      { id: 'dn-account', label: '个人中心', icon: 'account' },
+    ],
   },
   {
     label: '系统设置',
     items: [
-      { id: 'settings', label: '偏好设置', description: '外观、通知与窗口', icon: 'settings' },
-      { id: 'test-tools', label: '测试工具', description: '验证桌面与原生能力', icon: 'tools' },
+      { id: 'settings', label: '偏好设置', icon: 'settings' },
+      { id: 'test-tools', label: '测试工具', icon: 'tools' },
     ],
   },
 ]
@@ -65,6 +103,7 @@ export function AppSidebar({ activeView, onNavigate }: AppSidebarProps) {
   const [sidebarWidth, setSidebarWidth] = useState(initialSidebarWidth)
   const [isCompactViewport, setIsCompactViewport] = useState(initialCompactViewport)
   const [isResizing, setIsResizing] = useState(false)
+  const [dnExpanded, setDnExpanded] = useState(() => DN_VIEWS.includes(activeView))
   const resizeStart = useRef({ pointerX: 0, width: SIDEBAR_DEFAULT_WIDTH })
   const effectiveSidebarWidth = isCompactViewport ? SIDEBAR_MIN_WIDTH : sidebarWidth
   const isCollapsed = effectiveSidebarWidth < SIDEBAR_COLLAPSED_THRESHOLD
@@ -91,6 +130,12 @@ export function AppSidebar({ activeView, onNavigate }: AppSidebarProps) {
     mediaQuery.addEventListener('change', handleChange)
     return () => mediaQuery.removeEventListener('change', handleChange)
   }, [])
+
+  useEffect(() => {
+    if (DN_VIEWS.includes(activeView)) {
+      setDnExpanded(true)
+    }
+  }, [activeView])
 
   function handleResizeStart(event: ReactPointerEvent<HTMLDivElement>) {
     resizeStart.current = { pointerX: event.clientX, width: sidebarWidth }
@@ -149,23 +194,48 @@ export function AppSidebar({ activeView, onNavigate }: AppSidebarProps) {
         {NAVIGATION_GROUPS.map((group) => (
           <div key={group.label} className='app-sidebar-group'>
             <p>{group.label}</p>
-            {group.items.map((item) => (
+            {group.parent && (
               <AppButton
-                key={item.id}
-                className={activeView === item.id ? 'is-active' : ''}
+                className={`app-sidebar-parent${DN_VIEWS.includes(activeView) ? ' is-active' : ''}`}
                 size='lg'
+                variant='ghost'
                 type='button'
-                title={item.label}
-                aria-current={activeView === item.id ? 'page' : undefined}
-                onClick={() => onNavigate(item.id)}
+                title={group.parent.label}
+                aria-expanded={!isCollapsed ? dnExpanded : undefined}
+                onClick={() => {
+                  if (isCollapsed) {
+                    onNavigate('dn-dashboard')
+                  } else {
+                    setDnExpanded((current) => !current)
+                  }
+                }}
               >
-                <NavigationIcon name={item.icon} />
-                <span>
-                  <strong>{item.label}</strong>
-                  <small>{item.description}</small>
+                <Sparkles aria-hidden='true' />
+                <span className='app-sidebar-label'>
+                  <strong>{group.parent.label}</strong>
                 </span>
+                <ChevronDown className={`app-sidebar-chevron${dnExpanded ? ' is-expanded' : ''}`} aria-hidden='true' />
               </AppButton>
-            ))}
+            )}
+            <div className={group.parent ? `app-sidebar-submenu${dnExpanded ? ' is-expanded' : ''}` : undefined}>
+              {group.items.map((item) => (
+                <AppButton
+                  key={item.id}
+                  className={activeView === item.id ? 'is-active' : ''}
+                  size={group.parent ? 'md' : 'lg'}
+                  variant='ghost'
+                  type='button'
+                  title={item.label}
+                  aria-current={activeView === item.id ? 'page' : undefined}
+                  onClick={() => onNavigate(item.id)}
+                >
+                  <NavigationIcon name={item.icon} />
+                  <span className='app-sidebar-label'>
+                    <strong>{item.label}</strong>
+                  </span>
+                </AppButton>
+              ))}
+            </div>
           </div>
         ))}
       </nav>
@@ -203,26 +273,15 @@ interface NavigationIconProps {
 }
 
 function NavigationIcon({ name }: NavigationIconProps) {
-  if (name === 'settings') {
-    return (
-      <svg viewBox='0 0 24 24' aria-hidden='true'>
-        <path d='M12 8.5a3.5 3.5 0 1 0 0 7 3.5 3.5 0 0 0 0-7Z' />
-        <path d='M19 13.3a7.8 7.8 0 0 0 0-2.6l2-1.5-2-3.4-2.4 1a8.8 8.8 0 0 0-2.2-1.3L14 3h-4l-.4 2.5a8.8 8.8 0 0 0-2.2 1.3l-2.4-1-2 3.4 2 1.5a7.8 7.8 0 0 0 0 2.6l-2 1.5 2 3.4 2.4-1a8.8 8.8 0 0 0 2.2 1.3L10 21h4l.4-2.5a8.8 8.8 0 0 0 2.2-1.3l2.4 1 2-3.4-2-1.5Z' />
-      </svg>
-    )
-  }
-
-  if (name === 'tools') {
-    return (
-      <svg viewBox='0 0 24 24' aria-hidden='true'>
-        <path d='m14.5 6.5 3-3a5 5 0 0 1-6 6L5 16l-2 5 5-2 6.5-6.5a5 5 0 0 1 6-6l-3 3-3-3Z' />
-      </svg>
-    )
-  }
-
-  return (
-    <svg viewBox='0 0 24 24' aria-hidden='true'>
-      <path d='m3 11 9-8 9 8v9a1 1 0 0 1-1 1h-5v-7H9v7H4a1 1 0 0 1-1-1v-9Z' />
-    </svg>
-  )
+  const Icon = {
+    home: Home,
+    dashboard: Gauge,
+    weekly: CalendarCheck,
+    roles: UsersRound,
+    messages: Mails,
+    account: CircleUserRound,
+    settings: Settings,
+    tools: Wrench,
+  }[name]
+  return <Icon aria-hidden='true' />
 }

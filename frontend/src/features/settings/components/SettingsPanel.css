@@ -41,13 +41,20 @@
 
 .settings-heading span {
   display: block;
-  margin-top: 10px;
   color: var(--text-secondary);
 }
 
 .settings-heading-actions {
   display: flex;
+  align-items: center;
   gap: 10px;
+}
+
+.settings-save-status {
+  margin: 0;
+  color: var(--text-tertiary);
+  font-size: 11px;
+  white-space: nowrap;
 }
 
 .settings-button {
@@ -318,8 +325,7 @@
 
   .settings-heading-actions {
     width: 100%;
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    justify-content: space-between;
   }
 
   .settings-button {
@@ -334,7 +340,8 @@
 
 @container settings-panel (max-width: 440px) {
   .settings-heading-actions {
-    grid-template-columns: 1fr;
+    align-items: stretch;
+    flex-direction: column;
   }
 
   .settings-heading h1 {

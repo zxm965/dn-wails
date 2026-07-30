@@ -6,8 +6,9 @@
 
 ## 目录与职责
 
-- `frontend/src/shared/overlay/OverlayProvider.tsx`：维护 Overlay 栈和 Context API。
-- `frontend/src/shared/overlay/OverlayProvider.css`：遮罩、窗口尺寸和响应式样式。
+- `frontend/src/shared/overlay/OverlayProvider.tsx`：维护 Overlay 栈和兼容 Context API，并组合通用 Dialog。
+- `frontend/src/shared/components/ui/Dialog.tsx`：Base UI Dialog 的主题化实现。
+- `frontend/src/shared/overlay/OverlayProvider.css`：仅保留 Overlay 内容兼容样式。
 - `frontend/src/main.tsx`：在应用根部注册 Provider。
 
 ## API
@@ -26,13 +27,11 @@ openOverlay(
 ## 行为
 
 - Overlay 按打开顺序进入堆栈。
-- Escape 只关闭顶部且允许关闭的 Overlay。
-- 点击遮罩只关闭当前可关闭 Overlay。
-- 打开后自动聚焦对话框容器。
+- Escape、遮罩关闭、焦点捕获和焦点恢复由 Base UI Dialog 处理。
 - 窄窗口下自动变为底部弹层布局。
 - 移动尺寸下标题保持单行省略，内容区独立滚动并缩小内边距，避免超出可视高度。
 - Overlay 关闭按钮使用 `AppButton size="sm"`，内容区业务操作由调用方按语义选择尺寸。
-- reduced motion 环境下关闭进入动画。
+- reduced motion 环境下停用进入与退出动画。
 
 ## 边界
 

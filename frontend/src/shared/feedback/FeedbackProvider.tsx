@@ -1,10 +1,16 @@
 import { createContext, type ReactNode, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react'
-import { createPortal } from 'react-dom'
+import { toast } from 'sonner'
 
 import { AppButton } from '@/shared/components/button'
-import { useOverlay } from '@/shared/overlay'
-
-import './FeedbackProvider.css'
+import {
+  AlertDialog,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  Toaster,
+} from '@/shared/components/ui'
 
 export type FeedbackTone = 'info' | 'success' | 'warning' | 'error'
 
@@ -23,11 +29,6 @@ export interface ConfirmOptions {
   tone?: 'default' | 'danger'
 }
 
-interface ToastItem extends Required<Pick<ToastOptions, 'title' | 'tone' | 'duration'>> {
-  id: string
-  message?: string
-}
-
 interface FeedbackContextValue {
   notify: (options: ToastOptions) => string
   dismiss: (id: string) => void
@@ -36,97 +37,56 @@ interface FeedbackContextValue {
 
 const FeedbackContext = createContext<FeedbackContextValue | null>(null)
 
-function createToastID(): string {
-  return globalThis.crypto?.randomUUID?.() ?? `toast-${Date.now()}-${Math.random().toString(16).slice(2)}`
+function createFeedbackID(): string {
+  return globalThis.crypto?.randomUUID?.() ?? `feedback-${Date.now()}-${Math.random().toString(16).slice(2)}`
 }
 
-interface FeedbackProviderProps {
-  children: ReactNode
-}
+export function FeedbackProvider({ children }: { children: ReactNode }) {
+  const [confirmation, setConfirmation] = useState<ConfirmOptions | null>(null)
+  const resolverRef = useRef<((confirmed: boolean) => void) | null>(null)
 
-export function FeedbackProvider({ children }: FeedbackProviderProps) {
-  const { openOverlay } = useOverlay()
-  const [toasts, setToasts] = useState<ToastItem[]>([])
-  const timers = useRef(new Map<string, number>())
-
-  const dismiss = useCallback((id: string) => {
-    const timer = timers.current.get(id)
-    if (timer !== undefined) {
-      window.clearTimeout(timer)
-      timers.current.delete(id)
-    }
-    setToasts((current) => current.filter((toast) => toast.id !== id))
+  const finishConfirmation = useCallback((confirmed: boolean) => {
+    resolverRef.current?.(confirmed)
+    resolverRef.current = null
+    setConfirmation(null)
   }, [])
 
-  const notify = useCallback(
-    (options: ToastOptions) => {
-      const id = createToastID()
-      const duration = options.duration ?? 3600
-      setToasts((current) => [
-        ...current,
-        {
-          id,
-          title: options.title,
-          message: options.message,
-          tone: options.tone ?? 'info',
-          duration,
-        },
-      ])
-      if (duration > 0) {
-        timers.current.set(
-          id,
-          window.setTimeout(() => dismiss(id), duration),
-        )
-      }
-      return id
-    },
-    [dismiss],
-  )
+  const confirm = useCallback((options: ConfirmOptions) => {
+    resolverRef.current?.(false)
+    setConfirmation(options)
+    return new Promise<boolean>((resolve) => {
+      resolverRef.current = resolve
+    })
+  }, [])
 
-  const confirm = useCallback(
-    (options: ConfirmOptions) =>
-      new Promise<boolean>((resolve) => {
-        openOverlay(
-          ({ close }) => {
-            const finish = (result: boolean) => {
-              close()
-              resolve(result)
-            }
+  const notify = useCallback((options: ToastOptions) => {
+    const id = createFeedbackID()
+    const toastOptions = {
+      id,
+      description: options.message,
+      duration: options.duration ?? 3600,
+    }
+    const tone = options.tone ?? 'info'
+    if (tone === 'success') {
+      toast.success(options.title, toastOptions)
+    } else if (tone === 'warning') {
+      toast.warning(options.title, toastOptions)
+    } else if (tone === 'error') {
+      toast.error(options.title, toastOptions)
+    } else {
+      toast.info(options.title, toastOptions)
+    }
+    return id
+  }, [])
 
-            return (
-              <div className='feedback-confirm'>
-                <p>{options.message}</p>
-                <div className='feedback-confirm-actions'>
-                  <AppButton
-                    className='feedback-button feedback-button-secondary'
-                    type='button'
-                    onClick={() => finish(false)}
-                  >
-                    {options.cancelLabel ?? '取消'}
-                  </AppButton>
-                  <AppButton
-                    className={`feedback-button ${options.tone === 'danger' ? 'feedback-button-danger' : 'feedback-button-primary'}`}
-                    type='button'
-                    onClick={() => finish(true)}
-                  >
-                    {options.confirmLabel ?? '确认'}
-                  </AppButton>
-                </div>
-              </div>
-            )
-          },
-          { title: options.title, size: 'small', dismissible: false },
-        )
-      }),
-    [openOverlay],
-  )
+  const dismiss = useCallback((id: string) => {
+    toast.dismiss(id)
+  }, [])
 
   useEffect(
     () => () => {
-      for (const timer of timers.current.values()) {
-        window.clearTimeout(timer)
-      }
-      timers.current.clear()
+      resolverRef.current?.(false)
+      resolverRef.current = null
     },
     [],
   )
@@ -136,21 +96,35 @@ export function FeedbackProvider({ children }: FeedbackProviderProps) {
   return (
     <FeedbackContext.Provider value={value}>
       {children}
-      {createPortal(
-        <div className='feedback-toasts' aria-live='polite' aria-relevant='additions removals'>
-          {toasts.map((toast) => (
-            <article key={toast.id} className={`feedback-toast is-${toast.tone}`}>
-              <div>
-                <strong>{toast.title}</strong>
-                {toast.message && <p>{toast.message}</p>}
-              </div>
-              <AppButton size='sm' type='button' aria-label='关闭提示' onClick={() => dismiss(toast.id)}>
-                ×
+      <Toaster />
+      {confirmation && (
+        <AlertDialog
+          open
+          onOpenChange={(open) => {
+            if (!open && resolverRef.current) {
+              finishConfirmation(false)
+            }
+          }}
+        >
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>{confirmation.title}</AlertDialogTitle>
+              <AlertDialogDescription>{confirmation.message}</AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AppButton variant='outline' type='button' onClick={() => finishConfirmation(false)}>
+                {confirmation.cancelLabel ?? '取消'}
               </AppButton>
-            </article>
-          ))}
-        </div>,
-        document.body,
+              <AppButton
+                variant={confirmation.tone === 'danger' ? 'danger' : 'primary'}
+                type='button'
+                onClick={() => finishConfirmation(true)}
+              >
+                {confirmation.confirmLabel ?? '确认'}
+              </AppButton>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       )}
     </FeedbackContext.Provider>
   )

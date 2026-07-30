@@ -13,6 +13,7 @@
 ├── internal/
 │   ├── application/                # 暴露给前端的 Wails 应用门面
 │   ├── diagnostics/                # 日志与运行诊断
+│   ├── dn/                         # DN 认证、角色、周计划、消息与官网同步
 │   ├── greeting/                   # 按业务能力组织的功能包
 │   ├── lifecycle/                  # 应用生命周期状态
 │   ├── nativekit/                  # 原生能力规则与类型
@@ -28,8 +29,8 @@
 ├── frontend/
 │   ├── src/
 │   │   ├── app/                    # 应用壳、全局样式和顶层装配
-│   │   ├── features/               # 前端业务功能模块
-│   │   ├── shared/                 # 通用组件与基础工具
+│   │   ├── features/               # 前端业务功能模块（含 DN 工作区）
+│   │   ├── shared/                 # 通用 UI 组件与基础工具
 │   │   └── assets/                 # 静态资源
 │   └── wailsjs/                    # Wails 自动生成绑定，禁止手动修改
 ├── build/                          # 平台打包资源

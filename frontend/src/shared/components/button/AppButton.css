@@ -1,7 +1,7 @@
 :root {
-  --button-height-sm: 32px;
-  --button-height-md: 40px;
-  --button-height-lg: 44px;
+  --button-height-sm: 28px;
+  --button-height-md: 32px;
+  --button-height-lg: 36px;
   --button-height-default: var(--button-height-md);
 }
 
@@ -18,8 +18,103 @@
 }
 
 .app-button {
+  position: relative;
   height: var(--button-height-default);
   min-height: var(--button-height-default);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  overflow: hidden;
+  padding: 0 12px;
+  color: var(--button-primary-text);
+  font-size: 13px;
+  font-weight: 700;
+  white-space: nowrap;
+  background: var(--accent);
+  border: 1px solid transparent;
+  border-radius: 9px;
+  cursor: pointer;
+  transition:
+    color 140ms ease,
+    background-color 140ms ease,
+    border-color 140ms ease,
+    box-shadow 140ms ease,
+    transform 100ms ease;
+  user-select: none;
+}
+
+.app-button:hover:not(:disabled) {
+  background: var(--accent-hover);
+}
+
+.app-button:active:not(:disabled) {
+  transform: translateY(1px);
+}
+
+.app-button:focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 2px;
+}
+
+.app-button:disabled,
+.app-button[aria-disabled='true'] {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+.app-button-secondary {
+  color: var(--text-primary);
+  background: var(--surface-muted);
+  border-color: var(--border-subtle);
+}
+
+.app-button-secondary:hover:not(:disabled) {
+  background: var(--surface-hover);
+}
+
+.app-button-outline {
+  color: var(--text-primary);
+  background: transparent;
+  border-color: var(--border-strong);
+}
+
+.app-button-outline:hover:not(:disabled),
+.app-button-ghost:hover:not(:disabled) {
+  color: var(--text-primary);
+  background: var(--surface-hover);
+}
+
+.app-button-ghost {
+  color: var(--text-secondary);
+  background: transparent;
+  border-color: transparent;
+}
+
+.app-button-danger {
+  color: #ffffff;
+  background: #d84d45;
+}
+
+.app-button-danger:hover:not(:disabled) {
+  background: #c8433c;
+}
+
+.app-button svg {
+  width: 16px;
+  height: 16px;
+  flex: 0 0 auto;
+  pointer-events: none;
+}
+
+.app-button-ripple {
+  position: absolute;
+  pointer-events: none;
+  background: currentColor;
+  border-radius: 999px;
+  opacity: 0.18;
+  transform: scale(0);
+  animation: app-button-ripple 520ms ease-out;
 }
 
 .app-button[data-button-size='sm'] {
@@ -35,4 +130,11 @@
 .app-button[data-button-size='lg'] {
   height: var(--button-height-lg);
   min-height: var(--button-height-lg);
+}
+
+@keyframes app-button-ripple {
+  to {
+    opacity: 0;
+    transform: scale(1);
+  }
 }

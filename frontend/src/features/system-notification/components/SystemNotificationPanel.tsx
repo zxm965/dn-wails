@@ -2,6 +2,7 @@ import { type FormEvent, useCallback, useMemo, useState } from 'react'
 
 import { useSettings } from '@/features/settings'
 import { AppButton } from '@/shared/components/button'
+import { Badge, Card, Input, Label, Textarea } from '@/shared/components/ui'
 
 import { type NotificationActivation, useSystemNotification } from '../hooks/useSystemNotification'
 
@@ -137,14 +138,14 @@ export function SystemNotificationPanel({ embedded = false }: SystemNotification
           )}
           <p className='system-notification-description'>统一处理系统能力检测、权限申请、消息发送和点击唤醒。</p>
         </div>
-        <span className={`notification-status ${statusCopy.className}`}>
+        <Badge className={`notification-status ${statusCopy.className}`}>
           <span className='notification-status-dot' aria-hidden='true' />
           {statusCopy.label}
-        </span>
+        </Badge>
       </div>
 
       <div className='system-notification-grid'>
-        <article className='message-preview-card' aria-label='消息通知预览'>
+        <Card className='message-preview-card' aria-label='消息通知预览'>
           <div className='message-preview-toolbar'>
             <span>消息</span>
             <span className='message-preview-count'>1</span>
@@ -165,12 +166,12 @@ export function SystemNotificationPanel({ embedded = false }: SystemNotification
             </span>
           </div>
           <p className='message-preview-tip'>系统通知标题使用发送者名称，正文显示消息摘要。</p>
-        </article>
+        </Card>
 
         <form className='notification-form' onSubmit={handleSubmit}>
           <div className='notification-field'>
-            <label htmlFor='notification-sender'>发送者</label>
-            <input
+            <Label htmlFor='notification-sender'>发送者</Label>
+            <Input
               id='notification-sender'
               value={sender}
               onChange={(event) => setSender(event.target.value)}
@@ -180,8 +181,8 @@ export function SystemNotificationPanel({ embedded = false }: SystemNotification
           </div>
 
           <div className='notification-field'>
-            <label htmlFor='notification-content'>消息内容</label>
-            <textarea
+            <Label htmlFor='notification-content'>消息内容</Label>
+            <Textarea
               id='notification-content'
               value={content}
               onChange={(event) => setContent(event.target.value)}

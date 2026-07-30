@@ -14,8 +14,10 @@
 main
 ├── application（Wails 绑定门面）
 │   ├── GreetingService 接口
-│   └── SystemNotificationService 接口
+│   ├── SystemNotificationService 接口
+│   └── DnService 接口
 ├── appconfig（应用全局配置）
+├── dn（角色、周计划、消息与本地资料）
 ├── greeting（业务实现）
 ├── lifecycle（应用生命周期状态）
 ├── nativekit（原生能力规则）
@@ -50,6 +52,11 @@ app
 │   │   └── components
 │   ├── foundation
 │   │   └── components
+│   ├── dn-system
+│   │   ├── api
+│   │   ├── components
+│   │   ├── context
+│   │   └── model
 │   ├── settings
 │   │   ├── api
 │   │   ├── components
@@ -65,7 +72,8 @@ app
     ├── components
     │   ├── app-sidebar
     │   ├── button
-    │   └── titlebar
+    │   ├── titlebar
+    │   └── ui
     ├── diagnostics
     ├── feedback
     ├── lib
@@ -82,7 +90,8 @@ app
 - 应用概览只展示正式状态信息；所有人工验证入口统一放在“系统设置 → 测试工具”。
 - 所有页面必须支持响应式布局；页面优先基于右侧内容区域使用 Container Queries，避免侧边栏宽度导致视口媒体查询失真。
 - 页面统一复用全局间距变量，并至少覆盖常规桌面宽度、`720 × 520` 最小窗口和极窄内容宽度。
-- 应用内按钮统一使用 `AppButton`，尺寸限定为 `sm=32px`、`md=40px`、`lg=44px`；普通操作跟随偏好设置中的默认尺寸（默认 `md`），结构性或固定语义按钮显式指定尺寸，业务模块不得自行定义其他按钮高度。
+- 应用内按钮统一使用 `AppButton`，尺寸限定为 `sm=28px`、`md=32px`、`lg=36px`；普通操作跟随偏好设置中的默认尺寸（默认 `md`），结构性或固定语义按钮显式指定尺寸，业务模块不得自行定义其他按钮高度。
+- Dialog、Alert Dialog、Toast、Card、表单控件、Tabs、Progress、Avatar、分页和空状态统一从 `shared/components/ui` 使用；共享 UI 只依赖主题令牌和通用基础设施，不依赖业务模块。
 - `features/<feature>` 拥有该功能的请求适配、状态和 UI；跨功能引用应通过模块的 `index.ts`。
 - `shared` 只放无业务归属、可稳定复用的组件与工具，禁止反向依赖 `features`。
 - `frontend/wailsjs` 是生成目录；业务代码通过功能模块下的 `api` 文件引用它。
@@ -102,7 +111,9 @@ app
 
 - [应用全局配置](modules/app-config.md)
 - [按钮尺寸系统](modules/button-system.md)
+- [通用 UI 组件](modules/ui-components.md)
 - [桌面应用壳](modules/desktop-shell.md)
+- [DN 周常管理](modules/dn-system.md)
 - [应用生命周期](modules/app-lifecycle.md)
 - [单实例](modules/single-instance.md)
 - [窗口管理](modules/window-manager.md)

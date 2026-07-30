@@ -1,5 +1,3 @@
-import { type FormEvent, useEffect, useState } from 'react'
-
 import { AppButton } from '@/shared/components/button'
 import { useFeedback } from '@/shared/feedback'
 
@@ -27,62 +25,35 @@ const BUTTON_SIZE_OPTIONS: Array<{ value: ButtonSize; label: string }> = [
   { value: 'lg', label: '大型' },
 ]
 
-function cloneSettings(settings: AppSettings): AppSettings {
-  return {
-    ...settings,
-    appearance: { ...settings.appearance },
-    notifications: { ...settings.notifications },
-    window: {
-      ...settings.window,
-      bounds: settings.window.bounds ? { ...settings.window.bounds } : undefined,
-    },
-  }
-}
-
 export function SettingsPanel() {
   const { settings, isLoading, isSaving, error, updateSettings, resetSettings } = useSettings()
   const { notify, confirm } = useFeedback()
-  const [draft, setDraft] = useState<AppSettings>(() => cloneSettings(settings))
-
-  useEffect(() => {
-    setDraft(cloneSettings(settings))
-  }, [settings])
 
   function updateAppearance<Key extends keyof AppSettings['appearance']>(
     key: Key,
     value: AppSettings['appearance'][Key],
   ) {
-    setDraft((current) => ({
+    void updateSettings((current) => ({
       ...current,
       appearance: { ...current.appearance, [key]: value },
-    }))
+    })).catch(() => undefined)
   }
 
   function updateNotifications<Key extends keyof AppSettings['notifications']>(
     key: Key,
     value: AppSettings['notifications'][Key],
   ) {
-    setDraft((current) => ({
+    void updateSettings((current) => ({
       ...current,
       notifications: { ...current.notifications, [key]: value },
-    }))
+    })).catch(() => undefined)
   }
 
   function updateWindow<Key extends keyof AppSettings['window']>(key: Key, value: AppSettings['window'][Key]) {
-    setDraft((current) => ({
+    void updateSettings((current) => ({
       ...current,
       window: { ...current.window, [key]: value },
-    }))
-  }
-
-  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault()
-    try {
-      await updateSettings(draft)
-      notify({ title: '设置已保存', message: '主题和桌面行为已经生效。', tone: 'success' })
-    } catch {
-      notify({ title: '保存失败', message: '请检查设置内容后重试。', tone: 'error' })
-    }
+    })).catch(() => undefined)
   }
 
   async function handleReset() {
@@ -109,7 +80,7 @@ export function SettingsPanel() {
   }
 
   return (
-    <form className='settings-panel' onSubmit={handleSubmit}>
+    <div className='settings-panel'>
       <header className='settings-heading'>
         <div>
           <p>Preferences</p>
@@ -117,16 +88,17 @@ export function SettingsPanel() {
           <span>设置会保存到当前用户的应用配置目录。</span>
         </div>
         <div className='settings-heading-actions'>
+          <span className='settings-save-status' aria-live='polite'>
+            {isSaving ? '正在同步…' : '修改自动保存'}
+          </span>
           <AppButton
             className='settings-button settings-button-secondary'
+            variant='outline'
             type='button'
             onClick={handleReset}
             disabled={isSaving}
           >
             恢复默认
-          </AppButton>
-          <AppButton className='settings-button settings-button-primary' type='submit' disabled={isSaving}>
-            {isSaving ? '正在保存…' : '保存设置'}
           </AppButton>
         </div>
       </header>
@@ -148,12 +120,15 @@ export function SettingsPanel() {
             <legend>主题模式</legend>
             <div className='settings-segmented'>
               {THEME_OPTIONS.map((option) => (
-                <label key={option.value} className={draft.appearance.themeMode === option.value ? 'is-selected' : ''}>
+                <label
+                  key={option.value}
+                  className={settings.appearance.themeMode === option.value ? 'is-selected' : ''}
+                >
                   <input
                     type='radio'
                     name='theme-mode'
                     value={option.value}
-                    checked={draft.appearance.themeMode === option.value}
+                    checked={settings.appearance.themeMode === option.value}
                     onChange={() => updateAppearance('themeMode', option.value)}
                   />
                   {option.label}
@@ -171,7 +146,7 @@ export function SettingsPanel() {
                     type='radio'
                     name='accent-color'
                     value={option.value}
-                    checked={draft.appearance.accent === option.value}
+                    checked={settings.appearance.accent === option.value}
                     onChange={() => updateAppearance('accent', option.value)}
                   />
                   <span className={`settings-accent is-${option.value}`} aria-hidden='true' />
@@ -184,7 +159,7 @@ export function SettingsPanel() {
           <label className='settings-field'>
             <span>界面密度</span>
             <select
-              value={draft.appearance.density}
+              value={settings.appearance.density}
               onChange={(event) => updateAppearance('density', event.target.value as Density)}
             >
               <option value='comfortable'>舒适</option>
@@ -196,12 +171,15 @@ export function SettingsPanel() {
             <legend>默认按钮尺寸</legend>
             <div className='settings-segmented'>
               {BUTTON_SIZE_OPTIONS.map((option) => (
-                <label key={option.value} className={draft.appearance.buttonSize === option.value ? 'is-selected' : ''}>
+                <label
+                  key={option.value}
+                  className={settings.appearance.buttonSize === option.value ? 'is-selected' : ''}
+                >
                   <input
                     type='radio'
                     name='button-size'
                     value={option.value}
-                    checked={draft.appearance.buttonSize === option.value}
+                    checked={settings.appearance.buttonSize === option.value}
                     onChange={() => updateAppearance('buttonSize', option.value)}
                   />
                   {option.label}
@@ -211,13 +189,13 @@ export function SettingsPanel() {
           </fieldset>
 
           <label className='settings-field settings-range'>
-            <span>文字缩放：{Math.round(draft.appearance.fontScale * 100)}%</span>
+            <span>文字缩放：{Math.round(settings.appearance.fontScale * 100)}%</span>
             <input
               type='range'
               min='0.85'
               max='1.25'
               step='0.05'
-              value={draft.appearance.fontScale}
+              value={settings.appearance.fontScale}
               onChange={(event) => updateAppearance('fontScale', Number(event.target.value))}
             />
           </label>
@@ -233,21 +211,21 @@ export function SettingsPanel() {
           <ToggleRow
             title='启用系统通知'
             description='关闭后，业务消息不会发送到系统通知中心。'
-            checked={draft.notifications.enabled}
+            checked={settings.notifications.enabled}
             onChange={(checked) => updateNotifications('enabled', checked)}
           />
           <ToggleRow
             title='显示消息预览'
             description='关闭后，通知正文统一显示“您收到一条消息”。'
-            checked={draft.notifications.showPreview}
-            disabled={!draft.notifications.enabled}
+            checked={settings.notifications.showPreview}
+            disabled={!settings.notifications.enabled}
             onChange={(checked) => updateNotifications('showPreview', checked)}
           />
           <ToggleRow
             title='免打扰'
             description='临时暂停所有应用消息通知。'
-            checked={draft.notifications.doNotDisturb}
-            disabled={!draft.notifications.enabled}
+            checked={settings.notifications.doNotDisturb}
+            disabled={!settings.notifications.enabled}
             onChange={(checked) => updateNotifications('doNotDisturb', checked)}
           />
         </div>
@@ -262,7 +240,7 @@ export function SettingsPanel() {
           <label className='settings-field'>
             <span>关闭窗口时</span>
             <select
-              value={draft.window.closeBehavior}
+              value={settings.window.closeBehavior}
               onChange={(event) =>
                 updateWindow('closeBehavior', event.target.value as AppSettings['window']['closeBehavior'])
               }
@@ -275,19 +253,19 @@ export function SettingsPanel() {
         <div className='settings-toggles'>
           <ToggleRow
             title='窗口始终置顶'
-            description='保存后立即应用到主窗口。'
-            checked={draft.window.alwaysOnTop}
+            description='切换后立即应用到主窗口。'
+            checked={settings.window.alwaysOnTop}
             onChange={(checked) => updateWindow('alwaysOnTop', checked)}
           />
           <ToggleRow
             title='记住窗口位置和大小'
             description='下次启动时恢复上次关闭前的窗口状态。'
-            checked={draft.window.rememberBounds}
+            checked={settings.window.rememberBounds}
             onChange={(checked) => updateWindow('rememberBounds', checked)}
           />
         </div>
       </section>
-    </form>
+    </div>
   )
 }
 

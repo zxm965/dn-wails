@@ -2,6 +2,7 @@ import React from 'react'
 import { createRoot } from 'react-dom/client'
 
 import App from '@/app/App'
+import { DnAuthProvider } from '@/features/dn-system'
 import { SettingsProvider } from '@/features/settings'
 import { FeedbackProvider } from '@/shared/feedback'
 import { OverlayProvider } from '@/shared/overlay'
@@ -19,7 +20,9 @@ root.render(
       <ThemeProvider>
         <OverlayProvider>
           <FeedbackProvider>
-            <App />
+            <DnAuthProvider>
+              <App />
+            </DnAuthProvider>
           </FeedbackProvider>
         </OverlayProvider>
       </ThemeProvider>

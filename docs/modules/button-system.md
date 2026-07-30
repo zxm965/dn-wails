@@ -20,9 +20,9 @@ type AppButtonSize = 'sm' | 'md' | 'lg'
 
 | 尺寸 | 高度 | 使用场景 |
 | ---- | ---- | -------- |
-| `sm` | 32px | Toast、Overlay 等紧凑图标按钮 |
-| `md` | 40px | 默认值、分类切换和标准操作 |
-| `lg` | 44px | 侧栏导航、窗口控制等结构性按钮 |
+| `sm` | 28px | Toast、Dialog 等紧凑图标按钮 |
+| `md` | 32px | 默认值、分类切换和标准操作 |
+| `lg` | 36px | 侧栏导航、窗口控制等结构性按钮 |
 
 `size` 是可选属性。省略时读取偏好设置中的默认尺寸；显式传入时只允许上述三个值，并覆盖用户默认值。
 
@@ -30,7 +30,7 @@ type AppButtonSize = 'sm' | 'md' | 'lg'
 
 ```tsx
 <AppButton type='submit'>
-  保存设置
+  保存资料
 </AppButton>
 ```
 
@@ -39,7 +39,9 @@ type AppButtonSize = 'sm' | 'md' | 'lg'
 - 侧栏和标题栏按钮固定为 `lg`，分类切换固定为 `md`，Toast 和 Overlay 紧凑关闭按钮固定为 `sm`。
 - 模块样式只控制按钮宽度、颜色、边框、内边距和布局，不重复声明高度。
 - 图标按钮仍必须提供 `aria-label`。
-- 新增按钮视觉类型时优先扩展 tone 或 variant，不新增高度档位。
+- `AppButton` 提供 `primary`、`secondary`、`outline`、`ghost`、`danger` 视觉变体和 reduced-motion 兼容的点击波纹。
+- Base UI 的 Trigger、Close 等组合场景通过 `render={<AppButton />}` 复用同一底层按钮。
+- 新增按钮视觉类型时优先扩展 variant，不新增高度档位。
 
 ## 验证
 
@@ -50,4 +52,4 @@ pnpm lint
 pnpm build
 ```
 
-响应式人工验证需确认偏好设置切换为 `sm`、`md`、`lg` 后，普通操作按钮分别为 32px、40px、44px，固定语义按钮不受影响，并且常规窗口和窄窗口下不会产生文字裁切或横向溢出。
+响应式人工验证需确认偏好设置切换为 `sm`、`md`、`lg` 后，普通操作按钮分别为 28px、32px、36px，固定语义按钮不受影响，并且常规窗口和窄窗口下不会产生文字裁切或横向溢出。

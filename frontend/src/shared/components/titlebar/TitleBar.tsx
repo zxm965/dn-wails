@@ -1,3 +1,5 @@
+import type { ReactNode } from 'react'
+
 import appIcon from '@/assets/images/app-icon.png'
 import { AppButton } from '@/shared/components/button'
 import { isMacOS } from '@/shared/lib/platform'
@@ -7,9 +9,10 @@ import './TitleBar.css'
 
 interface TitleBarProps {
   title: string
+  actions?: ReactNode
 }
 
-export function TitleBar({ title }: TitleBarProps) {
+export function TitleBar({ title, actions }: TitleBarProps) {
   const usesNativeWindowControls = isMacOS()
 
   return (
@@ -21,6 +24,12 @@ export function TitleBar({ title }: TitleBarProps) {
         <img className='titlebar-logo' src={appIcon} alt='' />
         <span className='titlebar-title'>{title}</span>
       </div>
+
+      {actions && (
+        <div className='titlebar-actions' onDoubleClick={(event) => event.stopPropagation()}>
+          {actions}
+        </div>
+      )}
 
       {!usesNativeWindowControls && (
         <div className='window-controls' onDoubleClick={(event) => event.stopPropagation()}>

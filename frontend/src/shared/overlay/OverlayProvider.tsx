@@ -1,7 +1,14 @@
-import { createContext, type ReactNode, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react'
-import { createPortal } from 'react-dom'
+import { createContext, type ReactNode, useCallback, useContext, useMemo, useState } from 'react'
 
-import { AppButton } from '@/shared/components/button'
+import {
+  Dialog,
+  DialogBody,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  type DialogSize,
+} from '@/shared/components/ui'
 
 import './OverlayProvider.css'
 
@@ -37,11 +44,13 @@ function createOverlayID(): string {
   return globalThis.crypto?.randomUUID?.() ?? `overlay-${Date.now()}-${Math.random().toString(16).slice(2)}`
 }
 
-interface OverlayProviderProps {
-  children: ReactNode
+function dialogSize(size: OverlaySize): DialogSize {
+  if (size === 'small') return 'sm'
+  if (size === 'large') return 'lg'
+  return 'md'
 }
 
-export function OverlayProvider({ children }: OverlayProviderProps) {
+export function OverlayProvider({ children }: { children: ReactNode }) {
   const [overlays, setOverlays] = useState<OverlayItem[]>([])
 
   const closeOverlay = useCallback((id: string) => {
@@ -68,27 +77,9 @@ export function OverlayProvider({ children }: OverlayProviderProps) {
   const closeTopOverlay = useCallback(() => {
     setOverlays((current) => {
       const top = current.at(-1)
-      if (!top?.options.dismissible) {
-        return current
-      }
-      return current.slice(0, -1)
+      return top?.options.dismissible ? current.slice(0, -1) : current
     })
   }, [])
-
-  useEffect(() => {
-    if (overlays.length === 0) {
-      return
-    }
-
-    const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') {
-        event.preventDefault()
-        closeTopOverlay()
-      }
-    }
-    window.addEventListener('keydown', handleKeyDown)
-    return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [closeTopOverlay, overlays.length])
 
   const value = useMemo<OverlayContextValue>(
     () => ({ openOverlay, closeOverlay, closeTopOverlay }),
@@ -98,69 +89,30 @@ export function OverlayProvider({ children }: OverlayProviderProps) {
   return (
     <OverlayContext.Provider value={value}>
       {children}
-      {createPortal(
-        <div className='overlay-stack' aria-live='polite'>
-          {overlays.map((overlay, index) => (
-            <OverlayFrame
-              key={overlay.id}
-              overlay={overlay}
-              isTop={index === overlays.length - 1}
-              onClose={() => closeOverlay(overlay.id)}
-            />
-          ))}
-        </div>,
-        document.body,
-      )}
-    </OverlayContext.Provider>
-  )
-}
-
-interface OverlayFrameProps {
-  overlay: OverlayItem
-  isTop: boolean
-  onClose: () => void
-}
-
-function OverlayFrame({ overlay, isTop, onClose }: OverlayFrameProps) {
-  const dialogRef = useRef<HTMLDivElement>(null)
-
-  useEffect(() => {
-    if (isTop) {
-      dialogRef.current?.focus()
-    }
-  }, [isTop])
-
-  return (
-    <div
-      className='overlay-backdrop'
-      style={{ zIndex: 1000 + Number(isTop) }}
-      onMouseDown={(event) => {
-        if (event.target === event.currentTarget && overlay.options.dismissible) {
-          onClose()
-        }
-      }}
-    >
-      <div
-        ref={dialogRef}
-        className={`overlay-dialog overlay-dialog-${overlay.options.size}`}
-        role='dialog'
-        aria-modal='true'
-        aria-label={overlay.options.title ?? '对话框'}
-        tabIndex={-1}
-      >
-        {(overlay.options.title || overlay.options.dismissible) && (
-          <header className='overlay-header'>
-            <h2>{overlay.options.title}</h2>
-            {overlay.options.dismissible && (
-              <AppButton className='overlay-close' size='sm' type='button' aria-label='关闭' onClick={onClose}>
-                ×
-              </AppButton>
+      {overlays.map((overlay) => (
+        <Dialog
+          key={overlay.id}
+          open
+          onOpenChange={(open) => {
+            if (!open && overlay.options.dismissible) {
+              closeOverlay(overlay.id)
+            }
+          }}
+        >
+          <DialogContent size={dialogSize(overlay.options.size)} showCloseButton={overlay.options.dismissible}>
+            {overlay.options.title && (
+              <DialogHeader>
+                <DialogTitle>{overlay.options.title}</DialogTitle>
+                <DialogDescription>应用内子视图</DialogDescription>
+              </DialogHeader>
             )}
-          </header>
-        )}
-        <div className='overlay-content'>{overlay.render({ close: onClose })}</div>
-      </div>
-    </div>
+            <DialogBody className='overlay-content'>
+              {overlay.render({ close: () => closeOverlay(overlay.id) })}
+            </DialogBody>
+          </DialogContent>
+        </Dialog>
+      ))}
+    </OverlayContext.Provider>
   )
 }
 

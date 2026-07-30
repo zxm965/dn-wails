@@ -75,11 +75,11 @@
 }
 
 .app-sidebar-group + .app-sidebar-group {
-  margin-top: 20px;
+  margin-top: 14px;
 }
 
 .app-sidebar-group > p {
-  margin: 0 9px 7px;
+  margin: 0 9px 5px;
   color: var(--text-tertiary);
   font-size: 10px;
   font-weight: 800;
@@ -90,8 +90,9 @@
   width: 100%;
   display: flex;
   align-items: center;
-  gap: 11px;
-  padding: 7px 9px;
+  justify-content: flex-start;
+  gap: 9px;
+  padding: 0 9px;
   color: var(--text-secondary);
   text-align: left;
   background: transparent;
@@ -125,12 +126,11 @@
   color: var(--accent);
 }
 
-.app-sidebar-group button > span {
+.app-sidebar-label {
   min-width: 0;
 }
 
-.app-sidebar-group button strong,
-.app-sidebar-group button small {
+.app-sidebar-group button strong {
   display: block;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -138,13 +138,38 @@
 }
 
 .app-sidebar-group button strong {
-  font-size: 12px;
+  font-size: 11px;
 }
 
-.app-sidebar-group button small {
-  margin-top: 4px;
-  color: var(--text-tertiary);
-  font-size: 10px;
+.app-sidebar-parent .app-sidebar-chevron {
+  width: 14px;
+  height: 14px;
+  margin-left: auto;
+  transition: transform 150ms ease;
+}
+
+.app-sidebar-parent .app-sidebar-chevron.is-expanded {
+  transform: rotate(180deg);
+}
+
+.app-sidebar-submenu {
+  display: none;
+  margin: 2px 0 0 10px;
+}
+
+.app-sidebar-submenu.is-expanded {
+  display: grid;
+  gap: 0;
+}
+
+.app-sidebar-submenu button {
+  gap: 8px;
+  padding-left: 10px;
+}
+
+.app-sidebar-submenu button svg {
+  width: 15px;
+  height: 15px;
 }
 
 .app-sidebar-footer {
@@ -228,16 +253,24 @@ body.is-resizing-sidebar * {
 
 .app-sidebar.is-collapsed .app-sidebar-product div,
 .app-sidebar.is-collapsed .app-sidebar-group > p,
-.app-sidebar.is-collapsed .app-sidebar-group button > span,
+.app-sidebar.is-collapsed .app-sidebar-label,
 .app-sidebar.is-collapsed .app-sidebar-footer div {
   display: none;
 }
 
 .app-sidebar.is-collapsed .app-sidebar-group button {
-  width: 44px;
+  width: var(--button-height-lg);
   justify-content: center;
   margin: 0 auto;
   padding: 0;
+}
+
+.app-sidebar.is-collapsed .app-sidebar-submenu {
+  display: none;
+}
+
+.app-sidebar.is-collapsed .app-sidebar-parent .app-sidebar-chevron {
+  display: none;
 }
 
 .app-sidebar.is-collapsed .app-sidebar-group button svg {

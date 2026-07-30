@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"dn-wails/internal/diagnostics"
+	"dn-wails/internal/dn"
 	"dn-wails/internal/lifecycle"
 	"dn-wails/internal/nativekit"
 	"dn-wails/internal/notification"
@@ -85,6 +86,36 @@ type DiagnosticsService interface {
 	Close() error
 }
 
+type DnService interface {
+	Initialize() error
+	Close() error
+	AuthState() (dn.AuthState, error)
+	Register(input dn.RegistrationInput) (dn.Profile, error)
+	Login(input dn.LoginInput) (dn.Profile, error)
+	Logout() error
+	Profile() (dn.Profile, error)
+	UpdateProfile(input dn.ProfileInput) (dn.Profile, error)
+	ChangePassword(input dn.PasswordInput) error
+	ImportAvatar(path string) (string, error)
+	ListRoles(query dn.RoleProfessionQuery) (dn.RoleProfessionList, error)
+	RoleOptions() ([]dn.RoleProfession, error)
+	SaveRole(input dn.RoleProfessionInput) (dn.RoleProfession, error)
+	DeleteRole(id int) (dn.RoleProfession, error)
+	ListWeeklyPlans(query dn.WeeklyPlanQuery) (dn.WeeklyPlanList, error)
+	AllWeeklyPlans() ([]dn.WeeklyPlan, error)
+	SaveWeeklyPlan(input dn.WeeklyPlanInput) (dn.WeeklyPlan, error)
+	DeleteWeeklyPlan(id int) (dn.WeeklyPlan, error)
+	InitializeWeeklyPlans() (dn.WeeklyPlanInitializationResult, error)
+	SyncWeeklyPlans() (dn.WeeklyPlanSyncResult, error)
+	ListMessages(query dn.SiteMessageQuery) (dn.SiteMessageList, error)
+	MessageInbox(limit int) (dn.SiteMessageInbox, error)
+	ClaimMessageNotifications(limit int) (dn.SiteMessageClaim, error)
+	MarkMessageRead(id int) (dn.SiteMessage, error)
+	MarkAllMessagesRead() (int, error)
+	PublishMessage(input dn.SiteMessageInput) (dn.SiteMessage, error)
+	SyncOfficialMessages() (dn.OfficialMessageSyncResult, error)
+}
+
 type Dependencies struct {
 	Greeting           GreetingService
 	SystemNotification SystemNotificationService
@@ -94,6 +125,7 @@ type Dependencies struct {
 	Window             WindowService
 	Native             NativeService
 	Diagnostics        DiagnosticsService
+	Dn                 DnService
 }
 
 // App is the Wails-facing application facade.
@@ -106,6 +138,7 @@ type App struct {
 	windowService             WindowService
 	nativeService             NativeService
 	diagnosticsService        DiagnosticsService
+	dnService                 DnService
 
 	mu                    sync.RWMutex
 	ctx                   context.Context
@@ -124,6 +157,7 @@ func New(dependencies Dependencies) *App {
 		windowService:             dependencies.Window,
 		nativeService:             dependencies.Native,
 		diagnosticsService:        dependencies.Diagnostics,
+		dnService:                 dependencies.Dn,
 	}
 }
 
@@ -141,6 +175,9 @@ func (a *App) OnStartup(ctx context.Context) {
 	}
 	if err := a.settingsService.Initialize(); err != nil {
 		log.Printf("initialize settings with defaults: %v", err)
+	}
+	if err := a.dnService.Initialize(); err != nil {
+		log.Printf("initialize dn system data: %v", err)
 	}
 	a.lifecycleService.Start(time.Now())
 }
@@ -225,6 +262,9 @@ func (a *App) QuitApplication() error {
 func (a *App) OnShutdown(ctx context.Context) {
 	a.systemNotificationService.Cleanup(ctx)
 	a.lifecycleService.Stop()
+	if err := a.dnService.Close(); err != nil {
+		log.Printf("close dn database: %v", err)
+	}
 	if err := a.diagnosticsService.Close(); err != nil {
 		log.Printf("close diagnostics: %v", err)
 	}

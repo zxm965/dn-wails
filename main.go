@@ -8,6 +8,7 @@ import (
 	"dn-wails/internal/appconfig"
 	"dn-wails/internal/application"
 	"dn-wails/internal/diagnostics"
+	"dn-wails/internal/dn"
 	"dn-wails/internal/greeting"
 	"dn-wails/internal/lifecycle"
 	"dn-wails/internal/nativekit"
@@ -49,6 +50,14 @@ func main() {
 		log.Fatal("create settings store: ", err)
 	}
 	settingsService := settings.NewService(settingsStore)
+	databaseURL, err := dn.ResolveDatabaseURL(settingsStore)
+	if err != nil {
+		log.Fatal("resolve DN database connection: ", err)
+	}
+	dnService, err := dn.NewPostgresService(databaseURL, settingsStore)
+	if err != nil {
+		log.Fatal("create DN database service: ", err)
+	}
 
 	diagnosticsService, err := diagnostics.NewService(internalApplicationName, appVersion, startedAt)
 	if err != nil {
@@ -75,6 +84,7 @@ func main() {
 		Window:             windowService,
 		Native:             nativeService,
 		Diagnostics:        diagnosticsService,
+		Dn:                 dnService,
 	})
 
 	appOptions := &options.App{

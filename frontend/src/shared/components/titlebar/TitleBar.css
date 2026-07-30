@@ -28,6 +28,15 @@
   gap: 9px;
 }
 
+.titlebar-actions {
+  --wails-draggable: no-drag;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-left: auto;
+  -webkit-app-region: no-drag;
+}
+
 .titlebar-macos {
   flex-basis: 32px;
   padding-right: 82px;
@@ -57,13 +66,14 @@
 
 .window-controls {
   --wails-draggable: no-drag;
-  align-self: stretch;
+  align-self: center;
+  height: var(--button-height-lg);
   display: flex;
 }
 
 .window-control {
   width: 46px;
-  height: 100%;
+  height: var(--button-height-lg);
   display: grid;
   place-items: center;
   padding: 0;
