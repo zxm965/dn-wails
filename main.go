@@ -2,6 +2,8 @@ package main
 
 import (
 	"embed"
+	"errors"
+	"io/fs"
 	"log"
 	"time"
 
@@ -30,8 +32,8 @@ import (
 //go:embed all:frontend/dist
 var assets embed.FS
 
-//go:embed .env
-var applicationConfigData []byte
+//go:embed all:.env*
+var environmentFiles embed.FS
 
 const (
 	internalApplicationName = "dn-wails"
@@ -40,9 +42,17 @@ const (
 
 func main() {
 	startedAt := time.Now()
+	applicationConfigData, err := environmentFiles.ReadFile(".env")
+	if err != nil {
+		log.Fatal("read embedded application config: ", err)
+	}
 	applicationConfig, err := appconfig.Parse(applicationConfigData)
 	if err != nil {
 		log.Fatal("load application config: ", err)
+	}
+	databaseConfigData, err := environmentFiles.ReadFile(".env.local")
+	if err != nil && !errors.Is(err, fs.ErrNotExist) {
+		log.Fatal("read embedded database config: ", err)
 	}
 
 	settingsStore, err := storage.NewFileStore(internalApplicationName)
@@ -50,7 +60,7 @@ func main() {
 		log.Fatal("create settings store: ", err)
 	}
 	settingsService := settings.NewService(settingsStore)
-	databaseURL, err := dn.ResolveDatabaseURL(settingsStore)
+	databaseURL, err := dn.ResolveDatabaseURL(databaseConfigData)
 	if err != nil {
 		log.Fatal("resolve DN database connection: ", err)
 	}

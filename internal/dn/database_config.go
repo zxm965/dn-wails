@@ -2,125 +2,55 @@ package dn
 
 import (
 	"bufio"
-	"encoding/json"
-	"errors"
+	"bytes"
 	"fmt"
 	"os"
-	"path/filepath"
 	"strings"
-
-	"dn-wails/internal/storage"
 )
 
-const databaseConnectionStorageKey = "dn-database-connection"
+const databaseURLKey = "DATABASE_URL"
 
-type databaseConnection struct {
-	URL string `json:"url"`
-}
-
-func ResolveDatabaseURL(store storage.Store) (string, error) {
-	if value := strings.TrimSpace(os.Getenv("DATABASE_URL")); value != "" {
+func ResolveDatabaseURL(configData []byte) (string, error) {
+	if value := strings.TrimSpace(os.Getenv(databaseURLKey)); value != "" {
 		return value, nil
 	}
 
-	data, err := store.Load(databaseConnectionStorageKey)
-	if err == nil {
-		var connection databaseConnection
-		if decodeErr := json.Unmarshal(data, &connection); decodeErr != nil {
-			return "", fmt.Errorf("decode stored DN database connection: %w", decodeErr)
-		}
-		if value := strings.TrimSpace(connection.URL); value != "" {
-			return value, nil
-		}
-	} else if !errors.Is(err, storage.ErrNotFound) {
-		return "", fmt.Errorf("load stored DN database connection: %w", err)
-	}
-
-	for _, path := range databaseEnvironmentCandidates() {
-		value, readErr := readDatabaseURL(path)
-		if errors.Is(readErr, os.ErrNotExist) {
-			continue
-		}
-		if readErr != nil {
-			return "", readErr
-		}
-		if value == "" {
-			continue
-		}
-		encoded, encodeErr := json.Marshal(databaseConnection{URL: value})
-		if encodeErr != nil {
-			return "", fmt.Errorf("encode DN database connection: %w", encodeErr)
-		}
-		if saveErr := store.Save(databaseConnectionStorageKey, encoded); saveErr != nil {
-			return "", fmt.Errorf("persist DN database connection: %w", saveErr)
-		}
-		return value, nil
-	}
-
-	return "", fmt.Errorf("DATABASE_URL is not configured; set the environment variable or keep dn-next/.env beside this project")
-}
-
-func databaseEnvironmentCandidates() []string {
-	seen := make(map[string]struct{})
-	paths := make([]string, 0)
-	add := func(path string) {
-		path = filepath.Clean(path)
-		if _, exists := seen[path]; exists {
-			return
-		}
-		seen[path] = struct{}{}
-		paths = append(paths, path)
-	}
-	addRoots := func(start string) {
-		current := filepath.Clean(start)
-		for range 6 {
-			add(filepath.Join(current, ".env.local"))
-			add(filepath.Join(current, ".env"))
-			add(filepath.Join(current, "dn-next", ".env.local"))
-			add(filepath.Join(current, "dn-next", ".env"))
-			add(filepath.Join(filepath.Dir(current), "dn-next", ".env.local"))
-			add(filepath.Join(filepath.Dir(current), "dn-next", ".env"))
-			parent := filepath.Dir(current)
-			if parent == current {
-				break
-			}
-			current = parent
-		}
-	}
-	if workingDirectory, err := os.Getwd(); err == nil {
-		addRoots(workingDirectory)
-	}
-	if executable, err := os.Executable(); err == nil {
-		addRoots(filepath.Dir(executable))
-	}
-	return paths
-}
-
-func readDatabaseURL(path string) (string, error) {
-	file, err := os.Open(path)
+	value, err := readDatabaseURL(configData)
 	if err != nil {
 		return "", err
 	}
-	defer file.Close()
+	if value != "" {
+		return value, nil
+	}
 
-	scanner := bufio.NewScanner(file)
-	for scanner.Scan() {
+	return "", fmt.Errorf("%s is not configured in the process environment or dn-wails/.env.local", databaseURLKey)
+}
+
+func readDatabaseURL(data []byte) (string, error) {
+	scanner := bufio.NewScanner(bytes.NewReader(data))
+	foundDatabaseURL := false
+	databaseURL := ""
+	for lineNumber := 1; scanner.Scan(); lineNumber++ {
 		line := strings.TrimSpace(scanner.Text())
 		if line == "" || strings.HasPrefix(line, "#") {
 			continue
 		}
 		key, rawValue, found := strings.Cut(line, "=")
-		if !found || strings.TrimSpace(key) != "DATABASE_URL" {
+		if !found || strings.TrimSpace(key) != databaseURLKey {
 			continue
 		}
+		if foundDatabaseURL {
+			return "", fmt.Errorf("parse dn-wails/.env.local line %d: duplicate %s", lineNumber, databaseURLKey)
+		}
+		foundDatabaseURL = true
 		value := strings.TrimSpace(rawValue)
 		if len(value) >= 2 && ((value[0] == '\'' && value[len(value)-1] == '\'') || (value[0] == '"' && value[len(value)-1] == '"')) {
 			value = value[1 : len(value)-1]
 		}
-		return strings.TrimSpace(value), nil
+		databaseURL = strings.TrimSpace(value)
 	}
 	if err := scanner.Err(); err != nil {
-		return "", fmt.Errorf("read database environment %q: %w", path, err)
+		return "", fmt.Errorf("read dn-wails database configuration: %w", err)
 	}
-	return "", nil
+	return databaseURL, nil
 }
