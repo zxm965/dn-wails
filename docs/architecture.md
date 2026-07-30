@@ -64,6 +64,7 @@ app
     ├── app-lifecycle
     ├── components
     │   ├── app-sidebar
+    │   ├── button
     │   └── titlebar
     ├── diagnostics
     ├── feedback
@@ -79,6 +80,9 @@ app
 - `app` 负责应用壳、全局样式与顶层模块装配。
 - 桌面应用壳采用“顶部标题栏 + 左侧分组菜单 + 右侧视图区域”的固定布局。
 - 应用概览只展示正式状态信息；所有人工验证入口统一放在“系统设置 → 测试工具”。
+- 所有页面必须支持响应式布局；页面优先基于右侧内容区域使用 Container Queries，避免侧边栏宽度导致视口媒体查询失真。
+- 页面统一复用全局间距变量，并至少覆盖常规桌面宽度、`720 × 520` 最小窗口和极窄内容宽度。
+- 应用内按钮统一使用 `AppButton`，尺寸限定为 `sm=32px`、`md=40px`、`lg=44px`；普通操作跟随偏好设置中的默认尺寸（默认 `md`），结构性或固定语义按钮显式指定尺寸，业务模块不得自行定义其他按钮高度。
 - `features/<feature>` 拥有该功能的请求适配、状态和 UI；跨功能引用应通过模块的 `index.ts`。
 - `shared` 只放无业务归属、可稳定复用的组件与工具，禁止反向依赖 `features`。
 - `frontend/wailsjs` 是生成目录；业务代码通过功能模块下的 `api` 文件引用它。
@@ -97,6 +101,7 @@ app
 ## 模块文档
 
 - [应用全局配置](modules/app-config.md)
+- [按钮尺寸系统](modules/button-system.md)
 - [桌面应用壳](modules/desktop-shell.md)
 - [应用生命周期](modules/app-lifecycle.md)
 - [单实例](modules/single-instance.md)

@@ -50,8 +50,7 @@
 }
 
 .feedback-toast > button {
-  width: 26px;
-  height: 26px;
+  width: var(--button-height-sm);
   padding: 0;
   color: var(--text-tertiary);
   font-size: 20px;
@@ -82,7 +81,6 @@
 
 .feedback-button {
   min-width: 78px;
-  min-height: 38px;
   padding: 0 15px;
   font-weight: 700;
   border: 1px solid transparent;
@@ -104,6 +102,30 @@
 .feedback-button-danger {
   color: #ffffff;
   background: #d84d45;
+}
+
+@media (max-width: 520px) {
+  .feedback-toasts {
+    top: 44px;
+    right: 10px;
+    left: 10px;
+    width: auto;
+  }
+
+  .feedback-toast {
+    gap: 12px;
+    padding: 12px 12px 12px 14px;
+  }
+}
+
+@media (max-width: 420px) {
+  .feedback-confirm-actions {
+    flex-direction: column-reverse;
+  }
+
+  .feedback-button {
+    width: 100%;
+  }
 }
 
 @media (prefers-reduced-motion: no-preference) {

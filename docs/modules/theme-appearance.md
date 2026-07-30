@@ -2,7 +2,7 @@
 
 ## 模块目标
 
-提供跟随系统、浅色和深色主题，以及强调色、界面密度和字体缩放配置。
+提供跟随系统、浅色和深色主题，以及强调色、界面密度、默认按钮尺寸和字体缩放配置。
 
 ## 目录与职责
 
@@ -18,19 +18,21 @@ interface AppearanceSettings {
   themeMode: 'system' | 'light' | 'dark'
   accent: 'green' | 'blue' | 'purple' | 'orange'
   density: 'comfortable' | 'compact'
+  buttonSize: 'sm' | 'md' | 'lg'
   fontScale: number
 }
 ```
 
-字体缩放允许范围为 `0.85` 到 `1.25`。
+字体缩放允许范围为 `0.85` 到 `1.25`；默认按钮尺寸为 `md`。
 
 ## 核心链路
 
 ```text
 SettingsProvider 读取设置
   → ThemeProvider 计算系统/显式主题
-  → 设置 html[data-theme/data-accent/data-density]
+  → 设置 html[data-theme/data-accent/data-density/data-button-size]
   → 更新 --font-scale
+  → AppButton 读取默认高度变量
   → 同步 Wails Windows 窗口主题
 ```
 

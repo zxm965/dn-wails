@@ -3,6 +3,7 @@ import { useCallback, useEffect, useState } from 'react'
 import { appConfig } from '@/app/appConfig'
 import { SystemNotificationPanel } from '@/features/system-notification'
 import { useAppLifecycle, type SecondInstanceLaunch } from '@/shared/app-lifecycle'
+import { AppButton } from '@/shared/components/button'
 import { getDiagnosticsInfo, openDiagnosticsDirectory, type DiagnosticsInfo } from '@/shared/diagnostics'
 import { useFeedback } from '@/shared/feedback'
 import {
@@ -78,9 +79,9 @@ export function TestToolsPanel() {
       ({ close }) => (
         <div className='test-tools-overlay-demo'>
           <p>这是应用内 Overlay 子视图。它不会创建新的操作系统窗口。</p>
-          <button className='test-tools-button is-primary' type='button' onClick={close}>
+          <AppButton className='test-tools-button is-primary' type='button' onClick={close}>
             关闭子视图
-          </button>
+          </AppButton>
         </div>
       ),
       { title: 'Overlay 测试', size: 'medium' },
@@ -109,15 +110,16 @@ export function TestToolsPanel() {
       <div className='test-tools-layout'>
         <nav className='test-tools-categories' aria-label='测试工具分类'>
           {TOOL_CATEGORIES.map((category) => (
-            <button
+            <AppButton
               key={category.id}
               className={activeCategory === category.id ? 'is-active' : ''}
+              size='md'
               type='button'
               onClick={() => setActiveCategory(category.id)}
             >
               <strong>{category.label}</strong>
               <small>{category.description}</small>
-            </button>
+            </AppButton>
           ))}
         </nav>
 
@@ -132,19 +134,19 @@ export function TestToolsPanel() {
           {activeCategory === 'interaction' && (
             <ToolSection title='交互与窗口' description='验证应用内反馈、子视图和主窗口控制。'>
               <div className='test-tools-actions'>
-                <button
+                <AppButton
                   type='button'
                   onClick={() => notify({ title: 'Toast 测试', message: '应用内反馈模块工作正常。', tone: 'info' })}
                 >
                   显示 Toast
-                </button>
-                <button type='button' onClick={openConfirmTest}>
+                </AppButton>
+                <AppButton type='button' onClick={openConfirmTest}>
                   确认对话框
-                </button>
-                <button type='button' onClick={openOverlayTest}>
+                </AppButton>
+                <AppButton type='button' onClick={openOverlayTest}>
                   打开 Overlay
-                </button>
-                <button
+                </AppButton>
+                <AppButton
                   type='button'
                   onClick={() => {
                     windowManager.center()
@@ -152,8 +154,8 @@ export function TestToolsPanel() {
                   }}
                 >
                   窗口居中
-                </button>
-                <button
+                </AppButton>
+                <AppButton
                   type='button'
                   onClick={() =>
                     runAction('读取窗口状态', async () => {
@@ -163,7 +165,7 @@ export function TestToolsPanel() {
                   }
                 >
                   读取窗口状态
-                </button>
+                </AppButton>
               </div>
 
               <div className='test-tools-note'>
@@ -175,13 +177,13 @@ export function TestToolsPanel() {
           {activeCategory === 'native' && (
             <ToolSection title='原生能力' description='验证 Wails 文件、剪贴板、屏幕、对话框和系统集成。'>
               <div className='test-tools-actions'>
-                <button
+                <AppButton
                   type='button'
                   onClick={() => runAction('读取剪贴板', async () => (await readClipboard()) || '剪贴板为空。')}
                 >
                   读取剪贴板
-                </button>
-                <button
+                </AppButton>
+                <AppButton
                   type='button'
                   onClick={() =>
                     runAction('写入剪贴板', async () => {
@@ -192,8 +194,8 @@ export function TestToolsPanel() {
                   }
                 >
                   写入剪贴板
-                </button>
-                <button
+                </AppButton>
+                <AppButton
                   type='button'
                   onClick={() =>
                     runAction('选择文件', async () => {
@@ -203,14 +205,14 @@ export function TestToolsPanel() {
                   }
                 >
                   选择文件
-                </button>
-                <button
+                </AppButton>
+                <AppButton
                   type='button'
                   onClick={() => runAction('选择目录', async () => (await pickDirectory('选择目录')) || '已取消选择。')}
                 >
                   选择目录
-                </button>
-                <button
+                </AppButton>
+                <AppButton
                   type='button'
                   onClick={() =>
                     runAction('读取屏幕', async () => {
@@ -225,8 +227,8 @@ export function TestToolsPanel() {
                   }
                 >
                   读取屏幕
-                </button>
-                <button
+                </AppButton>
+                <AppButton
                   type='button'
                   onClick={() =>
                     runAction('原生对话框', async () => {
@@ -242,8 +244,8 @@ export function TestToolsPanel() {
                   }
                 >
                   原生对话框
-                </button>
-                <button
+                </AppButton>
+                <AppButton
                   type='button'
                   onClick={() =>
                     runAction('打开日志目录', async () => {
@@ -253,8 +255,8 @@ export function TestToolsPanel() {
                   }
                 >
                   打开日志目录
-                </button>
-                <button
+                </AppButton>
+                <AppButton
                   type='button'
                   onClick={() =>
                     runAction('打开外部链接', async () => {
@@ -264,7 +266,7 @@ export function TestToolsPanel() {
                   }
                 >
                   打开 Wails 文档
-                </button>
+                </AppButton>
               </div>
 
               <div className='test-tools-dropzone'>

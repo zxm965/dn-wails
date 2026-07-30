@@ -1,20 +1,20 @@
-function readDisplayName(value: unknown): string {
+function readPublicName(value: unknown, key: 'APP_DISPLAY_NAME' | 'APP_AUTHOR_NAME'): string {
   if (typeof value !== 'string') {
-    throw new Error('.env: APP_DISPLAY_NAME must be a string')
+    throw new Error(`.env: ${key} must be a string`)
   }
 
-  const displayName = value.trim()
-  if (!displayName) {
-    throw new Error('.env: APP_DISPLAY_NAME is required')
+  const name = value.trim()
+  if (!name) {
+    throw new Error(`.env: ${key} is required`)
   }
-  if (Array.from(displayName).length > 40) {
-    throw new Error('.env: APP_DISPLAY_NAME cannot exceed 40 characters')
+  if (Array.from(name).length > 40) {
+    throw new Error(`.env: ${key} cannot exceed 40 characters`)
   }
-  if (Array.from(displayName).some(isControlCharacter)) {
-    throw new Error('.env: APP_DISPLAY_NAME cannot contain control characters')
+  if (Array.from(name).some(isControlCharacter)) {
+    throw new Error(`.env: ${key} cannot contain control characters`)
   }
 
-  return displayName
+  return name
 }
 
 function isControlCharacter(character: string): boolean {
@@ -26,5 +26,6 @@ function isControlCharacter(character: string): boolean {
 }
 
 export const appConfig = Object.freeze({
-  displayName: readDisplayName(import.meta.env.APP_DISPLAY_NAME),
+  displayName: readPublicName(import.meta.env.APP_DISPLAY_NAME, 'APP_DISPLAY_NAME'),
+  authorName: readPublicName(import.meta.env.APP_AUTHOR_NAME, 'APP_AUTHOR_NAME'),
 })

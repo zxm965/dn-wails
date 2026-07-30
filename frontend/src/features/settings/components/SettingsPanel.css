@@ -1,7 +1,9 @@
 .settings-panel {
   width: min(940px, 100%);
   margin: 0 auto;
-  padding: clamp(28px, 5vw, 56px) clamp(20px, 4vw, 44px) 72px;
+  padding: var(--page-padding-start) var(--page-padding-inline) var(--page-padding-end);
+  container-name: settings-panel;
+  container-type: inline-size;
 }
 
 .settings-state {
@@ -17,6 +19,10 @@
   justify-content: space-between;
   gap: 24px;
   margin-bottom: 28px;
+}
+
+.settings-heading > div:first-child {
+  min-width: 0;
 }
 
 .settings-heading p {
@@ -45,7 +51,6 @@
 }
 
 .settings-button {
-  min-height: var(--control-height);
   padding: 0 16px;
   font-size: 13px;
   font-weight: 750;
@@ -79,10 +84,10 @@
 }
 
 .settings-section {
-  padding: 24px;
+  padding: var(--panel-padding);
   background: var(--surface-elevated);
   border: 1px solid var(--border-subtle);
-  border-radius: 16px;
+  border-radius: var(--panel-radius);
   box-shadow: var(--surface-shadow);
 }
 
@@ -306,17 +311,41 @@
   opacity: 0.48;
 }
 
-@media (max-width: 700px) {
+@container settings-panel (max-width: 700px) {
   .settings-heading {
     flex-direction: column;
   }
 
-  .settings-heading-actions,
+  .settings-heading-actions {
+    width: 100%;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
   .settings-button {
     width: 100%;
+    white-space: nowrap;
   }
 
   .settings-grid {
     grid-template-columns: 1fr;
+  }
+}
+
+@container settings-panel (max-width: 440px) {
+  .settings-heading-actions {
+    grid-template-columns: 1fr;
+  }
+
+  .settings-heading h1 {
+    font-size: clamp(26px, 9vw, 34px);
+  }
+
+  .settings-toggle-row {
+    align-items: flex-start;
+  }
+
+  .settings-toggle-row small {
+    overflow-wrap: anywhere;
   }
 }

@@ -1,0 +1,38 @@
+:root {
+  --button-height-sm: 32px;
+  --button-height-md: 40px;
+  --button-height-lg: 44px;
+  --button-height-default: var(--button-height-md);
+}
+
+:root[data-button-size='sm'] {
+  --button-height-default: var(--button-height-sm);
+}
+
+:root[data-button-size='md'] {
+  --button-height-default: var(--button-height-md);
+}
+
+:root[data-button-size='lg'] {
+  --button-height-default: var(--button-height-lg);
+}
+
+.app-button {
+  height: var(--button-height-default);
+  min-height: var(--button-height-default);
+}
+
+.app-button[data-button-size='sm'] {
+  height: var(--button-height-sm);
+  min-height: var(--button-height-sm);
+}
+
+.app-button[data-button-size='md'] {
+  height: var(--button-height-md);
+  min-height: var(--button-height-md);
+}
+
+.app-button[data-button-size='lg'] {
+  height: var(--button-height-lg);
+  min-height: var(--button-height-lg);
+}

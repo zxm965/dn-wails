@@ -1,6 +1,7 @@
 import { createContext, type ReactNode, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 
+import { AppButton } from '@/shared/components/button'
 import { useOverlay } from '@/shared/overlay'
 
 import './FeedbackProvider.css'
@@ -96,20 +97,20 @@ export function FeedbackProvider({ children }: FeedbackProviderProps) {
               <div className='feedback-confirm'>
                 <p>{options.message}</p>
                 <div className='feedback-confirm-actions'>
-                  <button
+                  <AppButton
                     className='feedback-button feedback-button-secondary'
                     type='button'
                     onClick={() => finish(false)}
                   >
                     {options.cancelLabel ?? '取消'}
-                  </button>
-                  <button
+                  </AppButton>
+                  <AppButton
                     className={`feedback-button ${options.tone === 'danger' ? 'feedback-button-danger' : 'feedback-button-primary'}`}
                     type='button'
                     onClick={() => finish(true)}
                   >
                     {options.confirmLabel ?? '确认'}
-                  </button>
+                  </AppButton>
                 </div>
               </div>
             )
@@ -143,9 +144,9 @@ export function FeedbackProvider({ children }: FeedbackProviderProps) {
                 <strong>{toast.title}</strong>
                 {toast.message && <p>{toast.message}</p>}
               </div>
-              <button type='button' aria-label='关闭提示' onClick={() => dismiss(toast.id)}>
+              <AppButton size='sm' type='button' aria-label='关闭提示' onClick={() => dismiss(toast.id)}>
                 ×
-              </button>
+              </AppButton>
             </article>
           ))}
         </div>,

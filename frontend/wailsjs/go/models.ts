@@ -290,6 +290,7 @@ export namespace settings {
 	    themeMode: string;
 	    accent: string;
 	    density: string;
+	    buttonSize: string;
 	    fontScale: number;
 	
 	    static createFrom(source: any = {}) {
@@ -301,6 +302,7 @@ export namespace settings {
 	        this.themeMode = source["themeMode"];
 	        this.accent = source["accent"];
 	        this.density = source["density"];
+	        this.buttonSize = source["buttonSize"];
 	        this.fontScale = source["fontScale"];
 	    }
 	}

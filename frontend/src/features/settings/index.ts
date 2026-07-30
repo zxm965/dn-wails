@@ -4,6 +4,7 @@ export type {
   AccentColor,
   AppSettings,
   AppearanceSettings,
+  ButtonSize,
   CloseBehavior,
   Density,
   NotificationSettings,

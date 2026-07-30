@@ -6,7 +6,7 @@
   align-items: center;
   justify-content: center;
   margin: 0 auto;
-  padding: 48px 24px;
+  padding: var(--page-padding-start) var(--page-padding-inline) var(--page-padding-end);
   text-align: center;
 }
 
@@ -74,7 +74,6 @@
 
 .greeting-submit {
   min-width: 88px;
-  height: 38px;
   padding: 0 16px;
   color: #152234;
   font-weight: 600;
@@ -102,7 +101,6 @@
 @media (max-width: 480px) {
   .greeting-panel {
     justify-content: flex-start;
-    padding-top: 40px;
   }
 
   .greeting-fields {

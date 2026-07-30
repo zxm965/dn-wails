@@ -1,6 +1,7 @@
 import { type FormEvent, useCallback, useMemo, useState } from 'react'
 
 import { useSettings } from '@/features/settings'
+import { AppButton } from '@/shared/components/button'
 
 import { type NotificationActivation, useSystemNotification } from '../hooks/useSystemNotification'
 
@@ -200,22 +201,22 @@ export function SystemNotificationPanel({ embedded = false }: SystemNotification
 
           <div className='notification-actions'>
             {capability === 'permission-required' && settings.notifications.enabled && (
-              <button
+              <AppButton
                 className='notification-button notification-button-secondary'
                 type='button'
                 onClick={handlePermissionRequest}
                 disabled={isRequestingPermission}
               >
                 {isRequestingPermission ? '正在申请…' : '开启系统通知'}
-              </button>
+              </AppButton>
             )}
-            <button
+            <AppButton
               className='notification-button notification-button-primary'
               type='submit'
               disabled={capability !== 'ready' || !notificationPolicyReady || isSending}
             >
               {isSending ? '正在发送…' : '发送测试消息'}
-            </button>
+            </AppButton>
           </div>
         </form>
       </div>

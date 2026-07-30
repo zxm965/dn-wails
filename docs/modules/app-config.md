@@ -2,7 +2,7 @@
 
 ## 模块目标
 
-为 Go 与 React 提供同一份应用展示配置，避免标题栏、侧边栏、页面标题和原生窗口分别维护应用名称。
+为 Go 与 React 提供同一份公开展示配置，统一维护应用名称和侧栏左下角作者名称。
 
 ## 配置文件
 
@@ -10,20 +10,21 @@
 
 ```dotenv
 APP_DISPLAY_NAME=dn-wails
+APP_AUTHOR_NAME=Your Name
 ```
 
 输入约定：
 
-- 变量名固定为 `APP_DISPLAY_NAME`，使用大写字母和下划线。
+- 变量名固定为 `APP_DISPLAY_NAME` 和 `APP_AUTHOR_NAME`，使用大写字母和下划线，两个字段都必须提供。
 - 值可以直接书写，也可以使用成对的单引号或双引号。
-- 首尾空白会被移除，值不能为空，最长 40 个 Unicode 字符。
+- 首尾空白会被移除，每个值都不能为空，最长 40 个 Unicode 字符。
 - 禁止换行符和其他控制字符。
 - 同一个变量不得重复声明。
 - 该文件会进入前端产物与桌面程序，只能存放公开配置，禁止写入密码、Token 或其他密钥。
 
 ## 目录与职责
 
-- `.env`：应用展示名称的全局公开配置源。
+- `.env`：应用名称和作者名称的全局公开配置源。
 - `internal/appconfig/`：按受限 dotenv 语法解析并校验 Go 启动配置。
 - `main.go`：嵌入配置并设置 Wails 原生窗口初始标题。
 - `frontend/src/app/appConfig.ts`：校验 Vite 环境变量并向 React 暴露只读配置。
@@ -32,20 +33,26 @@ APP_DISPLAY_NAME=dn-wails
 ## 核心链路
 
 ```text
-.env / APP_DISPLAY_NAME
-  ├── go:embed → appconfig.Parse → options.App.Title
-  └── Vite env → appConfig → TitleBar / AppSidebar / document.title / WindowSetTitle / 页面展示
+.env
+  ├── APP_DISPLAY_NAME
+  │   ├── go:embed → appconfig.Parse → options.App.Title
+  │   └── Vite env → appConfig.displayName → TitleBar / AppSidebar / document.title / WindowSetTitle / 页面展示
+  └── APP_AUTHOR_NAME
+      ├── go:embed → appconfig.Parse → 启动配置校验
+      └── Vite env → appConfig.authorName → AppSidebar 左下角状态区
 ```
 
 ## 内部标识边界
 
 - `APP_DISPLAY_NAME` 只影响用户可见名称。
+- `APP_AUTHOR_NAME` 只影响侧栏左下角展示名称。
 - Go module、存储目录、日志目录、本地存储 key 和单实例 UUID 不随展示名称变化。
 - 内部稳定名称仍为 `dn-wails`，避免改名后丢失已有设置或产生第二套数据目录。
 
 ## 接入方式
 
 - React 新增应用名称展示时统一读取 `appConfig.displayName`，禁止再次硬编码 `dn-wails`。
+- React 展示作者名称时统一读取 `appConfig.authorName`，禁止在组件中硬编码。
 - Go 启动窗口名称读取 `appconfig.Config.DisplayName`。
 - 新增公开全局字段时，变量名必须使用 `APP_` 前缀，并同步更新 Go 类型与校验、前端环境类型、只读配置和本文档。
 
@@ -59,4 +66,4 @@ pnpm lint
 pnpm build
 ```
 
-修改配置后，Vite 会重新加载环境变量；React 同步更新自定义标题栏和原生窗口运行时标题。Go 原生窗口的初始标题在下次启动时读取新值。
+修改配置后，Vite 会重新加载环境变量；React 同步更新标题和侧栏作者名称。Go 原生窗口的初始标题及配置校验在下次启动时读取新值。

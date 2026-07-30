@@ -34,6 +34,7 @@ export function ThemeProvider({ children }: ThemeProviderProps) {
     root.dataset.theme = effectiveTheme
     root.dataset.accent = settings.appearance.accent
     root.dataset.density = settings.appearance.density
+    root.dataset.buttonSize = settings.appearance.buttonSize
     root.style.setProperty('--font-scale', String(settings.appearance.fontScale))
 
     if (settings.appearance.themeMode === 'system') {

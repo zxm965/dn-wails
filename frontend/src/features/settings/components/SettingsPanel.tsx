@@ -1,8 +1,9 @@
 import { type FormEvent, useEffect, useState } from 'react'
 
+import { AppButton } from '@/shared/components/button'
 import { useFeedback } from '@/shared/feedback'
 
-import { type AccentColor, type AppSettings, type Density, type ThemeMode } from '../api/settingsApi'
+import { type AccentColor, type AppSettings, type ButtonSize, type Density, type ThemeMode } from '../api/settingsApi'
 import { useSettings } from '../context/SettingsProvider'
 
 import './SettingsPanel.css'
@@ -18,6 +19,12 @@ const ACCENT_OPTIONS: Array<{ value: AccentColor; label: string }> = [
   { value: 'blue', label: '蓝色' },
   { value: 'purple', label: '紫色' },
   { value: 'orange', label: '橙色' },
+]
+
+const BUTTON_SIZE_OPTIONS: Array<{ value: ButtonSize; label: string }> = [
+  { value: 'sm', label: '小型' },
+  { value: 'md', label: '标准' },
+  { value: 'lg', label: '大型' },
 ]
 
 function cloneSettings(settings: AppSettings): AppSettings {
@@ -110,17 +117,17 @@ export function SettingsPanel() {
           <span>设置会保存到当前用户的应用配置目录。</span>
         </div>
         <div className='settings-heading-actions'>
-          <button
+          <AppButton
             className='settings-button settings-button-secondary'
             type='button'
             onClick={handleReset}
             disabled={isSaving}
           >
             恢复默认
-          </button>
-          <button className='settings-button settings-button-primary' type='submit' disabled={isSaving}>
+          </AppButton>
+          <AppButton className='settings-button settings-button-primary' type='submit' disabled={isSaving}>
             {isSaving ? '正在保存…' : '保存设置'}
-          </button>
+          </AppButton>
         </div>
       </header>
 
@@ -133,7 +140,7 @@ export function SettingsPanel() {
       <section className='settings-section'>
         <div className='settings-section-title'>
           <h2>主题与外观</h2>
-          <p>控制应用配色、强调色、界面密度和文字缩放。</p>
+          <p>控制应用配色、强调色、界面密度、默认按钮尺寸和文字缩放。</p>
         </div>
 
         <div className='settings-grid'>
@@ -185,6 +192,24 @@ export function SettingsPanel() {
             </select>
           </label>
 
+          <fieldset className='settings-fieldset'>
+            <legend>默认按钮尺寸</legend>
+            <div className='settings-segmented'>
+              {BUTTON_SIZE_OPTIONS.map((option) => (
+                <label key={option.value} className={draft.appearance.buttonSize === option.value ? 'is-selected' : ''}>
+                  <input
+                    type='radio'
+                    name='button-size'
+                    value={option.value}
+                    checked={draft.appearance.buttonSize === option.value}
+                    onChange={() => updateAppearance('buttonSize', option.value)}
+                  />
+                  {option.label}
+                </label>
+              ))}
+            </div>
+          </fieldset>
+
           <label className='settings-field settings-range'>
             <span>文字缩放：{Math.round(draft.appearance.fontScale * 100)}%</span>
             <input
@@ -213,7 +238,7 @@ export function SettingsPanel() {
           />
           <ToggleRow
             title='显示消息预览'
-            description='关闭后，通知正文统一显示“消息内容已隐藏”。'
+            description='关闭后，通知正文统一显示“您收到一条消息”。'
             checked={draft.notifications.showPreview}
             disabled={!draft.notifications.enabled}
             onChange={(checked) => updateNotifications('showPreview', checked)}

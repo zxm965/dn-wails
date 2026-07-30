@@ -2,16 +2,18 @@
   width: min(980px, 100%);
   min-height: 100%;
   margin: 0 auto;
-  padding: clamp(32px, 6vw, 72px) clamp(20px, 4vw, 48px);
+  padding: var(--page-padding-start) var(--page-padding-inline) var(--page-padding-end);
+  container-name: system-notification;
+  container-type: inline-size;
 }
 
 .system-notification-panel.is-embedded {
   width: 100%;
   min-height: auto;
-  padding: 20px;
+  padding: var(--panel-padding);
   background: var(--surface-elevated);
   border: 1px solid var(--border-subtle);
-  border-radius: 14px;
+  border-radius: var(--panel-radius);
   box-shadow: var(--surface-shadow);
 }
 
@@ -108,7 +110,7 @@
 
 .system-notification-grid {
   display: grid;
-  grid-template-columns: minmax(280px, 0.92fr) minmax(320px, 1.08fr);
+  grid-template-columns: minmax(0, 0.92fr) minmax(0, 1.08fr);
   gap: 22px;
   align-items: stretch;
 }
@@ -116,10 +118,10 @@
 .message-preview-card,
 .notification-form {
   min-width: 0;
-  padding: clamp(20px, 3vw, 28px);
+  padding: var(--panel-padding);
   background: var(--surface-elevated);
   border: 1px solid var(--border-subtle);
-  border-radius: 18px;
+  border-radius: var(--panel-radius);
   box-shadow: var(--surface-shadow);
 }
 
@@ -326,7 +328,6 @@
 }
 
 .notification-button {
-  min-height: 40px;
   padding: 0 17px;
   font-size: 13px;
   font-weight: 700;
@@ -375,9 +376,13 @@
   }
 }
 
-@media (max-width: 760px) {
+@container system-notification (max-width: 720px) {
   .system-notification-heading {
     flex-direction: column;
+  }
+
+  .notification-status {
+    align-self: flex-start;
   }
 
   .system-notification-grid {
@@ -389,9 +394,30 @@
   }
 }
 
-@media (max-width: 480px) {
-  .system-notification-panel {
-    padding-top: 28px;
+@container system-notification (max-width: 440px) {
+  .system-notification-heading h1 {
+    font-size: clamp(26px, 9vw, 34px);
+  }
+
+  .message-preview-item {
+    gap: 10px;
+    padding: 13px;
+  }
+
+  .message-preview-avatar {
+    width: 40px;
+    height: 40px;
+    font-size: 17px;
+  }
+
+  .message-preview-meta {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 3px;
+  }
+
+  .message-preview-meta strong {
+    width: 100%;
   }
 
   .notification-actions {

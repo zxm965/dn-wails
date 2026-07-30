@@ -4,12 +4,14 @@ import { settings as WailsSettings } from '@wails/go/models'
 export type ThemeMode = 'system' | 'light' | 'dark'
 export type AccentColor = 'green' | 'blue' | 'purple' | 'orange'
 export type Density = 'comfortable' | 'compact'
+export type ButtonSize = 'sm' | 'md' | 'lg'
 export type CloseBehavior = 'quit' | 'hide'
 
 export interface AppearanceSettings {
   themeMode: ThemeMode
   accent: AccentColor
   density: Density
+  buttonSize: ButtonSize
   fontScale: number
 }
 
@@ -42,11 +44,12 @@ export interface AppSettings {
 }
 
 export const DEFAULT_SETTINGS: AppSettings = {
-  version: 1,
+  version: 2,
   appearance: {
     themeMode: 'system',
     accent: 'green',
     density: 'comfortable',
+    buttonSize: 'md',
     fontScale: 1,
   },
   notifications: {
@@ -68,6 +71,7 @@ function normalizeSettings(value: WailsSettings.AppSettings): AppSettings {
       themeMode: value.appearance.themeMode as ThemeMode,
       accent: value.appearance.accent as AccentColor,
       density: value.appearance.density as Density,
+      buttonSize: value.appearance.buttonSize as ButtonSize,
       fontScale: value.appearance.fontScale,
     },
     notifications: {

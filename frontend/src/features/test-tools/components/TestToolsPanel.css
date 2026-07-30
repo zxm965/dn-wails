@@ -1,7 +1,9 @@
 .test-tools-panel {
   width: min(1120px, 100%);
   margin: 0 auto;
-  padding: clamp(28px, 5vw, 52px) clamp(24px, 4vw, 48px) 72px;
+  padding: var(--page-padding-start) var(--page-padding-inline) var(--page-padding-end);
+  container-name: test-tools-panel;
+  container-type: inline-size;
 }
 
 .test-tools-heading {
@@ -10,6 +12,10 @@
   justify-content: space-between;
   gap: 24px;
   margin-bottom: 26px;
+}
+
+.test-tools-heading > div:first-child {
+  min-width: 0;
 }
 
 .test-tools-heading p {
@@ -65,8 +71,7 @@
 }
 
 .test-tools-categories button {
-  min-height: 58px;
-  padding: 9px 10px;
+  padding: 6px 10px;
   color: var(--text-secondary);
   text-align: left;
   background: transparent;
@@ -95,7 +100,7 @@
 }
 
 .test-tools-categories small {
-  margin-top: 5px;
+  margin-top: 2px;
   color: var(--text-tertiary);
   font-size: 9px;
   line-height: 1.4;
@@ -103,14 +108,16 @@
 
 .test-tools-view {
   min-width: 0;
+  container-name: test-tools-view;
+  container-type: inline-size;
 }
 
 .test-tools-result,
 .test-tools-section {
-  padding: 20px;
+  padding: var(--panel-padding);
   background: var(--surface-elevated);
   border: 1px solid var(--border-subtle);
-  border-radius: 14px;
+  border-radius: var(--panel-radius);
   box-shadow: var(--surface-shadow);
 }
 
@@ -159,7 +166,6 @@
 
 .test-tools-actions button,
 .test-tools-button {
-  min-height: var(--control-height);
   padding: 8px 12px;
   color: var(--text-primary);
   font-size: 11px;
@@ -241,7 +247,7 @@
   line-height: 1.65;
 }
 
-@media (max-width: 940px) {
+@container test-tools-panel (max-width: 860px) {
   .test-tools-layout {
     grid-template-columns: 1fr;
   }
@@ -249,16 +255,48 @@
   .test-tools-categories {
     position: static;
     flex-direction: row;
+    overflow-x: auto;
+    scrollbar-width: thin;
   }
 
   .test-tools-categories button {
     min-width: 0;
-    flex: 1;
+    flex: 1 0 150px;
   }
 }
 
-@media (max-width: 720px) {
+@container test-tools-panel (max-width: 700px) {
+  .test-tools-heading {
+    flex-direction: column;
+  }
+
+  .test-tools-badge {
+    align-self: flex-start;
+  }
+
   .test-tools-actions {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@container test-tools-panel (max-width: 480px) {
+  .test-tools-heading h1 {
+    font-size: clamp(26px, 9vw, 34px);
+  }
+
+  .test-tools-categories button {
+    flex-basis: 112px;
+  }
+
+  .test-tools-categories small {
+    display: none;
+  }
+
+  .test-tools-actions {
+    grid-template-columns: 1fr;
+  }
+
+  .test-tools-dropzone {
+    padding: 16px 12px;
   }
 }

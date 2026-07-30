@@ -1,6 +1,6 @@
 package settings
 
-const CurrentVersion = 1
+const CurrentVersion = 2
 
 const (
 	ThemeSystem = "system"
@@ -15,15 +15,20 @@ const (
 	DensityComfortable = "comfortable"
 	DensityCompact     = "compact"
 
+	ButtonSizeSM = "sm"
+	ButtonSizeMD = "md"
+	ButtonSizeLG = "lg"
+
 	CloseBehaviorQuit = "quit"
 	CloseBehaviorHide = "hide"
 )
 
 type Appearance struct {
-	ThemeMode string  `json:"themeMode"`
-	Accent    string  `json:"accent"`
-	Density   string  `json:"density"`
-	FontScale float64 `json:"fontScale"`
+	ThemeMode  string  `json:"themeMode"`
+	Accent     string  `json:"accent"`
+	Density    string  `json:"density"`
+	ButtonSize string  `json:"buttonSize"`
+	FontScale  float64 `json:"fontScale"`
 }
 
 type Notifications struct {
@@ -58,10 +63,11 @@ func Default() AppSettings {
 	return AppSettings{
 		Version: CurrentVersion,
 		Appearance: Appearance{
-			ThemeMode: ThemeSystem,
-			Accent:    AccentGreen,
-			Density:   DensityComfortable,
-			FontScale: 1,
+			ThemeMode:  ThemeSystem,
+			Accent:     AccentGreen,
+			Density:    DensityComfortable,
+			ButtonSize: ButtonSizeMD,
+			FontScale:  1,
 		},
 		Notifications: Notifications{
 			Enabled:      true,

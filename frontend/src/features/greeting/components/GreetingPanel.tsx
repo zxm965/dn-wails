@@ -2,6 +2,7 @@ import { type FormEvent, useState } from 'react'
 
 import { appConfig } from '@/app/appConfig'
 import appIcon from '@/assets/images/app-icon.png'
+import { AppButton } from '@/shared/components/button'
 
 import { requestGreeting } from '../api/greetingApi'
 
@@ -59,9 +60,9 @@ export function GreetingPanel() {
             autoComplete='name'
             disabled={isSubmitting}
           />
-          <button className='greeting-submit' type='submit' disabled={isSubmitting}>
+          <AppButton className='greeting-submit' type='submit' disabled={isSubmitting}>
             {isSubmitting ? 'Greeting…' : 'Greet'}
-          </button>
+          </AppButton>
         </div>
       </form>
     </section>

@@ -206,7 +206,7 @@ func TestServiceHidesMessagePreview(t *testing.T) {
 	if err != nil {
 		t.Fatalf("send message: %v", err)
 	}
-	if platform.sent[0].Body != "消息内容已隐藏" {
+	if platform.sent[0].Body != "您收到一条消息" {
 		t.Fatalf("expected hidden preview, got %q", platform.sent[0].Body)
 	}
 }

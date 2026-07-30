@@ -243,7 +243,7 @@ func (s *Service) SendMessage(ctx context.Context, message Message, policy Polic
 
 	body := contentPreview(content)
 	if !policy.ShowPreview {
-		body = "消息内容已隐藏"
+		body = "您收到一条消息"
 	}
 
 	nativeNotification := NativeNotification{

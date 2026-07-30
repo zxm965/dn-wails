@@ -43,6 +43,8 @@ Toast 支持 `info`、`success`、`warning`、`error`。`duration: 0` 表示不�
 - 确认窗口默认不可通过遮罩或 Escape 关闭，确保 Promise 获得明确结果。
 - Provider 卸载时会清理全部定时器。
 - 原生系统对话框属于 Native Kit，不由本模块替代。
+- 窄窗口下 Toast 使用左右安全间距并占满可用宽度；确认按钮在极窄宽度下改为纵向全宽布局。
+- Toast 关闭按钮固定使用 `sm`，确认和取消操作跟随用户配置的默认按钮尺寸。
 
 ## 验证
 

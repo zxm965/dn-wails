@@ -3,13 +3,20 @@
   width: var(--app-sidebar-width);
   min-width: var(--app-sidebar-width);
   min-height: 0;
+  flex: 0 0 var(--app-sidebar-width);
   display: flex;
   flex-direction: column;
+  overflow: hidden;
   padding: 16px 12px 14px;
   background: var(--navigation-background);
   border-right: 1px solid var(--border-subtle);
   -webkit-user-select: none;
   user-select: none;
+}
+
+.app-sidebar.is-viewport-compact {
+  padding-top: 12px;
+  padding-bottom: 12px;
 }
 
 .app-sidebar * {
@@ -81,7 +88,6 @@
 
 .app-sidebar-group button {
   width: 100%;
-  min-height: 52px;
   display: flex;
   align-items: center;
   gap: 11px;
@@ -229,7 +235,6 @@ body.is-resizing-sidebar * {
 
 .app-sidebar.is-collapsed .app-sidebar-group button {
   width: 44px;
-  min-height: 44px;
   justify-content: center;
   margin: 0 auto;
   padding: 0;

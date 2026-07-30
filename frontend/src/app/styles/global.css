@@ -31,6 +31,11 @@
   --danger-border: rgba(255, 117, 107, 0.24);
   --surface-shadow: 0 18px 42px rgba(6, 12, 21, 0.18);
   --control-height: 42px;
+  --page-padding-inline: clamp(20px, 4vw, 48px);
+  --page-padding-start: clamp(28px, 5vw, 56px);
+  --page-padding-end: 72px;
+  --panel-padding: clamp(18px, 2.5vw, 24px);
+  --panel-radius: 16px;
   color-scheme: dark;
 }
 
@@ -93,6 +98,8 @@ html {
 }
 
 body {
+  min-width: 0;
+  overflow: hidden;
   margin: 0;
   color: var(--text-primary);
   font-family:
@@ -109,6 +116,13 @@ body {
     'Helvetica Neue',
     sans-serif;
   background: var(--app-background);
+}
+
+img,
+svg,
+video,
+canvas {
+  max-width: 100%;
 }
 
 button,
@@ -128,4 +142,14 @@ textarea {
 ::selection {
   color: var(--button-primary-text);
   background: var(--accent);
+}
+
+@media (max-width: 640px) {
+  :root {
+    --page-padding-inline: 16px;
+    --page-padding-start: 24px;
+    --page-padding-end: 48px;
+    --panel-padding: 16px;
+    --panel-radius: 13px;
+  }
 }

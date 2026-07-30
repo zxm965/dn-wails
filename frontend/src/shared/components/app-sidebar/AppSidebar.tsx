@@ -9,6 +9,7 @@ import {
 
 import { appConfig } from '@/app/appConfig'
 import appIcon from '@/assets/images/app-icon.png'
+import { AppButton } from '@/shared/components/button'
 
 import './AppSidebar.css'
 
@@ -40,6 +41,7 @@ const SIDEBAR_MAX_WIDTH = 220
 const SIDEBAR_DEFAULT_WIDTH = 180
 const SIDEBAR_COLLAPSED_THRESHOLD = 104
 const SIDEBAR_STORAGE_KEY = 'dn-wails:sidebar-width'
+const COMPACT_VIEWPORT_QUERY = '(max-width: 820px)'
 
 function clampSidebarWidth(width: number): number {
   return Math.min(SIDEBAR_MAX_WIDTH, Math.max(SIDEBAR_MIN_WIDTH, Math.round(width)))
@@ -50,6 +52,10 @@ function initialSidebarWidth(): number {
   return Number.isFinite(storedWidth) && storedWidth > 0 ? clampSidebarWidth(storedWidth) : SIDEBAR_DEFAULT_WIDTH
 }
 
+function initialCompactViewport(): boolean {
+  return window.matchMedia(COMPACT_VIEWPORT_QUERY).matches
+}
+
 interface AppSidebarProps {
   activeView: AppView
   onNavigate: (view: AppView) => void
@@ -57,10 +63,12 @@ interface AppSidebarProps {
 
 export function AppSidebar({ activeView, onNavigate }: AppSidebarProps) {
   const [sidebarWidth, setSidebarWidth] = useState(initialSidebarWidth)
+  const [isCompactViewport, setIsCompactViewport] = useState(initialCompactViewport)
   const [isResizing, setIsResizing] = useState(false)
   const resizeStart = useRef({ pointerX: 0, width: SIDEBAR_DEFAULT_WIDTH })
-  const isCollapsed = sidebarWidth < SIDEBAR_COLLAPSED_THRESHOLD
-  const sidebarStyle = { '--app-sidebar-width': `${sidebarWidth}px` } as CSSProperties
+  const effectiveSidebarWidth = isCompactViewport ? SIDEBAR_MIN_WIDTH : sidebarWidth
+  const isCollapsed = effectiveSidebarWidth < SIDEBAR_COLLAPSED_THRESHOLD
+  const sidebarStyle = { '--app-sidebar-width': `${effectiveSidebarWidth}px` } as CSSProperties
 
   useEffect(() => {
     window.localStorage.setItem(SIDEBAR_STORAGE_KEY, String(sidebarWidth))
@@ -70,6 +78,19 @@ export function AppSidebar({ activeView, onNavigate }: AppSidebarProps) {
     document.body.classList.toggle('is-resizing-sidebar', isResizing)
     return () => document.body.classList.remove('is-resizing-sidebar')
   }, [isResizing])
+
+  useEffect(() => {
+    const mediaQuery = window.matchMedia(COMPACT_VIEWPORT_QUERY)
+    const handleChange = (event: MediaQueryListEvent) => {
+      setIsCompactViewport(event.matches)
+      if (event.matches) {
+        setIsResizing(false)
+      }
+    }
+
+    mediaQuery.addEventListener('change', handleChange)
+    return () => mediaQuery.removeEventListener('change', handleChange)
+  }, [])
 
   function handleResizeStart(event: ReactPointerEvent<HTMLDivElement>) {
     resizeStart.current = { pointerX: event.clientX, width: sidebarWidth }
@@ -112,7 +133,10 @@ export function AppSidebar({ activeView, onNavigate }: AppSidebarProps) {
   }
 
   return (
-    <aside className={`app-sidebar${isCollapsed ? ' is-collapsed' : ''}`} style={sidebarStyle}>
+    <aside
+      className={`app-sidebar${isCollapsed ? ' is-collapsed' : ''}${isCompactViewport ? ' is-viewport-compact' : ''}`}
+      style={sidebarStyle}
+    >
       <div className='app-sidebar-product'>
         <img src={appIcon} alt='' />
         <div>
@@ -126,9 +150,10 @@ export function AppSidebar({ activeView, onNavigate }: AppSidebarProps) {
           <div key={group.label} className='app-sidebar-group'>
             <p>{group.label}</p>
             {group.items.map((item) => (
-              <button
+              <AppButton
                 key={item.id}
                 className={activeView === item.id ? 'is-active' : ''}
+                size='lg'
                 type='button'
                 title={item.label}
                 aria-current={activeView === item.id ? 'page' : undefined}
@@ -139,34 +164,36 @@ export function AppSidebar({ activeView, onNavigate }: AppSidebarProps) {
                   <strong>{item.label}</strong>
                   <small>{item.description}</small>
                 </span>
-              </button>
+              </AppButton>
             ))}
           </div>
         ))}
       </nav>
 
-      <div className='app-sidebar-footer'>
+      <div className='app-sidebar-footer' title={appConfig.authorName}>
         <span className='app-sidebar-status-dot' aria-hidden='true' />
         <div>
-          <small>Wails · React · Go</small>
+          <small>{appConfig.authorName}</small>
         </div>
       </div>
 
-      <div
-        className={`app-sidebar-resizer${isResizing ? ' is-resizing' : ''}`}
-        role='separator'
-        aria-label='调整侧边栏宽度'
-        aria-orientation='vertical'
-        aria-valuemin={SIDEBAR_MIN_WIDTH}
-        aria-valuemax={SIDEBAR_MAX_WIDTH}
-        aria-valuenow={sidebarWidth}
-        tabIndex={0}
-        onPointerDown={handleResizeStart}
-        onPointerMove={handleResizeMove}
-        onPointerUp={handleResizeEnd}
-        onPointerCancel={handleResizeEnd}
-        onKeyDown={handleResizeKeyDown}
-      />
+      {!isCompactViewport && (
+        <div
+          className={`app-sidebar-resizer${isResizing ? ' is-resizing' : ''}`}
+          role='separator'
+          aria-label='调整侧边栏宽度'
+          aria-orientation='vertical'
+          aria-valuemin={SIDEBAR_MIN_WIDTH}
+          aria-valuemax={SIDEBAR_MAX_WIDTH}
+          aria-valuenow={sidebarWidth}
+          tabIndex={0}
+          onPointerDown={handleResizeStart}
+          onPointerMove={handleResizeMove}
+          onPointerUp={handleResizeEnd}
+          onPointerCancel={handleResizeEnd}
+          onKeyDown={handleResizeKeyDown}
+        />
+      )}
     </aside>
   )
 }

@@ -1,4 +1,5 @@
 import appIcon from '@/assets/images/app-icon.png'
+import { AppButton } from '@/shared/components/button'
 import { isMacOS } from '@/shared/lib/platform'
 import { windowManager } from '@/shared/window'
 
@@ -23,8 +24,9 @@ export function TitleBar({ title }: TitleBarProps) {
 
       {!usesNativeWindowControls && (
         <div className='window-controls' onDoubleClick={(event) => event.stopPropagation()}>
-          <button
+          <AppButton
             className='window-control'
+            size='lg'
             type='button'
             aria-label='最小化'
             title='最小化'
@@ -33,9 +35,10 @@ export function TitleBar({ title }: TitleBarProps) {
             <svg viewBox='0 0 12 12' aria-hidden='true'>
               <path d='M2 6.5h8' />
             </svg>
-          </button>
-          <button
+          </AppButton>
+          <AppButton
             className='window-control'
+            size='lg'
             type='button'
             aria-label='最大化或还原'
             title='最大化或还原'
@@ -44,9 +47,10 @@ export function TitleBar({ title }: TitleBarProps) {
             <svg viewBox='0 0 12 12' aria-hidden='true'>
               <rect x='2.5' y='2.5' width='7' height='7' rx='0.5' />
             </svg>
-          </button>
-          <button
+          </AppButton>
+          <AppButton
             className='window-control window-control-close'
+            size='lg'
             type='button'
             aria-label='关闭'
             title='关闭'
@@ -55,7 +59,7 @@ export function TitleBar({ title }: TitleBarProps) {
             <svg viewBox='0 0 12 12' aria-hidden='true'>
               <path d='m2.5 2.5 7 7m0-7-7 7' />
             </svg>
-          </button>
+          </AppButton>
         </div>
       )}
     </header>

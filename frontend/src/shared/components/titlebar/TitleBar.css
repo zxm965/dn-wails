@@ -98,11 +98,22 @@
 }
 
 @media (max-width: 640px) {
+  .window-control {
+    width: 42px;
+  }
+}
+
+@media (max-width: 480px) {
   .titlebar:not(.titlebar-macos) {
-    flex-basis: 40px;
+    padding-left: 10px;
+  }
+
+  .titlebar-logo {
+    width: 20px;
+    height: 20px;
   }
 
   .window-control {
-    width: 42px;
+    width: 38px;
   }
 }

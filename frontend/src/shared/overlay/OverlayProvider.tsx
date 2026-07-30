@@ -1,6 +1,8 @@
 import { createContext, type ReactNode, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 
+import { AppButton } from '@/shared/components/button'
+
 import './OverlayProvider.css'
 
 export type OverlaySize = 'small' | 'medium' | 'large'
@@ -150,9 +152,9 @@ function OverlayFrame({ overlay, isTop, onClose }: OverlayFrameProps) {
           <header className='overlay-header'>
             <h2>{overlay.options.title}</h2>
             {overlay.options.dismissible && (
-              <button className='overlay-close' type='button' aria-label='关闭' onClick={onClose}>
+              <AppButton className='overlay-close' size='sm' type='button' aria-label='关闭' onClick={onClose}>
                 ×
-              </button>
+              </AppButton>
             )}
           </header>
         )}

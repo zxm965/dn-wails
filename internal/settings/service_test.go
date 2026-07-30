@@ -1,6 +1,7 @@
 package settings
 
 import (
+	"encoding/json"
 	"errors"
 	"testing"
 
@@ -50,6 +51,9 @@ func TestServiceInitializesDefaultsAndPersistsUpdates(t *testing.T) {
 	if current.Appearance.ThemeMode != ThemeSystem {
 		t.Fatalf("expected system theme, got %q", current.Appearance.ThemeMode)
 	}
+	if current.Appearance.ButtonSize != ButtonSizeMD {
+		t.Fatalf("expected default button size %q, got %q", ButtonSizeMD, current.Appearance.ButtonSize)
+	}
 
 	current.Appearance.ThemeMode = ThemeDark
 	current.Appearance.Accent = AccentPurple
@@ -82,5 +86,57 @@ func TestServiceRejectsInvalidSettings(t *testing.T) {
 	value.Appearance.FontScale = 2
 	if _, err := service.Update(value); !errors.Is(err, ErrInvalidSettings) {
 		t.Fatalf("expected invalid settings error, got %v", err)
+	}
+
+	value.Appearance.FontScale = 1
+	value.Appearance.ButtonSize = "xl"
+	if _, err := service.Update(value); !errors.Is(err, ErrInvalidSettings) {
+		t.Fatalf("expected invalid button size error, got %v", err)
+	}
+}
+
+func TestServiceMigratesVersionOneButtonSize(t *testing.T) {
+	t.Parallel()
+
+	store := newMemoryStore()
+	store.data[storageKey] = []byte(`{
+  "version": 1,
+  "appearance": {
+    "themeMode": "dark",
+    "accent": "blue",
+    "density": "compact",
+    "fontScale": 1
+  },
+  "notifications": {
+    "enabled": true,
+    "showPreview": true,
+    "doNotDisturb": false
+  },
+  "window": {
+    "closeBehavior": "quit",
+    "alwaysOnTop": false,
+    "rememberBounds": true
+  }
+}`)
+
+	service := NewService(store)
+	if err := service.Initialize(); err != nil {
+		t.Fatalf("initialize migrated settings: %v", err)
+	}
+
+	current := service.Get()
+	if current.Version != CurrentVersion {
+		t.Fatalf("expected version %d, got %d", CurrentVersion, current.Version)
+	}
+	if current.Appearance.ButtonSize != ButtonSizeMD {
+		t.Fatalf("expected migrated button size %q, got %q", ButtonSizeMD, current.Appearance.ButtonSize)
+	}
+
+	var persisted AppSettings
+	if err := json.Unmarshal(store.data[storageKey], &persisted); err != nil {
+		t.Fatalf("decode persisted migrated settings: %v", err)
+	}
+	if persisted.Version != CurrentVersion || persisted.Appearance.ButtonSize != ButtonSizeMD {
+		t.Fatalf("migrated settings were not persisted: %+v", persisted.Appearance)
 	}
 }

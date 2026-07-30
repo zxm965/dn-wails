@@ -41,8 +41,15 @@ func (s *Service) Initialize() error {
 	if err := json.Unmarshal(data, &loaded); err != nil {
 		return fmt.Errorf("decode application settings: %w", err)
 	}
+	loaded, migrated, err := migrate(loaded)
+	if err != nil {
+		return err
+	}
 	if err := validate(loaded); err != nil {
 		return err
+	}
+	if migrated {
+		return s.persist(loaded)
 	}
 
 	s.mu.Lock()
@@ -50,6 +57,25 @@ func (s *Service) Initialize() error {
 	s.mu.Unlock()
 
 	return nil
+}
+
+func migrate(value AppSettings) (AppSettings, bool, error) {
+	migrated := false
+	for value.Version < CurrentVersion {
+		switch value.Version {
+		case 1:
+			value.Appearance.ButtonSize = ButtonSizeMD
+			value.Version = 2
+			migrated = true
+		default:
+			return AppSettings{}, false, fmt.Errorf("%w: unsupported version %d", ErrInvalidSettings, value.Version)
+		}
+	}
+	if value.Version != CurrentVersion {
+		return AppSettings{}, false, fmt.Errorf("%w: unsupported version %d", ErrInvalidSettings, value.Version)
+	}
+
+	return value, migrated, nil
 }
 
 func (s *Service) Get() AppSettings {
@@ -133,6 +159,9 @@ func validate(value AppSettings) error {
 	}
 	if !contains([]string{DensityComfortable, DensityCompact}, value.Appearance.Density) {
 		return fmt.Errorf("%w: unsupported density %q", ErrInvalidSettings, value.Appearance.Density)
+	}
+	if !contains([]string{ButtonSizeSM, ButtonSizeMD, ButtonSizeLG}, value.Appearance.ButtonSize) {
+		return fmt.Errorf("%w: unsupported button size %q", ErrInvalidSettings, value.Appearance.ButtonSize)
 	}
 	if value.Appearance.FontScale < 0.85 || value.Appearance.FontScale > 1.25 {
 		return fmt.Errorf("%w: font scale must be between 0.85 and 1.25", ErrInvalidSettings)
