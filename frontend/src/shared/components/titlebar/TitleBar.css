@@ -5,9 +5,20 @@
   align-items: center;
   justify-content: space-between;
   padding-left: 14px;
-  background: rgba(17, 27, 41, 0.86);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  background: var(--titlebar-background);
+  border-bottom: 1px solid var(--border-subtle);
+  -webkit-user-select: none;
   user-select: none;
+}
+
+.titlebar * {
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+.titlebar img,
+.titlebar svg {
+  -webkit-user-drag: none;
 }
 
 .titlebar-brand {
@@ -36,7 +47,7 @@
 
 .titlebar-title {
   overflow: hidden;
-  color: rgba(255, 255, 255, 0.88);
+  color: var(--text-primary);
   font-size: 13px;
   font-weight: 600;
   line-height: 1;
@@ -56,7 +67,7 @@
   display: grid;
   place-items: center;
   padding: 0;
-  color: rgba(255, 255, 255, 0.78);
+  color: var(--text-secondary);
   background: transparent;
   border: 0;
   border-radius: 0;
@@ -64,12 +75,12 @@
 }
 
 .window-control:hover {
-  color: #ffffff;
-  background: rgba(255, 255, 255, 0.1);
+  color: var(--text-primary);
+  background: var(--surface-hover);
 }
 
 .window-control:focus-visible {
-  outline: 2px solid rgba(98, 178, 255, 0.9);
+  outline: 2px solid var(--focus-ring);
   outline-offset: -2px;
 }
 

@@ -1,5 +1,6 @@
 import { type FormEvent, useState } from 'react'
 
+import { appConfig } from '@/app/appConfig'
 import appIcon from '@/assets/images/app-icon.png'
 
 import { requestGreeting } from '../api/greetingApi'
@@ -37,9 +38,9 @@ export function GreetingPanel() {
 
   return (
     <section className='greeting-panel' aria-labelledby='greeting-title'>
-      <img className='greeting-logo' src={appIcon} alt='dn-wails app icon' />
+      <img className='greeting-logo' src={appIcon} alt={`${appConfig.displayName} app icon`} />
       <h1 id='greeting-title' className='greeting-title'>
-        Welcome to dn-wails
+        Welcome to {appConfig.displayName}
       </h1>
       <p className={`greeting-message${errorMessage ? ' is-error' : ''}`} role={errorMessage ? 'alert' : 'status'}>
         {errorMessage || message}

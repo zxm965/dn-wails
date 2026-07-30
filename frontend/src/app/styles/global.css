@@ -7,6 +7,75 @@
     url('../../assets/fonts/nunito-v16-latin-regular.woff2') format('woff2');
 }
 
+:root {
+  --font-scale: 1;
+  --accent: #07c160;
+  --accent-hover: #06ad56;
+  --accent-muted: rgba(7, 193, 96, 0.13);
+  --button-primary-text: #ffffff;
+  --app-background: #1b2636;
+  --navigation-background: rgba(17, 27, 41, 0.72);
+  --titlebar-background: rgba(17, 27, 41, 0.9);
+  --surface-elevated: rgba(15, 24, 37, 0.9);
+  --surface-muted: rgba(255, 255, 255, 0.065);
+  --surface-hover: rgba(255, 255, 255, 0.1);
+  --border-subtle: rgba(255, 255, 255, 0.08);
+  --border-strong: rgba(255, 255, 255, 0.13);
+  --text-primary: #f5f8fb;
+  --text-secondary: rgba(245, 248, 251, 0.7);
+  --text-tertiary: rgba(245, 248, 251, 0.48);
+  --focus-ring: rgba(87, 190, 255, 0.92);
+  --switch-background: rgba(255, 255, 255, 0.18);
+  --danger-text: #ff918a;
+  --danger-background: rgba(220, 74, 66, 0.12);
+  --danger-border: rgba(255, 117, 107, 0.24);
+  --surface-shadow: 0 18px 42px rgba(6, 12, 21, 0.18);
+  --control-height: 42px;
+  color-scheme: dark;
+}
+
+:root[data-theme='light'] {
+  --app-background: #f2f5f7;
+  --navigation-background: rgba(247, 249, 250, 0.92);
+  --titlebar-background: rgba(250, 251, 252, 0.94);
+  --surface-elevated: #ffffff;
+  --surface-muted: #f2f4f6;
+  --surface-hover: #e9edf0;
+  --border-subtle: rgba(21, 34, 49, 0.08);
+  --border-strong: rgba(21, 34, 49, 0.14);
+  --text-primary: #172231;
+  --text-secondary: rgba(23, 34, 49, 0.7);
+  --text-tertiary: rgba(23, 34, 49, 0.48);
+  --switch-background: rgba(23, 34, 49, 0.2);
+  --danger-text: #b93831;
+  --danger-background: rgba(215, 66, 57, 0.08);
+  --danger-border: rgba(190, 56, 49, 0.18);
+  --surface-shadow: 0 18px 42px rgba(45, 59, 76, 0.09);
+  color-scheme: light;
+}
+
+:root[data-accent='blue'] {
+  --accent: #3488ff;
+  --accent-hover: #2377e8;
+  --accent-muted: rgba(52, 136, 255, 0.13);
+}
+
+:root[data-accent='purple'] {
+  --accent: #8b5cf6;
+  --accent-hover: #7948e5;
+  --accent-muted: rgba(139, 92, 246, 0.14);
+}
+
+:root[data-accent='orange'] {
+  --accent: #ef8b2c;
+  --accent-hover: #d97a20;
+  --accent-muted: rgba(239, 139, 44, 0.14);
+}
+
+:root[data-density='compact'] {
+  --control-height: 36px;
+}
+
 * {
   box-sizing: border-box;
 }
@@ -18,13 +87,14 @@ body,
 }
 
 html {
-  color: #ffffff;
-  background-color: rgba(27, 38, 54, 1);
+  color: var(--text-primary);
+  background: var(--app-background);
+  font-size: calc(16px * var(--font-scale));
 }
 
 body {
   margin: 0;
-  color: #ffffff;
+  color: var(--text-primary);
   font-family:
     'Nunito',
     -apple-system,
@@ -38,9 +108,24 @@ body {
     'Droid Sans',
     'Helvetica Neue',
     sans-serif;
+  background: var(--app-background);
 }
 
 button,
-input {
+input,
+select,
+textarea {
   font: inherit;
+}
+
+button,
+input,
+select,
+textarea {
+  outline-color: var(--focus-ring);
+}
+
+::selection {
+  color: var(--button-primary-text);
+  background: var(--accent);
 }

@@ -1,5 +1,5 @@
 {
-  "$schema": "https://wails.io/schemas/config.v2.json",
+  "$schema": "./schemas/wails-config-v2.13.0.schema.json",
   "name": "dn-wails",
   "outputfilename": "dn-wails",
   "frontend:install": "pnpm install",
