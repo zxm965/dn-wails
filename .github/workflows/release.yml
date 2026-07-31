@@ -47,12 +47,6 @@ jobs:
       - name: Check release tag
         run: node scripts/configure-release.mjs "$GITHUB_REF_NAME"
 
-      - name: Install Linux build dependencies
-        run: sudo apt-get update && sudo apt-get install --yes libgtk-3-dev libwebkit2gtk-4.1-dev
-
-      - name: Check Go packages
-        run: go test -tags webkit2_41 ./...
-
       - name: Check frontend formatting
         run: pnpm --dir frontend fmt:check
 
@@ -61,6 +55,12 @@ jobs:
 
       - name: Build frontend
         run: pnpm --dir frontend build
+
+      - name: Install Linux build dependencies
+        run: sudo apt-get update && sudo apt-get install --yes libgtk-3-dev libwebkit2gtk-4.1-dev
+
+      - name: Check Go packages
+        run: go test -tags webkit2_41 ./...
 
   build:
     name: Build ${{ matrix.name }}
