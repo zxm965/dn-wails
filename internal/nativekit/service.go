@@ -104,7 +104,14 @@ func (s *Service) WriteClipboard(ctx context.Context, text string) error {
 }
 
 func (s *Service) OpenFiles(ctx context.Context, options OpenFilesOptions) ([]string, error) {
-	return s.platform.OpenFiles(ctx, options)
+	paths, err := s.platform.OpenFiles(ctx, options)
+	if err != nil {
+		return nil, err
+	}
+	if paths == nil {
+		return []string{}, nil
+	}
+	return paths, nil
 }
 
 func (s *Service) OpenDirectory(ctx context.Context, title string, defaultDirectory string) (string, error) {

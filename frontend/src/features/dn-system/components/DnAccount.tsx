@@ -99,7 +99,10 @@ export function DnAccount() {
         multiple: false,
         filters: [{ displayName: '图片', pattern: '*.jpg;*.jpeg;*.png;*.gif;*.webp' }],
       })
-      if (!path) return
+      if (!path) {
+        notify({ title: '已取消选择头像', tone: 'info' })
+        return
+      }
       const avatar = await importAvatar(path)
       setForm((current) => ({ ...current, avatar }))
       notify({ title: '头像已导入，保存资料后生效', tone: 'success' })

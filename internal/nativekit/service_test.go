@@ -46,3 +46,19 @@ func TestServiceValidatesExternalURLs(t *testing.T) {
 		}
 	}
 }
+
+func TestServiceOpenFilesNormalizesCancelledSelection(t *testing.T) {
+	t.Parallel()
+
+	service := NewService(&platformStub{})
+	paths, err := service.OpenFiles(context.Background(), OpenFilesOptions{Title: "Select files"})
+	if err != nil {
+		t.Fatalf("open files: %v", err)
+	}
+	if paths == nil {
+		t.Fatal("expected cancelled selection to return a non-nil empty slice")
+	}
+	if len(paths) != 0 {
+		t.Fatalf("expected no selected files, got %v", paths)
+	}
+}

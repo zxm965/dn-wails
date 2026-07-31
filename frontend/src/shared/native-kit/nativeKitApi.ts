@@ -64,8 +64,8 @@ export function writeClipboard(text: string): Promise<void> {
   return WriteClipboard(text)
 }
 
-export function pickFiles(options: OpenFilesOptions): Promise<string[]> {
-  return OpenFiles(
+export async function pickFiles(options: OpenFilesOptions): Promise<string[]> {
+  const paths = await OpenFiles(
     WailsNativeKit.OpenFilesOptions.createFrom({
       title: options.title,
       defaultDirectory: options.defaultDirectory ?? '',
@@ -73,6 +73,7 @@ export function pickFiles(options: OpenFilesOptions): Promise<string[]> {
       multiple: options.multiple ?? false,
     }),
   )
+  return Array.isArray(paths) ? paths : []
 }
 
 export function pickDirectory(title: string, defaultDirectory = ''): Promise<string> {

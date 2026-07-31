@@ -239,8 +239,12 @@ globalStyle(`${testToolsCategories} button`, {
 })
 
 globalStyle(`${testToolsCategories} button:hover`, {
-  color: 'var(--text-primary)',
+  color: 'var(--button-primary-text)',
   background: 'var(--surface-hover)',
+})
+
+globalStyle(`${testToolsCategories} button:hover small`, {
+  color: 'color-mix(in srgb, var(--button-primary-text) 72%, transparent)',
 })
 
 globalStyle(
