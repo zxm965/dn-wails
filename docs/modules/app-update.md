@@ -41,7 +41,7 @@ React AppUpdateProvider
 1. 推送 `v1.2.3` 形式的标签。
 2. 工作流校验标签、执行 Go 测试和前端格式、lint、build。
 3. macOS 构建 universal 应用，生成自动更新使用的 ZIP 和手动安装使用的 DMG。
-4. Windows 构建 amd64、用户级 NSIS 安装器。
+4. Windows runner 安装 NSIS 后构建 amd64、用户级安装器。
 5. 两端资源全部成功后创建 GitHub Release，并附带校验和文件。
 
 ### 检查与安装
