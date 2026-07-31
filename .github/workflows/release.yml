@@ -113,7 +113,7 @@ jobs:
         run: |
           version="${GITHUB_REF_NAME#v}"
           ldflags="-X dn-wails/internal/buildinfo.Version=$version -X dn-wails/internal/buildinfo.Repository=$GITHUB_REPOSITORY"
-          wails build -clean -platform darwin/universal -o dn-wails -trimpath -ldflags "$ldflags"
+          wails build -clean -skipbindings -platform darwin/universal -o dn-wails -trimpath -ldflags "$ldflags"
           codesign --force --deep --sign - build/bin/dn-wails.app
           ditto -c -k --sequesterRsrc --keepParent build/bin/dn-wails.app build/bin/dn-wails-darwin-universal.zip
           hdiutil create -volname "dn-wails" -srcfolder build/bin/dn-wails.app -ov -format UDZO build/bin/dn-wails-darwin-universal.dmg
@@ -124,7 +124,8 @@ jobs:
         run: |
           $version = $env:GITHUB_REF_NAME.TrimStart('v')
           $ldflags = "-X dn-wails/internal/buildinfo.Version=$version -X dn-wails/internal/buildinfo.Repository=$env:GITHUB_REPOSITORY"
-          wails build -clean -platform windows/amd64 -o dn-wails.exe -nsis -installscope user -trimpath -ldflags $ldflags
+          wails build -clean -skipbindings -platform windows/amd64 -o dn-wails.exe -nsis -installscope user -trimpath -ldflags $ldflags
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           Move-Item build/bin/dn-wails-amd64-installer.exe build/bin/dn-wails-windows-amd64-installer.exe
 
       - name: Upload macOS packages
