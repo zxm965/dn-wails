@@ -20,7 +20,6 @@ export function Toaster(props: ToasterProps) {
   const theme = useSyncExternalStore<'light' | 'dark'>(subscribeTheme, themeSnapshot, () => 'light')
   return (
     <Sonner
-      closeButton
       position='top-center'
       theme={theme}
       icons={{
