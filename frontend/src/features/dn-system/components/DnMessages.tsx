@@ -1,9 +1,9 @@
 import { CheckCheck, ExternalLink, Globe2, Info, MailCheck, Plus, Search, TriangleAlert } from 'lucide-react'
 import { type FormEvent, useCallback, useEffect, useState } from 'react'
 
-import { AppButton } from '@/shared/components/button'
 import {
   Badge,
+  Button,
   Card,
   CardContent,
   CardFooter,
@@ -21,10 +21,12 @@ import {
   PageHeader,
   Pagination,
   Select,
+  SpinnerIcon,
   Switch,
   Textarea,
 } from '@/shared/components/ui'
 import { useFeedback } from '@/shared/feedback'
+import { createScopedClassNames } from '@/shared/lib/classNames'
 import { openExternalURL } from '@/shared/native-kit'
 
 import {
@@ -41,6 +43,10 @@ import {
 } from '../api/dnSystemApi'
 import { useDnAuth } from '../context/DnAuthProvider'
 import { useDnMessages } from '../context/DnMessageProvider'
+
+import { classes as styles } from './DnSystem.css'
+
+const cx = createScopedClassNames(styles)
 
 const emptyMeta: ListMeta = { total: 0, totalPages: 0, page: 1, pageSize: 10 }
 const emptyForm: SiteMessageInput = {
@@ -195,28 +201,28 @@ export function DnMessages({ onNavigate }: { onNavigate: (target: DnInternalTarg
   }
 
   return (
-    <div className='dn-page'>
+    <div className={cx('dn-page')}>
       <PageHeader
         title='站内消息'
         subtitle='查看桌面工作区公告与提醒。'
         actions={
           <>
             {unreadCount > 0 && (
-              <AppButton variant='outline' disabled={loading} onClick={() => void markAll()}>
+              <Button variant='outline' disabled={loading} onClick={() => void markAll()}>
                 <CheckCheck aria-hidden='true' />
                 全部已读
-              </AppButton>
+              </Button>
             )}
             {user?.role === 1 && (
               <>
-                <AppButton variant='outline' disabled={syncing} onClick={() => void syncOfficial()}>
-                  <Globe2 className={syncing ? 'ui-spin' : undefined} aria-hidden='true' />
+                <Button variant='outline' disabled={syncing} onClick={() => void syncOfficial()}>
+                  <SpinnerIcon icon={Globe2} spinning={syncing} aria-hidden='true' />
                   {syncing ? '同步中…' : '同步官网'}
-                </AppButton>
-                <AppButton onClick={() => setPublishOpen(true)}>
+                </Button>
+                <Button onClick={() => setPublishOpen(true)}>
                   <Plus aria-hidden='true' />
                   发布消息
-                </AppButton>
+                </Button>
               </>
             )}
           </>
@@ -225,8 +231,8 @@ export function DnMessages({ onNavigate }: { onNavigate: (target: DnInternalTarg
 
       <Card>
         <CardHeader>
-          <div className='dn-message-filters'>
-            <label className='dn-field'>
+          <div className={cx('dn-message-filters')}>
+            <label className={cx('dn-field')}>
               <Label>关键词</Label>
               <Input
                 value={filters.keyword}
@@ -235,7 +241,7 @@ export function DnMessages({ onNavigate }: { onNavigate: (target: DnInternalTarg
                 onKeyDown={(event) => event.key === 'Enter' && setAppliedFilters({ ...filters })}
               />
             </label>
-            <label className='dn-field'>
+            <label className={cx('dn-field')}>
               <Label>阅读状态</Label>
               <Select
                 value={filters.readStatus}
@@ -248,12 +254,12 @@ export function DnMessages({ onNavigate }: { onNavigate: (target: DnInternalTarg
                 <option value='read'>仅已读</option>
               </Select>
             </label>
-            <div className='dn-filter-actions'>
-              <AppButton variant='secondary' disabled={loading} onClick={() => setAppliedFilters({ ...filters })}>
+            <div className={cx('dn-filter-actions')}>
+              <Button variant='secondary' disabled={loading} onClick={() => setAppliedFilters({ ...filters })}>
                 <Search aria-hidden='true' />
                 搜索
-              </AppButton>
-              <AppButton
+              </Button>
+              <Button
                 variant='outline'
                 onClick={() => {
                   const next = { keyword: '', readStatus: 'all' as const }
@@ -262,18 +268,21 @@ export function DnMessages({ onNavigate }: { onNavigate: (target: DnInternalTarg
                 }}
               >
                 重置
-              </AppButton>
+              </Button>
             </div>
           </div>
         </CardHeader>
         <CardContent>
           {items.length ? (
-            <div className='dn-message-list'>
+            <div className={cx('dn-message-list')}>
               {items.map((message) => (
-                <article key={message.id} className={message.isRead ? 'dn-message-item' : 'dn-message-item is-unread'}>
+                <article
+                  key={message.id}
+                  className={cx(message.isRead ? 'dn-message-item' : 'dn-message-item is-unread')}
+                >
                   <MessageIcon level={message.level} />
                   <span>
-                    <span className='dn-message-title'>
+                    <span className={cx('dn-message-title')}>
                       {message.title}
                       {!message.isRead && <Badge tone='accent'>未读</Badge>}
                       <Badge tone='outline'>
@@ -284,13 +293,13 @@ export function DnMessages({ onNavigate }: { onNavigate: (target: DnInternalTarg
                             : message.source}
                       </Badge>
                     </span>
-                    {message.content && <span className='dn-message-content'>{message.content}</span>}
+                    {message.content && <span className={cx('dn-message-content')}>{message.content}</span>}
                     <small>{formatDate(message.publishedAt)}</small>
                   </span>
-                  <AppButton variant='ghost' onClick={() => void openMessage(message)}>
+                  <Button variant='ghost' onClick={() => void openMessage(message)}>
                     {message.actionLabel || (message.actionUrl ? '查看详情' : '查看消息')}
                     {message.actionTarget === '_blank' && <ExternalLink aria-hidden='true' />}
-                  </AppButton>
+                  </Button>
                 </article>
               ))}
             </div>
@@ -310,17 +319,17 @@ export function DnMessages({ onNavigate }: { onNavigate: (target: DnInternalTarg
             <DialogDescription>{activeMessage ? formatDate(activeMessage.publishedAt) : ''}</DialogDescription>
           </DialogHeader>
           <DialogBody>
-            <p className='dn-message-dialog-copy'>{activeMessage?.content || '你收到了一条新的站内消息。'}</p>
+            <p className={cx('dn-message-dialog-copy')}>{activeMessage?.content || '你收到了一条新的站内消息。'}</p>
           </DialogBody>
           <DialogFooter>
-            <AppButton variant='outline' onClick={() => setActiveMessage(null)}>
+            <Button variant='outline' onClick={() => setActiveMessage(null)}>
               关闭
-            </AppButton>
+            </Button>
             {activeMessage?.actionUrl && (
-              <AppButton onClick={() => void followAction(activeMessage)}>
+              <Button onClick={() => void followAction(activeMessage)}>
                 {activeMessage.actionTarget === '_blank' && <ExternalLink aria-hidden='true' />}
                 {activeMessage.actionLabel || '查看详情'}
-              </AppButton>
+              </Button>
             )}
           </DialogFooter>
         </DialogContent>
@@ -333,8 +342,8 @@ export function DnMessages({ onNavigate }: { onNavigate: (target: DnInternalTarg
               <DialogTitle>发布消息</DialogTitle>
               <DialogDescription>消息保存在当前桌面应用的本地工作区。</DialogDescription>
             </DialogHeader>
-            <DialogBody className='dn-form-grid'>
-              <label className='dn-field'>
+            <DialogBody className={cx('dn-form-grid')}>
+              <label className={cx('dn-field')}>
                 <Label>消息级别</Label>
                 <Select
                   value={form.level}
@@ -348,7 +357,7 @@ export function DnMessages({ onNavigate }: { onNavigate: (target: DnInternalTarg
                   <option value='error'>错误</option>
                 </Select>
               </label>
-              <label className='dn-field'>
+              <label className={cx('dn-field')}>
                 <Label>发布时间</Label>
                 <Input
                   type='datetime-local'
@@ -356,7 +365,7 @@ export function DnMessages({ onNavigate }: { onNavigate: (target: DnInternalTarg
                   onChange={(event) => setForm((current) => ({ ...current, publishedAt: event.target.value }))}
                 />
               </label>
-              <label className='dn-field'>
+              <label className={cx('dn-field')}>
                 <Label>有效期至</Label>
                 <Input
                   type='datetime-local'
@@ -364,28 +373,28 @@ export function DnMessages({ onNavigate }: { onNavigate: (target: DnInternalTarg
                   onChange={(event) => setForm((current) => ({ ...current, expiresAt: event.target.value }))}
                 />
               </label>
-              <label className='dn-field dn-form-full'>
+              <label className={cx('dn-field dn-form-full')}>
                 <Label>标题</Label>
                 <Input
                   value={form.title}
                   onChange={(event) => setForm((current) => ({ ...current, title: event.target.value }))}
                 />
               </label>
-              <label className='dn-field dn-form-full'>
+              <label className={cx('dn-field dn-form-full')}>
                 <Label>内容</Label>
                 <Textarea
                   value={form.content}
                   onChange={(event) => setForm((current) => ({ ...current, content: event.target.value }))}
                 />
               </label>
-              <label className='dn-field'>
+              <label className={cx('dn-field')}>
                 <Label>按钮文案</Label>
                 <Input
                   value={form.actionLabel}
                   onChange={(event) => setForm((current) => ({ ...current, actionLabel: event.target.value }))}
                 />
               </label>
-              <label className='dn-field'>
+              <label className={cx('dn-field')}>
                 <Label>跳转地址</Label>
                 <Input
                   value={form.actionUrl}
@@ -393,7 +402,7 @@ export function DnMessages({ onNavigate }: { onNavigate: (target: DnInternalTarg
                   onChange={(event) => setForm((current) => ({ ...current, actionUrl: event.target.value }))}
                 />
               </label>
-              <label className='dn-field'>
+              <label className={cx('dn-field')}>
                 <Label>打开方式</Label>
                 <Select
                   value={form.actionTarget}
@@ -408,7 +417,7 @@ export function DnMessages({ onNavigate }: { onNavigate: (target: DnInternalTarg
                   <option value='_blank'>系统浏览器</option>
                 </Select>
               </label>
-              <label className='dn-switch-row dn-form-full'>
+              <label className={cx('dn-switch-row dn-form-full')}>
                 <span>
                   <strong>作为弹窗提醒</strong>
                   <small>保留源项目的消息弹窗语义。</small>
@@ -420,12 +429,12 @@ export function DnMessages({ onNavigate }: { onNavigate: (target: DnInternalTarg
               </label>
             </DialogBody>
             <DialogFooter>
-              <AppButton type='button' variant='outline' disabled={publishing} onClick={() => setPublishOpen(false)}>
+              <Button type='button' variant='outline' disabled={publishing} onClick={() => setPublishOpen(false)}>
                 取消
-              </AppButton>
-              <AppButton type='submit' disabled={publishing}>
+              </Button>
+              <Button type='submit' disabled={publishing}>
                 {publishing ? '发布中…' : '发布'}
-              </AppButton>
+              </Button>
             </DialogFooter>
           </form>
         </DialogContent>
@@ -437,18 +446,18 @@ export function DnMessages({ onNavigate }: { onNavigate: (target: DnInternalTarg
 function MessageIcon({ level }: { level: SiteMessageLevel }) {
   if (level === 'warning' || level === 'error')
     return (
-      <span className={`dn-message-icon is-${level}`}>
+      <span className={cx(`dn-message-icon is-${level}`)}>
         <TriangleAlert aria-hidden='true' />
       </span>
     )
   if (level === 'success')
     return (
-      <span className='dn-message-icon is-success'>
+      <span className={cx('dn-message-icon is-success')}>
         <MailCheck aria-hidden='true' />
       </span>
     )
   return (
-    <span className='dn-message-icon is-info'>
+    <span className={cx('dn-message-icon is-info')}>
       <Info aria-hidden='true' />
     </span>
   )

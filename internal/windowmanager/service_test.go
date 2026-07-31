@@ -39,18 +39,38 @@ func TestServiceRestoresAndCapturesWindowState(t *testing.T) {
 	service.Restore(context.Background(), Preferences{
 		AlwaysOnTop:    true,
 		RememberBounds: true,
-		Bounds:         &Bounds{X: 80, Y: 60, Width: 1000, Height: 700, Maximised: true},
+		Bounds:         &Bounds{X: 80, Y: 60, Width: 1200, Height: 800, Maximised: true},
 	})
 
-	if platform.positionX != 80 || platform.positionY != 60 || platform.width != 1000 || platform.height != 700 {
+	if platform.positionX != 80 || platform.positionY != 60 || platform.width != 1200 || platform.height != 800 {
 		t.Fatalf("window bounds were not restored: %+v", platform)
 	}
 	if !platform.alwaysOnTop || !platform.maximised {
 		t.Fatalf("window preferences were not restored: %+v", platform)
 	}
 
-	if bounds := service.Capture(context.Background()); bounds.Width != 1000 || !bounds.Maximised {
+	if bounds := service.Capture(context.Background()); bounds.Width != 1200 || !bounds.Maximised {
 		t.Fatalf("unexpected captured bounds: %+v", bounds)
+	}
+}
+
+func TestServiceRejectsAndClampsBoundsBelowMinimum(t *testing.T) {
+	t.Parallel()
+
+	platform := &platformStub{width: 900, height: 700}
+	service := NewService(platform)
+	service.Restore(context.Background(), Preferences{
+		RememberBounds: true,
+		Bounds:         &Bounds{X: 80, Y: 60, Width: 900, Height: 700},
+	})
+
+	if platform.positionX != 0 || platform.positionY != 0 || platform.width != 900 || platform.height != 700 {
+		t.Fatalf("bounds below the minimum should not be restored: %+v", platform)
+	}
+
+	bounds := service.Capture(context.Background())
+	if bounds.Width != minimumWidth || bounds.Height != minimumHeight {
+		t.Fatalf("captured bounds were not clamped to the minimum: %+v", bounds)
 	}
 }
 

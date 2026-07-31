@@ -6,15 +6,14 @@
 
 ## 目录与职责
 
-- `frontend/src/shared/components/button/`：所有按钮的唯一底层实现、尺寸、变体和波纹。
-- `frontend/src/shared/components/ui/Dialog.tsx`：Base UI Dialog 封装。
-- `frontend/src/shared/components/ui/AlertDialog.tsx`：确认与危险操作对话框。
-- `frontend/src/shared/components/ui/FormControls.tsx`：Input、PasswordInput、Textarea、Select、Label、Checkbox、Switch。
-- `frontend/src/shared/components/ui/Card.tsx`、`Badge.tsx`：页面容器和状态标签。
-- `frontend/src/shared/components/ui/Progress.tsx`、`Tabs.tsx`、`Avatar.tsx`：进度、页签和头像。
-- `frontend/src/shared/components/ui/Layout.tsx`：PageHeader、Pagination、ListState 和 Skeleton。
-- `frontend/src/shared/components/ui/Toaster.tsx`：Sonner Toast 主题适配。
-- `frontend/src/shared/components/ui/ui.css`：只使用应用语义主题令牌的普通 CSS。
+- `frontend/src/shared/components/ui/Button.tsx`、`Button.css.ts`：所有按钮的唯一底层实现、尺寸、变体和波纹。
+- `frontend/src/shared/components/ui/Dialog.tsx`、`Dialog.css.ts`：Base UI Dialog 封装及其局部样式。
+- `frontend/src/shared/components/ui/AlertDialog.tsx`、`AlertDialog.css.ts`：确认对话框及自身尺寸样式，复用 Dialog 基础样式。
+- `frontend/src/shared/components/ui/FormControls.tsx`、`FormControls.css.ts`：Input、PasswordInput、Textarea、Select、Label、Checkbox、Switch。
+- `frontend/src/shared/components/ui/Card.tsx`、`Card.css.ts`：页面容器；Badge、Avatar、Progress、Tabs 也分别维护同名 `.css.ts`。
+- `frontend/src/shared/components/ui/Layout.tsx`、`Layout.css.ts`：PageHeader、Pagination、ListState 和 Skeleton。
+- `frontend/src/shared/components/ui/Spinner.tsx`、`Spinner.css.ts`：可复用的图标旋转状态和 reduced-motion 降级。
+- `frontend/src/shared/components/ui/Toaster.tsx`：Sonner Toast 主题适配，无独立样式时不创建空样式文件。
 
 ## 依赖与组合
 
@@ -22,13 +21,15 @@
 ThemeProvider
   → CSS semantic tokens
   → shared/components/ui
-      → AppButton
+      → Button
       → Base UI primitives
       → Sonner
   → existing features + dn-system
 ```
 
-Base UI 的弹层和组合组件使用 `render={<AppButton />}`，避免业务模块直接创建原生按钮。`PasswordInput` 的显隐操作同样使用固定结构的 `AppButton`。`#root` 使用 `isolation: isolate`，保证 Portal 弹层位于应用内容之上。
+Base UI 的弹层和组合组件使用 `render={<Button />}`，避免业务模块直接创建原生按钮。`PasswordInput` 的显隐操作同样使用固定结构的 `Button`，按钮固定在输入框内部右侧。`#root` 使用 `isolation: isolate`，保证 Portal 弹层位于应用内容之上。
+
+每个组件从同名 `.css.ts` 导入局部类。基础规则使用 `style`；跨局部类的后代/相邻关系和 Base UI 的 `data-*` 状态通过引用局部类的 `globalStyle` 表达，不允许重新引入全局语义类或集中式 `ui.css.ts`。
 
 ## 主题与响应式
 

@@ -13,12 +13,10 @@
 ```text
 main
 ├── application（Wails 绑定门面）
-│   ├── GreetingService 接口
 │   ├── SystemNotificationService 接口
 │   └── DnService 接口
 ├── appconfig（应用全局配置）
 ├── dn（角色、周计划、消息与本地资料）
-├── greeting（业务实现）
 ├── lifecycle（应用生命周期状态）
 ├── nativekit（原生能力规则）
 ├── notification（消息通知规则）
@@ -47,11 +45,6 @@ main
 app
 ├── appConfig（只读全局展示配置）
 ├── features
-│   ├── greeting
-│   │   ├── api
-│   │   └── components
-│   ├── foundation
-│   │   └── components
 │   ├── dn-system
 │   │   ├── api
 │   │   ├── components
@@ -66,12 +59,11 @@ app
 │   │   ├── components
 │   │   └── hooks
 │   └── test-tools
-│       └── components
+│       └── components（含嵌入式应用概览）
 └── shared
     ├── app-lifecycle
     ├── components
     │   ├── app-sidebar
-    │   ├── button
     │   ├── titlebar
     │   └── ui
     ├── diagnostics
@@ -86,11 +78,14 @@ app
 约定：
 
 - `app` 负责应用壳、全局样式与顶层模块装配。
+- Vite 通过 `@vanilla-extract/vite-plugin` 在构建期提取静态 CSS；源码不保留普通 `.css` 文件。
+- 全局字体、重置和主题令牌集中在 `app/styles/*.css.ts`；组件和页面使用就近共置的同名 `.css.ts`。
+- 组件局部规则优先使用 `style`，仅全局根节点、第三方状态和必要的复杂关系使用 `globalStyle`；共享 UI 不使用集中式 `ui.css.ts`。
 - 桌面应用壳采用“顶部标题栏 + 左侧分组菜单 + 右侧视图区域”的固定布局。
-- 应用概览只展示正式状态信息；所有人工验证入口统一放在“系统设置 → 测试工具”。
+- 应用概览、运行诊断和所有人工验证入口统一放在“系统设置 → 测试工具”；正式业务导航不展示概览入口。
 - 所有页面必须支持响应式布局；页面优先基于右侧内容区域使用 Container Queries，避免侧边栏宽度导致视口媒体查询失真。
-- 页面统一复用全局间距变量，并至少覆盖常规桌面宽度、`720 × 520` 最小窗口和极窄内容宽度。
-- 应用内按钮统一使用 `AppButton`，尺寸限定为 `sm=28px`、`md=32px`、`lg=36px`；普通操作跟随偏好设置中的默认尺寸（默认 `md`），结构性或固定语义按钮显式指定尺寸，业务模块不得自行定义其他按钮高度。
+- 页面统一复用全局间距变量，并至少覆盖常规桌面宽度、`1024 × 768` 最小窗口和极窄内容宽度。
+- 应用内按钮统一使用 `Button`，尺寸限定为 `sm=28px`、`md=32px`、`lg=36px`；普通操作跟随偏好设置中的默认尺寸（默认 `md`），结构性或固定语义按钮显式指定尺寸，业务模块不得自行定义其他按钮高度。
 - Dialog、Alert Dialog、Toast、Card、表单控件、Tabs、Progress、Avatar、分页和空状态统一从 `shared/components/ui` 使用；共享 UI 只依赖主题令牌和通用基础设施，不依赖业务模块。
 - `features/<feature>` 拥有该功能的请求适配、状态和 UI；跨功能引用应通过模块的 `index.ts`。
 - `shared` 只放无业务归属、可稳定复用的组件与工具，禁止反向依赖 `features`。

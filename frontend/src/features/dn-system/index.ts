@@ -1,5 +1,3 @@
-import './components/DnSystem.css'
-
 export { DnAccount } from './components/DnAccount'
 export { DnDashboard } from './components/DnDashboard'
 export { DnLogin } from './components/DnLogin'

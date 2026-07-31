@@ -27,10 +27,6 @@ const (
 
 var ErrAppNotReady = errors.New("application is not ready")
 
-type GreetingService interface {
-	Greet(name string) (string, error)
-}
-
 type SystemNotificationService interface {
 	Initialize(ctx context.Context, onActivation func(notification.Activation), onError func(error)) error
 	Cleanup(ctx context.Context)
@@ -117,7 +113,6 @@ type DnService interface {
 }
 
 type Dependencies struct {
-	Greeting           GreetingService
 	SystemNotification SystemNotificationService
 	Settings           SettingsService
 	Lifecycle          LifecycleService
@@ -130,7 +125,6 @@ type Dependencies struct {
 
 // App is the Wails-facing application facade.
 type App struct {
-	greetingService           GreetingService
 	systemNotificationService SystemNotificationService
 	settingsService           SettingsService
 	lifecycleService          LifecycleService
@@ -149,7 +143,6 @@ type App struct {
 
 func New(dependencies Dependencies) *App {
 	return &App{
-		greetingService:           dependencies.Greeting,
 		systemNotificationService: dependencies.SystemNotification,
 		settingsService:           dependencies.Settings,
 		lifecycleService:          dependencies.Lifecycle,
@@ -159,10 +152,6 @@ func New(dependencies Dependencies) *App {
 		diagnosticsService:        dependencies.Diagnostics,
 		dnService:                 dependencies.Dn,
 	}
-}
-
-func (a *App) Greet(name string) (string, error) {
-	return a.greetingService.Greet(name)
 }
 
 func (a *App) OnStartup(ctx context.Context) {
@@ -191,15 +180,15 @@ func (a *App) OnDomReady(ctx context.Context) {
 	a.mu.Unlock()
 
 	a.windowService.Restore(ctx, windowPreferences(a.settingsService.Get().Window))
+	a.lifecycleService.MarkReady()
+	for _, launch := range pendingLaunches {
+		a.emitSecondInstance(ctx, launch)
+	}
+
 	if err := a.systemNotificationService.Initialize(ctx, a.handleNotificationActivation, func(err error) {
 		log.Printf("handle system notification response: %v", err)
 	}); err != nil {
 		log.Printf("initialize system notifications: %v", err)
-	}
-
-	a.lifecycleService.MarkReady()
-	for _, launch := range pendingLaunches {
-		a.emitSecondInstance(ctx, launch)
 	}
 }
 

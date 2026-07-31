@@ -1,5 +1,6 @@
 import { fileURLToPath, URL } from 'node:url'
 
+import { vanillaExtractPlugin } from '@vanilla-extract/vite-plugin'
 import react from '@vitejs/plugin-react'
 import { defineConfig } from 'vite'
 
@@ -10,7 +11,7 @@ const projectRoot = fileURLToPath(new URL('..', import.meta.url))
 export default defineConfig({
   envDir: projectRoot,
   envPrefix: 'APP_',
-  plugins: [react()],
+  plugins: [vanillaExtractPlugin(), react()],
   server: {
     port: devServerPort,
     strictPort: true,

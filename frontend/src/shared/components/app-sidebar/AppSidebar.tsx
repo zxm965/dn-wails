@@ -3,7 +3,6 @@ import {
   ChevronDown,
   CircleUserRound,
   Gauge,
-  Home,
   Mails,
   Settings,
   Sparkles,
@@ -21,12 +20,14 @@ import {
 
 import { appConfig } from '@/app/appConfig'
 import appIcon from '@/assets/images/app-icon.png'
-import { AppButton } from '@/shared/components/button'
+import { Button } from '@/shared/components/ui'
+import { createScopedClassNames } from '@/shared/lib/classNames'
 
-import './AppSidebar.css'
+import { classes as styles } from './AppSidebar.css'
+
+const cx = createScopedClassNames(styles)
 
 export type AppView =
-  | 'overview'
   | 'dn-dashboard'
   | 'dn-weekly'
   | 'dn-roles'
@@ -38,7 +39,7 @@ export type AppView =
 interface NavigationItem {
   id: AppView
   label: string
-  icon: 'home' | 'dashboard' | 'weekly' | 'roles' | 'messages' | 'account' | 'settings' | 'tools'
+  icon: 'dashboard' | 'weekly' | 'roles' | 'messages' | 'account' | 'settings' | 'tools'
 }
 
 interface NavigationGroup {
@@ -50,10 +51,6 @@ interface NavigationGroup {
 const DN_VIEWS: AppView[] = ['dn-dashboard', 'dn-weekly', 'dn-roles', 'dn-messages', 'dn-account']
 
 const NAVIGATION_GROUPS: NavigationGroup[] = [
-  {
-    label: '主菜单',
-    items: [{ id: 'overview', label: '应用概览', icon: 'home' }],
-  },
   {
     label: '业务系统',
     parent: { label: 'DN 周常管理' },
@@ -114,8 +111,9 @@ export function AppSidebar({ activeView, onNavigate }: AppSidebarProps) {
   }, [sidebarWidth])
 
   useEffect(() => {
-    document.body.classList.toggle('is-resizing-sidebar', isResizing)
-    return () => document.body.classList.remove('is-resizing-sidebar')
+    const resizingClassName = cx('is-resizing-sidebar')
+    document.body.classList.toggle(resizingClassName, isResizing)
+    return () => document.body.classList.remove(resizingClassName)
   }, [isResizing])
 
   useEffect(() => {
@@ -179,10 +177,12 @@ export function AppSidebar({ activeView, onNavigate }: AppSidebarProps) {
 
   return (
     <aside
-      className={`app-sidebar${isCollapsed ? ' is-collapsed' : ''}${isCompactViewport ? ' is-viewport-compact' : ''}`}
+      className={cx(
+        `app-sidebar${isCollapsed ? ' is-collapsed' : ''}${isCompactViewport ? ' is-viewport-compact' : ''}`,
+      )}
       style={sidebarStyle}
     >
-      <div className='app-sidebar-product'>
+      <div className={cx('app-sidebar-product')}>
         <img src={appIcon} alt='' />
         <div>
           <strong>{appConfig.displayName}</strong>
@@ -190,13 +190,13 @@ export function AppSidebar({ activeView, onNavigate }: AppSidebarProps) {
         </div>
       </div>
 
-      <nav className='app-sidebar-navigation' aria-label='应用菜单'>
+      <nav className={cx('app-sidebar-navigation')} aria-label='应用菜单'>
         {NAVIGATION_GROUPS.map((group) => (
-          <div key={group.label} className='app-sidebar-group'>
+          <div key={group.label} className={cx('app-sidebar-group')}>
             <p>{group.label}</p>
             {group.parent && (
-              <AppButton
-                className={`app-sidebar-parent${DN_VIEWS.includes(activeView) ? ' is-active' : ''}`}
+              <Button
+                className={cx(`app-sidebar-parent${DN_VIEWS.includes(activeView) ? ' is-active' : ''}`)}
                 size='lg'
                 variant='ghost'
                 type='button'
@@ -211,17 +211,20 @@ export function AppSidebar({ activeView, onNavigate }: AppSidebarProps) {
                 }}
               >
                 <Sparkles aria-hidden='true' />
-                <span className='app-sidebar-label'>
+                <span className={cx('app-sidebar-label')}>
                   <strong>{group.parent.label}</strong>
                 </span>
-                <ChevronDown className={`app-sidebar-chevron${dnExpanded ? ' is-expanded' : ''}`} aria-hidden='true' />
-              </AppButton>
+                <ChevronDown
+                  className={cx(`app-sidebar-chevron${dnExpanded ? ' is-expanded' : ''}`)}
+                  aria-hidden='true'
+                />
+              </Button>
             )}
-            <div className={group.parent ? `app-sidebar-submenu${dnExpanded ? ' is-expanded' : ''}` : undefined}>
+            <div className={cx(group.parent ? `app-sidebar-submenu${dnExpanded ? ' is-expanded' : ''}` : undefined)}>
               {group.items.map((item) => (
-                <AppButton
+                <Button
                   key={item.id}
-                  className={activeView === item.id ? 'is-active' : ''}
+                  className={cx(activeView === item.id ? 'is-active' : '')}
                   size={group.parent ? 'md' : 'lg'}
                   variant='ghost'
                   type='button'
@@ -230,18 +233,18 @@ export function AppSidebar({ activeView, onNavigate }: AppSidebarProps) {
                   onClick={() => onNavigate(item.id)}
                 >
                   <NavigationIcon name={item.icon} />
-                  <span className='app-sidebar-label'>
+                  <span className={cx('app-sidebar-label')}>
                     <strong>{item.label}</strong>
                   </span>
-                </AppButton>
+                </Button>
               ))}
             </div>
           </div>
         ))}
       </nav>
 
-      <div className='app-sidebar-footer' title={appConfig.authorName}>
-        <span className='app-sidebar-status-dot' aria-hidden='true' />
+      <div className={cx('app-sidebar-footer')} title={appConfig.authorName}>
+        <span className={cx('app-sidebar-status-dot')} aria-hidden='true' />
         <div>
           <small>{appConfig.authorName}</small>
         </div>
@@ -249,7 +252,7 @@ export function AppSidebar({ activeView, onNavigate }: AppSidebarProps) {
 
       {!isCompactViewport && (
         <div
-          className={`app-sidebar-resizer${isResizing ? ' is-resizing' : ''}`}
+          className={cx(`app-sidebar-resizer${isResizing ? ' is-resizing' : ''}`)}
           role='separator'
           aria-label='调整侧边栏宽度'
           aria-orientation='vertical'
@@ -274,7 +277,6 @@ interface NavigationIconProps {
 
 function NavigationIcon({ name }: NavigationIconProps) {
   const Icon = {
-    home: Home,
     dashboard: Gauge,
     weekly: CalendarCheck,
     roles: UsersRound,

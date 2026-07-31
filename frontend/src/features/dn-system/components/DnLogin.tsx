@@ -1,8 +1,8 @@
 import { ShieldCheck } from 'lucide-react'
 import { type FormEvent, useEffect, useState } from 'react'
 
-import { AppButton } from '@/shared/components/button'
 import {
+  Button,
   Card,
   CardContent,
   CardDescription,
@@ -16,9 +16,14 @@ import {
   TabsTrigger,
 } from '@/shared/components/ui'
 import { useFeedback } from '@/shared/feedback'
+import { createScopedClassNames } from '@/shared/lib/classNames'
 
 import { getErrorMessage } from '../api/dnSystemApi'
 import { useDnAuth } from '../context/DnAuthProvider'
+
+import { classes as styles } from './DnSystem.css'
+
+const cx = createScopedClassNames(styles)
 
 const authTabStorageKey = 'dn-wails:dn-auth-tab'
 
@@ -92,26 +97,29 @@ export function DnLogin({ onAuthenticated }: { onAuthenticated: () => void }) {
   }
 
   return (
-    <div className='dn-auth-page'>
-      <Card className='dn-auth-card'>
+    <div className={cx('dn-auth-page')}>
+      <Card className={cx('dn-auth-card')}>
         <CardHeader>
-          <span className='dn-auth-mark' aria-hidden='true'>
+          <span className={cx('dn-auth-mark')} aria-hidden='true'>
             <ShieldCheck />
           </span>
           <CardTitle>DN 周常管理</CardTitle>
           <CardDescription>登录后管理你的角色、周计划和站内消息。</CardDescription>
+          {activeTab === 'register' ? (
+            <p className={cx('dn-auth-register-note')}>请勿使用真实游戏账号或游戏密码，建议单独设置密码。</p>
+          ) : null}
         </CardHeader>
         <CardContent>
           <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as 'login' | 'register')}>
-            <TabsList className='dn-auth-tabs'>
+            <TabsList className={cx('dn-auth-tabs')}>
               <TabsTrigger value='login'>登录</TabsTrigger>
               <TabsTrigger value='register'>注册</TabsTrigger>
             </TabsList>
           </Tabs>
 
           {activeTab === 'login' ? (
-            <form className='dn-auth-form' onSubmit={submitLogin}>
-              <label className='dn-field'>
+            <form className={cx('dn-auth-form')} onSubmit={submitLogin}>
+              <label className={cx('dn-field')}>
                 <Label>用户名或邮箱</Label>
                 <Input
                   value={loginForm.login}
@@ -120,7 +128,7 @@ export function DnLogin({ onAuthenticated }: { onAuthenticated: () => void }) {
                   onChange={(event) => setLoginForm((current) => ({ ...current, login: event.target.value }))}
                 />
               </label>
-              <label className='dn-field'>
+              <label className={cx('dn-field')}>
                 <Label>密码</Label>
                 <PasswordInput
                   value={loginForm.password}
@@ -129,14 +137,13 @@ export function DnLogin({ onAuthenticated }: { onAuthenticated: () => void }) {
                   onChange={(event) => setLoginForm((current) => ({ ...current, password: event.target.value }))}
                 />
               </label>
-              <AppButton type='submit' disabled={busy !== null}>
+              <Button type='submit' disabled={busy !== null}>
                 {busy === 'login' ? '登录中…' : '登录'}
-              </AppButton>
+              </Button>
             </form>
           ) : (
-            <form className='dn-auth-form' onSubmit={submitRegistration}>
-              <p className='dn-auth-notice'>请勿使用真实游戏账号或游戏密码，建议单独设置密码。</p>
-              <label className='dn-field'>
+            <form className={cx('dn-auth-form')} onSubmit={submitRegistration}>
+              <label className={cx('dn-field')}>
                 <Label>用户名</Label>
                 <Input
                   value={registrationForm.account}
@@ -145,7 +152,7 @@ export function DnLogin({ onAuthenticated }: { onAuthenticated: () => void }) {
                   onChange={(event) => setRegistrationForm((current) => ({ ...current, account: event.target.value }))}
                 />
               </label>
-              <label className='dn-field'>
+              <label className={cx('dn-field')}>
                 <Label>邮箱</Label>
                 <Input
                   type='email'
@@ -155,7 +162,7 @@ export function DnLogin({ onAuthenticated }: { onAuthenticated: () => void }) {
                   onChange={(event) => setRegistrationForm((current) => ({ ...current, email: event.target.value }))}
                 />
               </label>
-              <label className='dn-field'>
+              <label className={cx('dn-field')}>
                 <Label>密码</Label>
                 <PasswordInput
                   value={registrationForm.password}
@@ -164,7 +171,7 @@ export function DnLogin({ onAuthenticated }: { onAuthenticated: () => void }) {
                   onChange={(event) => setRegistrationForm((current) => ({ ...current, password: event.target.value }))}
                 />
               </label>
-              <label className='dn-field'>
+              <label className={cx('dn-field')}>
                 <Label>确认密码</Label>
                 <PasswordInput
                   value={registrationForm.confirm}
@@ -173,9 +180,9 @@ export function DnLogin({ onAuthenticated }: { onAuthenticated: () => void }) {
                   onChange={(event) => setRegistrationForm((current) => ({ ...current, confirm: event.target.value }))}
                 />
               </label>
-              <AppButton type='submit' disabled={busy !== null}>
+              <Button type='submit' disabled={busy !== null}>
                 {busy === 'register' ? '注册中…' : '注册并登录'}
-              </AppButton>
+              </Button>
             </form>
           )}
         </CardContent>

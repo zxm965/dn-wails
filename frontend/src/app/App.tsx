@@ -12,24 +12,26 @@ import {
   useDnAuth,
   type DnInternalTarget,
 } from '@/features/dn-system'
-import { DesktopOverview } from '@/features/foundation'
 import { SettingsPanel } from '@/features/settings'
 import { TestToolsPanel } from '@/features/test-tools'
 import { AppSidebar, type AppView } from '@/shared/components/app-sidebar'
 import { TitleBar } from '@/shared/components/titlebar'
 import { ListState } from '@/shared/components/ui'
+import { createScopedClassNames } from '@/shared/lib/classNames'
 import { windowManager } from '@/shared/window'
 
-import './App.css'
 import { appConfig } from './appConfig'
 
+import { classes as styles } from './App.css'
+
+const cx = createScopedClassNames(styles)
+
 export default function App() {
-  const [activeView, setActiveView] = useState<AppView>('overview')
+  const [activeView, setActiveView] = useState<AppView>('dn-dashboard')
   const auth = useDnAuth()
   const isDnView = activeView.startsWith('dn-')
 
   const viewTitle = {
-    overview: '应用概览',
     'dn-dashboard': 'DN · 仪表盘',
     'dn-weekly': 'DN · 周计划',
     'dn-roles': 'DN · 角色',
@@ -72,12 +74,11 @@ export default function App() {
 
   return (
     <DnMessageProvider onNavigate={navigateDn}>
-      <div className='app-shell'>
+      <div className={cx('app-shell')}>
         <TitleBar title={windowTitle} actions={auth.user ? <DnMessageCenter /> : undefined} />
-        <div className='app-workspace'>
+        <div className={cx('app-workspace')}>
           <AppSidebar activeView={activeView} onNavigate={setActiveView} />
-          <main className='app-content'>
-            {activeView === 'overview' && <DesktopOverview />}
+          <main className={cx('app-content')}>
             {isDnView && renderDnView()}
             {activeView === 'settings' && <SettingsPanel />}
             {activeView === 'test-tools' && <TestToolsPanel />}

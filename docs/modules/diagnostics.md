@@ -9,7 +9,7 @@
 - `internal/diagnostics/service.go`：日志文件、轮转、标准日志输出和诊断信息。
 - `internal/application/diagnostics.go`：Wails 查询与打开日志目录接口。
 - `frontend/src/shared/diagnostics/`：类型化诊断 API。
-- `DesktopOverview`：展示正式运行信息。
+- 测试工具中的 `DesktopOverview`：展示只读运行信息。
 - `TestToolsPanel`：提供打开日志目录的验证入口。
 
 ## 诊断数据

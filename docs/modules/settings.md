@@ -43,7 +43,7 @@ OnStartup → Settings.Initialize → Storage.Load
 React SettingsProvider → GetSettings
 用户修改任一控件 → 乐观更新全局状态 → 串行 UpdateSettings → 校验 → Storage.Save
   ├── ThemeProvider 应用外观
-  ├── AppButton 应用默认按钮尺寸
+  ├── Button 应用默认按钮尺寸
   ├── Notification 使用新策略
   └── WindowManager 应用置顶设置
 ```

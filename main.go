@@ -11,7 +11,6 @@ import (
 	"dn-wails/internal/application"
 	"dn-wails/internal/diagnostics"
 	"dn-wails/internal/dn"
-	"dn-wails/internal/greeting"
 	"dn-wails/internal/lifecycle"
 	"dn-wails/internal/nativekit"
 	"dn-wails/internal/notification"
@@ -75,7 +74,6 @@ func main() {
 	}
 	defer diagnosticsService.Close()
 
-	greetingService := greeting.NewService()
 	notificationPlatform := platformnotification.NewWails()
 	notificationService := notification.NewService(notificationPlatform)
 	nativePlatform := platformnativekit.NewWails()
@@ -86,7 +84,6 @@ func main() {
 	singleInstanceService := singleinstance.NewService()
 
 	app := application.New(application.Dependencies{
-		Greeting:           greetingService,
 		SystemNotification: notificationService,
 		Settings:           settingsService,
 		Lifecycle:          lifecycleService,
@@ -99,10 +96,10 @@ func main() {
 
 	appOptions := &options.App{
 		Title:     applicationConfig.DisplayName,
-		Width:     1024,
-		Height:    768,
-		MinWidth:  720,
-		MinHeight: 520,
+		Width:     1280,
+		Height:    800,
+		MinWidth:  1024,
+		MinHeight: 768,
 		AssetServer: &assetserver.Options{
 			Assets: assets,
 		},

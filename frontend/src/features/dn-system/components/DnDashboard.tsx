@@ -1,9 +1,9 @@
 import { CalendarCheck, CircleCheckBig, Clock3, RefreshCw, Ticket, UsersRound } from 'lucide-react'
 import { type CSSProperties, useCallback, useEffect, useMemo, useState } from 'react'
 
-import { AppButton } from '@/shared/components/button'
 import {
   Badge,
+  Button,
   Card,
   CardContent,
   CardHeader,
@@ -11,11 +11,17 @@ import {
   ListState,
   PageHeader,
   Progress,
+  SpinnerIcon,
 } from '@/shared/components/ui'
 import { useFeedback } from '@/shared/feedback'
+import { createScopedClassNames } from '@/shared/lib/classNames'
 
 import { getErrorMessage, listAllWeeklyPlans, type WeeklyPlan } from '../api/dnSystemApi'
 import { createDashboardSummary, priorityMeta } from '../model/dnSystem'
+
+import { classes as styles } from './DnSystem.css'
+
+const cx = createScopedClassNames(styles)
 
 export function DnDashboard({ onNavigateWeekly }: { onNavigateWeekly: () => void }) {
   const { notify } = useFeedback()
@@ -43,33 +49,33 @@ export function DnDashboard({ onNavigateWeekly }: { onNavigateWeekly: () => void
   const primaryPending = summary.pending[0]
 
   return (
-    <div className='dn-page'>
+    <div className={cx('dn-page')}>
       <PageHeader
         title='仪表盘'
         subtitle='查看本周进度和需要优先处理的内容。'
         actions={
           <>
-            <AppButton variant='outline' disabled={loading} onClick={() => void loadDashboard()}>
-              <RefreshCw className={loading ? 'ui-spin' : undefined} aria-hidden='true' />
+            <Button variant='outline' disabled={loading} onClick={() => void loadDashboard()}>
+              <SpinnerIcon icon={RefreshCw} spinning={loading} aria-hidden='true' />
               刷新
-            </AppButton>
-            <AppButton onClick={onNavigateWeekly}>
+            </Button>
+            <Button onClick={onNavigateWeekly}>
               <CalendarCheck aria-hidden='true' />
               周计划
-            </AppButton>
+            </Button>
           </>
         }
       />
 
-      <section className='dn-dashboard-overview'>
-        <Card className='dn-progress-card'>
+      <section className={cx('dn-dashboard-overview')}>
+        <Card className={cx('dn-progress-card')}>
           <CardContent>
-            <div className='dn-progress-summary'>
+            <div className={cx('dn-progress-summary')}>
               <div>
-                <span className='dn-kicker'>
+                <span className={cx('dn-kicker')}>
                   <Clock3 aria-hidden='true' /> 本周完成度
                 </span>
-                <div className='dn-progress-value'>
+                <div className={cx('dn-progress-value')}>
                   {summary.weeklyProgress.percent}
                   <small>%</small>
                 </div>
@@ -79,7 +85,7 @@ export function DnDashboard({ onNavigateWeekly }: { onNavigateWeekly: () => void
                 <Progress value={summary.weeklyProgress.percent} />
               </div>
               <div
-                className='dn-progress-ring'
+                className={cx('dn-progress-ring')}
                 style={{ '--dn-progress': `${summary.weeklyProgress.percent * 3.6}deg` } as CSSProperties}
               >
                 <span>
@@ -90,7 +96,7 @@ export function DnDashboard({ onNavigateWeekly }: { onNavigateWeekly: () => void
                 </span>
               </div>
             </div>
-            <div className='dn-overview-metrics'>
+            <div className={cx('dn-overview-metrics')}>
               <OverviewMetric
                 label='任务完成'
                 value={`${summary.weeklyProgress.completed}/${summary.weeklyProgress.total}`}
@@ -101,11 +107,11 @@ export function DnDashboard({ onNavigateWeekly }: { onNavigateWeekly: () => void
           </CardContent>
         </Card>
 
-        <Card className='dn-priority-card'>
+        <Card className={cx('dn-priority-card')}>
           <CardContent>
             {primaryPending ? (
               <>
-                <div className='dn-card-heading-row'>
+                <div className={cx('dn-card-heading-row')}>
                   <span>优先处理</span>
                   <Badge tone={priorityMeta(primaryPending.plan.priority).tone}>
                     {priorityMeta(primaryPending.plan.priority).label}
@@ -113,18 +119,18 @@ export function DnDashboard({ onNavigateWeekly }: { onNavigateWeekly: () => void
                 </div>
                 <h2>{primaryPending.plan.roleName}</h2>
                 <p>{primaryPending.plan.profession || '未设置职业'}</p>
-                <div className='dn-inline-progress'>
+                <div className={cx('dn-inline-progress')}>
                   <span>当前进度</span>
                   <strong>{primaryPending.percent}%</strong>
                 </div>
                 <Progress value={primaryPending.percent} />
-                <p className='dn-pending-copy'>待处理：{primaryPending.missing.join('、') || '无'}</p>
-                <AppButton variant='outline' onClick={onNavigateWeekly}>
+                <p className={cx('dn-pending-copy')}>待处理：{primaryPending.missing.join('、') || '无'}</p>
+                <Button variant='outline' onClick={onNavigateWeekly}>
                   前往处理
-                </AppButton>
+                </Button>
               </>
             ) : (
-              <div className='dn-complete-state'>
+              <div className={cx('dn-complete-state')}>
                 <CircleCheckBig aria-hidden='true' />
                 <strong>{loading ? '正在统计' : '本周任务已完成'}</strong>
                 <span>{loading ? '请稍候…' : '所有角色都已处理完毕。'}</span>
@@ -134,9 +140,9 @@ export function DnDashboard({ onNavigateWeekly }: { onNavigateWeekly: () => void
         </Card>
       </section>
 
-      <section className='dn-dashboard-grid'>
+      <section className={cx('dn-dashboard-grid')}>
         <Card>
-          <CardHeader className='dn-card-heading-row'>
+          <CardHeader className={cx('dn-card-heading-row')}>
             <div>
               <CardTitle>待办角色</CardTitle>
               <p>按优先级和完成度排列</p>
@@ -145,10 +151,10 @@ export function DnDashboard({ onNavigateWeekly }: { onNavigateWeekly: () => void
           </CardHeader>
           <CardContent>
             {summary.pending.length ? (
-              <div className='dn-pending-grid'>
+              <div className={cx('dn-pending-grid')}>
                 {summary.pending.slice(0, 8).map((item) => (
-                  <article key={item.plan.id} className='dn-pending-item'>
-                    <div className='dn-card-heading-row'>
+                  <article key={item.plan.id} className={cx('dn-pending-item')}>
+                    <div className={cx('dn-card-heading-row')}>
                       <div>
                         <strong>{item.plan.roleName}</strong>
                         <span>{item.plan.profession || '未设置职业'}</span>
@@ -157,7 +163,7 @@ export function DnDashboard({ onNavigateWeekly }: { onNavigateWeekly: () => void
                         {priorityMeta(item.plan.priority).label}
                       </Badge>
                     </div>
-                    <div className='dn-inline-progress'>
+                    <div className={cx('dn-inline-progress')}>
                       <span>{item.missing.join('、') || '暂无待办'}</span>
                       <strong>{item.percent}%</strong>
                     </div>
@@ -172,7 +178,7 @@ export function DnDashboard({ onNavigateWeekly }: { onNavigateWeekly: () => void
         </Card>
 
         <Card>
-          <CardHeader className='dn-card-heading-row'>
+          <CardHeader className={cx('dn-card-heading-row')}>
             <div>
               <CardTitle>巢穴票提醒</CardTitle>
               <p>关注三天内到期的票券</p>
@@ -181,7 +187,7 @@ export function DnDashboard({ onNavigateWeekly }: { onNavigateWeekly: () => void
           </CardHeader>
           <CardContent>
             {summary.tickets.length ? (
-              <div className='dn-ticket-list'>
+              <div className={cx('dn-ticket-list')}>
                 {summary.tickets.slice(0, 8).map((item) => (
                   <article key={item.key}>
                     <div>

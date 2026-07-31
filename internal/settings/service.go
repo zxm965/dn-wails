@@ -169,7 +169,7 @@ func validate(value AppSettings) error {
 	if !contains([]string{CloseBehaviorQuit, CloseBehaviorHide}, value.Window.CloseBehavior) {
 		return fmt.Errorf("%w: unsupported close behavior %q", ErrInvalidSettings, value.Window.CloseBehavior)
 	}
-	if value.Window.Bounds != nil && (value.Window.Bounds.Width < 720 || value.Window.Bounds.Height < 520) {
+	if value.Window.Bounds != nil && (value.Window.Bounds.Width < 1024 || value.Window.Bounds.Height < 768) {
 		return fmt.Errorf("%w: saved window bounds are below the minimum size", ErrInvalidSettings)
 	}
 

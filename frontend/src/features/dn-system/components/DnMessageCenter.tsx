@@ -1,9 +1,9 @@
 import { Bell, CheckCheck, ExternalLink, MailCheck } from 'lucide-react'
 import { useState } from 'react'
 
-import { AppButton } from '@/shared/components/button'
 import {
   Badge,
+  Button,
   Dialog,
   DialogBody,
   DialogContent,
@@ -14,9 +14,14 @@ import {
   ListState,
 } from '@/shared/components/ui'
 import { useFeedback } from '@/shared/feedback'
+import { createScopedClassNames } from '@/shared/lib/classNames'
 
 import { getErrorMessage, type SiteMessage } from '../api/dnSystemApi'
 import { useDnMessages } from '../context/DnMessageProvider'
+
+import { classes as styles } from './DnSystem.css'
+
+const cx = createScopedClassNames(styles)
 
 export function DnMessageCenter() {
   const { notify } = useFeedback()
@@ -37,8 +42,8 @@ export function DnMessageCenter() {
 
   return (
     <>
-      <AppButton
-        className='dn-message-center-trigger'
+      <Button
+        className={cx('dn-message-center-trigger')}
         size='sm'
         variant='ghost'
         type='button'
@@ -48,13 +53,15 @@ export function DnMessageCenter() {
       >
         <Bell aria-hidden='true' />
         {messages.unreadCount > 0 && (
-          <span className='dn-message-center-count'>{messages.unreadCount > 99 ? '99+' : messages.unreadCount}</span>
+          <span className={cx('dn-message-center-count')}>
+            {messages.unreadCount > 99 ? '99+' : messages.unreadCount}
+          </span>
         )}
-      </AppButton>
+      </Button>
 
       <Dialog open={messages.centerOpen} onOpenChange={messages.setCenterOpen}>
         <DialogContent size='sm'>
-          <DialogHeader className='dn-message-center-header'>
+          <DialogHeader className={cx('dn-message-center-header')}>
             <div>
               <DialogTitle>消息盒子</DialogTitle>
               <DialogDescription>
@@ -62,19 +69,19 @@ export function DnMessageCenter() {
               </DialogDescription>
             </div>
             {messages.unreadCount > 0 && (
-              <AppButton variant='ghost' disabled={markingAll} onClick={() => void markAll()}>
+              <Button variant='ghost' disabled={markingAll} onClick={() => void markAll()}>
                 <CheckCheck aria-hidden='true' />
                 全部已读
-              </AppButton>
+              </Button>
             )}
           </DialogHeader>
-          <DialogBody className='dn-message-center-body'>
+          <DialogBody className={cx('dn-message-center-body')}>
             {messages.inboxItems.length ? (
-              <div className='dn-message-center-list'>
+              <div className={cx('dn-message-center-list')}>
                 {messages.inboxItems.map((message) => (
-                  <AppButton
+                  <Button
                     key={message.id}
-                    className='dn-message-center-item'
+                    className={cx('dn-message-center-item')}
                     size='lg'
                     variant='ghost'
                     title={message.content || message.title}
@@ -86,7 +93,7 @@ export function DnMessageCenter() {
                       <time>{formatMessageDate(message.publishedAt)}</time>
                     </span>
                     {message.actionTarget === '_blank' && <ExternalLink aria-hidden='true' />}
-                  </AppButton>
+                  </Button>
                 ))}
               </div>
             ) : (
@@ -97,15 +104,15 @@ export function DnMessageCenter() {
               />
             )}
           </DialogBody>
-          <DialogFooter className='dn-message-center-footer'>
+          <DialogFooter className={cx('dn-message-center-footer')}>
             <span>
               {messages.lastSyncedAt
                 ? `官网消息同步于 ${formatMessageDate(messages.lastSyncedAt)}`
                 : '官网消息尚未同步'}
             </span>
-            <AppButton variant='ghost' onClick={messages.showAllMessages}>
+            <Button variant='ghost' onClick={messages.showAllMessages}>
               查看全部消息
-            </AppButton>
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -124,20 +131,20 @@ export function DnMessageCenter() {
             </DialogDescription>
           </DialogHeader>
           <DialogBody>
-            <p className='dn-message-popup-content'>
+            <p className={cx('dn-message-popup-content')}>
               {messages.activeMessage?.content || '你收到了一条新的站内消息。'}
             </p>
           </DialogBody>
           <DialogFooter>
-            <AppButton variant='outline' disabled={messages.actionLoading} onClick={messages.dismissPopup}>
+            <Button variant='outline' disabled={messages.actionLoading} onClick={messages.dismissPopup}>
               {messages.activeMessage?.actionUrl ? '稍后查看' : '关闭'}
-            </AppButton>
-            <AppButton disabled={messages.actionLoading} onClick={() => void messages.followActiveMessage()}>
+            </Button>
+            <Button disabled={messages.actionLoading} onClick={() => void messages.followActiveMessage()}>
               {messages.activeMessage?.actionTarget === '_blank' && <ExternalLink aria-hidden='true' />}
               {messages.actionLoading
                 ? '处理中…'
                 : messages.activeMessage?.actionLabel || (messages.activeMessage?.actionUrl ? '查看详情' : '我知道了')}
-            </AppButton>
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

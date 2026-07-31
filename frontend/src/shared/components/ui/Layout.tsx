@@ -1,17 +1,22 @@
-import { LoaderCircle } from 'lucide-react'
 import type { HTMLAttributes, ReactNode } from 'react'
 
-import { AppButton } from '@/shared/components/button'
-import { classNames } from '@/shared/lib/classNames'
+import { createScopedClassNames } from '@/shared/lib/classNames'
+
+import { Button } from './Button'
+import { SpinnerIcon } from './Spinner'
+
+import { classes as styles } from './Layout.css'
+
+const cx = createScopedClassNames(styles)
 
 export function PageHeader({ title, subtitle, actions }: { title: string; subtitle?: string; actions?: ReactNode }) {
   return (
-    <header className='ui-page-header'>
+    <header className={cx('ui-page-header')}>
       <div>
         <h1>{title}</h1>
         {subtitle && <p>{subtitle}</p>}
       </div>
-      {actions && <div className='ui-page-header-actions'>{actions}</div>}
+      {actions && <div className={cx('ui-page-header-actions')}>{actions}</div>}
     </header>
   )
 }
@@ -36,30 +41,30 @@ export function Pagination({
 }) {
   const totalPages = Math.max(meta.totalPages, 1)
   return (
-    <div className='ui-pagination'>
+    <div className={cx('ui-pagination')}>
       <span>
         共 {meta.total} {totalLabel}
       </span>
       <div>
-        <AppButton
+        <Button
           size='sm'
           variant='outline'
           disabled={loading || meta.page <= 1}
           onClick={() => onPageChange(meta.page - 1)}
         >
           上一页
-        </AppButton>
+        </Button>
         <span>
           {meta.page}/{totalPages}
         </span>
-        <AppButton
+        <Button
           size='sm'
           variant='outline'
           disabled={loading || meta.page >= totalPages}
           onClick={() => onPageChange(meta.page + 1)}
         >
           下一页
-        </AppButton>
+        </Button>
       </div>
     </div>
   )
@@ -79,13 +84,13 @@ export function ListState({
   className?: string
 }) {
   return (
-    <div className={classNames('ui-list-state', className)}>
-      {loading ? <LoaderCircle className='ui-spin' aria-hidden='true' /> : icon}
+    <div className={cx('ui-list-state', className)}>
+      {loading ? <SpinnerIcon aria-hidden='true' /> : icon}
       <span>{loading ? loadingText : emptyText}</span>
     </div>
   )
 }
 
 export function Skeleton({ className, ...props }: HTMLAttributes<HTMLDivElement>) {
-  return <div className={classNames('ui-skeleton', className)} {...props} />
+  return <div className={cx('ui-skeleton', className)} {...props} />
 }

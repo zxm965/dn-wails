@@ -1,11 +1,11 @@
 import { Database, KeyRound, LogOut, RefreshCw, Upload } from 'lucide-react'
 import { type FormEvent, useCallback, useEffect, useMemo, useState } from 'react'
 
-import { AppButton } from '@/shared/components/button'
 import {
   Avatar,
   AvatarFallback,
   AvatarImage,
+  Button,
   Card,
   CardContent,
   CardFooter,
@@ -16,12 +16,14 @@ import {
   ListState,
   PageHeader,
   PasswordInput,
+  SpinnerIcon,
   Tabs,
   TabsContent,
   TabsList,
   TabsTrigger,
 } from '@/shared/components/ui'
 import { useFeedback } from '@/shared/feedback'
+import { createScopedClassNames } from '@/shared/lib/classNames'
 import { pickFiles } from '@/shared/native-kit'
 
 import {
@@ -34,6 +36,10 @@ import {
   type ProfileInput,
 } from '../api/dnSystemApi'
 import { useDnAuth } from '../context/DnAuthProvider'
+
+import { classes as styles } from './DnSystem.css'
+
+const cx = createScopedClassNames(styles)
 
 const emptyProfile: ProfileInput = { name: '', email: '', avatar: '' }
 
@@ -166,15 +172,15 @@ export function DnAccount() {
   }
 
   return (
-    <div className='dn-page dn-account-page'>
+    <div className={cx('dn-page dn-account-page')}>
       <PageHeader
         title='个人中心'
         subtitle='管理个人资料、登录密码和本地数据。'
         actions={
-          <AppButton variant='outline' onClick={() => void logout()}>
+          <Button variant='outline' onClick={() => void logout()}>
             <LogOut aria-hidden='true' />
             退出登录
-          </AppButton>
+          </Button>
         }
       />
       {loading && !profile ? (
@@ -188,46 +194,46 @@ export function DnAccount() {
           </TabsList>
           <TabsContent value='profile'>
             <Card>
-              <CardHeader className='dn-card-heading-row'>
+              <CardHeader className={cx('dn-card-heading-row')}>
                 <div>
                   <CardTitle>个人资料</CardTitle>
                   <p>更新显示名称、邮箱和头像。</p>
                 </div>
-                <AppButton variant='outline' disabled={loading} onClick={() => void load(true)}>
-                  <RefreshCw className={loading ? 'ui-spin' : undefined} aria-hidden='true' />
+                <Button variant='outline' disabled={loading} onClick={() => void load(true)}>
+                  <SpinnerIcon icon={RefreshCw} spinning={loading} aria-hidden='true' />
                   重新加载
-                </AppButton>
+                </Button>
               </CardHeader>
               <form onSubmit={submit}>
-                <CardContent className='dn-account-form'>
-                  <div className='dn-avatar-panel'>
+                <CardContent className={cx('dn-account-form')}>
+                  <div className={cx('dn-avatar-panel')}>
                     <Avatar>
                       <AvatarImage src={form.avatar || undefined} alt={form.name || form.email} />
                       <AvatarFallback>{initial}</AvatarFallback>
                     </Avatar>
-                    <AppButton type='button' variant='outline' disabled={importing} onClick={() => void chooseAvatar()}>
+                    <Button type='button' variant='outline' disabled={importing} onClick={() => void chooseAvatar()}>
                       <Upload aria-hidden='true' />
                       {importing ? '导入中…' : '选择头像'}
-                    </AppButton>
+                    </Button>
                     {form.avatar && (
-                      <AppButton
+                      <Button
                         type='button'
                         variant='ghost'
                         onClick={() => setForm((current) => ({ ...current, avatar: '' }))}
                       >
                         移除头像
-                      </AppButton>
+                      </Button>
                     )}
                   </div>
-                  <div className='dn-form-grid'>
-                    <label className='dn-field'>
+                  <div className={cx('dn-form-grid')}>
+                    <label className={cx('dn-field')}>
                       <Label>显示名称</Label>
                       <Input
                         value={form.name}
                         onChange={(event) => setForm((current) => ({ ...current, name: event.target.value }))}
                       />
                     </label>
-                    <label className='dn-field'>
+                    <label className={cx('dn-field')}>
                       <Label>邮箱</Label>
                       <Input
                         type='email'
@@ -235,28 +241,28 @@ export function DnAccount() {
                         onChange={(event) => setForm((current) => ({ ...current, email: event.target.value }))}
                       />
                     </label>
-                    <label className='dn-field'>
+                    <label className={cx('dn-field')}>
                       <Label>本地账号</Label>
                       <Input value={profile?.account || ''} disabled />
                     </label>
-                    <label className='dn-field'>
+                    <label className={cx('dn-field')}>
                       <Label>权限</Label>
                       <Input value={profile?.role === 1 ? '本地管理员' : '本地用户'} disabled />
                     </label>
                   </div>
                 </CardContent>
-                <CardFooter className='dn-account-footer'>
-                  <AppButton
+                <CardFooter className={cx('dn-account-footer')}>
+                  <Button
                     type='button'
                     variant='outline'
                     disabled={!dirty || saving}
                     onClick={() => setForm({ ...initialForm })}
                   >
                     重置
-                  </AppButton>
-                  <AppButton type='submit' disabled={saving}>
+                  </Button>
+                  <Button type='submit' disabled={saving}>
                     {saving ? '保存中…' : '保存资料'}
-                  </AppButton>
+                  </Button>
                 </CardFooter>
               </form>
             </Card>
@@ -268,10 +274,10 @@ export function DnAccount() {
                 <p>更新当前账号的登录密码。</p>
               </CardHeader>
               <form onSubmit={submitPassword}>
-                <CardContent className='dn-security-form'>
+                <CardContent className={cx('dn-security-form')}>
                   <KeyRound aria-hidden='true' />
-                  <div className='dn-form-grid'>
-                    <label className='dn-field dn-field-full'>
+                  <div className={cx('dn-form-grid')}>
+                    <label className={cx('dn-field dn-field-full')}>
                       <Label>当前密码</Label>
                       <PasswordInput
                         value={passwordForm.currentPassword}
@@ -281,7 +287,7 @@ export function DnAccount() {
                         }
                       />
                     </label>
-                    <label className='dn-field'>
+                    <label className={cx('dn-field')}>
                       <Label>新密码</Label>
                       <PasswordInput
                         value={passwordForm.newPassword}
@@ -291,7 +297,7 @@ export function DnAccount() {
                         }
                       />
                     </label>
-                    <label className='dn-field'>
+                    <label className={cx('dn-field')}>
                       <Label>确认新密码</Label>
                       <PasswordInput
                         value={passwordForm.confirmPassword}
@@ -303,25 +309,25 @@ export function DnAccount() {
                     </label>
                   </div>
                 </CardContent>
-                <CardFooter className='dn-account-footer'>
-                  <AppButton
+                <CardFooter className={cx('dn-account-footer')}>
+                  <Button
                     type='button'
                     variant='outline'
                     disabled={passwordSaving}
                     onClick={() => setPasswordForm({ currentPassword: '', newPassword: '', confirmPassword: '' })}
                   >
                     重置
-                  </AppButton>
-                  <AppButton type='submit' disabled={passwordSaving}>
+                  </Button>
+                  <Button type='submit' disabled={passwordSaving}>
                     {passwordSaving ? '更新中…' : '更新密码'}
-                  </AppButton>
+                  </Button>
                 </CardFooter>
               </form>
             </Card>
           </TabsContent>
           <TabsContent value='storage'>
             <Card>
-              <CardContent className='dn-storage-info'>
+              <CardContent className={cx('dn-storage-info')}>
                 <Database aria-hidden='true' />
                 <div>
                   <h2>Go 本地持久化</h2>

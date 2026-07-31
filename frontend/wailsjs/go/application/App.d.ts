@@ -29,8 +29,6 @@ export function GetSettings():Promise<settings.AppSettings>;
 
 export function GetSystemNotificationStatus():Promise<application.SystemNotificationStatus>;
 
-export function Greet(arg1:string):Promise<string>;
-
 export function ImportDnAvatar(arg1:string):Promise<string>;
 
 export function InitializeDnWeeklyPlans():Promise<dn.WeeklyPlanInitializationResult>;

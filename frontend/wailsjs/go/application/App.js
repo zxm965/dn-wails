@@ -50,10 +50,6 @@ export function GetSystemNotificationStatus() {
   return window['go']['application']['App']['GetSystemNotificationStatus']();
 }
 
-export function Greet(arg1) {
-  return window['go']['application']['App']['Greet'](arg1);
-}
-
 export function ImportDnAvatar(arg1) {
   return window['go']['application']['App']['ImportDnAvatar'](arg1);
 }

@@ -13,7 +13,7 @@
 
 - 桌面框架：Wails v2。
 - 后端：Go。
-- 前端：React、TypeScript、Vite。
+- 前端：React、TypeScript、Vite、vanilla-extract。
 - 包管理器：pnpm。
 - 前端检查：oxfmt、oxlint、TypeScript、Vite build。
 - Go 检查：gofmt、`go test ./...`。
@@ -96,13 +96,16 @@ main
 
 ## 样式与界面约定
 
-- 继续使用项目现有的普通 CSS 方案，不为单个需求引入 CSS-in-JS、CSS Modules、Tailwind 或 SCSS。
-- 类名必须语义清晰、稳定、可搜索，避免过深的结构选择器。
-- 禁止使用不利于搜索和 IDE 识别的 `&-xxx` 命名拼接。
+- 组件和页面样式统一使用 vanilla-extract，并以 `Component.css.ts` 与对应组件或页面就近共置；禁止新增普通 `.css`、CSS Modules、Tailwind、SCSS 或其他样式方案。
+- `frontend/src/app/styles/` 只存放字体、重置、主题令牌等全局基础样式；业务功能和共享组件不得把局部样式集中到全局文件。
+- 组件局部样式必须优先使用 `style`、`styleVariants`、`keyframes` 等局部 API。只有 `html`、`body`、`:root`、第三方组件状态、复杂后代关系或平台专用选择器等无法由单一局部类表达的规则才使用 `globalStyle`。
+- `shared/components/ui` 中每个 UI 组件必须维护自己的同名 `.css.ts`，禁止新增集中承载全部 UI 规则的 `ui.css.ts`。
+- 局部类名通过样式模块导出并由组件显式接入，不得依赖手写全局业务类名；复杂选择器必须引用 vanilla-extract 生成的局部类。
+- 样式名称必须语义清晰、稳定、可搜索，避免过深的结构选择器。
 - UI 改动必须考虑窄窗口、文本溢出、禁用状态、加载状态、错误状态、键盘焦点和 reduced motion。
 - 应用内所有页面必须支持响应式布局；优先基于右侧内容区域使用 CSS Container Queries，避免侧边栏宽度让仅依赖 viewport 的媒体查询失真。
-- 页面必须至少检查常规桌面尺寸、`720 × 520` 最小窗口和极窄内容宽度；卡片、表单、操作按钮、长文本与弹层不得造成整页横向滚动。
-- 应用内按钮必须使用 `frontend/src/shared/components/button/AppButton`，尺寸只允许 `sm`、`md`、`lg`，对应高度为 28px、32px、36px。普通页面操作按钮必须省略 `size` 并跟随偏好设置中的默认尺寸（默认 `md`）；只有侧栏、标题栏、分类切换、紧凑关闭等具有固定结构或交互语义的按钮才显式传入尺寸。禁止业务模块直接渲染原生 `<button>` 或定义其他按钮高度。
+- 页面必须至少检查常规桌面尺寸、`1024 × 768` 最小窗口和极窄内容宽度；卡片、表单、操作按钮、长文本与弹层不得造成整页横向滚动。
+- 应用内按钮必须使用 `frontend/src/shared/components/ui/Button`，尺寸只允许 `sm`、`md`、`lg`，对应高度为 28px、32px、36px。普通页面操作按钮必须省略 `size` 并跟随偏好设置中的默认尺寸（默认 `md`）；只有侧栏、标题栏、分类切换、紧凑关闭等具有固定结构或交互语义的按钮才显式传入尺寸。禁止业务模块直接渲染原生 `<button>` 或定义其他按钮高度。
 - 保持 Wails 自定义标题栏的拖拽区域与交互控件边界，按钮区域不得误设为可拖拽。
 - 原生系统 UI 的最终外观由操作系统控制；应用内预览不能作为原生交互验证的替代。
 

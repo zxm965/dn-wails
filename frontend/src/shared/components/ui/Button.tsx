@@ -1,13 +1,17 @@
 import { forwardRef, type ButtonHTMLAttributes, type MouseEvent } from 'react'
 
-import './AppButton.css'
+import { createScopedClassNames } from '@/shared/lib/classNames'
 
-export type AppButtonSize = 'sm' | 'md' | 'lg'
-export type AppButtonVariant = 'primary' | 'secondary' | 'outline' | 'ghost' | 'danger'
+import { classes as styles } from './Button.css'
 
-export interface AppButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
-  size?: AppButtonSize
-  variant?: AppButtonVariant
+const cx = createScopedClassNames(styles)
+
+export type ButtonSize = 'sm' | 'md' | 'lg'
+export type ButtonVariant = 'primary' | 'secondary' | 'outline' | 'ghost' | 'danger'
+
+export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
+  size?: ButtonSize
+  variant?: ButtonVariant
   ripple?: boolean
 }
 
@@ -22,7 +26,7 @@ function createButtonRipple(element: HTMLButtonElement, event: MouseEvent<HTMLBu
   const originX = hasPointerPosition ? event.clientX - rect.left : rect.width / 2
   const originY = hasPointerPosition ? event.clientY - rect.top : rect.height / 2
   const wave = document.createElement('span')
-  wave.className = 'app-button-ripple'
+  wave.className = cx('ui-button-ripple')
   wave.style.width = `${size}px`
   wave.style.height = `${size}px`
   wave.style.left = `${originX - size / 2}px`
@@ -34,11 +38,11 @@ function createButtonRipple(element: HTMLButtonElement, event: MouseEvent<HTMLBu
   element.appendChild(wave)
 }
 
-export const AppButton = forwardRef<HTMLButtonElement, AppButtonProps>(function AppButton(
+export const Button = forwardRef<HTMLButtonElement, ButtonProps>(function Button(
   { size, variant = 'primary', ripple = true, className, disabled, onClick, ...props },
   ref,
 ) {
-  const resolvedClassName = ['app-button', `app-button-${variant}`, className].filter(Boolean).join(' ')
+  const resolvedClassName = ['ui-button', `ui-button-${variant}`, className].filter(Boolean).join(' ')
 
   function handleClick(event: MouseEvent<HTMLButtonElement>) {
     if (ripple && !disabled && event.currentTarget.getAttribute('aria-disabled') !== 'true') {
@@ -51,7 +55,7 @@ export const AppButton = forwardRef<HTMLButtonElement, AppButtonProps>(function 
     <button
       {...props}
       ref={ref}
-      className={resolvedClassName}
+      className={cx(resolvedClassName)}
       data-button-size={size}
       disabled={disabled}
       onClick={handleClick}

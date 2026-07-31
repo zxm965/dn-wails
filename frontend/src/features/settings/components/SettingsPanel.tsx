@@ -1,10 +1,13 @@
-import { AppButton } from '@/shared/components/button'
+import { Button } from '@/shared/components/ui'
 import { useFeedback } from '@/shared/feedback'
+import { createScopedClassNames } from '@/shared/lib/classNames'
 
 import { type AccentColor, type AppSettings, type ButtonSize, type Density, type ThemeMode } from '../api/settingsApi'
 import { useSettings } from '../context/SettingsProvider'
 
-import './SettingsPanel.css'
+import { classes as styles } from './SettingsPanel.css'
+
+const cx = createScopedClassNames(styles)
 
 const THEME_OPTIONS: Array<{ value: ThemeMode; label: string }> = [
   { value: 'system', label: '跟随系统' },
@@ -76,53 +79,53 @@ export function SettingsPanel() {
   }
 
   if (isLoading) {
-    return <div className='settings-state'>正在读取应用设置…</div>
+    return <div className={cx('settings-state')}>正在读取应用设置…</div>
   }
 
   return (
-    <div className='settings-panel'>
-      <header className='settings-heading'>
+    <div className={cx('settings-panel')}>
+      <header className={cx('settings-heading')}>
         <div>
           <p>Preferences</p>
           <h1>设置与外观</h1>
           <span>设置会保存到当前用户的应用配置目录。</span>
         </div>
-        <div className='settings-heading-actions'>
-          <span className='settings-save-status' aria-live='polite'>
+        <div className={cx('settings-heading-actions')}>
+          <span className={cx('settings-save-status')} aria-live='polite'>
             {isSaving ? '正在同步…' : '修改自动保存'}
           </span>
-          <AppButton
-            className='settings-button settings-button-secondary'
+          <Button
+            className={cx('settings-button settings-button-secondary')}
             variant='outline'
             type='button'
             onClick={handleReset}
             disabled={isSaving}
           >
             恢复默认
-          </AppButton>
+          </Button>
         </div>
       </header>
 
       {error && (
-        <p className='settings-error' role='alert'>
+        <p className={cx('settings-error')} role='alert'>
           {error}
         </p>
       )}
 
-      <section className='settings-section'>
-        <div className='settings-section-title'>
+      <section className={cx('settings-section')}>
+        <div className={cx('settings-section-title')}>
           <h2>主题与外观</h2>
           <p>控制应用配色、强调色、界面密度、默认按钮尺寸和文字缩放。</p>
         </div>
 
-        <div className='settings-grid'>
-          <fieldset className='settings-fieldset'>
+        <div className={cx('settings-grid')}>
+          <fieldset className={cx('settings-fieldset')}>
             <legend>主题模式</legend>
-            <div className='settings-segmented'>
+            <div className={cx('settings-segmented')}>
               {THEME_OPTIONS.map((option) => (
                 <label
                   key={option.value}
-                  className={settings.appearance.themeMode === option.value ? 'is-selected' : ''}
+                  className={cx(settings.appearance.themeMode === option.value ? 'is-selected' : '')}
                 >
                   <input
                     type='radio'
@@ -137,9 +140,9 @@ export function SettingsPanel() {
             </div>
           </fieldset>
 
-          <fieldset className='settings-fieldset'>
+          <fieldset className={cx('settings-fieldset')}>
             <legend>强调色</legend>
-            <div className='settings-accents'>
+            <div className={cx('settings-accents')}>
               {ACCENT_OPTIONS.map((option) => (
                 <label key={option.value} title={option.label}>
                   <input
@@ -149,14 +152,14 @@ export function SettingsPanel() {
                     checked={settings.appearance.accent === option.value}
                     onChange={() => updateAppearance('accent', option.value)}
                   />
-                  <span className={`settings-accent is-${option.value}`} aria-hidden='true' />
+                  <span className={cx(`settings-accent is-${option.value}`)} aria-hidden='true' />
                   <span>{option.label}</span>
                 </label>
               ))}
             </div>
           </fieldset>
 
-          <label className='settings-field'>
+          <label className={cx('settings-field')}>
             <span>界面密度</span>
             <select
               value={settings.appearance.density}
@@ -167,13 +170,13 @@ export function SettingsPanel() {
             </select>
           </label>
 
-          <fieldset className='settings-fieldset'>
+          <fieldset className={cx('settings-fieldset')}>
             <legend>默认按钮尺寸</legend>
-            <div className='settings-segmented'>
+            <div className={cx('settings-segmented')}>
               {BUTTON_SIZE_OPTIONS.map((option) => (
                 <label
                   key={option.value}
-                  className={settings.appearance.buttonSize === option.value ? 'is-selected' : ''}
+                  className={cx(settings.appearance.buttonSize === option.value ? 'is-selected' : '')}
                 >
                   <input
                     type='radio'
@@ -188,7 +191,7 @@ export function SettingsPanel() {
             </div>
           </fieldset>
 
-          <label className='settings-field settings-range'>
+          <label className={cx('settings-field settings-range')}>
             <span>文字缩放：{Math.round(settings.appearance.fontScale * 100)}%</span>
             <input
               type='range'
@@ -202,12 +205,12 @@ export function SettingsPanel() {
         </div>
       </section>
 
-      <section className='settings-section'>
-        <div className='settings-section-title'>
+      <section className={cx('settings-section')}>
+        <div className={cx('settings-section-title')}>
           <h2>系统通知</h2>
           <p>控制应用是否发送通知以及是否展示消息正文。</p>
         </div>
-        <div className='settings-toggles'>
+        <div className={cx('settings-toggles')}>
           <ToggleRow
             title='启用系统通知'
             description='关闭后，业务消息不会发送到系统通知中心。'
@@ -231,13 +234,13 @@ export function SettingsPanel() {
         </div>
       </section>
 
-      <section className='settings-section'>
-        <div className='settings-section-title'>
+      <section className={cx('settings-section')}>
+        <div className={cx('settings-section-title')}>
           <h2>窗口行为</h2>
           <p>窗口位置和大小会在正常关闭时保存。</p>
         </div>
-        <div className='settings-grid'>
-          <label className='settings-field'>
+        <div className={cx('settings-grid')}>
+          <label className={cx('settings-field')}>
             <span>关闭窗口时</span>
             <select
               value={settings.window.closeBehavior}
@@ -250,7 +253,7 @@ export function SettingsPanel() {
             </select>
           </label>
         </div>
-        <div className='settings-toggles'>
+        <div className={cx('settings-toggles')}>
           <ToggleRow
             title='窗口始终置顶'
             description='切换后立即应用到主窗口。'
@@ -279,7 +282,7 @@ interface ToggleRowProps {
 
 function ToggleRow({ title, description, checked, disabled = false, onChange }: ToggleRowProps) {
   return (
-    <label className={`settings-toggle-row${disabled ? ' is-disabled' : ''}`}>
+    <label className={cx(`settings-toggle-row${disabled ? ' is-disabled' : ''}`)}>
       <span>
         <strong>{title}</strong>
         <small>{description}</small>
@@ -290,7 +293,7 @@ function ToggleRow({ title, description, checked, disabled = false, onChange }: 
         disabled={disabled}
         onChange={(event) => onChange(event.target.checked)}
       />
-      <span className='settings-switch' aria-hidden='true' />
+      <span className={cx('settings-switch')} aria-hidden='true' />
     </label>
   )
 }

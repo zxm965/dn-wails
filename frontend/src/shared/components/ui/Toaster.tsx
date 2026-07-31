@@ -1,6 +1,8 @@
-import { CircleCheck, Info, LoaderCircle, OctagonX, TriangleAlert } from 'lucide-react'
+import { CircleCheck, Info, OctagonX, TriangleAlert } from 'lucide-react'
 import { useSyncExternalStore } from 'react'
 import { Toaster as Sonner, type ToasterProps } from 'sonner'
+
+import { SpinnerIcon } from './Spinner'
 
 function subscribeTheme(callback: () => void) {
   const observer = new MutationObserver(callback)
@@ -26,7 +28,7 @@ export function Toaster(props: ToasterProps) {
         info: <Info aria-hidden='true' />,
         warning: <TriangleAlert aria-hidden='true' />,
         error: <OctagonX aria-hidden='true' />,
-        loading: <LoaderCircle className='ui-spin' aria-hidden='true' />,
+        loading: <SpinnerIcon aria-hidden='true' />,
       }}
       toastOptions={{
         style: {

@@ -45,7 +45,7 @@ Toast 支持 `info`、`success`、`warning`、`error`。`duration: 0` 表示不�
 - Provider 卸载时会结束未完成的确认 Promise。
 - 原生系统对话框属于 Native Kit，不由本模块替代。
 - 窄窗口下 Toast 使用左右安全间距并占满可用宽度；确认按钮在极窄宽度下改为纵向全宽布局。
-- Toast 颜色、边框和背景读取应用主题变量；确认和取消操作使用 `AppButton` 并跟随用户配置的默认按钮尺寸。
+- Toast 颜色、边框和背景读取应用主题变量；确认和取消操作使用 `Button` 并跟随用户配置的默认按钮尺寸。
 
 ## 验证
 

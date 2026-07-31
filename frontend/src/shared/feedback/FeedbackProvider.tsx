@@ -1,7 +1,6 @@
 import { createContext, type ReactNode, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react'
 import { toast } from 'sonner'
 
-import { AppButton } from '@/shared/components/button'
 import {
   AlertDialog,
   AlertDialogContent,
@@ -9,6 +8,7 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
+  Button,
   Toaster,
 } from '@/shared/components/ui'
 
@@ -112,16 +112,16 @@ export function FeedbackProvider({ children }: { children: ReactNode }) {
               <AlertDialogDescription>{confirmation.message}</AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>
-              <AppButton variant='outline' type='button' onClick={() => finishConfirmation(false)}>
+              <Button variant='outline' type='button' onClick={() => finishConfirmation(false)}>
                 {confirmation.cancelLabel ?? '取消'}
-              </AppButton>
-              <AppButton
+              </Button>
+              <Button
                 variant={confirmation.tone === 'danger' ? 'danger' : 'primary'}
                 type='button'
                 onClick={() => finishConfirmation(true)}
               >
                 {confirmation.confirmLabel ?? '确认'}
-              </AppButton>
+              </Button>
             </AlertDialogFooter>
           </AlertDialogContent>
         </AlertDialog>

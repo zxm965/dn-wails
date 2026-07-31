@@ -93,6 +93,12 @@ func TestServiceRejectsInvalidSettings(t *testing.T) {
 	if _, err := service.Update(value); !errors.Is(err, ErrInvalidSettings) {
 		t.Fatalf("expected invalid button size error, got %v", err)
 	}
+
+	value.Appearance.ButtonSize = ButtonSizeMD
+	value.Window.Bounds = &WindowBounds{Width: 1023, Height: 768}
+	if _, err := service.Update(value); !errors.Is(err, ErrInvalidSettings) {
+		t.Fatalf("expected invalid window bounds error, got %v", err)
+	}
 }
 
 func TestServiceMigratesVersionOneButtonSize(t *testing.T) {

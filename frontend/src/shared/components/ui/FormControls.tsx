@@ -4,24 +4,29 @@ import { Check, Eye, EyeOff } from 'lucide-react'
 import type { InputHTMLAttributes, LabelHTMLAttributes, SelectHTMLAttributes, TextareaHTMLAttributes } from 'react'
 import { useState } from 'react'
 
-import { AppButton } from '@/shared/components/button'
-import { classNames } from '@/shared/lib/classNames'
+import { createScopedClassNames } from '@/shared/lib/classNames'
+
+import { Button } from './Button'
+
+import { classes as styles } from './FormControls.css'
+
+const cx = createScopedClassNames(styles)
 
 export function Label({ className, ...props }: LabelHTMLAttributes<HTMLLabelElement>) {
-  return <label data-ui='label' className={classNames('ui-label', className)} {...props} />
+  return <label data-ui='label' className={cx('ui-label', className)} {...props} />
 }
 
 export function Input({ className, ...props }: InputHTMLAttributes<HTMLInputElement>) {
-  return <input data-ui='input' className={classNames('ui-input', className)} {...props} />
+  return <input data-ui='input' className={cx('ui-input', className)} {...props} />
 }
 
 export function PasswordInput({ className, ...props }: Omit<InputHTMLAttributes<HTMLInputElement>, 'type'>) {
   const [visible, setVisible] = useState(false)
   return (
-    <span className={classNames('ui-password-input', className)}>
-      <Input {...props} className='ui-password-input-control' type={visible ? 'text' : 'password'} />
-      <AppButton
-        className='ui-password-input-toggle'
+    <span className={cx('ui-password-input', className)}>
+      <Input {...props} className={cx('ui-password-input-control')} type={visible ? 'text' : 'password'} />
+      <Button
+        className={cx('ui-password-input-toggle')}
         size='sm'
         variant='ghost'
         type='button'
@@ -30,18 +35,18 @@ export function PasswordInput({ className, ...props }: Omit<InputHTMLAttributes<
         onClick={() => setVisible((current) => !current)}
       >
         {visible ? <EyeOff aria-hidden='true' /> : <Eye aria-hidden='true' />}
-      </AppButton>
+      </Button>
     </span>
   )
 }
 
 export function Textarea({ className, ...props }: TextareaHTMLAttributes<HTMLTextAreaElement>) {
-  return <textarea data-ui='textarea' className={classNames('ui-input', 'ui-textarea', className)} {...props} />
+  return <textarea data-ui='textarea' className={cx('ui-input', 'ui-textarea', className)} {...props} />
 }
 
 export function Select({ className, children, ...props }: SelectHTMLAttributes<HTMLSelectElement>) {
   return (
-    <select data-ui='select' className={classNames('ui-input', 'ui-select', className)} {...props}>
+    <select data-ui='select' className={cx('ui-input', 'ui-select', className)} {...props}>
       {children}
     </select>
   )
@@ -49,12 +54,10 @@ export function Select({ className, children, ...props }: SelectHTMLAttributes<H
 
 export function Checkbox({ className, ...props }: CheckboxPrimitive.Root.Props) {
   const resolvedClassName: CheckboxPrimitive.Root.Props['className'] =
-    typeof className === 'function'
-      ? (state) => classNames('ui-checkbox', className(state))
-      : classNames('ui-checkbox', className)
+    typeof className === 'function' ? (state) => cx('ui-checkbox', className(state)) : cx('ui-checkbox', className)
   return (
     <CheckboxPrimitive.Root data-ui='checkbox' className={resolvedClassName} {...props}>
-      <CheckboxPrimitive.Indicator className='ui-checkbox-indicator'>
+      <CheckboxPrimitive.Indicator className={cx('ui-checkbox-indicator')}>
         <Check aria-hidden='true' />
       </CheckboxPrimitive.Indicator>
     </CheckboxPrimitive.Root>
@@ -63,12 +66,10 @@ export function Checkbox({ className, ...props }: CheckboxPrimitive.Root.Props) 
 
 export function Switch({ className, ...props }: SwitchPrimitive.Root.Props) {
   const resolvedClassName: SwitchPrimitive.Root.Props['className'] =
-    typeof className === 'function'
-      ? (state) => classNames('ui-switch', className(state))
-      : classNames('ui-switch', className)
+    typeof className === 'function' ? (state) => cx('ui-switch', className(state)) : cx('ui-switch', className)
   return (
     <SwitchPrimitive.Root data-ui='switch' className={resolvedClassName} {...props}>
-      <SwitchPrimitive.Thumb className='ui-switch-thumb' />
+      <SwitchPrimitive.Thumb className={cx('ui-switch-thumb')} />
     </SwitchPrimitive.Root>
   )
 }

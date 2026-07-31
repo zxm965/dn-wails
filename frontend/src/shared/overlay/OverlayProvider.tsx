@@ -9,8 +9,11 @@ import {
   DialogTitle,
   type DialogSize,
 } from '@/shared/components/ui'
+import { createScopedClassNames } from '@/shared/lib/classNames'
 
-import './OverlayProvider.css'
+import { classes as styles } from './OverlayProvider.css'
+
+const cx = createScopedClassNames(styles)
 
 export type OverlaySize = 'small' | 'medium' | 'large'
 
@@ -106,7 +109,7 @@ export function OverlayProvider({ children }: { children: ReactNode }) {
                 <DialogDescription>应用内子视图</DialogDescription>
               </DialogHeader>
             )}
-            <DialogBody className='overlay-content'>
+            <DialogBody className={cx('overlay-content')}>
               {overlay.render({ close: () => closeOverlay(overlay.id) })}
             </DialogBody>
           </DialogContent>

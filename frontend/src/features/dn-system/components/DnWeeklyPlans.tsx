@@ -1,9 +1,9 @@
 import { Pencil, Plus, RefreshCw, Search, Sparkles, Trash2, X } from 'lucide-react'
 import { type FormEvent, type ReactNode, useCallback, useEffect, useMemo, useState } from 'react'
 
-import { AppButton } from '@/shared/components/button'
 import {
   Badge,
+  Button,
   Card,
   CardContent,
   CardFooter,
@@ -26,6 +26,7 @@ import {
   Textarea,
 } from '@/shared/components/ui'
 import { useFeedback } from '@/shared/feedback'
+import { createScopedClassNames } from '@/shared/lib/classNames'
 
 import {
   deleteWeeklyPlan,
@@ -54,6 +55,10 @@ import {
   WEEKLY_FLAGS,
   type WeeklyFlagKey,
 } from '../model/dnSystem'
+
+import { classes as styles } from './DnSystem.css'
+
+const cx = createScopedClassNames(styles)
 
 const emptyMeta: ListMeta = { total: 0, totalPages: 0, page: 1, pageSize: 20 }
 const emptyFilters = { roleName: '', profession: '', priority: -1, nestCommission: '', roleProfessionId: 0 }
@@ -239,26 +244,26 @@ export function DnWeeklyPlans({ onNavigateRoles }: { onNavigateRoles: () => void
   }
 
   return (
-    <div className='dn-page'>
+    <div className={cx('dn-page')}>
       <PageHeader
         title='周计划'
         subtitle='按角色维护本周任务完成状态。'
         actions={
           <>
-            <AppButton variant='outline' disabled={loading} onClick={() => void syncRoles()}>
+            <Button variant='outline' disabled={loading} onClick={() => void syncRoles()}>
               <RefreshCw aria-hidden='true' />
               同步角色
-            </AppButton>
-            <AppButton variant='outline' disabled={loading} onClick={() => void resetWeek()}>
+            </Button>
+            <Button variant='outline' disabled={loading} onClick={() => void resetWeek()}>
               <Sparkles aria-hidden='true' />
               重置任务
-            </AppButton>
+            </Button>
           </>
         }
       />
 
       {showWeeklyRefreshTip && (
-        <div className='dn-alert dn-alert-warning'>
+        <div className={cx('dn-alert dn-alert-warning')}>
           <strong>周任务已更新</strong>
           <span>请及时核对巢穴委托、巢穴票和每日疲劳状态。</span>
         </div>
@@ -266,7 +271,7 @@ export function DnWeeklyPlans({ onNavigateRoles }: { onNavigateRoles: () => void
 
       <Card>
         <CardHeader>
-          <div className='dn-filter-grid dn-weekly-filter-grid'>
+          <div className={cx('dn-filter-grid dn-weekly-filter-grid')}>
             <Field label='角色'>
               <Input
                 value={filters.roleName}
@@ -307,20 +312,20 @@ export function DnWeeklyPlans({ onNavigateRoles }: { onNavigateRoles: () => void
                 onChange={(event) => setFilters((current) => ({ ...current, nestCommission: event.target.value }))}
               />
             </Field>
-            <div className='dn-filter-actions'>
-              <AppButton variant='secondary' disabled={loading} onClick={applyFilters}>
+            <div className={cx('dn-filter-actions')}>
+              <Button variant='secondary' disabled={loading} onClick={applyFilters}>
                 <Search aria-hidden='true' />
                 搜索
-              </AppButton>
-              <AppButton variant='outline' onClick={resetFilters}>
+              </Button>
+              <Button variant='outline' onClick={resetFilters}>
                 重置
-              </AppButton>
+              </Button>
             </div>
           </div>
         </CardHeader>
         <CardContent>
           {items.length ? (
-            <div className='dn-plan-grid'>
+            <div className={cx('dn-plan-grid')}>
               {items.map((plan) => (
                 <PlanCard
                   key={plan.id}
@@ -351,10 +356,10 @@ export function DnWeeklyPlans({ onNavigateRoles }: { onNavigateRoles: () => void
             <ListState loading={loading} emptyText={roles.length ? '暂无周计划记录' : '请先创建角色，再同步周计划'} />
           )}
           {!loading && !roles.length && (
-            <div className='dn-empty-action'>
-              <AppButton variant='outline' onClick={onNavigateRoles}>
+            <div className={cx('dn-empty-action')}>
+              <Button variant='outline' onClick={onNavigateRoles}>
                 前往创建角色
-              </AppButton>
+              </Button>
             </div>
           )}
         </CardContent>
@@ -378,7 +383,7 @@ export function DnWeeklyPlans({ onNavigateRoles }: { onNavigateRoles: () => void
 
 function Field({ label, children }: { label: string; children: ReactNode }) {
   return (
-    <label className='dn-field'>
+    <label className={cx('dn-field')}>
       <Label>{label}</Label>
       {children}
     </label>
@@ -406,55 +411,55 @@ function PlanCard({
 }) {
   const priority = priorityMeta(plan.priority)
   return (
-    <article className={`dn-plan-card${updating ? ' is-updating' : ''}`}>
-      <div className='dn-card-heading-row'>
+    <article className={cx(`dn-plan-card${updating ? ' is-updating' : ''}`)}>
+      <div className={cx('dn-card-heading-row')}>
         <div>
           <strong>{plan.roleName}</strong>
           <span>{plan.profession || '未设置职业'}</span>
         </div>
         <Badge tone={priority.tone}>{priority.label}</Badge>
       </div>
-      {plan.remark && <p className='dn-plan-remark'>{plan.remark}</p>}
+      {plan.remark && <p className={cx('dn-plan-remark')}>{plan.remark}</p>}
 
-      <section className='dn-plan-section'>
-        <div className='dn-section-heading'>
+      <section className={cx('dn-plan-section')}>
+        <div className={cx('dn-section-heading')}>
           <span>巢穴委托</span>
-          <AppButton size='sm' variant='ghost' aria-label='编辑巢穴委托' onClick={onEdit}>
+          <Button size='sm' variant='ghost' aria-label='编辑巢穴委托' onClick={onEdit}>
             <Pencil aria-hidden='true' />
-          </AppButton>
+          </Button>
         </div>
-        <div className='dn-status-grid'>
+        <div className={cx('dn-status-grid')}>
           {plan.nestCommissions.map((item) => (
-            <AppButton
+            <Button
               key={item.id}
               size='sm'
               variant='outline'
-              className={item.completed ? 'dn-status-toggle is-selected' : 'dn-status-toggle'}
+              className={cx(item.completed ? 'dn-status-toggle is-selected' : 'dn-status-toggle')}
               aria-pressed={item.completed}
               disabled={updating}
               onClick={() => onToggleCommission(item.id)}
             >
               {getNestLabel(item.id)}
-            </AppButton>
+            </Button>
           ))}
-          {!plan.nestCommissions.length && <span className='dn-muted'>暂无</span>}
+          {!plan.nestCommissions.length && <span className={cx('dn-muted')}>暂无</span>}
         </div>
       </section>
 
-      <section className='dn-plan-section'>
-        <div className='dn-section-heading'>
+      <section className={cx('dn-plan-section')}>
+        <div className={cx('dn-section-heading')}>
           <span>巢穴票</span>
-          <AppButton size='sm' variant='ghost' aria-label='编辑巢穴票' onClick={onEdit}>
+          <Button size='sm' variant='ghost' aria-label='编辑巢穴票' onClick={onEdit}>
             <Pencil aria-hidden='true' />
-          </AppButton>
+          </Button>
         </div>
-        <div className='dn-ticket-chips'>
+        <div className={cx('dn-ticket-chips')}>
           {plan.nestTickets.map((ticket, index) => (
             <span key={`${ticket.id}-${ticket.expiresAt}-${index}`}>
               <Badge>
                 {getNestLabel(ticket.id)} · {ticket.expiresAt}
               </Badge>
-              <AppButton
+              <Button
                 size='sm'
                 variant='ghost'
                 aria-label='删除巢穴票'
@@ -462,14 +467,14 @@ function PlanCard({
                 onClick={() => onDeleteTicket(index)}
               >
                 <X aria-hidden='true' />
-              </AppButton>
+              </Button>
             </span>
           ))}
-          {!plan.nestTickets.length && <span className='dn-muted'>暂无</span>}
+          {!plan.nestTickets.length && <span className={cx('dn-muted')}>暂无</span>}
         </div>
       </section>
 
-      <div className='dn-plan-flags'>
+      <div className={cx('dn-plan-flags')}>
         <label>
           <span>每日疲劳</span>
           <Switch checked={plan.levelCommissionCount > 0} disabled={updating} onCheckedChange={onToggleDaily} />
@@ -482,15 +487,15 @@ function PlanCard({
         ))}
       </div>
 
-      <div className='dn-row-actions'>
-        <AppButton size='sm' variant='ghost' onClick={onEdit}>
+      <div className={cx('dn-row-actions')}>
+        <Button size='sm' variant='ghost' onClick={onEdit}>
           <Pencil aria-hidden='true' />
           编辑
-        </AppButton>
-        <AppButton size='sm' variant='ghost' className='dn-danger-action' onClick={onDelete}>
+        </Button>
+        <Button size='sm' variant='ghost' className={cx('dn-danger-action')} onClick={onDelete}>
           <Trash2 aria-hidden='true' />
           删除
-        </AppButton>
+        </Button>
       </div>
     </article>
   )
@@ -547,8 +552,8 @@ function PlanEditor({
               <DialogTitle>编辑周计划</DialogTitle>
               <DialogDescription>更新角色关联、巢穴任务、票券和完成状态。</DialogDescription>
             </DialogHeader>
-            <DialogBody className='dn-plan-editor'>
-              <div className='dn-form-grid'>
+            <DialogBody className={cx('dn-plan-editor')}>
+              <div className={cx('dn-form-grid')}>
                 <Field label='角色职业'>
                   <Select
                     value={form.roleProfessionId}
@@ -569,23 +574,23 @@ function PlanEditor({
                     onChange={(event) => update('sortOrder', Number(event.target.value || 0))}
                   />
                 </Field>
-                <label className='dn-field dn-form-full'>
+                <label className={cx('dn-field dn-form-full')}>
                   <Label>备注</Label>
                   <Textarea value={form.remark} onChange={(event) => update('remark', event.target.value)} />
                 </label>
               </div>
 
               <section>
-                <div className='dn-section-heading'>
+                <div className={cx('dn-section-heading')}>
                   <strong>巢穴委托</strong>
                   <span>{form.nestCommissions.length}/6</span>
                 </div>
-                <div className='dn-nest-picker'>
+                <div className={cx('dn-nest-picker')}>
                   {NEST_OPTIONS.map((nest) => {
                     const checked = form.nestCommissions.some((item) => item.id === nest.id)
                     const disabled = !checked && form.nestCommissions.length >= 6
                     return (
-                      <label key={nest.id} className={checked ? 'is-selected' : undefined}>
+                      <label key={nest.id} className={cx(checked ? 'is-selected' : undefined)}>
                         <Checkbox
                           checked={checked}
                           disabled={disabled}
@@ -599,9 +604,9 @@ function PlanEditor({
               </section>
 
               <section>
-                <div className='dn-section-heading'>
+                <div className={cx('dn-section-heading')}>
                   <strong>巢穴票</strong>
-                  <AppButton
+                  <Button
                     type='button'
                     size='sm'
                     variant='outline'
@@ -609,9 +614,9 @@ function PlanEditor({
                   >
                     <Plus aria-hidden='true' />
                     新增
-                  </AppButton>
+                  </Button>
                 </div>
-                <div className='dn-ticket-editor'>
+                <div className={cx('dn-ticket-editor')}>
                   {form.nestTickets.map((ticket, index) => (
                     <div key={index}>
                       <Select
@@ -629,10 +634,10 @@ function PlanEditor({
                         placeholder='5-20'
                         onChange={(event) => updateTicket(index, { expiresAt: event.target.value })}
                       />
-                      <AppButton
+                      <Button
                         type='button'
                         variant='ghost'
-                        className='dn-danger-action'
+                        className={cx('dn-danger-action')}
                         onClick={() =>
                           update(
                             'nestTickets',
@@ -642,7 +647,7 @@ function PlanEditor({
                       >
                         <Trash2 aria-hidden='true' />
                         删除
-                      </AppButton>
+                      </Button>
                     </div>
                   ))}
                 </div>
@@ -650,7 +655,7 @@ function PlanEditor({
 
               <section>
                 <strong>完成状态</strong>
-                <div className='dn-editor-switches'>
+                <div className={cx('dn-editor-switches')}>
                   <label>
                     <span>每日疲劳</span>
                     <Switch
@@ -668,12 +673,12 @@ function PlanEditor({
               </section>
             </DialogBody>
             <DialogFooter>
-              <AppButton type='button' variant='outline' disabled={saving} onClick={() => onOpenChange(false)}>
+              <Button type='button' variant='outline' disabled={saving} onClick={() => onOpenChange(false)}>
                 取消
-              </AppButton>
-              <AppButton type='submit' disabled={saving}>
+              </Button>
+              <Button type='submit' disabled={saving}>
                 {saving ? '保存中…' : '保存'}
-              </AppButton>
+              </Button>
             </DialogFooter>
           </form>
         )}

@@ -1,12 +1,14 @@
 import { type FormEvent, useCallback, useMemo, useState } from 'react'
 
 import { useSettings } from '@/features/settings'
-import { AppButton } from '@/shared/components/button'
-import { Badge, Card, Input, Label, Textarea } from '@/shared/components/ui'
+import { Badge, Button, Card, Input, Label, Textarea } from '@/shared/components/ui'
+import { createScopedClassNames } from '@/shared/lib/classNames'
 
 import { type NotificationActivation, useSystemNotification } from '../hooks/useSystemNotification'
 
-import './SystemNotificationPanel.css'
+import { classes as styles } from './SystemNotificationPanel.css'
+
+const cx = createScopedClassNames(styles)
 
 const DEMO_CONVERSATION_ID = 'system-notification-demo'
 const DEFAULT_SENDER = '产品小助手'
@@ -125,51 +127,51 @@ export function SystemNotificationPanel({ embedded = false }: SystemNotification
 
   return (
     <section
-      className={`system-notification-panel${embedded ? ' is-embedded' : ''}`}
+      className={cx(`system-notification-panel${embedded ? ' is-embedded' : ''}`)}
       aria-labelledby='system-notification-title'
     >
-      <div className='system-notification-heading'>
+      <div className={cx('system-notification-heading')}>
         <div>
-          <p className='system-notification-eyebrow'>System notification</p>
+          <p className={cx('system-notification-eyebrow')}>System notification</p>
           {embedded ? (
             <h2 id='system-notification-title'>系统通知</h2>
           ) : (
             <h1 id='system-notification-title'>微信式消息通知</h1>
           )}
-          <p className='system-notification-description'>统一处理系统能力检测、权限申请、消息发送和点击唤醒。</p>
+          <p className={cx('system-notification-description')}>统一处理系统能力检测、权限申请、消息发送和点击唤醒。</p>
         </div>
-        <Badge className={`notification-status ${statusCopy.className}`}>
-          <span className='notification-status-dot' aria-hidden='true' />
+        <Badge className={cx(`notification-status ${statusCopy.className}`)}>
+          <span className={cx('notification-status-dot')} aria-hidden='true' />
           {statusCopy.label}
         </Badge>
       </div>
 
-      <div className='system-notification-grid'>
-        <Card className='message-preview-card' aria-label='消息通知预览'>
-          <div className='message-preview-toolbar'>
+      <div className={cx('system-notification-grid')}>
+        <Card className={cx('message-preview-card')} aria-label='消息通知预览'>
+          <div className={cx('message-preview-toolbar')}>
             <span>消息</span>
-            <span className='message-preview-count'>1</span>
+            <span className={cx('message-preview-count')}>1</span>
           </div>
-          <div className='message-preview-item'>
-            <div className='message-preview-avatar' aria-hidden='true'>
+          <div className={cx('message-preview-item')}>
+            <div className={cx('message-preview-avatar')} aria-hidden='true'>
               {avatarText}
             </div>
-            <div className='message-preview-body'>
-              <div className='message-preview-meta'>
+            <div className={cx('message-preview-body')}>
+              <div className={cx('message-preview-meta')}>
                 <strong>{previewSender}</strong>
                 <time>{previewTime}</time>
               </div>
               <p>{previewContent}</p>
             </div>
-            <span className='message-preview-unread' aria-label='1 条未读消息'>
+            <span className={cx('message-preview-unread')} aria-label='1 条未读消息'>
               1
             </span>
           </div>
-          <p className='message-preview-tip'>系统通知标题使用发送者名称，正文显示消息摘要。</p>
+          <p className={cx('message-preview-tip')}>系统通知标题使用发送者名称，正文显示消息摘要。</p>
         </Card>
 
-        <form className='notification-form' onSubmit={handleSubmit}>
-          <div className='notification-field'>
+        <form className={cx('notification-form')} onSubmit={handleSubmit}>
+          <div className={cx('notification-field')}>
             <Label htmlFor='notification-sender'>发送者</Label>
             <Input
               id='notification-sender'
@@ -180,7 +182,7 @@ export function SystemNotificationPanel({ embedded = false }: SystemNotification
             />
           </div>
 
-          <div className='notification-field'>
+          <div className={cx('notification-field')}>
             <Label htmlFor='notification-content'>消息内容</Label>
             <Textarea
               id='notification-content'
@@ -190,34 +192,34 @@ export function SystemNotificationPanel({ embedded = false }: SystemNotification
               maxLength={500}
               disabled={isSending}
             />
-            <span className='notification-field-counter'>{content.length}/500</span>
+            <span className={cx('notification-field-counter')}>{content.length}/500</span>
           </div>
 
           <p
-            className={`notification-feedback${visibleError ? ' is-error' : ''}`}
+            className={cx(`notification-feedback${visibleError ? ' is-error' : ''}`)}
             role={visibleError ? 'alert' : 'status'}
           >
             {visibleError || feedback}
           </p>
 
-          <div className='notification-actions'>
+          <div className={cx('notification-actions')}>
             {capability === 'permission-required' && settings.notifications.enabled && (
-              <AppButton
-                className='notification-button notification-button-secondary'
+              <Button
+                className={cx('notification-button notification-button-secondary')}
                 type='button'
                 onClick={handlePermissionRequest}
                 disabled={isRequestingPermission}
               >
                 {isRequestingPermission ? '正在申请…' : '开启系统通知'}
-              </AppButton>
+              </Button>
             )}
-            <AppButton
-              className='notification-button notification-button-primary'
+            <Button
+              className={cx('notification-button notification-button-primary')}
               type='submit'
               disabled={capability !== 'ready' || !notificationPolicyReady || isSending}
             >
               {isSending ? '正在发送…' : '发送测试消息'}
-            </AppButton>
+            </Button>
           </div>
         </form>
       </div>

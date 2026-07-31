@@ -1,9 +1,9 @@
 import { LayoutGrid, Pencil, Plus, RefreshCw, Search, Table2, Trash2 } from 'lucide-react'
 import { type FormEvent, type ReactNode, useCallback, useEffect, useState } from 'react'
 
-import { AppButton } from '@/shared/components/button'
 import {
   Badge,
+  Button,
   Card,
   CardContent,
   CardFooter,
@@ -21,9 +21,11 @@ import {
   PageHeader,
   Pagination,
   Select,
+  SpinnerIcon,
   Textarea,
 } from '@/shared/components/ui'
 import { useFeedback } from '@/shared/feedback'
+import { createScopedClassNames } from '@/shared/lib/classNames'
 
 import {
   deleteRole,
@@ -35,6 +37,10 @@ import {
   type RoleProfessionInput,
 } from '../api/dnSystemApi'
 import { PRIORITY_OPTIONS, PROFESSION_OPTIONS, priorityMeta } from '../model/dnSystem'
+
+import { classes as styles } from './DnSystem.css'
+
+const cx = createScopedClassNames(styles)
 
 const emptyMeta: ListMeta = { total: 0, totalPages: 0, page: 1, pageSize: 15 }
 const emptyFilters = { roleName: '', profession: '', priority: -1 }
@@ -137,26 +143,26 @@ export function DnRoles() {
   }
 
   return (
-    <div className='dn-page'>
+    <div className={cx('dn-page')}>
       <PageHeader
         title='角色'
         subtitle='维护周计划所使用的角色和职业。'
         actions={
           <>
-            <AppButton variant='outline' disabled={loading} onClick={() => void load(meta.page)}>
-              <RefreshCw className={loading ? 'ui-spin' : undefined} aria-hidden='true' /> 刷新
-            </AppButton>
-            <AppButton onClick={openCreate}>
+            <Button variant='outline' disabled={loading} onClick={() => void load(meta.page)}>
+              <SpinnerIcon icon={RefreshCw} spinning={loading} aria-hidden='true' /> 刷新
+            </Button>
+            <Button onClick={openCreate}>
               <Plus aria-hidden='true' />
               新增角色
-            </AppButton>
+            </Button>
           </>
         }
       />
 
       <Card>
         <CardHeader>
-          <div className='dn-filter-grid dn-role-filter-grid'>
+          <div className={cx('dn-filter-grid dn-role-filter-grid')}>
             <Field label='角色'>
               <Input
                 value={filters.roleName}
@@ -190,20 +196,20 @@ export function DnRoles() {
                 ))}
               </Select>
             </Field>
-            <div className='dn-filter-actions'>
-              <AppButton variant='secondary' disabled={loading} onClick={applyFilters}>
+            <div className={cx('dn-filter-actions')}>
+              <Button variant='secondary' disabled={loading} onClick={applyFilters}>
                 <Search aria-hidden='true' />
                 搜索
-              </AppButton>
-              <AppButton variant='outline' onClick={resetFilters}>
+              </Button>
+              <Button variant='outline' onClick={resetFilters}>
                 重置
-              </AppButton>
+              </Button>
             </div>
           </div>
         </CardHeader>
         <CardContent>
-          <div className='dn-view-switch' role='group' aria-label='切换角色展示方式'>
-            <AppButton
+          <div className={cx('dn-view-switch')} role='group' aria-label='切换角色展示方式'>
+            <Button
               size='sm'
               variant={view === 'table' ? 'secondary' : 'ghost'}
               aria-pressed={view === 'table'}
@@ -211,8 +217,8 @@ export function DnRoles() {
             >
               <Table2 aria-hidden='true' />
               表格
-            </AppButton>
-            <AppButton
+            </Button>
+            <Button
               size='sm'
               variant={view === 'card' ? 'secondary' : 'ghost'}
               aria-pressed={view === 'card'}
@@ -220,7 +226,7 @@ export function DnRoles() {
             >
               <LayoutGrid aria-hidden='true' />
               卡片
-            </AppButton>
+            </Button>
           </div>
           {items.length ? (
             view === 'table' ? (
@@ -244,7 +250,7 @@ export function DnRoles() {
               <DialogTitle>{form.id ? '编辑角色' : '新增角色'}</DialogTitle>
               <DialogDescription>角色名在本地工作区内不能重复。</DialogDescription>
             </DialogHeader>
-            <DialogBody className='dn-form-grid'>
+            <DialogBody className={cx('dn-form-grid')}>
               <Field label='角色名'>
                 <Input
                   autoFocus
@@ -287,7 +293,7 @@ export function DnRoles() {
                   }
                 />
               </Field>
-              <Field label='备注' className='dn-form-full'>
+              <Field label='备注' className={cx('dn-form-full')}>
                 <Textarea
                   value={form.remark}
                   onChange={(event) => setForm((current) => ({ ...current, remark: event.target.value }))}
@@ -295,12 +301,12 @@ export function DnRoles() {
               </Field>
             </DialogBody>
             <DialogFooter>
-              <AppButton type='button' variant='outline' disabled={saving} onClick={() => setEditorOpen(false)}>
+              <Button type='button' variant='outline' disabled={saving} onClick={() => setEditorOpen(false)}>
                 取消
-              </AppButton>
-              <AppButton type='submit' disabled={saving}>
+              </Button>
+              <Button type='submit' disabled={saving}>
                 {saving ? '保存中…' : '保存'}
-              </AppButton>
+              </Button>
             </DialogFooter>
           </form>
         </DialogContent>
@@ -311,7 +317,7 @@ export function DnRoles() {
 
 function Field({ label, className, children }: { label: string; className?: string; children: ReactNode }) {
   return (
-    <label className={`dn-field${className ? ` ${className}` : ''}`}>
+    <label className={cx(`dn-field${className ? ` ${className}` : ''}`)}>
       <Label>{label}</Label>
       {children}
     </label>
@@ -328,8 +334,8 @@ function RoleTable({
   onDelete: (item: RoleProfession) => void
 }) {
   return (
-    <div className='dn-table-wrap'>
-      <table className='dn-table'>
+    <div className={cx('dn-table-wrap')}>
+      <table className={cx('dn-table')}>
         <thead>
           <tr>
             <th>序号</th>
@@ -355,17 +361,17 @@ function RoleTable({
               <td>
                 <Badge>{item.weeklyPlanCount} 条</Badge>
               </td>
-              <td className='dn-table-remark'>{item.remark || '无备注'}</td>
+              <td className={cx('dn-table-remark')}>{item.remark || '无备注'}</td>
               <td>
-                <div className='dn-row-actions'>
-                  <AppButton size='sm' variant='ghost' onClick={() => onEdit(item)}>
+                <div className={cx('dn-row-actions')}>
+                  <Button size='sm' variant='ghost' onClick={() => onEdit(item)}>
                     <Pencil aria-hidden='true' />
                     编辑
-                  </AppButton>
-                  <AppButton size='sm' variant='ghost' className='dn-danger-action' onClick={() => onDelete(item)}>
+                  </Button>
+                  <Button size='sm' variant='ghost' className={cx('dn-danger-action')} onClick={() => onDelete(item)}>
                     <Trash2 aria-hidden='true' />
                     删除
-                  </AppButton>
+                  </Button>
                 </div>
               </td>
             </tr>
@@ -386,17 +392,17 @@ function RoleCards({
   onDelete: (item: RoleProfession) => void
 }) {
   return (
-    <div className='dn-role-cards'>
+    <div className={cx('dn-role-cards')}>
       {items.map((item) => (
-        <article key={item.id} className='dn-role-card'>
-          <div className='dn-card-heading-row'>
+        <article key={item.id} className={cx('dn-role-card')}>
+          <div className={cx('dn-card-heading-row')}>
             <div>
               <strong>{item.roleName}</strong>
               <span>{item.profession}</span>
             </div>
             <Badge tone={priorityMeta(item.priority).tone}>{priorityMeta(item.priority).label}</Badge>
           </div>
-          <div className='dn-role-stats'>
+          <div className={cx('dn-role-stats')}>
             <span>
               排序<strong>{item.sortOrder}</strong>
             </span>
@@ -405,15 +411,15 @@ function RoleCards({
             </span>
           </div>
           <p>{item.remark || '无备注'}</p>
-          <div className='dn-row-actions'>
-            <AppButton size='sm' variant='ghost' onClick={() => onEdit(item)}>
+          <div className={cx('dn-row-actions')}>
+            <Button size='sm' variant='ghost' onClick={() => onEdit(item)}>
               <Pencil aria-hidden='true' />
               编辑
-            </AppButton>
-            <AppButton size='sm' variant='ghost' className='dn-danger-action' onClick={() => onDelete(item)}>
+            </Button>
+            <Button size='sm' variant='ghost' className={cx('dn-danger-action')} onClick={() => onDelete(item)}>
               <Trash2 aria-hidden='true' />
               删除
-            </AppButton>
+            </Button>
           </div>
         </article>
       ))}

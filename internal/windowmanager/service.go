@@ -5,8 +5,8 @@ import "context"
 const (
 	CloseBehaviorQuit = "quit"
 	CloseBehaviorHide = "hide"
-	minimumWidth      = 720
-	minimumHeight     = 520
+	minimumWidth      = 1024
+	minimumHeight     = 768
 )
 
 type Bounds struct {

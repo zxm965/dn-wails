@@ -3,9 +3,10 @@ import { useCallback, useEffect, useState } from 'react'
 import { appConfig } from '@/app/appConfig'
 import { SystemNotificationPanel } from '@/features/system-notification'
 import { useAppLifecycle, type SecondInstanceLaunch } from '@/shared/app-lifecycle'
-import { AppButton } from '@/shared/components/button'
+import { Button } from '@/shared/components/ui'
 import { getDiagnosticsInfo, openDiagnosticsDirectory, type DiagnosticsInfo } from '@/shared/diagnostics'
 import { useFeedback } from '@/shared/feedback'
+import { createScopedClassNames } from '@/shared/lib/classNames'
 import {
   getScreens,
   openExternalURL,
@@ -19,12 +20,17 @@ import {
 import { useOverlay } from '@/shared/overlay'
 import { windowManager } from '@/shared/window'
 
-import './TestToolsPanel.css'
+import { DesktopOverview } from './DesktopOverview'
 
-type ToolCategory = 'interaction' | 'native' | 'notification'
+import { classes as styles } from './TestToolsPanel.css'
+
+const cx = createScopedClassNames(styles)
+
+type ToolCategory = 'overview' | 'interaction' | 'native' | 'notification'
 
 const TOOL_CATEGORIES: Array<{ id: ToolCategory; label: string; description: string }> = [
-  { id: 'interaction', label: '交互与窗口', description: 'Overlay、反馈和主窗口能力' },
+  { id: 'overview', label: '应用概览', description: '运行状态、模块和环境信息' },
+  { id: 'interaction', label: '交互窗口', description: 'Toast、反馈和主窗口能力' },
   { id: 'native', label: '原生能力', description: '文件、剪贴板、屏幕和诊断' },
   { id: 'notification', label: '系统通知', description: '权限、消息预览和点击回传' },
 ]
@@ -32,7 +38,7 @@ const TOOL_CATEGORIES: Array<{ id: ToolCategory; label: string; description: str
 export function TestToolsPanel() {
   const { notify, confirm } = useFeedback()
   const { openOverlay } = useOverlay()
-  const [activeCategory, setActiveCategory] = useState<ToolCategory>('interaction')
+  const [activeCategory, setActiveCategory] = useState<ToolCategory>('overview')
   const [result, setResult] = useState('选择测试操作后，结果会显示在这里。')
   const [droppedFiles, setDroppedFiles] = useState<string[]>([])
   const [diagnostics, setDiagnostics] = useState<DiagnosticsInfo | null>(null)
@@ -77,11 +83,11 @@ export function TestToolsPanel() {
   function openOverlayTest() {
     openOverlay(
       ({ close }) => (
-        <div className='test-tools-overlay-demo'>
+        <div className={cx('test-tools-overlay-demo')}>
           <p>这是应用内 Overlay 子视图。它不会创建新的操作系统窗口。</p>
-          <AppButton className='test-tools-button is-primary' type='button' onClick={close}>
+          <Button className={cx('test-tools-button is-primary')} type='button' onClick={close}>
             关闭子视图
-          </AppButton>
+          </Button>
         </div>
       ),
       { title: 'Overlay 测试', size: 'medium' },
@@ -97,56 +103,58 @@ export function TestToolsPanel() {
   }
 
   return (
-    <section className='test-tools-panel'>
-      <header className='test-tools-heading'>
+    <section className={cx('test-tools-panel')}>
+      <header className={cx('test-tools-heading')}>
         <div>
           <p>System settings</p>
           <h1>测试工具</h1>
           <span>开发和验收阶段使用，不承载正式业务入口。</span>
         </div>
-        <span className='test-tools-badge'>Developer tools</span>
+        <span className={cx('test-tools-badge')}>Developer tools</span>
       </header>
 
-      <div className='test-tools-layout'>
-        <nav className='test-tools-categories' aria-label='测试工具分类'>
+      <div className={cx('test-tools-layout')}>
+        <nav className={cx('test-tools-categories')} aria-label='测试工具分类'>
           {TOOL_CATEGORIES.map((category) => (
-            <AppButton
+            <Button
               key={category.id}
-              className={activeCategory === category.id ? 'is-active' : ''}
+              className={cx(activeCategory === category.id ? 'is-active' : '')}
               size='md'
               type='button'
               onClick={() => setActiveCategory(category.id)}
             >
               <strong>{category.label}</strong>
               <small>{category.description}</small>
-            </AppButton>
+            </Button>
           ))}
         </nav>
 
-        <div className='test-tools-view'>
-          {activeCategory !== 'notification' && (
-            <article className='test-tools-result'>
+        <div className={cx('test-tools-view')}>
+          {activeCategory !== 'overview' && activeCategory !== 'notification' && (
+            <article className={cx('test-tools-result')}>
               <span>最近一次结果</span>
               <p>{result}</p>
             </article>
           )}
 
+          {activeCategory === 'overview' && <DesktopOverview embedded />}
+
           {activeCategory === 'interaction' && (
-            <ToolSection title='交互与窗口' description='验证应用内反馈、子视图和主窗口控制。'>
-              <div className='test-tools-actions'>
-                <AppButton
+            <ToolSection title='交互窗口' description='验证应用内反馈、子视图和主窗口控制。'>
+              <div className={cx('test-tools-actions')}>
+                <Button
                   type='button'
                   onClick={() => notify({ title: 'Toast 测试', message: '应用内反馈模块工作正常。', tone: 'info' })}
                 >
                   显示 Toast
-                </AppButton>
-                <AppButton type='button' onClick={openConfirmTest}>
+                </Button>
+                <Button type='button' onClick={openConfirmTest}>
                   确认对话框
-                </AppButton>
-                <AppButton type='button' onClick={openOverlayTest}>
+                </Button>
+                <Button type='button' onClick={openOverlayTest}>
                   打开 Overlay
-                </AppButton>
-                <AppButton
+                </Button>
+                <Button
                   type='button'
                   onClick={() => {
                     windowManager.center()
@@ -154,8 +162,8 @@ export function TestToolsPanel() {
                   }}
                 >
                   窗口居中
-                </AppButton>
-                <AppButton
+                </Button>
+                <Button
                   type='button'
                   onClick={() =>
                     runAction('读取窗口状态', async () => {
@@ -165,10 +173,10 @@ export function TestToolsPanel() {
                   }
                 >
                   读取窗口状态
-                </AppButton>
+                </Button>
               </div>
 
-              <div className='test-tools-note'>
+              <div className={cx('test-tools-note')}>
                 单实例测试：再次启动当前应用，已有窗口应恢复并显示，结果会记录在本页。
               </div>
             </ToolSection>
@@ -176,14 +184,14 @@ export function TestToolsPanel() {
 
           {activeCategory === 'native' && (
             <ToolSection title='原生能力' description='验证 Wails 文件、剪贴板、屏幕、对话框和系统集成。'>
-              <div className='test-tools-actions'>
-                <AppButton
+              <div className={cx('test-tools-actions')}>
+                <Button
                   type='button'
                   onClick={() => runAction('读取剪贴板', async () => (await readClipboard()) || '剪贴板为空。')}
                 >
                   读取剪贴板
-                </AppButton>
-                <AppButton
+                </Button>
+                <Button
                   type='button'
                   onClick={() =>
                     runAction('写入剪贴板', async () => {
@@ -194,8 +202,8 @@ export function TestToolsPanel() {
                   }
                 >
                   写入剪贴板
-                </AppButton>
-                <AppButton
+                </Button>
+                <Button
                   type='button'
                   onClick={() =>
                     runAction('选择文件', async () => {
@@ -205,14 +213,14 @@ export function TestToolsPanel() {
                   }
                 >
                   选择文件
-                </AppButton>
-                <AppButton
+                </Button>
+                <Button
                   type='button'
                   onClick={() => runAction('选择目录', async () => (await pickDirectory('选择目录')) || '已取消选择。')}
                 >
                   选择目录
-                </AppButton>
-                <AppButton
+                </Button>
+                <Button
                   type='button'
                   onClick={() =>
                     runAction('读取屏幕', async () => {
@@ -227,8 +235,8 @@ export function TestToolsPanel() {
                   }
                 >
                   读取屏幕
-                </AppButton>
-                <AppButton
+                </Button>
+                <Button
                   type='button'
                   onClick={() =>
                     runAction('原生对话框', async () => {
@@ -244,8 +252,8 @@ export function TestToolsPanel() {
                   }
                 >
                   原生对话框
-                </AppButton>
-                <AppButton
+                </Button>
+                <Button
                   type='button'
                   onClick={() =>
                     runAction('打开日志目录', async () => {
@@ -255,8 +263,8 @@ export function TestToolsPanel() {
                   }
                 >
                   打开日志目录
-                </AppButton>
-                <AppButton
+                </Button>
+                <Button
                   type='button'
                   onClick={() =>
                     runAction('打开外部链接', async () => {
@@ -266,10 +274,10 @@ export function TestToolsPanel() {
                   }
                 >
                   打开 Wails 文档
-                </AppButton>
+                </Button>
               </div>
 
-              <div className='test-tools-dropzone'>
+              <div className={cx('test-tools-dropzone')}>
                 <strong>文件拖放区域</strong>
                 <span>将文件拖到这里验证 Wails Drag &amp; Drop</span>
                 {droppedFiles.length > 0 && (
@@ -298,7 +306,7 @@ interface ToolSectionProps {
 
 function ToolSection({ title, description, children }: ToolSectionProps) {
   return (
-    <section className='test-tools-section'>
+    <section className={cx('test-tools-section')}>
       <header>
         <h2>{title}</h2>
         <p>{description}</p>
