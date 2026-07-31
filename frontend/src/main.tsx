@@ -2,6 +2,7 @@ import React from 'react'
 import { createRoot } from 'react-dom/client'
 
 import App from '@/app/App'
+import { AppUpdateProvider } from '@/features/app-update'
 import { DnAuthProvider } from '@/features/dn-system'
 import { SettingsProvider } from '@/features/settings'
 import { FeedbackProvider } from '@/shared/feedback'
@@ -20,9 +21,11 @@ root.render(
       <ThemeProvider>
         <OverlayProvider>
           <FeedbackProvider>
-            <DnAuthProvider>
-              <App />
-            </DnAuthProvider>
+            <AppUpdateProvider>
+              <DnAuthProvider>
+                <App />
+              </DnAuthProvider>
+            </AppUpdateProvider>
           </FeedbackProvider>
         </OverlayProvider>
       </ThemeProvider>

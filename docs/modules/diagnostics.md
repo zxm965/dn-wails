@@ -6,7 +6,7 @@
 
 ## 目录与职责
 
-- `internal/diagnostics/service.go`：日志文件、轮转、标准日志输出和诊断信息。
+- `internal/diagnostics/service.go`：日志文件、轮转、标准日志输出和诊断信息，版本来自构建期 `buildinfo.Version`。
 - `internal/application/diagnostics.go`：Wails 查询与打开日志目录接口。
 - `frontend/src/shared/diagnostics/`：类型化诊断 API。
 - 测试工具中的 `DesktopOverview`：展示只读运行信息。

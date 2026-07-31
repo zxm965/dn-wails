@@ -1,0 +1,172 @@
+name: Build and publish desktop release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  NODE_OPTIONS: --max-old-space-size=4096
+
+jobs:
+  quality:
+    name: Quality checks
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v7
+
+      - name: Set up pnpm
+        uses: pnpm/action-setup@v6.0.9
+        with:
+          version: 10.33.3
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          cache: pnpm
+          cache-dependency-path: frontend/pnpm-lock.yaml
+
+      - name: Set up Go
+        uses: actions/setup-go@v6
+        with:
+          go-version-file: go.mod
+          cache: true
+
+      - name: Install frontend dependencies
+        run: pnpm --dir frontend install --frozen-lockfile
+
+      - name: Check release tag
+        run: node scripts/configure-release.mjs "$GITHUB_REF_NAME"
+
+      - name: Install Linux build dependencies
+        run: sudo apt-get update && sudo apt-get install --yes libgtk-3-dev libwebkit2gtk-4.1-dev
+
+      - name: Check Go packages
+        run: go test -tags webkit2_41 ./...
+
+      - name: Check frontend formatting
+        run: pnpm --dir frontend fmt:check
+
+      - name: Lint frontend
+        run: pnpm --dir frontend lint
+
+      - name: Build frontend
+        run: pnpm --dir frontend build
+
+  build:
+    name: Build ${{ matrix.name }}
+    needs: quality
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: macOS universal
+            runner: macos-latest
+            artifact: release-macos
+          - name: Windows amd64
+            runner: windows-latest
+            artifact: release-windows
+    runs-on: ${{ matrix.runner }}
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v7
+
+      - name: Set up pnpm
+        uses: pnpm/action-setup@v6.0.9
+        with:
+          version: 10.33.3
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          cache: pnpm
+          cache-dependency-path: frontend/pnpm-lock.yaml
+
+      - name: Set up Go
+        uses: actions/setup-go@v6
+        with:
+          go-version-file: go.mod
+          cache: true
+
+      - name: Install frontend dependencies
+        run: pnpm --dir frontend install --frozen-lockfile
+
+      - name: Install Wails CLI
+        run: go install github.com/wailsapp/wails/v2/cmd/wails@v2.13.0
+
+      - name: Configure release version
+        run: node scripts/configure-release.mjs "${{ github.ref_name }}"
+
+      - name: Build macOS application
+        if: runner.os == 'macOS'
+        shell: bash
+        run: |
+          version="${GITHUB_REF_NAME#v}"
+          ldflags="-X dn-wails/internal/buildinfo.Version=$version -X dn-wails/internal/buildinfo.Repository=$GITHUB_REPOSITORY"
+          wails build -clean -platform darwin/universal -o dn-wails -trimpath -ldflags "$ldflags"
+          codesign --force --deep --sign - build/bin/dn-wails.app
+          ditto -c -k --sequesterRsrc --keepParent build/bin/dn-wails.app build/bin/dn-wails-darwin-universal.zip
+          hdiutil create -volname "dn-wails" -srcfolder build/bin/dn-wails.app -ov -format UDZO build/bin/dn-wails-darwin-universal.dmg
+
+      - name: Build Windows installer
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          $version = $env:GITHUB_REF_NAME.TrimStart('v')
+          $ldflags = "-X dn-wails/internal/buildinfo.Version=$version -X dn-wails/internal/buildinfo.Repository=$env:GITHUB_REPOSITORY"
+          wails build -clean -platform windows/amd64 -o dn-wails.exe -nsis -installscope user -trimpath -ldflags $ldflags
+          Move-Item build/bin/dn-wails-amd64-installer.exe build/bin/dn-wails-windows-amd64-installer.exe
+
+      - name: Upload macOS packages
+        if: runner.os == 'macOS'
+        uses: actions/upload-artifact@v6
+        with:
+          name: ${{ matrix.artifact }}
+          path: |
+            build/bin/dn-wails-darwin-universal.zip
+            build/bin/dn-wails-darwin-universal.dmg
+          if-no-files-found: error
+
+      - name: Upload Windows package
+        if: runner.os == 'Windows'
+        uses: actions/upload-artifact@v6
+        with:
+          name: ${{ matrix.artifact }}
+          path: build/bin/dn-wails-windows-amd64-installer.exe
+          if-no-files-found: error
+
+  release:
+    name: Publish GitHub Release
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download packages
+        uses: actions/download-artifact@v8
+        with:
+          path: release
+          merge-multiple: true
+
+      - name: Generate checksums
+        shell: bash
+        run: sha256sum release/* > release/SHA256SUMS.txt
+
+      - name: Create or update release
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if gh release view "$GITHUB_REF_NAME" >/dev/null 2>&1; then
+            gh release upload "$GITHUB_REF_NAME" release/* --clobber
+          else
+            gh release create "$GITHUB_REF_NAME" release/* --verify-tag --generate-notes --title "$GITHUB_REF_NAME"
+          fi

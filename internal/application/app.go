@@ -7,6 +7,7 @@ import (
 	"sync"
 	"time"
 
+	"dn-wails/internal/appupdate"
 	"dn-wails/internal/diagnostics"
 	"dn-wails/internal/dn"
 	"dn-wails/internal/lifecycle"
@@ -82,6 +83,12 @@ type DiagnosticsService interface {
 	Close() error
 }
 
+type ApplicationUpdateService interface {
+	Info() appupdate.Info
+	Check(ctx context.Context) (appupdate.Status, error)
+	Install(ctx context.Context, expectedVersion string) error
+}
+
 type DnService interface {
 	Initialize() error
 	Close() error
@@ -120,6 +127,7 @@ type Dependencies struct {
 	Window             WindowService
 	Native             NativeService
 	Diagnostics        DiagnosticsService
+	ApplicationUpdate  ApplicationUpdateService
 	Dn                 DnService
 }
 
@@ -132,6 +140,7 @@ type App struct {
 	windowService             WindowService
 	nativeService             NativeService
 	diagnosticsService        DiagnosticsService
+	applicationUpdateService  ApplicationUpdateService
 	dnService                 DnService
 
 	mu                    sync.RWMutex
@@ -150,6 +159,7 @@ func New(dependencies Dependencies) *App {
 		windowService:             dependencies.Window,
 		nativeService:             dependencies.Native,
 		diagnosticsService:        dependencies.Diagnostics,
+		applicationUpdateService:  dependencies.ApplicationUpdate,
 		dnService:                 dependencies.Dn,
 	}
 }

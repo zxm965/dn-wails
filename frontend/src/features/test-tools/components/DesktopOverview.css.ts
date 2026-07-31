@@ -139,6 +139,23 @@ const desktopOverviewCapabilityIndex = style({
 
 const desktopOverviewRuntime = style({})
 
+const desktopOverviewUpdateContent = style([
+  {
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: '20px',
+  },
+  {
+    '@container': {
+      'desktop-overview (max-width: 520px)': {
+        alignItems: 'stretch',
+        flexDirection: 'column',
+      },
+    },
+  },
+])
+
 const desktopOverviewError = style({
   margin: '14px 0 0',
   color: 'var(--danger-text)',
@@ -158,6 +175,7 @@ export const styles = {
   'desktop-overview-capabilities': desktopOverviewCapabilities,
   'desktop-overview-capability-index': desktopOverviewCapabilityIndex,
   'desktop-overview-runtime': desktopOverviewRuntime,
+  'desktop-overview-update-content': desktopOverviewUpdateContent,
   'desktop-overview-error': desktopOverviewError,
 } as const
 
@@ -306,6 +324,41 @@ globalStyle(`${desktopOverviewRuntime} dl`, {
   gridTemplateColumns: 'repeat(2, minmax(0, 1fr))',
   gap: '0 24px',
   margin: '0',
+})
+
+globalStyle(`${desktopOverviewUpdateContent} > div`, {
+  minWidth: '0',
+})
+
+globalStyle(
+  `${desktopOverviewUpdateContent} strong,
+${desktopOverviewUpdateContent} small`,
+  {
+    display: 'block',
+  },
+)
+
+globalStyle(`${desktopOverviewUpdateContent} strong`, {
+  fontSize: '14px',
+})
+
+globalStyle(`${desktopOverviewUpdateContent} small`, {
+  marginTop: '7px',
+  color: 'var(--text-tertiary)',
+  fontSize: '10px',
+  overflowWrap: 'anywhere',
+})
+
+globalStyle(`${desktopOverviewUpdateContent} button`, {
+  flex: '0 0 auto',
+})
+
+globalStyle(`${desktopOverviewUpdateContent} button`, {
+  '@container': {
+    'desktop-overview (max-width: 520px)': {
+      width: '100%',
+    },
+  },
 })
 
 globalStyle(`${desktopOverviewRuntime} dl > div`, {

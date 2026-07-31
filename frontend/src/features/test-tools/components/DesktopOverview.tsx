@@ -1,8 +1,10 @@
 import { useEffect, useState } from 'react'
 
 import { appConfig } from '@/app/appConfig'
+import { useAppUpdate } from '@/features/app-update'
 import { useSettings } from '@/features/settings'
 import { useAppLifecycle } from '@/shared/app-lifecycle'
+import { Button } from '@/shared/components/ui'
 import { getDiagnosticsInfo, type DiagnosticsInfo } from '@/shared/diagnostics'
 import { createScopedClassNames } from '@/shared/lib/classNames'
 
@@ -24,7 +26,7 @@ const CAPABILITY_GROUPS = [
   {
     title: '系统服务',
     description: '为业务模块提供稳定的底层能力。',
-    modules: ['设置中心', '本地存储', 'Native Kit', '日志诊断'],
+    modules: ['设置中心', '应用更新', '本地存储', 'Native Kit', '日志诊断'],
   },
 ] as const
 
@@ -36,6 +38,15 @@ const THEME_LABELS = {
 
 export function DesktopOverview({ embedded = false }: { embedded?: boolean }) {
   const { settings } = useSettings()
+  const {
+    info: updateInfo,
+    status: updateStatus,
+    error: updateError,
+    isLoading: isUpdateLoading,
+    isChecking,
+    isInstalling,
+    checkForUpdates,
+  } = useAppUpdate()
   const { status: lifecycleStatus, error: lifecycleError } = useAppLifecycle()
   const [diagnostics, setDiagnostics] = useState<DiagnosticsInfo | null>(null)
   const lifecycleReady = lifecycleStatus?.ready === true
@@ -46,6 +57,16 @@ export function DesktopOverview({ embedded = false }: { embedded?: boolean }) {
       : lifecycleStatus
         ? '应用正在初始化'
         : '正在读取状态'
+  const currentVersion = updateInfo?.currentVersion ?? diagnostics?.appVersion ?? '—'
+  const updateSummary = isUpdateLoading
+    ? '正在读取版本信息'
+    : updateStatus?.updateAvailable
+      ? `发现新版本 ${updateStatus.latestVersion}`
+      : updateStatus
+        ? `当前已是最新版 ${updateStatus.currentVersion}`
+        : updateInfo?.configured
+          ? '启动时自动检查更新'
+          : '开发构建未启用更新'
 
   useEffect(() => {
     void getDiagnosticsInfo()
@@ -68,7 +89,7 @@ export function DesktopOverview({ embedded = false }: { embedded?: boolean }) {
       </header>
 
       <div className={cx('desktop-overview-summary')}>
-        <SummaryCard label='应用版本' value={diagnostics?.appVersion ?? '—'} hint={appConfig.displayName} />
+        <SummaryCard label='应用版本' value={currentVersion} hint={appConfig.displayName} />
         <SummaryCard
           label='运行平台'
           value={diagnostics ? `${diagnostics.os} / ${diagnostics.arch}` : '—'}
@@ -89,10 +110,41 @@ export function DesktopOverview({ embedded = false }: { embedded?: boolean }) {
       <section className={cx('desktop-overview-section')}>
         <div className={cx('desktop-overview-section-heading')}>
           <div>
+            <h2>版本与更新</h2>
+            <p>正式版本启动后会自动检查 GitHub Releases，也可以在这里主动检查。</p>
+          </div>
+          <span>{updateStatus?.latestVersion ? `latest ${updateStatus.latestVersion}` : 'GitHub Releases'}</span>
+        </div>
+        <div className={cx('desktop-overview-update-content')}>
+          <div>
+            <strong>{updateSummary}</strong>
+            <small>
+              {updateInfo?.repository
+                ? `${updateInfo.repository} · ${updateInfo.platform}/${updateInfo.arch}`
+                : '正在读取发布配置'}
+            </small>
+            {updateError && <p className={cx('desktop-overview-error')}>{updateError}</p>}
+          </div>
+          <Button
+            type='button'
+            variant={updateStatus?.updateAvailable ? 'primary' : 'outline'}
+            disabled={
+              isUpdateLoading || isChecking || isInstalling || !updateInfo?.configured || !updateInfo.canInstall
+            }
+            onClick={() => void checkForUpdates(true)}
+          >
+            {isInstalling ? '正在安装…' : isChecking ? '正在检查…' : '检查最新版'}
+          </Button>
+        </div>
+      </section>
+
+      <section className={cx('desktop-overview-section')}>
+        <div className={cx('desktop-overview-section-heading')}>
+          <div>
             <h2>应用能力</h2>
             <p>基础模块按照桌面运行、应用体验和系统服务分层组织。</p>
           </div>
-          <span>11 modules</span>
+          <span>12 modules</span>
         </div>
 
         <div className={cx('desktop-overview-capabilities')}>

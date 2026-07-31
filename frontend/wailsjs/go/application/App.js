@@ -6,6 +6,10 @@ export function ChangeDnPassword(arg1) {
   return window['go']['application']['App']['ChangeDnPassword'](arg1);
 }
 
+export function CheckForApplicationUpdate() {
+  return window['go']['application']['App']['CheckForApplicationUpdate']();
+}
+
 export function ClaimDnMessageNotifications(arg1) {
   return window['go']['application']['App']['ClaimDnMessageNotifications'](arg1);
 }
@@ -16,6 +20,10 @@ export function DeleteDnRole(arg1) {
 
 export function DeleteDnWeeklyPlan(arg1) {
   return window['go']['application']['App']['DeleteDnWeeklyPlan'](arg1);
+}
+
+export function GetApplicationUpdateInfo() {
+  return window['go']['application']['App']['GetApplicationUpdateInfo']();
 }
 
 export function GetDiagnosticsInfo() {
@@ -56,6 +64,10 @@ export function ImportDnAvatar(arg1) {
 
 export function InitializeDnWeeklyPlans() {
   return window['go']['application']['App']['InitializeDnWeeklyPlans']();
+}
+
+export function InstallApplicationUpdate(arg1) {
+  return window['go']['application']['App']['InstallApplicationUpdate'](arg1);
 }
 
 export function ListAllDnWeeklyPlans() {

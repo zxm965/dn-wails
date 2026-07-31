@@ -14,7 +14,10 @@
 main
 ├── application（Wails 绑定门面）
 │   ├── SystemNotificationService 接口
+│   ├── ApplicationUpdateService 接口
 │   └── DnService 接口
+├── appupdate（版本比较、更新检查与安装用例）
+├── buildinfo（构建期版本与发布元数据）
 ├── appconfig（应用全局配置）
 ├── dn（角色、周计划、消息与本地资料）
 ├── lifecycle（应用生命周期状态）
@@ -27,6 +30,7 @@ main
 └── platform
     ├── nativekit（Wails 原生能力适配）
     ├── notification（Wails 原生通知适配）
+    ├── appupdate（GitHub Release 与平台更新安装器）
     ├── singleinstance（单实例配置）
     └── window（平台窗口配置）
 ```
@@ -45,6 +49,9 @@ main
 app
 ├── appConfig（只读全局展示配置）
 ├── features
+│   ├── app-update
+│   │   ├── api
+│   │   └── context
 │   ├── dn-system
 │   │   ├── api
 │   │   ├── components
@@ -82,7 +89,7 @@ app
 - 全局字体、重置和主题令牌集中在 `app/styles/*.css.ts`；组件和页面使用就近共置的同名 `.css.ts`。
 - 组件局部规则优先使用 `style`，仅全局根节点、第三方状态和必要的复杂关系使用 `globalStyle`；共享 UI 不使用集中式 `ui.css.ts`。
 - 桌面应用壳采用“顶部标题栏 + 左侧分组菜单 + 右侧视图区域”的固定布局。
-- 应用概览、运行诊断和所有人工验证入口统一放在“系统设置 → 测试工具”；正式业务导航不展示概览入口。
+- 应用概览、运行诊断和所有人工验证入口统一放在“系统设置 → 测试工具”；概览中的版本与检查更新属于正式应用能力，其余测试操作不进入业务页面。
 - 所有页面必须支持响应式布局；页面优先基于右侧内容区域使用 Container Queries，避免侧边栏宽度导致视口媒体查询失真。
 - 页面统一复用全局间距变量，并至少覆盖常规桌面宽度、`1024 × 768` 最小窗口和极窄内容宽度。
 - 应用内按钮统一使用 `Button`，尺寸限定为 `sm=28px`、`md=32px`、`lg=36px`；普通操作跟随偏好设置中的默认尺寸（默认 `md`），结构性或固定语义按钮显式指定尺寸，业务模块不得自行定义其他按钮高度。
@@ -110,6 +117,7 @@ app
 - [桌面应用壳](modules/desktop-shell.md)
 - [DN 周常管理](modules/dn-system.md)
 - [应用生命周期](modules/app-lifecycle.md)
+- [应用更新与发布](modules/app-update.md)
 - [单实例](modules/single-instance.md)
 - [窗口管理](modules/window-manager.md)
 - [Overlay Manager](modules/overlay-manager.md)

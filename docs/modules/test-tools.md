@@ -8,7 +8,8 @@
 
 - `frontend/src/features/test-tools/components/TestToolsPanel.tsx`：测试分类、操作执行和结果展示。
 - `frontend/src/features/test-tools/components/TestToolsPanel.css.ts`：分类菜单、操作网格和拖放区域的局部样式。
-- `frontend/src/features/test-tools/components/DesktopOverview.tsx`、`DesktopOverview.css.ts`：嵌入式应用概览、模块状态和运行信息。
+- `frontend/src/features/test-tools/components/DesktopOverview.tsx`、`DesktopOverview.css.ts`：嵌入式应用概览、版本更新、模块状态和运行信息。
+- `frontend/src/features/app-update/`：为应用概览提供正式版本、自动检查和手动检查能力。
 - `frontend/src/features/system-notification/components/SystemNotificationPanel.tsx`：以 embedded 模式嵌入通知测试。
 - `frontend/src/app/App.tsx`：将测试工具放入“系统设置”分组。
 
@@ -17,6 +18,7 @@
 ### 应用概览
 
 - 应用版本、运行平台、主题与通知设置摘要
+- GitHub Release 自动检查状态、最新版本与手动检查入口
 - 生命周期就绪状态、启动时间和第二实例唤醒次数
 - 桌面基础、应用体验和系统服务模块清单
 
@@ -49,7 +51,7 @@
 ## 行为约定
 
 - 测试操作的结果统一显示在测试工具页，不影响正式业务状态。
-- 打开测试工具时默认展示应用概览；概览为只读状态，不提供业务操作入口。
+- 打开测试工具时默认展示应用概览；除正式的“检查最新版”外，概览不提供测试操作入口。
 - 需要用户主动触发的系统操作不得在页面加载时自动执行。
 - 文件、剪贴板、窗口和通知等真实原生能力需要在 Wails 桌面运行环境中验证。
 - 新增通用模块的人工验证入口时，优先放入本模块现有分类；确有必要时再增加分类。

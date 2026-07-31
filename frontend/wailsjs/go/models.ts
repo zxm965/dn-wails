@@ -77,6 +77,57 @@ export namespace application {
 
 }
 
+export namespace appupdate {
+
+	export class Info {
+	    currentVersion: string;
+	    repository: string;
+	    platform: string;
+	    arch: string;
+	    configured: boolean;
+	    canInstall: boolean;
+
+	    static createFrom(source: any = {}) {
+	        return new Info(source);
+	    }
+
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.currentVersion = source["currentVersion"];
+	        this.repository = source["repository"];
+	        this.platform = source["platform"];
+	        this.arch = source["arch"];
+	        this.configured = source["configured"];
+	        this.canInstall = source["canInstall"];
+	    }
+	}
+	export class Status {
+	    currentVersion: string;
+	    latestVersion: string;
+	    updateAvailable: boolean;
+	    releaseName: string;
+	    releaseNotes: string;
+	    releaseUrl: string;
+	    publishedAt: string;
+
+	    static createFrom(source: any = {}) {
+	        return new Status(source);
+	    }
+
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.currentVersion = source["currentVersion"];
+	        this.latestVersion = source["latestVersion"];
+	        this.updateAvailable = source["updateAvailable"];
+	        this.releaseName = source["releaseName"];
+	        this.releaseNotes = source["releaseNotes"];
+	        this.releaseUrl = source["releaseUrl"];
+	        this.publishedAt = source["publishedAt"];
+	    }
+	}
+
+}
+
 export namespace dn {
 	
 	export class Profile {
@@ -1069,4 +1120,3 @@ export namespace settings {
 	
 
 }
-

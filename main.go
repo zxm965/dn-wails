@@ -5,15 +5,20 @@ import (
 	"errors"
 	"io/fs"
 	"log"
+	"net/http"
+	"runtime"
 	"time"
 
 	"dn-wails/internal/appconfig"
 	"dn-wails/internal/application"
+	"dn-wails/internal/appupdate"
+	"dn-wails/internal/buildinfo"
 	"dn-wails/internal/diagnostics"
 	"dn-wails/internal/dn"
 	"dn-wails/internal/lifecycle"
 	"dn-wails/internal/nativekit"
 	"dn-wails/internal/notification"
+	platformappupdate "dn-wails/internal/platform/appupdate"
 	platformnativekit "dn-wails/internal/platform/nativekit"
 	platformnotification "dn-wails/internal/platform/notification"
 	platformsingleinstance "dn-wails/internal/platform/singleinstance"
@@ -36,7 +41,6 @@ var environmentFiles embed.FS
 
 const (
 	internalApplicationName = "dn-wails"
-	appVersion              = "0.0.0"
 )
 
 func main() {
@@ -68,7 +72,7 @@ func main() {
 		log.Fatal("create DN database service: ", err)
 	}
 
-	diagnosticsService, err := diagnostics.NewService(internalApplicationName, appVersion, startedAt)
+	diagnosticsService, err := diagnostics.NewService(internalApplicationName, buildinfo.Version, startedAt)
 	if err != nil {
 		log.Fatal("create diagnostics service: ", err)
 	}
@@ -82,6 +86,15 @@ func main() {
 	windowService := windowmanager.NewService(windowPlatform)
 	lifecycleService := lifecycle.NewService()
 	singleInstanceService := singleinstance.NewService()
+	applicationUpdateSource := platformappupdate.NewGitHubSource(&http.Client{Timeout: 30 * time.Second})
+	applicationUpdateInstaller := platformappupdate.NewInstaller(internalApplicationName)
+	applicationUpdateService := appupdate.NewService(appupdate.Config{
+		AppName:    internalApplicationName,
+		Version:    buildinfo.Version,
+		Repository: buildinfo.Repository,
+		Platform:   runtime.GOOS,
+		Arch:       runtime.GOARCH,
+	}, applicationUpdateSource, applicationUpdateInstaller)
 
 	app := application.New(application.Dependencies{
 		SystemNotification: notificationService,
@@ -91,6 +104,7 @@ func main() {
 		Window:             windowService,
 		Native:             nativeService,
 		Diagnostics:        diagnosticsService,
+		ApplicationUpdate:  applicationUpdateService,
 		Dn:                 dnService,
 	})
 
