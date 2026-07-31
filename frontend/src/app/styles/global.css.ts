@@ -31,6 +31,10 @@ globalStyle(':root', {
     '--danger-background': 'rgba(220, 74, 66, 0.12)',
     '--danger-border': 'rgba(255, 117, 107, 0.24)',
     '--surface-shadow': '0 18px 42px rgba(6, 12, 21, 0.18)',
+    '--button-height-sm': '28px',
+    '--button-height-md': '32px',
+    '--button-height-lg': '36px',
+    '--button-height-default': 'var(--button-height-md)',
     '--control-height': '42px',
     '--page-padding-inline': 'clamp(20px, 4vw, 48px)',
     '--page-padding-start': 'clamp(28px, 5vw, 56px)',
@@ -89,6 +93,24 @@ globalStyle(":root[data-accent='orange']", {
 globalStyle(":root[data-density='compact']", {
   vars: {
     '--control-height': '36px',
+  },
+})
+
+globalStyle(":root[data-button-size='sm']", {
+  vars: {
+    '--button-height-default': 'var(--button-height-sm)',
+  },
+})
+
+globalStyle(":root[data-button-size='md']", {
+  vars: {
+    '--button-height-default': 'var(--button-height-md)',
+  },
+})
+
+globalStyle(":root[data-button-size='lg']", {
+  vars: {
+    '--button-height-default': 'var(--button-height-lg)',
   },
 })
 

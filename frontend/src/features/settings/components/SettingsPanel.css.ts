@@ -71,6 +71,10 @@ const settingsButton = style([
     border: '1px solid transparent',
     borderRadius: '9px',
     cursor: 'pointer',
+    ':disabled': {
+      cursor: 'not-allowed',
+      opacity: '0.56',
+    },
   },
   {
     '@container': {
@@ -107,6 +111,11 @@ const settingsSection = style({
   border: '1px solid var(--border-subtle)',
   borderRadius: 'var(--panel-radius)',
   boxShadow: 'var(--surface-shadow)',
+  selectors: {
+    '& + &': {
+      marginTop: '18px',
+    },
+  },
 })
 
 const settingsSectionTitle = style({
@@ -146,7 +155,15 @@ const settingsSegmented = style({
   borderRadius: '10px',
 })
 
-const isSelected = style({})
+const isSelected = style({
+  selectors: {
+    [`${settingsSegmented} label&`]: {
+      color: 'var(--text-primary)',
+      background: 'var(--surface-elevated)',
+      boxShadow: '0 2px 8px rgba(0, 0, 0, 0.12)',
+    },
+  },
+})
 
 const settingsAccents = style({
   display: 'flex',
@@ -162,13 +179,21 @@ const settingsAccent = style({
   boxShadow: '0 0 0 1px var(--border-strong)',
 })
 
-const isGreen = style({})
+const isGreen = style({
+  background: '#07c160',
+})
 
-const isBlue = style({})
+const isBlue = style({
+  background: '#3488ff',
+})
 
-const isPurple = style({})
+const isPurple = style({
+  background: '#8b5cf6',
+})
 
-const isOrange = style({})
+const isOrange = style({
+  background: '#ef8b2c',
+})
 
 const settingsRange = style({})
 
@@ -186,6 +211,11 @@ const settingsToggleRow = style([
     gap: '18px',
     padding: '14px 0',
     cursor: 'pointer',
+    selectors: {
+      '& + &': {
+        borderTop: '1px solid var(--border-subtle)',
+      },
+    },
   },
   {
     '@container': {
@@ -204,11 +234,42 @@ const settingsSwitch = style({
   background: 'var(--switch-background)',
   borderRadius: '999px',
   transition: 'background-color 150ms ease',
+  '::after': {
+    position: 'absolute',
+    top: '3px',
+    left: '3px',
+    width: '18px',
+    height: '18px',
+    background: '#ffffff',
+    borderRadius: '50%',
+    boxShadow: '0 1px 4px rgba(0, 0, 0, 0.28)',
+    transition: 'transform 150ms ease',
+    content: "''",
+  },
+  selectors: {
+    [`${settingsToggleRow} input:checked + &`]: {
+      background: 'var(--accent)',
+    },
+    [`${settingsToggleRow} input:checked + &::after`]: {
+      transform: 'translateX(18px)',
+    },
+    [`${settingsToggleRow} input:focus-visible + &`]: {
+      outline: '2px solid var(--focus-ring)',
+      outlineOffset: '2px',
+    },
+  },
 })
 
-const isDisabled = style({})
+const isDisabled = style({
+  selectors: {
+    [`${settingsToggleRow}&`]: {
+      cursor: 'not-allowed',
+      opacity: '0.48',
+    },
+  },
+})
 
-export const classes = {
+export const styles = {
   'settings-panel': settingsPanel,
   'settings-state': settingsState,
   'settings-heading': settingsHeading,
@@ -261,15 +322,6 @@ globalStyle(`${settingsHeading} span`, {
   color: 'var(--text-secondary)',
 })
 
-globalStyle(`${settingsButton}:disabled`, {
-  cursor: 'not-allowed',
-  opacity: '0.56',
-})
-
-globalStyle(`${settingsSection} + ${settingsSection}`, {
-  marginTop: '18px',
-})
-
 globalStyle(`${settingsSectionTitle} h2`, {
   margin: '0',
   fontSize: '17px',
@@ -304,12 +356,6 @@ globalStyle(`${settingsSegmented} label`, {
   cursor: 'pointer',
 })
 
-globalStyle(`${settingsSegmented} label${isSelected}`, {
-  color: 'var(--text-primary)',
-  background: 'var(--surface-elevated)',
-  boxShadow: '0 2px 8px rgba(0, 0, 0, 0.12)',
-})
-
 globalStyle(
   `${settingsSegmented} input,
 ${settingsAccents} input`,
@@ -336,22 +382,6 @@ globalStyle(`${settingsAccents} label:has(input:checked)`, {
   fontWeight: '700',
 })
 
-globalStyle(`${settingsAccent}${isGreen}`, {
-  background: '#07c160',
-})
-
-globalStyle(`${settingsAccent}${isBlue}`, {
-  background: '#3488ff',
-})
-
-globalStyle(`${settingsAccent}${isPurple}`, {
-  background: '#8b5cf6',
-})
-
-globalStyle(`${settingsAccent}${isOrange}`, {
-  background: '#ef8b2c',
-})
-
 globalStyle(`${settingsField} select`, {
   width: '100%',
   height: 'var(--control-height)',
@@ -366,10 +396,6 @@ globalStyle(`${settingsField} select`, {
 globalStyle(`${settingsRange} input`, {
   width: '100%',
   accentColor: 'var(--accent)',
-})
-
-globalStyle(`${settingsToggleRow} + ${settingsToggleRow}`, {
-  borderTop: '1px solid var(--border-subtle)',
 })
 
 globalStyle(`${settingsToggleRow} > span:first-child`, {
@@ -397,37 +423,6 @@ globalStyle(`${settingsToggleRow} small`, {
 globalStyle(`${settingsToggleRow} input`, {
   position: 'absolute',
   opacity: '0',
-})
-
-globalStyle(`${settingsSwitch}::after`, {
-  position: 'absolute',
-  top: '3px',
-  left: '3px',
-  width: '18px',
-  height: '18px',
-  background: '#ffffff',
-  borderRadius: '50%',
-  boxShadow: '0 1px 4px rgba(0, 0, 0, 0.28)',
-  transition: 'transform 150ms ease',
-  content: "''",
-})
-
-globalStyle(`${settingsToggleRow} input:checked + ${settingsSwitch}`, {
-  background: 'var(--accent)',
-})
-
-globalStyle(`${settingsToggleRow} input:checked + ${settingsSwitch}::after`, {
-  transform: 'translateX(18px)',
-})
-
-globalStyle(`${settingsToggleRow} input:focus-visible + ${settingsSwitch}`, {
-  outline: '2px solid var(--focus-ring)',
-  outlineOffset: '2px',
-})
-
-globalStyle(`${settingsToggleRow}${isDisabled}`, {
-  cursor: 'not-allowed',
-  opacity: '0.48',
 })
 
 globalStyle(`${settingsHeading} h1`, {

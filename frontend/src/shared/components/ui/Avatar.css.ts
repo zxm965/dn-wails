@@ -27,7 +27,7 @@ const uiAvatarFallback = style({
   fontWeight: '800',
 })
 
-export const classes = {
+export const styles = {
   'ui-avatar': uiAvatar,
   'ui-avatar-image': uiAvatarImage,
   'ui-avatar-fallback': uiAvatarFallback,

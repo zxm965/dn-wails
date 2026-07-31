@@ -1,13 +1,13 @@
-import { globalStyle, keyframes, style } from '@vanilla-extract/css'
+import { globalStyle, keyframes, style, styleVariants } from '@vanilla-extract/css'
 
-const uiButtonRippleKeyframes = keyframes({
+const rippleKeyframes = keyframes({
   to: {
     opacity: '0',
     transform: 'scale(1)',
   },
 })
 
-const uiButton = style({
+const root = style({
   position: 'relative',
   height: 'var(--button-height-default)',
   minHeight: 'var(--button-height-default)',
@@ -26,136 +26,113 @@ const uiButton = style({
   borderRadius: '9px',
   cursor: 'pointer',
   transition:
-    'color 140ms ease,\n    background-color 140ms ease,\n    border-color 140ms ease,\n    box-shadow 140ms ease,\n    transform 100ms ease',
+    'color 140ms ease, background-color 140ms ease, border-color 140ms ease, box-shadow 140ms ease, transform 100ms ease',
   userSelect: 'none',
+  ':disabled': {
+    cursor: 'not-allowed',
+    opacity: '0.5',
+  },
+  ':focus-visible': {
+    outline: '2px solid var(--focus-ring)',
+    outlineOffset: '2px',
+  },
+  selectors: {
+    '&:active:not(:disabled)': {
+      transform: 'translateY(1px)',
+    },
+    '&[aria-disabled="true"]': {
+      cursor: 'not-allowed',
+      opacity: '0.5',
+    },
+  },
 })
 
-const uiButtonSecondary = style({
-  color: 'var(--text-primary)',
-  background: 'var(--surface-muted)',
-  borderColor: 'var(--border-subtle)',
+const variants = styleVariants({
+  primary: {
+    selectors: {
+      '&:hover:not(:disabled)': {
+        background: 'var(--accent-hover)',
+      },
+    },
+  },
+  secondary: {
+    color: 'var(--text-primary)',
+    background: 'var(--surface-muted)',
+    borderColor: 'var(--border-subtle)',
+    selectors: {
+      '&:hover:not(:disabled)': {
+        background: 'var(--surface-hover)',
+      },
+    },
+  },
+  outline: {
+    color: 'var(--text-primary)',
+    background: 'transparent',
+    borderColor: 'var(--border-strong)',
+    selectors: {
+      '&:hover:not(:disabled)': {
+        color: 'var(--text-primary)',
+        background: 'var(--surface-hover)',
+      },
+    },
+  },
+  ghost: {
+    color: 'var(--text-secondary)',
+    background: 'transparent',
+    borderColor: 'transparent',
+    selectors: {
+      '&:hover:not(:disabled)': {
+        color: 'var(--text-primary)',
+        background: 'var(--surface-hover)',
+      },
+    },
+  },
+  danger: {
+    color: '#ffffff',
+    background: '#d84d45',
+    selectors: {
+      '&:hover:not(:disabled)': {
+        background: '#c8433c',
+      },
+    },
+  },
 })
 
-const uiButtonOutline = style({
-  color: 'var(--text-primary)',
-  background: 'transparent',
-  borderColor: 'var(--border-strong)',
+const sizes = styleVariants({
+  sm: {
+    height: 'var(--button-height-sm)',
+    minHeight: 'var(--button-height-sm)',
+  },
+  md: {
+    height: 'var(--button-height-md)',
+    minHeight: 'var(--button-height-md)',
+  },
+  lg: {
+    height: 'var(--button-height-lg)',
+    minHeight: 'var(--button-height-lg)',
+  },
 })
 
-const uiButtonGhost = style({
-  color: 'var(--text-secondary)',
-  background: 'transparent',
-  borderColor: 'transparent',
-})
-
-const uiButtonDanger = style({
-  color: '#ffffff',
-  background: '#d84d45',
-})
-
-const uiButtonRipple = style({
+const ripple = style({
   position: 'absolute',
   pointerEvents: 'none',
   background: 'currentColor',
   borderRadius: '999px',
   opacity: '0.18',
   transform: 'scale(0)',
-  animation: `${uiButtonRippleKeyframes} 520ms ease-out`,
+  animation: `${rippleKeyframes} 520ms ease-out`,
 })
 
-export const classes = {
-  'ui-button': uiButton,
-  'ui-button-secondary': uiButtonSecondary,
-  'ui-button-outline': uiButtonOutline,
-  'ui-button-ghost': uiButtonGhost,
-  'ui-button-danger': uiButtonDanger,
-  'ui-button-ripple': uiButtonRipple,
-} as const
+export const styles = {
+  root,
+  variants,
+  sizes,
+  ripple,
+}
 
-globalStyle(`${uiButton}:hover:not(:disabled)`, {
-  background: 'var(--accent-hover)',
-})
-
-globalStyle(`${uiButton}:active:not(:disabled)`, {
-  transform: 'translateY(1px)',
-})
-
-globalStyle(`${uiButton}:focus-visible`, {
-  outline: '2px solid var(--focus-ring)',
-  outlineOffset: '2px',
-})
-
-globalStyle(
-  `${uiButton}:disabled,
-${uiButton}[aria-disabled='true']`,
-  {
-    cursor: 'not-allowed',
-    opacity: '0.5',
-  },
-)
-
-globalStyle(`${uiButtonSecondary}:hover:not(:disabled)`, {
-  background: 'var(--surface-hover)',
-})
-
-globalStyle(
-  `${uiButtonOutline}:hover:not(:disabled),
-${uiButtonGhost}:hover:not(:disabled)`,
-  {
-    color: 'var(--text-primary)',
-    background: 'var(--surface-hover)',
-  },
-)
-
-globalStyle(`${uiButtonDanger}:hover:not(:disabled)`, {
-  background: '#c8433c',
-})
-
-globalStyle(`${uiButton} svg`, {
+globalStyle(`${root} svg`, {
   width: '16px',
   height: '16px',
   flex: '0 0 auto',
   pointerEvents: 'none',
-})
-
-globalStyle(`${uiButton}[data-button-size='sm']`, {
-  height: 'var(--button-height-sm)',
-  minHeight: 'var(--button-height-sm)',
-})
-
-globalStyle(`${uiButton}[data-button-size='md']`, {
-  height: 'var(--button-height-md)',
-  minHeight: 'var(--button-height-md)',
-})
-
-globalStyle(`${uiButton}[data-button-size='lg']`, {
-  height: 'var(--button-height-lg)',
-  minHeight: 'var(--button-height-lg)',
-})
-
-globalStyle(':root', {
-  vars: {
-    '--button-height-sm': '28px',
-    '--button-height-md': '32px',
-    '--button-height-lg': '36px',
-    '--button-height-default': 'var(--button-height-md)',
-  },
-})
-
-globalStyle(":root[data-button-size='sm']", {
-  vars: {
-    '--button-height-default': 'var(--button-height-sm)',
-  },
-})
-
-globalStyle(":root[data-button-size='md']", {
-  vars: {
-    '--button-height-default': 'var(--button-height-md)',
-  },
-})
-
-globalStyle(":root[data-button-size='lg']", {
-  vars: {
-    '--button-height-default': 'var(--button-height-lg)',
-  },
 })

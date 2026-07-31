@@ -37,7 +37,7 @@ import {
 } from '../api/dnSystemApi'
 import { useDnAuth } from '../context/DnAuthProvider'
 
-import { classes as styles } from './DnSystem.css'
+import { styles } from './DnSystem.css'
 
 const cx = createScopedClassNames(styles)
 

@@ -20,6 +20,17 @@ const uiInput = style({
   borderRadius: '9px',
   outline: 'none',
   transition: 'border-color 140ms ease,\n    box-shadow 140ms ease,\n    background-color 140ms ease',
+  ':disabled': {
+    cursor: 'not-allowed',
+    opacity: '0.55',
+  },
+  ':focus': {
+    borderColor: 'var(--accent)',
+    boxShadow: '0 0 0 3px var(--accent-muted)',
+  },
+  '::placeholder': {
+    color: 'var(--text-tertiary)',
+  },
 })
 
 const uiPasswordInput = style({
@@ -33,7 +44,19 @@ const uiPasswordInputControl = style({
   paddingRight: '42px',
 })
 
-const uiPasswordInputToggle = style({})
+const uiPasswordInputToggle = style({
+  selectors: {
+    [`${uiPasswordInput} > &`]: {
+      position: 'absolute',
+      top: '50%',
+      right: '3px',
+      zIndex: '1',
+      minWidth: '30px',
+      padding: '0',
+      translate: '0 -50%',
+    },
+  },
+})
 
 const uiTextarea = style({
   minHeight: '92px',
@@ -58,6 +81,20 @@ const uiCheckbox = style({
   border: '1px solid var(--border-strong)',
   borderRadius: '5px',
   cursor: 'pointer',
+  ':disabled': {
+    cursor: 'not-allowed',
+    opacity: '0.5',
+  },
+  ':focus-visible': {
+    outline: '2px solid var(--focus-ring)',
+    outlineOffset: '2px',
+  },
+  selectors: {
+    '&[data-checked]': {
+      background: 'var(--accent)',
+      borderColor: 'var(--accent)',
+    },
+  },
 })
 
 const uiSwitch = style({
@@ -70,9 +107,25 @@ const uiSwitch = style({
   border: '0',
   borderRadius: '999px',
   cursor: 'pointer',
+  ':disabled': {
+    cursor: 'not-allowed',
+    opacity: '0.5',
+  },
+  ':focus-visible': {
+    outline: '2px solid var(--focus-ring)',
+    outlineOffset: '2px',
+  },
+  selectors: {
+    '&[data-checked]': {
+      background: 'var(--accent)',
+    },
+  },
 })
 
-const uiCheckboxIndicator = style({})
+const uiCheckboxIndicator = style({
+  width: '13px',
+  height: '13px',
+})
 
 const uiSwitchThumb = style([
   {
@@ -84,6 +137,11 @@ const uiSwitchThumb = style([
     boxShadow: '0 1px 4px rgba(0, 0, 0, 0.28)',
     transform: 'translateX(3px)',
     transition: 'transform 150ms ease',
+    selectors: {
+      [`${uiSwitch}[data-checked] &`]: {
+        transform: 'translateX(21px)',
+      },
+    },
   },
   {
     '@media': {
@@ -94,7 +152,7 @@ const uiSwitchThumb = style([
   },
 ])
 
-export const classes = {
+export const styles = {
   'ui-label': uiLabel,
   'ui-input': uiInput,
   'ui-password-input': uiPasswordInput,
@@ -108,71 +166,12 @@ export const classes = {
   'ui-switch-thumb': uiSwitchThumb,
 } as const
 
-globalStyle(`${uiInput}::placeholder`, {
-  color: 'var(--text-tertiary)',
-})
-
-globalStyle(`${uiInput}:focus`, {
-  borderColor: 'var(--accent)',
-  boxShadow: '0 0 0 3px var(--accent-muted)',
-})
-
-globalStyle(`${uiInput}:disabled`, {
-  cursor: 'not-allowed',
-  opacity: '0.55',
-})
-
-globalStyle(`${uiPasswordInput} > ${uiPasswordInputToggle}`, {
-  position: 'absolute',
-  top: '50%',
-  right: '3px',
-  zIndex: '1',
-  minWidth: '30px',
-  padding: '0',
-  translate: '0 -50%',
-})
-
 globalStyle(`${uiPasswordInputToggle} svg`, {
   width: '15px',
   height: '15px',
 })
 
-globalStyle(`${uiCheckbox}[data-checked]`, {
-  background: 'var(--accent)',
-  borderColor: 'var(--accent)',
-})
-
-globalStyle(
-  `${uiCheckbox}:focus-visible,
-${uiSwitch}:focus-visible`,
-  {
-    outline: '2px solid var(--focus-ring)',
-    outlineOffset: '2px',
-  },
-)
-
-globalStyle(
-  `${uiCheckbox}:disabled,
-${uiSwitch}:disabled`,
-  {
-    cursor: 'not-allowed',
-    opacity: '0.5',
-  },
-)
-
-globalStyle(
-  `${uiCheckboxIndicator},
-${uiCheckboxIndicator} svg`,
-  {
-    width: '13px',
-    height: '13px',
-  },
-)
-
-globalStyle(`${uiSwitch}[data-checked]`, {
-  background: 'var(--accent)',
-})
-
-globalStyle(`${uiSwitch}[data-checked] ${uiSwitchThumb}`, {
-  transform: 'translateX(21px)',
+globalStyle(`${uiCheckboxIndicator} svg`, {
+  width: '13px',
+  height: '13px',
 })

@@ -2,6 +2,14 @@ import { globalStyle, style } from '@vanilla-extract/css'
 
 const disableImageDrag = { WebkitUserDrag: 'none' } as const
 
+const isViewportCompact = style({})
+
+const isCollapsed = style({})
+
+const isExpanded = style({})
+
+const isResizing = style({})
+
 const appSidebar = style({
   position: 'relative',
   width: 'var(--app-sidebar-width)',
@@ -16,15 +24,30 @@ const appSidebar = style({
   borderRight: '1px solid var(--border-subtle)',
   WebkitUserSelect: 'none',
   userSelect: 'none',
+  selectors: {
+    [`&${isViewportCompact}`]: {
+      paddingTop: '12px',
+      paddingBottom: '12px',
+    },
+    [`&${isCollapsed}`]: {
+      paddingRight: '8px',
+      paddingLeft: '8px',
+    },
+  },
 })
-
-const isViewportCompact = style({})
 
 const appSidebarProduct = style({
   display: 'flex',
   alignItems: 'center',
   gap: '11px',
   padding: '4px 8px 18px',
+  selectors: {
+    [`${appSidebar}${isCollapsed} &`]: {
+      justifyContent: 'center',
+      paddingRight: '0',
+      paddingLeft: '0',
+    },
+  },
 })
 
 const appSidebarFooter = style({
@@ -34,6 +57,13 @@ const appSidebarFooter = style({
   marginTop: '14px',
   padding: '12px 9px 2px',
   borderTop: '1px solid var(--border-subtle)',
+  selectors: {
+    [`${appSidebar}${isCollapsed} &`]: {
+      justifyContent: 'center',
+      paddingRight: '0',
+      paddingLeft: '0',
+    },
+  },
 })
 
 const appSidebarNavigation = style({
@@ -42,23 +72,73 @@ const appSidebarNavigation = style({
   overflowY: 'auto',
 })
 
-const appSidebarGroup = style({})
+const appSidebarGroup = style({
+  selectors: {
+    '& + &': {
+      marginTop: '14px',
+    },
+    [`${appSidebar}${isCollapsed} & + &`]: {
+      marginTop: '14px',
+      paddingTop: '14px',
+      borderTop: '1px solid var(--border-subtle)',
+    },
+  },
+})
 
-const isActive = style({})
+const isActive = style({
+  selectors: {
+    [`${appSidebarGroup} button&`]: {
+      color: 'var(--text-primary)',
+      background: 'var(--accent-muted)',
+    },
+  },
+})
+
+const appSidebarMenuItem = style({
+  selectors: {
+    '& + &': {
+      marginTop: '4px',
+    },
+  },
+})
 
 const appSidebarLabel = style({
   minWidth: '0',
+  selectors: {
+    [`${appSidebar}${isCollapsed} &`]: {
+      display: 'none',
+    },
+  },
 })
 
 const appSidebarParent = style({})
 
-const appSidebarChevron = style({})
-
-const isExpanded = style({})
+const appSidebarChevron = style({
+  width: '14px',
+  height: '14px',
+  marginLeft: 'auto',
+  transition: 'transform 150ms ease',
+  selectors: {
+    [`&${isExpanded}`]: {
+      transform: 'rotate(180deg)',
+    },
+    [`${appSidebar}${isCollapsed} ${appSidebarParent} &`]: {
+      display: 'none',
+    },
+  },
+})
 
 const appSidebarSubmenu = style({
   display: 'none',
   margin: '4px 0 0 10px',
+  selectors: {
+    [`&${isExpanded}`]: {
+      display: 'grid',
+    },
+    [`${appSidebar}${isCollapsed} &`]: {
+      display: 'none',
+    },
+  },
 })
 
 const appSidebarStatusDot = style({
@@ -80,21 +160,36 @@ const appSidebarResizer = style({
   cursor: 'col-resize',
   touchAction: 'none',
   outline: 'none',
+  '::after': {
+    position: 'absolute',
+    top: '0',
+    right: '3px',
+    bottom: '0',
+    width: '2px',
+    background: 'transparent',
+    transition: 'background-color 120ms ease',
+    content: "''",
+  },
+  selectors: {
+    '&:hover::after, &:focus-visible::after': {
+      background: 'var(--accent)',
+    },
+    [`&${isResizing}::after`]: {
+      background: 'var(--accent)',
+    },
+  },
 })
-
-const isResizing = style({})
 
 const isResizingSidebar = style({})
 
-const isCollapsed = style({})
-
-export const classes = {
+export const styles = {
   'app-sidebar': appSidebar,
   'is-viewport-compact': isViewportCompact,
   'app-sidebar-product': appSidebarProduct,
   'app-sidebar-footer': appSidebarFooter,
   'app-sidebar-navigation': appSidebarNavigation,
   'app-sidebar-group': appSidebarGroup,
+  'app-sidebar-menu-item': appSidebarMenuItem,
   'is-active': isActive,
   'app-sidebar-label': appSidebarLabel,
   'app-sidebar-parent': appSidebarParent,
@@ -107,11 +202,6 @@ export const classes = {
   'is-resizing-sidebar': isResizingSidebar,
   'is-collapsed': isCollapsed,
 } as const
-
-globalStyle(`${appSidebar}${isViewportCompact}`, {
-  paddingTop: '12px',
-  paddingBottom: '12px',
-})
 
 globalStyle(`${appSidebar} *`, {
   WebkitUserSelect: 'none',
@@ -162,10 +252,6 @@ globalStyle(`${appSidebarProduct} span`, {
   letterSpacing: '0.04em',
 })
 
-globalStyle(`${appSidebarGroup} + ${appSidebarGroup}`, {
-  marginTop: '14px',
-})
-
 globalStyle(`${appSidebarGroup} > p`, {
   margin: '0 9px 5px',
   color: 'var(--text-tertiary)',
@@ -194,11 +280,6 @@ globalStyle(`${appSidebarGroup} button:hover`, {
   background: 'var(--surface-hover)',
 })
 
-globalStyle(`${appSidebarGroup} button${isActive}`, {
-  color: 'var(--text-primary)',
-  background: 'var(--accent-muted)',
-})
-
 globalStyle(`${appSidebarGroup} button svg`, {
   width: '19px',
   height: '19px',
@@ -225,22 +306,6 @@ globalStyle(`${appSidebarGroup} button strong`, {
   fontSize: '11px',
 })
 
-globalStyle(`${appSidebarParent} ${appSidebarChevron}`, {
-  width: '14px',
-  height: '14px',
-  marginLeft: 'auto',
-  transition: 'transform 150ms ease',
-})
-
-globalStyle(`${appSidebarParent} ${appSidebarChevron}${isExpanded}`, {
-  transform: 'rotate(180deg)',
-})
-
-globalStyle(`${appSidebarSubmenu}${isExpanded}`, {
-  display: 'grid',
-  gap: '4px',
-})
-
 globalStyle(`${appSidebarSubmenu} button`, {
   gap: '8px',
   paddingLeft: '10px',
@@ -261,26 +326,6 @@ globalStyle(`${appSidebarFooter} small`, {
   fontSize: '9px',
 })
 
-globalStyle(`${appSidebarResizer}::after`, {
-  position: 'absolute',
-  top: '0',
-  right: '3px',
-  bottom: '0',
-  width: '2px',
-  background: 'transparent',
-  transition: 'background-color 120ms ease',
-  content: "''",
-})
-
-globalStyle(
-  `${appSidebarResizer}:hover::after,
-${appSidebarResizer}:focus-visible::after,
-${appSidebarResizer}${isResizing}::after`,
-  {
-    background: 'var(--accent)',
-  },
-)
-
 globalStyle(
   `body${isResizingSidebar},
 body${isResizingSidebar} *`,
@@ -290,17 +335,6 @@ body${isResizingSidebar} *`,
   },
 )
 
-globalStyle(`${appSidebar}${isCollapsed}`, {
-  paddingRight: '8px',
-  paddingLeft: '8px',
-})
-
-globalStyle(`${appSidebar}${isCollapsed} ${appSidebarProduct}`, {
-  justifyContent: 'center',
-  paddingRight: '0',
-  paddingLeft: '0',
-})
-
 globalStyle(`${appSidebar}${isCollapsed} ${appSidebarProduct} img`, {
   width: '32px',
   height: '32px',
@@ -309,7 +343,6 @@ globalStyle(`${appSidebar}${isCollapsed} ${appSidebarProduct} img`, {
 globalStyle(
   `${appSidebar}${isCollapsed} ${appSidebarProduct} div,
 ${appSidebar}${isCollapsed} ${appSidebarGroup} > p,
-${appSidebar}${isCollapsed} ${appSidebarLabel},
 ${appSidebar}${isCollapsed} ${appSidebarFooter} div`,
   {
     display: 'none',
@@ -323,27 +356,7 @@ globalStyle(`${appSidebar}${isCollapsed} ${appSidebarGroup} button`, {
   padding: '0',
 })
 
-globalStyle(`${appSidebar}${isCollapsed} ${appSidebarSubmenu}`, {
-  display: 'none',
-})
-
-globalStyle(`${appSidebar}${isCollapsed} ${appSidebarParent} ${appSidebarChevron}`, {
-  display: 'none',
-})
-
 globalStyle(`${appSidebar}${isCollapsed} ${appSidebarGroup} button svg`, {
   width: '20px',
   height: '20px',
-})
-
-globalStyle(`${appSidebar}${isCollapsed} ${appSidebarGroup} + ${appSidebarGroup}`, {
-  marginTop: '14px',
-  paddingTop: '14px',
-  borderTop: '1px solid var(--border-subtle)',
-})
-
-globalStyle(`${appSidebar}${isCollapsed} ${appSidebarFooter}`, {
-  justifyContent: 'center',
-  paddingRight: '0',
-  paddingLeft: '0',
 })

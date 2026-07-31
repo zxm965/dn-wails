@@ -2,7 +2,7 @@ import type { HTMLAttributes } from 'react'
 
 import { createScopedClassNames } from '@/shared/lib/classNames'
 
-import { classes as styles } from './Badge.css'
+import { styles } from './Badge.css'
 
 const cx = createScopedClassNames(styles)
 

@@ -6,7 +6,7 @@ const spinKeyframes = keyframes({
   },
 })
 
-export const spinnerIcon = style({
+const icon = style({
   animation: `${spinKeyframes} 900ms linear infinite`,
   '@media': {
     '(prefers-reduced-motion: reduce)': {
@@ -14,3 +14,7 @@ export const spinnerIcon = style({
     },
   },
 })
+
+export const styles = {
+  icon,
+} as const

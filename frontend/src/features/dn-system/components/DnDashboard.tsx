@@ -19,7 +19,7 @@ import { createScopedClassNames } from '@/shared/lib/classNames'
 import { getErrorMessage, listAllWeeklyPlans, type WeeklyPlan } from '../api/dnSystemApi'
 import { createDashboardSummary, priorityMeta } from '../model/dnSystem'
 
-import { classes as styles } from './DnSystem.css'
+import { styles } from './DnSystem.css'
 
 const cx = createScopedClassNames(styles)
 

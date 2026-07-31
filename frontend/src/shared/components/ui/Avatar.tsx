@@ -2,7 +2,7 @@ import { Avatar as AvatarPrimitive } from '@base-ui/react/avatar'
 
 import { createScopedClassNames } from '@/shared/lib/classNames'
 
-import { classes as styles } from './Avatar.css'
+import { styles } from './Avatar.css'
 
 const cx = createScopedClassNames(styles)
 

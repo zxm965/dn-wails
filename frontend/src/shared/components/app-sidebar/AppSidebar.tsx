@@ -23,7 +23,7 @@ import appIcon from '@/assets/images/app-icon.png'
 import { Button } from '@/shared/components/ui'
 import { createScopedClassNames } from '@/shared/lib/classNames'
 
-import { classes as styles } from './AppSidebar.css'
+import { styles } from './AppSidebar.css'
 
 const cx = createScopedClassNames(styles)
 
@@ -196,7 +196,9 @@ export function AppSidebar({ activeView, onNavigate }: AppSidebarProps) {
             <p>{group.label}</p>
             {group.parent && (
               <Button
-                className={cx(`app-sidebar-parent${DN_VIEWS.includes(activeView) ? ' is-active' : ''}`)}
+                className={cx(
+                  `app-sidebar-menu-item app-sidebar-parent${DN_VIEWS.includes(activeView) ? ' is-active' : ''}`,
+                )}
                 size='lg'
                 variant='ghost'
                 type='button'
@@ -224,7 +226,7 @@ export function AppSidebar({ activeView, onNavigate }: AppSidebarProps) {
               {group.items.map((item) => (
                 <Button
                   key={item.id}
-                  className={cx(activeView === item.id ? 'is-active' : '')}
+                  className={cx(`app-sidebar-menu-item${activeView === item.id ? ' is-active' : ''}`)}
                   size={group.parent ? 'md' : 'lg'}
                   variant='ghost'
                   type='button'

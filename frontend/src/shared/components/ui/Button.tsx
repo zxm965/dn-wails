@@ -1,10 +1,8 @@
 import { forwardRef, type ButtonHTMLAttributes, type MouseEvent } from 'react'
 
-import { createScopedClassNames } from '@/shared/lib/classNames'
+import { classNames } from '@/shared/lib/classNames'
 
-import { classes as styles } from './Button.css'
-
-const cx = createScopedClassNames(styles)
+import { styles } from './Button.css'
 
 export type ButtonSize = 'sm' | 'md' | 'lg'
 export type ButtonVariant = 'primary' | 'secondary' | 'outline' | 'ghost' | 'danger'
@@ -26,7 +24,7 @@ function createButtonRipple(element: HTMLButtonElement, event: MouseEvent<HTMLBu
   const originX = hasPointerPosition ? event.clientX - rect.left : rect.width / 2
   const originY = hasPointerPosition ? event.clientY - rect.top : rect.height / 2
   const wave = document.createElement('span')
-  wave.className = cx('ui-button-ripple')
+  wave.className = styles.ripple
   wave.style.width = `${size}px`
   wave.style.height = `${size}px`
   wave.style.left = `${originX - size / 2}px`
@@ -42,7 +40,12 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(function Button
   { size, variant = 'primary', ripple = true, className, disabled, onClick, ...props },
   ref,
 ) {
-  const resolvedClassName = ['ui-button', `ui-button-${variant}`, className].filter(Boolean).join(' ')
+  const resolvedClassName = classNames(
+    styles.root,
+    styles.variants[variant],
+    size ? styles.sizes[size] : undefined,
+    className,
+  )
 
   function handleClick(event: MouseEvent<HTMLButtonElement>) {
     if (ripple && !disabled && event.currentTarget.getAttribute('aria-disabled') !== 'true') {
@@ -55,7 +58,7 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(function Button
     <button
       {...props}
       ref={ref}
-      className={cx(resolvedClassName)}
+      className={resolvedClassName}
       data-button-size={size}
       disabled={disabled}
       onClick={handleClick}

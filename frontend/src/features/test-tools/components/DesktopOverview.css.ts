@@ -60,11 +60,30 @@ const desktopOverviewReady = style({
   border: '1px solid var(--border-subtle)',
   borderRadius: '999px',
   boxShadow: 'var(--surface-shadow)',
+  '@container': {
+    'desktop-overview (max-width: 520px)': {
+      alignSelf: 'flex-start',
+    },
+  },
 })
 
-const isReady = style({})
+const isReady = style({
+  selectors: {
+    [`${desktopOverviewReady} > span&`]: {
+      background: '#18b768',
+      boxShadow: '0 0 0 4px rgba(24, 183, 104, 0.13)',
+    },
+  },
+})
 
-const isError = style({})
+const isError = style({
+  selectors: {
+    [`${desktopOverviewReady} > span&`]: {
+      background: 'var(--danger-text)',
+      boxShadow: '0 0 0 4px var(--danger-background)',
+    },
+  },
+})
 
 const desktopOverviewSummary = style([
   {
@@ -126,7 +145,7 @@ const desktopOverviewError = style({
   fontSize: '11px',
 })
 
-export const classes = {
+export const styles = {
   'desktop-overview': desktopOverview,
   'is-embedded': isEmbedded,
   'desktop-overview-heading': desktopOverviewHeading,
@@ -175,16 +194,6 @@ globalStyle(`${desktopOverviewReady} > span`, {
   margin: '0',
   background: 'var(--text-tertiary)',
   borderRadius: '50%',
-})
-
-globalStyle(`${desktopOverviewReady} > span${isReady}`, {
-  background: '#18b768',
-  boxShadow: '0 0 0 4px rgba(24, 183, 104, 0.13)',
-})
-
-globalStyle(`${desktopOverviewReady} > span${isError}`, {
-  background: 'var(--danger-text)',
-  boxShadow: '0 0 0 4px var(--danger-background)',
 })
 
 globalStyle(`${desktopOverviewSummary} article`, {
@@ -330,17 +339,13 @@ globalStyle(`${desktopOverviewRuntime} dl`, {
   },
 })
 
-globalStyle(
-  `${desktopOverviewReady},
-  ${desktopOverviewSectionHeading} > span`,
-  {
-    '@container': {
-      'desktop-overview (max-width: 520px)': {
-        alignSelf: 'flex-start',
-      },
+globalStyle(`${desktopOverviewSectionHeading} > span`, {
+  '@container': {
+    'desktop-overview (max-width: 520px)': {
+      alignSelf: 'flex-start',
     },
   },
-)
+})
 
 globalStyle(`${desktopOverviewHeading} h1`, {
   '@container': {

@@ -1,4 +1,4 @@
-import { globalStyle, style } from '@vanilla-extract/css'
+import { style } from '@vanilla-extract/css'
 
 const uiTabs = style({
   display: 'flex',
@@ -27,6 +27,17 @@ const uiTabsTrigger = style({
   border: '0',
   borderRadius: '7px',
   cursor: 'pointer',
+  ':focus-visible': {
+    outline: '2px solid var(--focus-ring)',
+    outlineOffset: '2px',
+  },
+  selectors: {
+    '&[data-active]': {
+      color: 'var(--text-primary)',
+      background: 'var(--surface-elevated)',
+      boxShadow: '0 2px 8px rgba(0, 0, 0, 0.12)',
+    },
+  },
 })
 
 const uiTabsContent = style({
@@ -34,20 +45,9 @@ const uiTabsContent = style({
   outline: 'none',
 })
 
-export const classes = {
+export const styles = {
   'ui-tabs': uiTabs,
   'ui-tabs-list': uiTabsList,
   'ui-tabs-trigger': uiTabsTrigger,
   'ui-tabs-content': uiTabsContent,
 } as const
-
-globalStyle(`${uiTabsTrigger}[data-active]`, {
-  color: 'var(--text-primary)',
-  background: 'var(--surface-elevated)',
-  boxShadow: '0 2px 8px rgba(0, 0, 0, 0.12)',
-})
-
-globalStyle(`${uiTabsTrigger}:focus-visible`, {
-  outline: '2px solid var(--focus-ring)',
-  outlineOffset: '2px',
-})

@@ -2,7 +2,7 @@ import { LoaderCircle, type LucideIcon, type LucideProps } from 'lucide-react'
 
 import { classNames } from '@/shared/lib/classNames'
 
-import { spinnerIcon } from './Spinner.css'
+import { styles } from './Spinner.css'
 
 export interface SpinnerIconProps extends LucideProps {
   icon?: LucideIcon
@@ -10,5 +10,5 @@ export interface SpinnerIconProps extends LucideProps {
 }
 
 export function SpinnerIcon({ icon: Icon = LoaderCircle, spinning = true, className, ...props }: SpinnerIconProps) {
-  return <Icon className={classNames(spinning && spinnerIcon, className)} {...props} />
+  return <Icon className={classNames(spinning && styles.icon, className)} {...props} />
 }

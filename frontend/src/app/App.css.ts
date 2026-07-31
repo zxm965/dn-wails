@@ -30,7 +30,7 @@ const appContent = style({
   background: 'radial-gradient(circle at 92% 0%, var(--accent-muted), transparent 28%), var(--app-background)',
 })
 
-export const classes = {
+export const styles = {
   'app-shell': appShell,
   'app-workspace': appWorkspace,
   'app-content': appContent,

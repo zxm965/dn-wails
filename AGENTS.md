@@ -98,7 +98,9 @@ main
 
 - 组件和页面样式统一使用 vanilla-extract，并以 `Component.css.ts` 与对应组件或页面就近共置；禁止新增普通 `.css`、CSS Modules、Tailwind、SCSS 或其他样式方案。
 - `frontend/src/app/styles/` 只存放字体、重置、主题令牌等全局基础样式；业务功能和共享组件不得把局部样式集中到全局文件。
-- 组件局部样式必须优先使用 `style`、`styleVariants`、`keyframes` 等局部 API。只有 `html`、`body`、`:root`、第三方组件状态、复杂后代关系或平台专用选择器等无法由单一局部类表达的规则才使用 `globalStyle`。
+- 每个组件或页面的 `.css.ts` 必须统一导出名为 `styles` 的样式映射；单一样式模块的消费方直接使用 `import { styles }`，只有同一文件同时导入多个样式模块时才按组件语义使用 `buttonStyles`、`cardStyles` 等必要别名。
+- 简单伪类、伪元素直接写入对应 `style`；复杂选择器只要最终目标仍是当前局部类，就必须写入该类的 `selectors`，包括当前类的属性或状态组合、相邻同类，以及“父级局部类/状态 + 当前局部类”等关系。不得仅因选择器复杂而使用 `globalStyle`。
+- 除 `html`、`body`、`:root`、重置规则等真正的全局基础样式外，只有规则最终作用于未挂载局部类、因而无法由当前局部类表达的后代元素或外部节点时才允许使用 `globalStyle`；能为目标节点提供局部类时应优先局部化。
 - `shared/components/ui` 中每个 UI 组件必须维护自己的同名 `.css.ts`，禁止新增集中承载全部 UI 规则的 `ui.css.ts`。
 - 局部类名通过样式模块导出并由组件显式接入，不得依赖手写全局业务类名；复杂选择器必须引用 vanilla-extract 生成的局部类。
 - 样式名称必须语义清晰、稳定、可搜索，避免过深的结构选择器。

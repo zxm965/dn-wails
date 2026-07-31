@@ -2,7 +2,7 @@ import { Tabs as TabsPrimitive } from '@base-ui/react/tabs'
 
 import { createScopedClassNames } from '@/shared/lib/classNames'
 
-import { classes as styles } from './Tabs.css'
+import { styles } from './Tabs.css'
 
 const cx = createScopedClassNames(styles)
 

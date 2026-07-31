@@ -1,4 +1,4 @@
-import { globalStyle, style } from '@vanilla-extract/css'
+import { style } from '@vanilla-extract/css'
 
 const uiCard = style({
   minWidth: '0',
@@ -15,6 +15,11 @@ const uiCardHeader = style({
 
 const uiCardContent = style({
   padding: 'var(--panel-padding)',
+  selectors: {
+    [`${uiCardHeader} + &`]: {
+      borderTop: '1px solid var(--border-subtle)',
+    },
+  },
 })
 
 const uiCardFooter = style([
@@ -26,6 +31,11 @@ const uiCardFooter = style([
     alignItems: 'center',
     justifyContent: 'space-between',
     gap: '12px',
+    selectors: {
+      [`${uiCardContent} + &`]: {
+        borderTop: '1px solid var(--border-subtle)',
+      },
+    },
   },
 ])
 
@@ -50,7 +60,7 @@ const uiCardDescription = style([
   },
 ])
 
-export const classes = {
+export const styles = {
   'ui-card': uiCard,
   'ui-card-header': uiCardHeader,
   'ui-card-content': uiCardContent,
@@ -58,11 +68,3 @@ export const classes = {
   'ui-card-title': uiCardTitle,
   'ui-card-description': uiCardDescription,
 } as const
-
-globalStyle(
-  `${uiCardHeader} + ${uiCardContent},
-${uiCardContent} + ${uiCardFooter}`,
-  {
-    borderTop: '1px solid var(--border-subtle)',
-  },
-)

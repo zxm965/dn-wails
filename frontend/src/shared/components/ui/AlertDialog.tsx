@@ -5,8 +5,8 @@ import { createScopedClassNames } from '@/shared/lib/classNames'
 
 import { Button, type ButtonProps } from './Button'
 
-import { classes as alertDialogStyles } from './AlertDialog.css'
-import { classes as dialogStyles } from './Dialog.css'
+import { styles as alertDialogStyles } from './AlertDialog.css'
+import { styles as dialogStyles } from './Dialog.css'
 
 const cx = createScopedClassNames({ ...dialogStyles, ...alertDialogStyles })
 

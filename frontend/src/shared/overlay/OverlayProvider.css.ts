@@ -5,6 +5,6 @@ const overlayContent = style({
   lineHeight: '1.65',
 })
 
-export const classes = {
+export const styles = {
   'overlay-content': overlayContent,
 } as const

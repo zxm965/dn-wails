@@ -2,7 +2,7 @@ import { Progress as ProgressPrimitive } from '@base-ui/react/progress'
 
 import { createScopedClassNames } from '@/shared/lib/classNames'
 
-import { classes as styles } from './Progress.css'
+import { styles } from './Progress.css'
 
 const cx = createScopedClassNames(styles)
 

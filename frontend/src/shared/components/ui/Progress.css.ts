@@ -27,7 +27,7 @@ const uiProgressIndicator = style([
   },
 ])
 
-export const classes = {
+export const styles = {
   'ui-progress': uiProgress,
   'ui-progress-track': uiProgressTrack,
   'ui-progress-indicator': uiProgressIndicator,

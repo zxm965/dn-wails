@@ -46,7 +46,7 @@ const uiBadgeInfo = style({
   background: 'rgba(87, 190, 255, 0.12)',
 })
 
-export const classes = {
+export const styles = {
   'ui-badge': uiBadge,
   'ui-badge-accent': uiBadgeAccent,
   'ui-badge-outline': uiBadgeOutline,

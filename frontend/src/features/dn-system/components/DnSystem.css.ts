@@ -1,7 +1,7 @@
 import { globalStyle, style } from '@vanilla-extract/css'
 
-import { classes as buttonClasses } from '../../../shared/components/ui/Button.css'
-import { classes as cardClasses } from '../../../shared/components/ui/Card.css'
+import { styles as buttonStyles } from '../../../shared/components/ui/Button.css'
+import { styles as cardStyles } from '../../../shared/components/ui/Card.css'
 
 const dnPage = style({
   width: 'min(1180px, 100%)',
@@ -177,17 +177,17 @@ const dnCardHeadingRow = style({
   alignItems: 'flex-start',
   justifyContent: 'space-between',
   gap: '12px',
+  '@container': {
+    'dn-page (max-width: 410px)': {
+      alignItems: 'stretch',
+      flexDirection: 'column',
+    },
+  },
 })
 
-const dnCardHeaderCopy = style({})
-
-const dnInlineProgress = style({
-  display: 'flex',
-  alignItems: 'center',
-  justifyContent: 'space-between',
-  gap: '12px',
-  margin: '22px 0 8px',
-  color: 'var(--text-secondary)',
+const dnCardHeaderCopy = style({
+  margin: '4px 0 0',
+  color: 'var(--text-tertiary)',
   fontSize: '11px',
 })
 
@@ -221,6 +221,21 @@ const dnPendingItem = style({
   background: 'var(--surface-muted)',
   border: '1px solid var(--border-subtle)',
   borderRadius: '11px',
+})
+
+const dnInlineProgress = style({
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'space-between',
+  gap: '12px',
+  margin: '22px 0 8px',
+  color: 'var(--text-secondary)',
+  fontSize: '11px',
+  selectors: {
+    [`${dnPendingItem} &`]: {
+      margin: '13px 0 7px',
+    },
+  },
 })
 
 const dnTicketList = style({
@@ -308,6 +323,14 @@ const dnFilterActions = style([
       },
     },
   },
+  {
+    '@container': {
+      'dn-page (max-width: 410px)': {
+        alignItems: 'stretch',
+        flexDirection: 'column',
+      },
+    },
+  },
 ])
 
 const dnViewSwitch = style({
@@ -337,13 +360,6 @@ const dnTableRemark = style({
   color: 'var(--text-secondary)',
   textOverflow: 'ellipsis',
   whiteSpace: 'nowrap',
-})
-
-const dnRowActions = style({
-  display: 'flex',
-  alignItems: 'center',
-  justifyContent: 'flex-end',
-  gap: '3px',
 })
 
 const dnDangerAction = style({
@@ -380,6 +396,14 @@ const dnRoleCard = style([
       },
     },
   },
+  {
+    selectors: {
+      '&:hover': {
+        background: 'var(--surface-muted)',
+        borderColor: 'var(--border-strong)',
+      },
+    },
+  },
 ])
 
 const dnPlanCard = style([
@@ -400,9 +424,36 @@ const dnPlanCard = style([
       },
     },
   },
+  {
+    selectors: {
+      '&:hover': {
+        background: 'var(--surface-muted)',
+        borderColor: 'var(--border-strong)',
+      },
+    },
+  },
 ])
 
-const isUpdating = style({})
+const isUpdating = style({
+  selectors: {
+    [`${dnPlanCard}&`]: {
+      opacity: '0.68',
+    },
+  },
+})
+
+const dnRowActions = style({
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'flex-end',
+  gap: '3px',
+  selectors: {
+    [`${dnRoleCard} &, ${dnPlanCard} &`]: {
+      paddingTop: '10px',
+      borderTop: '1px solid var(--border-subtle)',
+    },
+  },
+})
 
 const dnRoleStats = style({
   display: 'grid',
@@ -410,7 +461,13 @@ const dnRoleStats = style({
   gap: '8px',
 })
 
-const dnPlanRemark = style({})
+const dnPlanRemark = style({
+  minHeight: '34px',
+  margin: '0',
+  color: 'var(--text-secondary)',
+  fontSize: '11px',
+  lineHeight: '1.5',
+})
 
 const dnFormGrid = style([
   {
@@ -484,8 +541,6 @@ const dnStatusToggle = style({
   overflow: 'visible',
 })
 
-const isSelected = style({})
-
 const dnTicketChips = style({
   display: 'flex',
   flexWrap: 'wrap',
@@ -527,7 +582,17 @@ const dnEditorSwitches = style([
   },
 ])
 
-const dnSwitchRow = style({})
+const dnSwitchRow = style({
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'space-between',
+  gap: '10px',
+  padding: '9px 10px',
+  color: 'var(--text-secondary)',
+  fontSize: '11px',
+  background: 'var(--surface-muted)',
+  borderRadius: '9px',
+})
 
 const dnPlanEditor = style({
   display: 'grid',
@@ -562,6 +627,35 @@ const dnNestPicker = style([
     },
   },
 ])
+
+const isSelected = style({
+  selectors: {
+    [`${dnStatusToggle}&`]: {
+      color: 'var(--accent)',
+      background: 'var(--accent-muted)',
+      borderColor: 'var(--accent)',
+    },
+    [`${dnStatusToggle}&::after`]: {
+      position: 'absolute',
+      top: '-5px',
+      right: '-5px',
+      width: '14px',
+      height: '14px',
+      display: 'grid',
+      placeItems: 'center',
+      color: 'var(--button-primary-text)',
+      fontSize: '9px',
+      background: 'var(--accent)',
+      borderRadius: '50%',
+      content: "'✓'",
+    },
+    [`${dnNestPicker} label&`]: {
+      color: 'var(--text-primary)',
+      background: 'var(--accent-muted)',
+      borderColor: 'var(--accent)',
+    },
+  },
+})
 
 const dnTicketEditor = style({
   display: 'grid',
@@ -601,7 +695,14 @@ const dnMessageItem = style([
   },
 ])
 
-const isUnread = style({})
+const isUnread = style({
+  selectors: {
+    [`${dnMessageItem}&`]: {
+      background: 'var(--accent-muted)',
+      borderColor: 'color-mix(in srgb, var(--accent) 35%, transparent)',
+    },
+  },
+})
 
 const dnMessageIcon = style({
   width: '38px',
@@ -611,13 +712,41 @@ const dnMessageIcon = style({
   borderRadius: '50%',
 })
 
-const isInfo = style({})
+const isInfo = style({
+  selectors: {
+    [`${dnMessageIcon}&`]: {
+      color: '#57beff',
+      background: 'rgba(87, 190, 255, 0.12)',
+    },
+  },
+})
 
-const isSuccess = style({})
+const isSuccess = style({
+  selectors: {
+    [`${dnMessageIcon}&`]: {
+      color: '#26c876',
+      background: 'rgba(24, 183, 104, 0.12)',
+    },
+  },
+})
 
-const isWarning = style({})
+const isWarning = style({
+  selectors: {
+    [`${dnMessageIcon}&`]: {
+      color: '#e7a72f',
+      background: 'rgba(231, 167, 47, 0.12)',
+    },
+  },
+})
 
-const isError = style({})
+const isError = style({
+  selectors: {
+    [`${dnMessageIcon}&`]: {
+      color: 'var(--danger-text)',
+      background: 'var(--danger-background)',
+    },
+  },
+})
 
 const dnMessageTitle = style({
   display: 'flex',
@@ -629,9 +758,11 @@ const dnMessageTitle = style({
 })
 
 const dnMessageContent = style({
-  display: '-webkit-box',
+  display: 'block',
   overflow: 'hidden',
   marginTop: '5px',
+  color: 'var(--text-secondary)',
+  fontSize: '11px',
   lineHeight: '1.55',
   WebkitBoxOrient: 'vertical',
   WebkitLineClamp: '2',
@@ -776,7 +907,7 @@ const dnStorageInfo = style([
   },
 ])
 
-export const classes = {
+export const styles = {
   'dn-page': dnPage,
   'dn-auth-page': dnAuthPage,
   'dn-auth-card': dnAuthCard,
@@ -870,7 +1001,7 @@ globalStyle(`${dnPage} p`, {
   overflowWrap: 'anywhere',
 })
 
-globalStyle(`${dnAuthCard} ${cardClasses['ui-card-header']}`, {
+globalStyle(`${dnAuthCard} ${cardStyles['ui-card-header']}`, {
   display: 'grid',
   justifyItems: 'center',
   textAlign: 'center',
@@ -881,13 +1012,13 @@ globalStyle(`${dnAuthMark} svg`, {
   height: '24px',
 })
 
-globalStyle(`${dnAuthForm} > ${buttonClasses['ui-button']}`, {
+globalStyle(`${dnAuthForm} > ${buttonStyles.root}`, {
   width: '100%',
 })
 
 globalStyle(
-  `${dnProgressCard} ${cardClasses['ui-card-content']},
-${dnPriorityCard} ${cardClasses['ui-card-content']}`,
+  `${dnProgressCard} ${cardStyles['ui-card-content']},
+${dnPriorityCard} ${cardStyles['ui-card-content']}`,
   {
     padding: '0',
   },
@@ -958,7 +1089,7 @@ globalStyle(`${dnOverviewMetrics} span`, {
   fontSize: '10px',
 })
 
-globalStyle(`${dnPriorityCard} ${cardClasses['ui-card-content']}`, {
+globalStyle(`${dnPriorityCard} ${cardStyles['ui-card-content']}`, {
   minHeight: '286px',
   display: 'flex',
   flexDirection: 'column',
@@ -976,7 +1107,7 @@ globalStyle(`${dnPriorityCard} p`, {
   fontSize: '12px',
 })
 
-globalStyle(`${dnPriorityCard} ${buttonClasses['ui-button']}`, {
+globalStyle(`${dnPriorityCard} ${buttonStyles.root}`, {
   width: '100%',
   marginTop: 'auto',
 })
@@ -996,8 +1127,7 @@ ${dnCardHeadingRow} p`,
 
 globalStyle(
   `${dnCardHeadingRow} span,
-${dnCardHeadingRow} p,
-${dnCardHeaderCopy}`,
+${dnCardHeadingRow} p`,
   {
     margin: '4px 0 0',
     color: 'var(--text-tertiary)',
@@ -1026,10 +1156,6 @@ globalStyle(`${dnCompleteState} svg`, {
 globalStyle(`${dnCompleteState} span`, {
   color: 'var(--text-secondary)',
   fontSize: '12px',
-})
-
-globalStyle(`${dnPendingItem} ${dnInlineProgress}`, {
-  margin: '13px 0 7px',
 })
 
 globalStyle(`${dnTicketList} article`, {
@@ -1096,19 +1222,6 @@ globalStyle(`${dnTable} td:last-child`, {
   textAlign: 'right',
 })
 
-globalStyle(
-  `${dnRoleCard}:hover,
-${dnPlanCard}:hover`,
-  {
-    background: 'var(--surface-muted)',
-    borderColor: 'var(--border-strong)',
-  },
-)
-
-globalStyle(`${dnPlanCard}${isUpdating}`, {
-  opacity: '0.68',
-})
-
 globalStyle(`${dnRoleStats} span`, {
   display: 'grid',
   gap: '4px',
@@ -1124,51 +1237,17 @@ globalStyle(`${dnRoleStats} strong`, {
   fontSize: '12px',
 })
 
-globalStyle(
-  `${dnRoleCard} > p,
-${dnPlanRemark}`,
-  {
-    minHeight: '34px',
-    margin: '0',
-    color: 'var(--text-secondary)',
-    fontSize: '11px',
-    lineHeight: '1.5',
-  },
-)
+globalStyle(`${dnRoleCard} > p`, {
+  minHeight: '34px',
+  margin: '0',
+  color: 'var(--text-secondary)',
+  fontSize: '11px',
+  lineHeight: '1.5',
+})
 
-globalStyle(
-  `${dnRoleCard} ${dnRowActions},
-${dnPlanCard} ${dnRowActions}`,
-  {
-    paddingTop: '10px',
-    borderTop: '1px solid var(--border-subtle)',
-  },
-)
-
-globalStyle(`${dnSectionHeading} ${buttonClasses['ui-button']}`, {
+globalStyle(`${dnSectionHeading} ${buttonStyles.root}`, {
   width: 'var(--button-height-sm)',
   padding: '0',
-})
-
-globalStyle(`${dnStatusToggle}${isSelected}`, {
-  color: 'var(--accent)',
-  background: 'var(--accent-muted)',
-  borderColor: 'var(--accent)',
-})
-
-globalStyle(`${dnStatusToggle}${isSelected}::after`, {
-  position: 'absolute',
-  top: '-5px',
-  right: '-5px',
-  width: '14px',
-  height: '14px',
-  display: 'grid',
-  placeItems: 'center',
-  color: 'var(--button-primary-text)',
-  fontSize: '9px',
-  background: 'var(--accent)',
-  borderRadius: '50%',
-  content: "'✓'",
 })
 
 globalStyle(`${dnTicketChips} > span`, {
@@ -1179,7 +1258,7 @@ globalStyle(`${dnTicketChips} > span`, {
   borderRadius: '999px',
 })
 
-globalStyle(`${dnTicketChips} ${buttonClasses['ui-button']}`, {
+globalStyle(`${dnTicketChips} ${buttonStyles.root}`, {
   width: 'var(--button-height-sm)',
   padding: '0',
   borderRadius: '0',
@@ -1187,8 +1266,7 @@ globalStyle(`${dnTicketChips} ${buttonClasses['ui-button']}`, {
 
 globalStyle(
   `${dnPlanFlags} label,
-${dnEditorSwitches} label,
-${dnSwitchRow}`,
+${dnEditorSwitches} label`,
   {
     display: 'flex',
     alignItems: 'center',
@@ -1218,12 +1296,6 @@ globalStyle(`${dnNestPicker} label`, {
   borderRadius: '9px',
 })
 
-globalStyle(`${dnNestPicker} label${isSelected}`, {
-  color: 'var(--text-primary)',
-  background: 'var(--accent-muted)',
-  borderColor: 'var(--accent)',
-})
-
 globalStyle(`${dnTicketEditor} > div`, {
   display: 'grid',
   gridTemplateColumns: 'minmax(130px, 1fr) minmax(120px, 0.7fr) auto',
@@ -1231,11 +1303,6 @@ globalStyle(`${dnTicketEditor} > div`, {
   padding: '10px',
   background: 'var(--surface-muted)',
   borderRadius: '10px',
-})
-
-globalStyle(`${dnMessageItem}${isUnread}`, {
-  background: 'var(--accent-muted)',
-  borderColor: 'color-mix(in srgb, var(--accent) 35%, transparent)',
 })
 
 globalStyle(`${dnMessageItem} > span:nth-child(2)`, {
@@ -1247,42 +1314,18 @@ globalStyle(`${dnMessageIcon} svg`, {
   height: '18px',
 })
 
-globalStyle(`${dnMessageIcon}${isInfo}`, {
-  color: '#57beff',
-  background: 'rgba(87, 190, 255, 0.12)',
+globalStyle(`${dnMessageItem} small`, {
+  display: 'block',
+  color: 'var(--text-secondary)',
+  fontSize: '11px',
 })
-
-globalStyle(`${dnMessageIcon}${isSuccess}`, {
-  color: '#26c876',
-  background: 'rgba(24, 183, 104, 0.12)',
-})
-
-globalStyle(`${dnMessageIcon}${isWarning}`, {
-  color: '#e7a72f',
-  background: 'rgba(231, 167, 47, 0.12)',
-})
-
-globalStyle(`${dnMessageIcon}${isError}`, {
-  color: 'var(--danger-text)',
-  background: 'var(--danger-background)',
-})
-
-globalStyle(
-  `${dnMessageContent},
-${dnMessageItem} small`,
-  {
-    display: 'block',
-    color: 'var(--text-secondary)',
-    fontSize: '11px',
-  },
-)
 
 globalStyle(`${dnMessageItem} small`, {
   marginTop: '7px',
   color: 'var(--text-tertiary)',
 })
 
-globalStyle(`${dnMessageItem} > ${buttonClasses['ui-button']}`, {
+globalStyle(`${dnMessageItem} > ${buttonStyles.root}`, {
   maxWidth: '160px',
 })
 
@@ -1375,7 +1418,7 @@ globalStyle(`${dnStorageInfo} p`, {
   lineHeight: '1.65',
 })
 
-globalStyle(`${dnPriorityCard} ${cardClasses['ui-card-content']}`, {
+globalStyle(`${dnPriorityCard} ${cardStyles['ui-card-content']}`, {
   '@container': {
     'dn-page (max-width: 880px)': {
       minHeight: '250px',
@@ -1391,7 +1434,7 @@ globalStyle(`${dnSecurityForm} > svg`, {
   },
 })
 
-globalStyle(`${dnFilterActions} ${buttonClasses['ui-button']}`, {
+globalStyle(`${dnFilterActions} ${buttonStyles.root}`, {
   '@container': {
     'dn-page (max-width: 620px)': {
       flex: '1',
@@ -1399,7 +1442,7 @@ globalStyle(`${dnFilterActions} ${buttonClasses['ui-button']}`, {
   },
 })
 
-globalStyle(`${dnMessageItem} > ${buttonClasses['ui-button']}`, {
+globalStyle(`${dnMessageItem} > ${buttonStyles.root}`, {
   '@container': {
     'dn-page (max-width: 620px)': {
       maxWidth: 'none',
@@ -1425,23 +1468,18 @@ globalStyle(`${dnOverviewMetrics} > div + div`, {
   },
 })
 
-globalStyle(
-  `${dnFilterActions},
-  ${dnCardHeadingRow},
-  ${dnTicketList} article`,
-  {
-    '@container': {
-      'dn-page (max-width: 410px)': {
-        alignItems: 'stretch',
-        flexDirection: 'column',
-      },
+globalStyle(`${dnTicketList} article`, {
+  '@container': {
+    'dn-page (max-width: 410px)': {
+      alignItems: 'stretch',
+      flexDirection: 'column',
     },
   },
-)
+})
 
 globalStyle(
-  `${dnFilterActions} ${buttonClasses['ui-button']},
-  ${dnCardHeadingRow} > ${buttonClasses['ui-button']}`,
+  `${dnFilterActions} ${buttonStyles.root},
+  ${dnCardHeadingRow} > ${buttonStyles.root}`,
   {
     '@container': {
       'dn-page (max-width: 410px)': {

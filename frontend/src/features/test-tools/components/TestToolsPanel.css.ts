@@ -67,7 +67,14 @@ const testToolsCategories = style({
   scrollbarWidth: 'thin',
 })
 
-const isActive = style({})
+const isActive = style({
+  selectors: {
+    [`${testToolsCategories} button&`]: {
+      color: 'var(--text-primary)',
+      background: 'var(--accent-muted)',
+    },
+  },
+})
 
 const testToolsView = style({
   minWidth: '0',
@@ -118,9 +125,25 @@ const testToolsActions = style([
   },
 ])
 
-const testToolsButton = style({})
+const testToolsButton = style({
+  padding: '8px 12px',
+  color: 'var(--text-primary)',
+  fontSize: '11px',
+  fontWeight: '700',
+  background: 'var(--surface-muted)',
+  border: '1px solid var(--border-strong)',
+  borderRadius: '8px',
+  cursor: 'pointer',
+  ':hover': {
+    background: 'var(--surface-hover)',
+  },
+})
 
-const isPrimary = style({})
+const isPrimary = style({
+  color: 'var(--button-primary-text)',
+  background: 'var(--accent)',
+  borderColor: 'transparent',
+})
 
 const testToolsNote = style({
   marginTop: '16px',
@@ -161,7 +184,7 @@ const testToolsDropzone = style([
 
 const testToolsOverlayDemo = style({})
 
-export const classes = {
+export const styles = {
   'test-tools-panel': testToolsPanel,
   'test-tools-heading': testToolsHeading,
   'test-tools-badge': testToolsBadge,
@@ -220,11 +243,6 @@ globalStyle(`${testToolsCategories} button:hover`, {
   background: 'var(--surface-hover)',
 })
 
-globalStyle(`${testToolsCategories} button${isActive}`, {
-  color: 'var(--text-primary)',
-  background: 'var(--accent-muted)',
-})
-
 globalStyle(
   `${testToolsCategories} strong,
 ${testToolsCategories} small`,
@@ -277,33 +295,19 @@ globalStyle(`${testToolsSection} header p`, {
   fontSize: '10px',
 })
 
-globalStyle(
-  `${testToolsActions} button,
-${testToolsButton}`,
-  {
-    padding: '8px 12px',
-    color: 'var(--text-primary)',
-    fontSize: '11px',
-    fontWeight: '700',
-    background: 'var(--surface-muted)',
-    border: '1px solid var(--border-strong)',
-    borderRadius: '8px',
-    cursor: 'pointer',
-  },
-)
+globalStyle(`${testToolsActions} button`, {
+  padding: '8px 12px',
+  color: 'var(--text-primary)',
+  fontSize: '11px',
+  fontWeight: '700',
+  background: 'var(--surface-muted)',
+  border: '1px solid var(--border-strong)',
+  borderRadius: '8px',
+  cursor: 'pointer',
+})
 
-globalStyle(
-  `${testToolsActions} button:hover,
-${testToolsButton}:hover`,
-  {
-    background: 'var(--surface-hover)',
-  },
-)
-
-globalStyle(`${testToolsButton}${isPrimary}`, {
-  color: 'var(--button-primary-text)',
-  background: 'var(--accent)',
-  borderColor: 'transparent',
+globalStyle(`${testToolsActions} button:hover`, {
+  background: 'var(--surface-hover)',
 })
 
 globalStyle(`${testToolsDropzone} strong`, {

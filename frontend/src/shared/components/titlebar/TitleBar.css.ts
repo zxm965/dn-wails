@@ -4,6 +4,12 @@ const disableImageDrag = { WebkitUserDrag: 'none' } as const
 
 const disableWindowDrag = { WebkitAppRegion: 'no-drag' } as const
 
+const titlebarMacos = style({
+  flexBasis: '32px',
+  paddingRight: '82px',
+  paddingLeft: '82px',
+})
+
 const titlebar = style({
   flex: '0 0 44px',
   display: 'flex',
@@ -17,6 +23,15 @@ const titlebar = style({
   vars: {
     '--wails-draggable': 'drag',
   },
+  selectors: {
+    [`&:not(${titlebarMacos})`]: {
+      '@media': {
+        '(max-width: 480px)': {
+          paddingLeft: '10px',
+        },
+      },
+    },
+  },
 })
 
 const titlebarBrand = style({
@@ -24,6 +39,12 @@ const titlebarBrand = style({
   display: 'flex',
   alignItems: 'center',
   gap: '9px',
+  selectors: {
+    [`${titlebarMacos} &`]: {
+      flex: '1',
+      justifyContent: 'center',
+    },
+  },
 })
 
 const titlebarActions = style({
@@ -35,12 +56,6 @@ const titlebarActions = style({
   vars: {
     '--wails-draggable': 'no-drag',
   },
-})
-
-const titlebarMacos = style({
-  flexBasis: '32px',
-  paddingRight: '82px',
-  paddingLeft: '82px',
 })
 
 const titlebarLogo = style([
@@ -90,6 +105,14 @@ const windowControl = style([
     border: '0',
     borderRadius: '0',
     cursor: 'default',
+    ':hover': {
+      color: 'var(--text-primary)',
+      background: 'var(--surface-hover)',
+    },
+    ':focus-visible': {
+      outline: '2px solid var(--focus-ring)',
+      outlineOffset: '-2px',
+    },
   },
   {
     '@media': {
@@ -107,9 +130,13 @@ const windowControl = style([
   },
 ])
 
-const windowControlClose = style({})
+const windowControlClose = style({
+  ':hover': {
+    background: '#c42b1c',
+  },
+})
 
-export const classes = {
+export const styles = {
   titlebar: titlebar,
   'titlebar-brand': titlebarBrand,
   'titlebar-actions': titlebarActions,
@@ -132,25 +159,6 @@ ${titlebar} svg`,
   disableImageDrag as never,
 )
 
-globalStyle(`${titlebarMacos} ${titlebarBrand}`, {
-  flex: '1',
-  justifyContent: 'center',
-})
-
-globalStyle(`${windowControl}:hover`, {
-  color: 'var(--text-primary)',
-  background: 'var(--surface-hover)',
-})
-
-globalStyle(`${windowControl}:focus-visible`, {
-  outline: '2px solid var(--focus-ring)',
-  outlineOffset: '-2px',
-})
-
-globalStyle(`${windowControlClose}:hover`, {
-  background: '#c42b1c',
-})
-
 globalStyle(`${windowControl} svg`, {
   width: '12px',
   height: '12px',
@@ -158,12 +166,4 @@ globalStyle(`${windowControl} svg`, {
   stroke: 'currentColor',
   strokeLinecap: 'round',
   strokeWidth: '1.2',
-})
-
-globalStyle(`${titlebar}:not(${titlebarMacos})`, {
-  '@media': {
-    '(max-width: 480px)': {
-      paddingLeft: '10px',
-    },
-  },
 })

@@ -6,7 +6,7 @@ import { createScopedClassNames } from '@/shared/lib/classNames'
 
 import { type NotificationActivation, useSystemNotification } from '../hooks/useSystemNotification'
 
-import { classes as styles } from './SystemNotificationPanel.css'
+import { styles } from './SystemNotificationPanel.css'
 
 const cx = createScopedClassNames(styles)
 

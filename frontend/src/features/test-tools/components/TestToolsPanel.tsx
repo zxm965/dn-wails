@@ -22,7 +22,7 @@ import { windowManager } from '@/shared/window'
 
 import { DesktopOverview } from './DesktopOverview'
 
-import { classes as styles } from './TestToolsPanel.css'
+import { styles } from './TestToolsPanel.css'
 
 const cx = createScopedClassNames(styles)
 

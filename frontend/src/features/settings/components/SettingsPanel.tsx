@@ -5,7 +5,7 @@ import { createScopedClassNames } from '@/shared/lib/classNames'
 import { type AccentColor, type AppSettings, type ButtonSize, type Density, type ThemeMode } from '../api/settingsApi'
 import { useSettings } from '../context/SettingsProvider'
 
-import { classes as styles } from './SettingsPanel.css'
+import { styles } from './SettingsPanel.css'
 
 const cx = createScopedClassNames(styles)
 

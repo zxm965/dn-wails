@@ -8,7 +8,7 @@ import { createScopedClassNames } from '@/shared/lib/classNames'
 
 import { Button } from './Button'
 
-import { classes as styles } from './FormControls.css'
+import { styles } from './FormControls.css'
 
 const cx = createScopedClassNames(styles)
 

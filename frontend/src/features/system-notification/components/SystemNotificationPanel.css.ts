@@ -18,7 +18,19 @@ const systemNotificationPanel = style({
   containerType: 'inline-size',
 })
 
-const isEmbedded = style({})
+const isEmbedded = style({
+  selectors: {
+    [`${systemNotificationPanel}&`]: {
+      width: '100%',
+      minHeight: 'auto',
+      padding: 'var(--panel-padding)',
+      background: 'var(--surface-elevated)',
+      border: '1px solid var(--border-subtle)',
+      borderRadius: 'var(--panel-radius)',
+      boxShadow: 'var(--surface-shadow)',
+    },
+  },
+})
 
 const systemNotificationHeading = style([
   {
@@ -27,6 +39,11 @@ const systemNotificationHeading = style([
     justifyContent: 'space-between',
     gap: '24px',
     marginBottom: '28px',
+    selectors: {
+      [`${systemNotificationPanel}${isEmbedded} &`]: {
+        marginBottom: '20px',
+      },
+    },
   },
   {
     '@container': {
@@ -44,12 +61,23 @@ const systemNotificationEyebrow = style({
   fontWeight: '700',
   letterSpacing: '0.14em',
   textTransform: 'uppercase',
+  selectors: {
+    [`${systemNotificationPanel}${isEmbedded} &`]: {
+      fontSize: '9px',
+    },
+  },
 })
 
 const systemNotificationDescription = style({
   margin: '12px 0 0',
   color: 'var(--text-secondary)',
   lineHeight: '1.6',
+  selectors: {
+    [`${systemNotificationPanel}${isEmbedded} &`]: {
+      marginTop: '7px',
+      fontSize: '10px',
+    },
+  },
 })
 
 const messagePreviewCard = style([
@@ -60,6 +88,12 @@ const messagePreviewCard = style([
     border: '1px solid var(--border-subtle)',
     borderRadius: 'var(--panel-radius)',
     boxShadow: 'var(--surface-shadow)',
+    selectors: {
+      [`${systemNotificationPanel}${isEmbedded} &`]: {
+        padding: '20px',
+        boxShadow: 'none',
+      },
+    },
   },
   {
     display: 'flex',
@@ -76,6 +110,12 @@ const notificationForm = style([
     border: '1px solid var(--border-subtle)',
     borderRadius: 'var(--panel-radius)',
     boxShadow: 'var(--surface-shadow)',
+    selectors: {
+      [`${systemNotificationPanel}${isEmbedded} &`]: {
+        padding: '20px',
+        boxShadow: 'none',
+      },
+    },
   },
   {
     display: 'flex',
@@ -107,13 +147,6 @@ const notificationStatus = style([
   },
 ])
 
-const notificationStatusDot = style({
-  width: '8px',
-  height: '8px',
-  background: '#8b98a9',
-  borderRadius: '50%',
-})
-
 const isReady = style({})
 
 const isWarning = style({})
@@ -121,6 +154,33 @@ const isWarning = style({})
 const isError = style({})
 
 const isLoading = style({})
+
+const notificationStatusDot = style({
+  width: '8px',
+  height: '8px',
+  background: '#8b98a9',
+  borderRadius: '50%',
+  selectors: {
+    [`${notificationStatus}${isReady} &`]: {
+      background: '#07c160',
+      boxShadow: '0 0 0 4px rgba(7, 193, 96, 0.14)',
+    },
+    [`${notificationStatus}${isWarning} &`]: {
+      background: '#f5b942',
+    },
+    [`${notificationStatus}${isError} &`]: {
+      background: '#ff756b',
+    },
+    [`${notificationStatus}${isLoading} &`]: {
+      animation: `${notificationPulseKeyframes} 1.2s ease-in-out infinite`,
+      '@media': {
+        '(prefers-reduced-motion: reduce)': {
+          animation: 'none',
+        },
+      },
+    },
+  },
+})
 
 const systemNotificationGrid = style([
   {
@@ -278,6 +338,11 @@ const notificationFeedback = style({
   color: 'var(--text-secondary)',
   fontSize: '13px',
   lineHeight: '1.55',
+  selectors: {
+    [`&${isError}`]: {
+      color: 'var(--danger-text)',
+    },
+  },
 })
 
 const notificationActions = style([
@@ -304,6 +369,14 @@ const notificationButton = style([
     border: '1px solid transparent',
     borderRadius: '9px',
     cursor: 'pointer',
+    ':disabled': {
+      cursor: 'not-allowed',
+      opacity: '0.5',
+    },
+    ':focus-visible': {
+      outline: '2px solid var(--focus-ring)',
+      outlineOffset: '2px',
+    },
   },
   {
     '@container': {
@@ -317,15 +390,25 @@ const notificationButton = style([
 const notificationButtonPrimary = style({
   color: '#ffffff',
   background: 'var(--accent)',
+  selectors: {
+    '&:hover:not(:disabled)': {
+      background: 'var(--accent-hover)',
+    },
+  },
 })
 
 const notificationButtonSecondary = style({
   color: 'var(--text-primary)',
   background: 'var(--surface-muted)',
   borderColor: 'var(--border-strong)',
+  selectors: {
+    '&:hover:not(:disabled)': {
+      background: 'var(--surface-hover)',
+    },
+  },
 })
 
-export const classes = {
+export const styles = {
   'system-notification-panel': systemNotificationPanel,
   'is-embedded': isEmbedded,
   'system-notification-heading': systemNotificationHeading,
@@ -357,16 +440,6 @@ export const classes = {
   'notification-button-secondary': notificationButtonSecondary,
 } as const
 
-globalStyle(`${systemNotificationPanel}${isEmbedded}`, {
-  width: '100%',
-  minHeight: 'auto',
-  padding: 'var(--panel-padding)',
-  background: 'var(--surface-elevated)',
-  border: '1px solid var(--border-subtle)',
-  borderRadius: 'var(--panel-radius)',
-  boxShadow: 'var(--surface-shadow)',
-})
-
 globalStyle(`${systemNotificationHeading} h1`, {
   margin: '0',
   fontSize: 'clamp(28px, 4vw, 40px)',
@@ -376,45 +449,6 @@ globalStyle(`${systemNotificationHeading} h1`, {
 globalStyle(`${systemNotificationHeading} h2`, {
   margin: '0',
   fontSize: '18px',
-})
-
-globalStyle(`${systemNotificationPanel}${isEmbedded} ${systemNotificationHeading}`, {
-  marginBottom: '20px',
-})
-
-globalStyle(`${systemNotificationPanel}${isEmbedded} ${systemNotificationEyebrow}`, {
-  fontSize: '9px',
-})
-
-globalStyle(`${systemNotificationPanel}${isEmbedded} ${systemNotificationDescription}`, {
-  marginTop: '7px',
-  fontSize: '10px',
-})
-
-globalStyle(
-  `${systemNotificationPanel}${isEmbedded} ${messagePreviewCard},
-${systemNotificationPanel}${isEmbedded} ${notificationForm}`,
-  {
-    padding: '20px',
-    boxShadow: 'none',
-  },
-)
-
-globalStyle(`${notificationStatus}${isReady} ${notificationStatusDot}`, {
-  background: '#07c160',
-  boxShadow: '0 0 0 4px rgba(7, 193, 96, 0.14)',
-})
-
-globalStyle(`${notificationStatus}${isWarning} ${notificationStatusDot}`, {
-  background: '#f5b942',
-})
-
-globalStyle(`${notificationStatus}${isError} ${notificationStatusDot}`, {
-  background: '#ff756b',
-})
-
-globalStyle(`${notificationStatus}${isLoading} ${notificationStatusDot}`, {
-  animation: `${notificationPulseKeyframes} 1.2s ease-in-out infinite`,
 })
 
 globalStyle(`${messagePreviewMeta} strong`, {
@@ -504,28 +538,6 @@ ${notificationField} textarea:disabled`,
   },
 )
 
-globalStyle(`${notificationFeedback}${isError}`, {
-  color: 'var(--danger-text)',
-})
-
-globalStyle(`${notificationButton}:focus-visible`, {
-  outline: '2px solid var(--focus-ring)',
-  outlineOffset: '2px',
-})
-
-globalStyle(`${notificationButton}:disabled`, {
-  cursor: 'not-allowed',
-  opacity: '0.5',
-})
-
-globalStyle(`${notificationButtonPrimary}:hover:not(:disabled)`, {
-  background: 'var(--accent-hover)',
-})
-
-globalStyle(`${notificationButtonSecondary}:hover:not(:disabled)`, {
-  background: 'var(--surface-hover)',
-})
-
 globalStyle(`${systemNotificationHeading} h1`, {
   '@container': {
     'system-notification (max-width: 440px)': {
@@ -538,14 +550,6 @@ globalStyle(`${messagePreviewMeta} strong`, {
   '@container': {
     'system-notification (max-width: 440px)': {
       width: '100%',
-    },
-  },
-})
-
-globalStyle(`${notificationStatus}${isLoading} ${notificationStatusDot}`, {
-  '@media': {
-    '(prefers-reduced-motion: reduce)': {
-      animation: 'none',
     },
   },
 })

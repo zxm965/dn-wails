@@ -5,7 +5,7 @@ import { createScopedClassNames } from '@/shared/lib/classNames'
 import { Button } from './Button'
 import { SpinnerIcon } from './Spinner'
 
-import { classes as styles } from './Layout.css'
+import { styles } from './Layout.css'
 
 const cx = createScopedClassNames(styles)
 

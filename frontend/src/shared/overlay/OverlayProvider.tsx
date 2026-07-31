@@ -11,7 +11,7 @@ import {
 } from '@/shared/components/ui'
 import { createScopedClassNames } from '@/shared/lib/classNames'
 
-import { classes as styles } from './OverlayProvider.css'
+import { styles } from './OverlayProvider.css'
 
 const cx = createScopedClassNames(styles)
 

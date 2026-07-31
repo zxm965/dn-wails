@@ -22,7 +22,7 @@ import { windowManager } from '@/shared/window'
 
 import { appConfig } from './appConfig'
 
-import { classes as styles } from './App.css'
+import { styles } from './App.css'
 
 const cx = createScopedClassNames(styles)
 

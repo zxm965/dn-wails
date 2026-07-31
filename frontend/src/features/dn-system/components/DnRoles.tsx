@@ -38,7 +38,7 @@ import {
 } from '../api/dnSystemApi'
 import { PRIORITY_OPTIONS, PROFESSION_OPTIONS, priorityMeta } from '../model/dnSystem'
 
-import { classes as styles } from './DnSystem.css'
+import { styles } from './DnSystem.css'
 
 const cx = createScopedClassNames(styles)
 

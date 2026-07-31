@@ -6,7 +6,7 @@ import { createScopedClassNames } from '@/shared/lib/classNames'
 import { isMacOS } from '@/shared/lib/platform'
 import { windowManager } from '@/shared/window'
 
-import { classes as styles } from './TitleBar.css'
+import { styles } from './TitleBar.css'
 
 const cx = createScopedClassNames(styles)
 

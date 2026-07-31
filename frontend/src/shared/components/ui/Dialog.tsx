@@ -6,7 +6,7 @@ import { createScopedClassNames } from '@/shared/lib/classNames'
 
 import { Button } from './Button'
 
-import { classes as styles } from './Dialog.css'
+import { styles } from './Dialog.css'
 
 const cx = createScopedClassNames(styles)
 

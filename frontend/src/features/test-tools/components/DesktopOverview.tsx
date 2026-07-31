@@ -6,7 +6,7 @@ import { useAppLifecycle } from '@/shared/app-lifecycle'
 import { getDiagnosticsInfo, type DiagnosticsInfo } from '@/shared/diagnostics'
 import { createScopedClassNames } from '@/shared/lib/classNames'
 
-import { classes as styles } from './DesktopOverview.css'
+import { styles } from './DesktopOverview.css'
 
 const cx = createScopedClassNames(styles)
 

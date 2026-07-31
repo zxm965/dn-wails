@@ -4,6 +4,6 @@ const uiAlertDialog = style({
   width: 'min(100%, 430px)',
 })
 
-export const classes = {
+export const styles = {
   'ui-alert-dialog': uiAlertDialog,
 } as const

@@ -87,7 +87,7 @@ const uiSkeleton = style([
   },
 ])
 
-export const classes = {
+export const styles = {
   'ui-page-header': uiPageHeader,
   'ui-page-header-actions': uiPageHeaderActions,
   'ui-pagination': uiPagination,

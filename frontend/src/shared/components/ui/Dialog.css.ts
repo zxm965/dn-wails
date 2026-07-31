@@ -1,6 +1,6 @@
 import { globalStyle, style } from '@vanilla-extract/css'
 
-import { classes as buttonClasses } from './Button.css'
+import { styles as buttonStyles } from './Button.css'
 
 const uiDialogBackdrop = style([
   {
@@ -10,6 +10,11 @@ const uiDialogBackdrop = style([
     background: 'rgba(4, 9, 15, 0.62)',
     backdropFilter: 'blur(8px)',
     transition: 'opacity 140ms ease',
+    selectors: {
+      '&[data-starting-style], &[data-ending-style]': {
+        opacity: '0',
+      },
+    },
   },
   {
     '@media': {
@@ -55,6 +60,18 @@ const uiDialog = style([
     boxShadow: '0 28px 80px rgba(0, 0, 0, 0.34)',
     outline: 'none',
     transition: 'opacity 160ms ease,\n    transform 160ms ease',
+    selectors: {
+      "&[data-size='sm']": {
+        width: 'min(100%, 430px)',
+      },
+      "&[data-size='lg']": {
+        width: 'min(100%, 880px)',
+      },
+      '&[data-starting-style], &[data-ending-style]': {
+        opacity: '0',
+        transform: 'translateY(10px) scale(0.985)',
+      },
+    },
   },
   {
     '@media': {
@@ -127,7 +144,7 @@ const uiDialogClose = style({
   padding: '0',
 })
 
-export const classes = {
+export const styles = {
   'ui-dialog-backdrop': uiDialogBackdrop,
   'ui-dialog-viewport': uiDialogViewport,
   'ui-dialog': uiDialog,
@@ -139,14 +156,6 @@ export const classes = {
   'ui-dialog-close': uiDialogClose,
 } as const
 
-globalStyle(
-  `${uiDialogBackdrop}[data-starting-style],
-${uiDialogBackdrop}[data-ending-style]`,
-  {
-    opacity: '0',
-  },
-)
-
 globalStyle(`${uiDialog} > form`, {
   minHeight: '0',
   flex: '1',
@@ -154,24 +163,7 @@ globalStyle(`${uiDialog} > form`, {
   flexDirection: 'column',
 })
 
-globalStyle(`${uiDialog}[data-size='sm']`, {
-  width: 'min(100%, 430px)',
-})
-
-globalStyle(`${uiDialog}[data-size='lg']`, {
-  width: 'min(100%, 880px)',
-})
-
-globalStyle(
-  `${uiDialog}[data-starting-style],
-${uiDialog}[data-ending-style]`,
-  {
-    opacity: '0',
-    transform: 'translateY(10px) scale(0.985)',
-  },
-)
-
-globalStyle(`${uiDialogFooter} ${buttonClasses['ui-button']}`, {
+globalStyle(`${uiDialogFooter} ${buttonStyles.root}`, {
   '@media': {
     '(max-width: 560px)': {
       width: '100%',

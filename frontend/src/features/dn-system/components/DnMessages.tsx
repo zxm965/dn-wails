@@ -44,7 +44,7 @@ import {
 import { useDnAuth } from '../context/DnAuthProvider'
 import { useDnMessages } from '../context/DnMessageProvider'
 
-import { classes as styles } from './DnSystem.css'
+import { styles } from './DnSystem.css'
 
 const cx = createScopedClassNames(styles)
 
