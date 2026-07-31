@@ -80,4 +80,4 @@ git push origin v1.0.0
 
 正式版本启动后会自动检查最新正式 Release；用户也可在“系统设置 → 测试工具 → 应用概览”点击“检查最新版”。发现新版后必须确认才会下载、校验、安装并重启。普通代码提交不会发布更新。
 
-发布前请确认 GitLab 镜像同步 tags、GitHub Actions 已启用，并在仓库 Actions 设置中允许工作流写入 Contents。当前默认产物未配置正式 Apple/Windows 代码签名，面向外部用户分发前应补齐签名与 macOS 公证，详细约定见 [应用更新与发布文档](docs/modules/app-update.md)。
+发布前请确认 GitLab 镜像同步 tags、GitHub Actions 已启用，并在仓库 Actions 设置中允许工作流写入 Contents。双端构建会关联 GitHub Environment `DATABASE`，其中的 Environment Secret `DATABASE_URL` 会显式注入构建进程，但不会暴露给前端。当前默认产物未配置正式 Apple/Windows 代码签名，面向外部用户分发前应补齐签名与 macOS 公证，详细约定见 [应用更新与发布文档](docs/modules/app-update.md)。

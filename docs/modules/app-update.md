@@ -97,7 +97,7 @@ interface ApplicationUpdateStatus {
 
 ## 接入与发布
 
-GitHub 更新源固定为 `zxm965/dn-wails`。项目继续以 GitLab 为主仓库时，镜像规则必须同步 Git 标签，并确保 GitHub 仓库启用 Actions、工作流拥有 `contents: write` 权限。
+GitHub 更新源固定为 `zxm965/dn-wails`。项目继续以 GitLab 为主仓库时，镜像规则必须同步 Git 标签，并确保 GitHub 仓库启用 Actions、工作流拥有 `contents: write` 权限。双端构建 job 关联 GitHub Environment `DATABASE`，并将其中的 Environment Secret `DATABASE_URL` 显式映射到构建进程；该值不会作为 Vite 公共变量暴露。Wails 构建继续使用仓库内已生成绑定，不依赖执行应用组合根。
 
 ```bash
 git tag v1.0.0

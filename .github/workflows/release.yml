@@ -65,6 +65,9 @@ jobs:
   build:
     name: Build ${{ matrix.name }}
     needs: quality
+    environment: DATABASE
+    env:
+      DATABASE_URL: ${{ secrets.DATABASE_URL }}
     strategy:
       fail-fast: false
       matrix:
