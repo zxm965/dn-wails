@@ -781,22 +781,15 @@ const dnMessageCenterTrigger = style({
   padding: '0',
 })
 
-const dnMessageCenterCount = style({
+const dnMessageCenterIndicator = style({
   position: 'absolute',
-  top: '-3px',
-  right: '-5px',
-  minWidth: '16px',
-  height: '16px',
-  display: 'grid',
-  placeItems: 'center',
-  padding: '0 4px',
-  color: '#ffffff',
-  fontSize: '9px',
-  fontWeight: '800',
-  lineHeight: '1',
+  top: '5px',
+  right: '5px',
+  width: '6px',
+  height: '6px',
   background: '#d84d45',
-  border: '2px solid var(--titlebar-background)',
-  borderRadius: '999px',
+  borderRadius: '50%',
+  boxShadow: '0 0 0 1.5px var(--titlebar-background)',
 })
 
 const dnMessageCenterHeader = style({
@@ -981,7 +974,7 @@ export const styles = {
   'dn-message-content': dnMessageContent,
   'dn-message-dialog-copy': dnMessageDialogCopy,
   'dn-message-center-trigger': dnMessageCenterTrigger,
-  'dn-message-center-count': dnMessageCenterCount,
+  'dn-message-center-indicator': dnMessageCenterIndicator,
   'dn-message-center-header': dnMessageCenterHeader,
   'dn-message-center-body': dnMessageCenterBody,
   'dn-message-center-list': dnMessageCenterList,

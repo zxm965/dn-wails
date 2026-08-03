@@ -47,16 +47,12 @@ export function DnMessageCenter() {
         size='sm'
         variant='ghost'
         type='button'
-        aria-label='打开消息盒子'
+        aria-label={messages.unreadCount ? `打开消息盒子，${messages.unreadCount} 条未读消息` : '打开消息盒子'}
         title='消息盒子'
         onClick={() => messages.setCenterOpen(true)}
       >
         <Bell aria-hidden='true' />
-        {messages.unreadCount > 0 && (
-          <span className={cx('dn-message-center-count')}>
-            {messages.unreadCount > 99 ? '99+' : messages.unreadCount}
-          </span>
-        )}
+        {messages.unreadCount > 0 && <span className={cx('dn-message-center-indicator')} aria-hidden='true' />}
       </Button>
 
       <Dialog open={messages.centerOpen} onOpenChange={messages.setCenterOpen}>

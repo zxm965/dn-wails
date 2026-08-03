@@ -97,30 +97,42 @@ const uiCheckbox = style({
   },
 })
 
-const uiSwitch = style({
-  position: 'relative',
-  width: '42px',
-  height: '24px',
-  flex: '0 0 auto',
-  padding: '0',
-  background: 'var(--switch-background)',
-  border: '0',
-  borderRadius: '999px',
-  cursor: 'pointer',
-  ':disabled': {
-    cursor: 'not-allowed',
-    opacity: '0.5',
-  },
-  ':focus-visible': {
-    outline: '2px solid var(--focus-ring)',
-    outlineOffset: '2px',
-  },
-  selectors: {
-    '&[data-checked]': {
-      background: 'var(--accent)',
+const uiSwitch = style([
+  {
+    position: 'relative',
+    width: '42px',
+    height: '24px',
+    flex: '0 0 auto',
+    display: 'inline-flex',
+    alignItems: 'center',
+    padding: '0',
+    background: 'var(--switch-background)',
+    border: '0',
+    borderRadius: '999px',
+    cursor: 'pointer',
+    transition: 'background-color 150ms ease',
+    ':focus-visible': {
+      outline: '2px solid var(--focus-ring)',
+      outlineOffset: '2px',
+    },
+    selectors: {
+      '&[data-checked]': {
+        background: 'var(--accent)',
+      },
+      '&[data-disabled]': {
+        cursor: 'not-allowed',
+        opacity: '0.5',
+      },
     },
   },
-})
+  {
+    '@media': {
+      '(prefers-reduced-motion: reduce)': {
+        transition: 'none',
+      },
+    },
+  },
+])
 
 const uiCheckboxIndicator = style({
   width: '13px',
