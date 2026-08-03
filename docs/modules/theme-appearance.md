@@ -7,7 +7,7 @@
 ## 目录与职责
 
 - `internal/settings/model.go`：外观设置持久化模型和允许值。
-- `frontend/src/shared/theme/ThemeProvider.tsx`：计算有效主题并同步 DOM 和窗口主题。
+- `frontend/src/shared/theme/ThemeProvider.tsx`：计算有效主题并同步 DOM。
 - `frontend/src/app/styles/global.css.ts`：通过 vanilla-extract 全局 API 维护字体、重置、主题变量和强调色变量。
 - `frontend/src/features/settings/components/SettingsPanel.tsx`：外观设置界面。
 
@@ -33,7 +33,6 @@ SettingsProvider 读取设置
   → 设置 html[data-theme/data-accent/data-density/data-button-size]
   → 更新 --font-scale
   → Button 读取默认高度变量
-  → 同步 Wails Windows 窗口主题
 ```
 
 系统主题变化通过 `matchMedia('(prefers-color-scheme: dark)')` 监听，并在组件卸载时解除订阅。
@@ -53,7 +52,7 @@ SettingsProvider 读取设置
 
 ## 边界
 
-- macOS 和 Linux 的原生窗口外观主要由系统控制；WebView 内容主题始终由 CSS 变量控制。
+- Wails v3 当前没有 v2 动态窗口主题方法的直接等价能力；本模块只负责 React/WebView 内容主题，原生窗口外观由操作系统控制。
 - 主题会先乐观应用；若最新持久化请求失败，Provider 会恢复为实际保存值。
 
 ## 验证
@@ -65,4 +64,4 @@ pnpm lint
 pnpm build
 ```
 
-跟随系统和原生标题栏外观需要人工桌面验证。
+跟随系统主题需要人工桌面验证；原生窗口主题同步不再属于本模块能力。

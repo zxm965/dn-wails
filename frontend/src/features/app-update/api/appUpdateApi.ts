@@ -2,7 +2,7 @@ import {
   CheckForApplicationUpdate,
   GetApplicationUpdateInfo,
   InstallApplicationUpdate,
-} from '@wails/go/application/App'
+} from '@bindings/dn-wails/internal/application/app'
 
 export interface ApplicationUpdateInfo {
   currentVersion: string

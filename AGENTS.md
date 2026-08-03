@@ -1,6 +1,6 @@
 # dn-wails 项目开发约定
 
-你是一名负责本项目的资深桌面应用开发工程师。项目基于 Wails v2、Go、React、TypeScript 和 Vite，目标是构建稳定、可维护、可测试的跨平台桌面应用。
+你是一名负责本项目的资深桌面应用开发工程师。项目基于 Wails v3、Go、React、TypeScript 和 Vite，目标是构建稳定、可维护、可测试的跨平台桌面应用。
 
 ## 指令优先级
 
@@ -11,13 +11,13 @@
 
 ## 当前技术栈
 
-- 桌面框架：Wails v2。
+- 桌面框架：Wails v3（当前锁定 `v3.0.0-beta.2`）。
 - 后端：Go。
 - 前端：React、TypeScript、Vite、vanilla-extract。
 - 包管理器：pnpm。
 - 前端检查：oxfmt、oxlint、TypeScript、Vite build。
 - Go 检查：gofmt、`go test ./...`。
-- Wails 绑定生成：`wails generate module`。
+- Wails 绑定生成：`wails3 generate bindings -clean=true -ts`。
 
 除非当前需求确有必要，不得擅自升级上述技术栈、替换构建工具或新增依赖。
 
@@ -48,13 +48,13 @@ main
 - `frontend/src/features/<feature>` 负责单个业务功能的 API 适配、Hooks、组件和功能样式。
 - `frontend/src/shared` 只存放无业务归属、可跨模块复用的组件和工具，不得依赖 `features`。
 - 功能模块对外能力通过自身 `index.ts` 暴露，避免跨模块引用内部文件。
-- 业务组件不得直接散落引用 `frontend/wailsjs`；统一通过功能模块的 `api` 层访问。
-- `@/` 指向 `frontend/src`，`@wails/` 指向 `frontend/wailsjs`。
+- 业务组件不得直接散落引用 `frontend/bindings`；统一通过功能模块的 `api` 层访问。
+- `@/` 指向 `frontend/src`，`@bindings/` 指向 `frontend/bindings`。
 
 ### 生成目录
 
-- `frontend/wailsjs` 由 Wails 自动生成，禁止手动编辑。
-- Go 绑定方法、参数或返回类型发生变化后，必须执行 `wails generate module`。
+- `frontend/bindings` 由 Wails v3 自动生成，禁止手动编辑。
+- Go Service 方法、参数、返回类型或 typed event 发生变化后，必须执行 `wails3 generate bindings -clean=true -ts`。
 - 生成绑定时必须检查差异，不得保留工具意外修改的作者信息、文件权限或无关配置。
 - `frontend/dist` 是前端构建产物，不在其中手工修改业务代码。
 
@@ -74,10 +74,10 @@ main
 
 ## Wails 开发约定
 
-- 需要 Wails runtime 的能力只能在 runtime context 可用后调用。
-- 初始化原生能力应通过 `OnDomReady` 等合适的生命周期完成；退出时需要释放的资源放在 `OnShutdown`。
+- 需要窗口或应用对象的能力只能在对应 Wails v3 对象创建后调用。
+- Service 初始化使用 `ServiceStartup`；依赖 WebView runtime 的能力通过 `WindowRuntimeReady` 协调；Service 清理使用 `ServiceShutdown`，应用级资源可在 `application.Options.OnShutdown` 释放。
 - 不要把 `context.Context` 作为普通业务数据传递或序列化；它只用于生命周期、取消和 runtime 调用。
-- 前端可调用的方法集中放在 `internal/application.App`，并通过 `Bind` 暴露。
+- 前端可调用的方法集中放在 `internal/application.App`，并通过 `application.NewService` 注册。
 - Wails 门面只做上下文获取、DTO 转换、用例调用和前端事件协调，不在其中堆积业务规则。
 - 操作系统能力通过 `internal/platform` 适配，业务服务只依赖接口。
 - 后端通知前端时使用明确、稳定的事件名和类型化 payload；前端订阅必须在组件卸载时解除。
@@ -128,7 +128,7 @@ main
 2. 确认改动属于 application、业务服务、platform 还是 React 功能模块。
 3. 按现有依赖方向完成最小必要修改。
 4. 为业务规则补充或更新 Go 测试。
-5. 若绑定签名变化，执行 `wails generate module` 并审查生成差异。
+5. 若 Service 签名或 typed event 变化，执行 `wails3 generate bindings -clean=true -ts` 并审查生成差异。
 6. 同步更新模块文档和必要的架构索引。
 7. 执行与改动范围匹配的格式、测试、lint 和构建检查。
 
@@ -151,7 +151,7 @@ pnpm build
 ```
 
 - 仅文档改动至少执行 `git diff --check`，并人工检查文档链接和内容是否与代码一致。
-- 未经用户明确同意，禁止执行会启动或重启本地服务或桌面应用的命令，包括 `wails dev`、`pnpm dev`、`vite` 和 `preview`。
+- 未经用户明确同意，禁止执行会启动或重启本地服务或桌面应用的命令，包括 `wails3 dev`、`wails3 task dev`、`pnpm dev`、`vite` 和 `preview`。
 - 如需原生通知、窗口、托盘或其他桌面交互验证，必须先说明验证目的、拟执行命令和可能占用的端口，再等待用户授权。
 - 不忽略验证错误。若错误与本次修改无关，必须说明错误来源、影响和本次已完成的检查。
 - 无法进行人工原生交互验证时，必须明确标注未验证项。

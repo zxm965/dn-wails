@@ -15,11 +15,7 @@ type MessageNotificationRequest struct {
 }
 
 func (a *App) GetSystemNotificationStatus() (SystemNotificationStatus, error) {
-	ctx, err := a.runtimeContext()
-	if err != nil {
-		return SystemNotificationStatus{}, err
-	}
-	status, err := a.systemNotificationService.Status(ctx)
+	status, err := a.systemNotificationService.Status()
 	if err != nil {
 		return SystemNotificationStatus{}, err
 	}
@@ -27,22 +23,12 @@ func (a *App) GetSystemNotificationStatus() (SystemNotificationStatus, error) {
 }
 
 func (a *App) RequestSystemNotificationPermission() (bool, error) {
-	ctx, err := a.runtimeContext()
-	if err != nil {
-		return false, err
-	}
-	return a.systemNotificationService.RequestAuthorization(ctx)
+	return a.systemNotificationService.RequestAuthorization()
 }
 
 func (a *App) SendMessageNotification(request MessageNotificationRequest) (string, error) {
-	ctx, err := a.runtimeContext()
-	if err != nil {
-		return "", err
-	}
-
 	preferences := a.settingsService.Get().Notifications
 	return a.systemNotificationService.SendMessage(
-		ctx,
 		notification.Message{
 			ID:             request.ID,
 			Sender:         request.Sender,

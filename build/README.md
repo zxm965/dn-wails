@@ -1,35 +1,24 @@
-# Build Directory
+# Wails v3 Build Directory
 
-The build directory is used to house all the build files and assets for your application.
+本目录保存 Wails v3 的开发配置、平台元数据、图标与 Taskfile 子任务。
 
-The structure is:
+- `config.yml`：应用元数据和 `wails3 dev` 进程编排。
+- `Taskfile.yml`：前端依赖、bindings、图标和通用构建任务。
+- `darwin/Taskfile.yml`：macOS 原生、universal、`.app` 和 DMG 任务。
+- `windows/Taskfile.yml`：Windows 可执行文件和 NSIS 安装器任务。
+- `linux/Taskfile.yml`：Linux 构建与打包任务。
+- `appicon.png`：生成 macOS `icons.icns`、Windows `icon.ico` 和托盘图标的源文件。
 
-* bin - Output directory
-* darwin - macOS specific files
-* windows - Windows specific files
+平台元数据由以下命令根据 `config.yml` 更新：
 
-## Mac
+```bash
+wails3 task common:update:build-assets
+```
 
-The `darwin` directory holds files specific to Mac builds.
-These may be customised and used as part of the build. To return these files to the default state, simply delete them
-and
-build with `wails build`.
+图标由以下命令生成：
 
-The directory contains the following files:
+```bash
+wails3 task common:generate:icons
+```
 
-- `Info.plist` - the main plist file used for Mac builds. It is used when building using `wails build`.
-- `Info.dev.plist` - same as the main plist file but used when building using `wails dev`.
-
-## Windows
-
-The `windows` directory contains the manifest and rc files used when building with `wails build`.
-These may be customised for your application. To return these files to the default state, simply delete them and
-build with `wails build`.
-
-- `icon.ico` - The icon used for the application. This is used when building using `wails build`. If you wish to
-  use a different icon, simply replace this file with your own. If it is missing, a new `icon.ico` file
-  will be created using the `appicon.png` file in the build directory.
-- `installer/*` - The files used to create the Windows installer. These are used when building using `wails build`.
-- `info.json` - Application details used for Windows builds. The data here will be used by the Windows installer,
-  as well as the application itself (right click the exe -> properties -> details)
-- `wails.exe.manifest` - The main application manifest file.
+构建产物输出到仓库根目录的 `bin/`，不得在产物中手工修改业务代码。

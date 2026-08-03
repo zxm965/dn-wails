@@ -10,7 +10,7 @@ import (
 	"time"
 
 	"dn-wails/internal/appconfig"
-	"dn-wails/internal/application"
+	appservice "dn-wails/internal/application"
 	"dn-wails/internal/appupdate"
 	"dn-wails/internal/buildinfo"
 	"dn-wails/internal/diagnostics"
@@ -28,9 +28,9 @@ import (
 	"dn-wails/internal/storage"
 	"dn-wails/internal/windowmanager"
 
-	"github.com/wailsapp/wails/v2"
-	"github.com/wailsapp/wails/v2/pkg/options"
-	"github.com/wailsapp/wails/v2/pkg/options/assetserver"
+	"github.com/wailsapp/wails/v3/pkg/application"
+	"github.com/wailsapp/wails/v3/pkg/events"
+	"github.com/wailsapp/wails/v3/pkg/services/notifications"
 )
 
 //go:embed all:frontend/dist
@@ -39,9 +39,10 @@ var assets embed.FS
 //go:embed all:.env*
 var environmentFiles embed.FS
 
-const (
-	internalApplicationName = "dn-wails"
-)
+//go:embed build/appicon.png
+var trayIcon []byte
+
+const internalApplicationName = "dn-wails"
 
 func main() {
 	startedAt := time.Now()
@@ -63,7 +64,7 @@ func main() {
 		log.Fatal("create settings store: ", err)
 	}
 	settingsService := settings.NewService(settingsStore)
-	dnService := application.DnService(dn.NewUnavailableService())
+	dnService := appservice.DnService(dn.NewUnavailableService())
 	databaseURL, databaseConfigErr := dn.ResolveDatabaseURL(databaseConfigData)
 	if databaseConfigErr == nil {
 		postgresService, postgresErr := dn.NewPostgresService(databaseURL, settingsStore)
@@ -82,12 +83,9 @@ func main() {
 	}
 	defer diagnosticsService.Close()
 
-	notificationPlatform := platformnotification.NewWails()
+	notificationRuntime := notifications.New()
+	notificationPlatform := platformnotification.NewWails(notificationRuntime)
 	notificationService := notification.NewService(notificationPlatform)
-	nativePlatform := platformnativekit.NewWails()
-	nativeService := nativekit.NewService(nativePlatform)
-	windowPlatform := platformwindow.NewRuntime()
-	windowService := windowmanager.NewService(windowPlatform)
 	lifecycleService := lifecycle.NewService()
 	singleInstanceService := singleinstance.NewService()
 	applicationUpdateSource := platformappupdate.NewGitHubSource(&http.Client{Timeout: 30 * time.Second})
@@ -100,7 +98,62 @@ func main() {
 		Arch:       runtime.GOARCH,
 	}, applicationUpdateSource, applicationUpdateInstaller)
 
-	app := application.New(application.Dependencies{
+	var facade *appservice.App
+	var tray *application.SystemTray
+	appOptions := application.Options{
+		Name: applicationConfig.DisplayName,
+		Services: []application.Service{
+			application.NewService(notificationRuntime),
+		},
+		Assets: application.AssetOptions{
+			Handler: application.AssetFileServerFS(assets),
+		},
+		Mac: application.MacOptions{
+			ApplicationShouldTerminateAfterLastWindowClosed: false,
+		},
+		Windows: application.WindowsOptions{
+			DisableQuitOnLastWindowClosed: true,
+		},
+		Linux: application.LinuxOptions{
+			DisableQuitOnLastWindowClosed: true,
+		},
+		ShouldQuit: func() bool {
+			return facade == nil || facade.ShouldQuit()
+		},
+		OnShutdown: func() {
+			if tray != nil {
+				tray.Destroy()
+			}
+		},
+	}
+	platformsingleinstance.Configure(&appOptions, func(data application.SecondInstanceData) {
+		if facade != nil {
+			facade.HandleSecondInstanceLaunch(data)
+		}
+	})
+
+	wailsApp := application.New(appOptions)
+	windowOptions := application.WebviewWindowOptions{
+		Name:             "main",
+		Title:            applicationConfig.DisplayName,
+		Width:            1280,
+		Height:           800,
+		MinWidth:         1024,
+		MinHeight:        768,
+		BackgroundColour: application.NewRGB(27, 38, 54),
+		EnableFileDrop:   true,
+		URL:              "/",
+	}
+	platformwindow.Configure(&windowOptions)
+	mainWindow := wailsApp.Window.NewWithOptions(windowOptions)
+
+	nativePlatform := platformnativekit.NewWails(wailsApp, mainWindow)
+	nativeService := nativekit.NewService(nativePlatform)
+	windowPlatform := platformwindow.NewRuntime(wailsApp, mainWindow)
+	windowService := windowmanager.NewService(windowPlatform)
+
+	facade = appservice.New(appservice.Dependencies{
+		Runtime:            wailsApp,
 		SystemNotification: notificationService,
 		Settings:           settingsService,
 		Lifecycle:          lifecycleService,
@@ -111,32 +164,48 @@ func main() {
 		ApplicationUpdate:  applicationUpdateService,
 		Dn:                 dnService,
 	})
+	wailsApp.RegisterService(application.NewService(facade))
 
-	appOptions := &options.App{
-		Title:     applicationConfig.DisplayName,
-		Width:     1280,
-		Height:    800,
-		MinWidth:  1024,
-		MinHeight: 768,
-		AssetServer: &assetserver.Options{
-			Assets: assets,
-		},
-		BackgroundColour: &options.RGBA{R: 27, G: 38, B: 54, A: 1},
-		OnStartup:        app.OnStartup,
-		OnDomReady:       app.OnDomReady,
-		OnBeforeClose:    app.OnBeforeClose,
-		OnShutdown:       app.OnShutdown,
-		DragAndDrop: &options.DragAndDrop{
-			EnableFileDrop: true,
-		},
-		Bind: []interface{}{
-			app,
-		},
-	}
-	platformwindow.Configure(appOptions)
-	platformsingleinstance.Configure(appOptions, application.SecondInstanceHandler(app))
+	mainWindow.OnWindowEvent(events.Common.WindowRuntimeReady, func(_ *application.WindowEvent) {
+		facade.RuntimeReady()
+	})
+	mainWindow.RegisterHook(events.Common.WindowClosing, facade.HandleWindowClosing)
+	mainWindow.OnWindowEvent(events.Common.WindowFilesDropped, facade.HandleFileDrop)
 
-	if err := wails.Run(appOptions); err != nil {
+	tray = setupSystemTray(wailsApp, mainWindow, facade, applicationConfig.DisplayName)
+
+	if err := wailsApp.Run(); err != nil {
 		log.Fatal("run application: ", err)
 	}
+}
+
+func setupSystemTray(
+	app *application.App,
+	window *application.WebviewWindow,
+	facade *appservice.App,
+	displayName string,
+) *application.SystemTray {
+	tray := app.SystemTray.New()
+	tray.SetIcon(trayIcon)
+	tray.SetTooltip(displayName)
+
+	showWindow := func() {
+		window.Show()
+		window.UnMinimise()
+		window.Focus()
+	}
+	tray.OnClick(showWindow)
+
+	menu := app.NewMenu()
+	menu.Add("显示主窗口").OnClick(func(_ *application.Context) {
+		showWindow()
+	})
+	menu.AddSeparator()
+	menu.Add("退出").OnClick(func(_ *application.Context) {
+		if err := facade.QuitApplication(); err != nil {
+			log.Printf("quit application from system tray: %v", err)
+		}
+	})
+	tray.SetMenu(menu)
+	return tray
 }

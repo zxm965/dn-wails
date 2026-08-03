@@ -32,7 +32,7 @@ func (a *App) InstallApplicationUpdate(expectedVersion string) error {
 	a.mu.Unlock()
 	go func() {
 		time.Sleep(250 * time.Millisecond)
-		a.windowService.Quit(ctx)
+		a.windowService.Quit()
 	}()
 	return nil
 }

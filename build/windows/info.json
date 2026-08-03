@@ -1,15 +1,15 @@
 {
 	"fixed": {
-		"file_version": "{{.Info.ProductVersion}}"
+		"file_version": "0.0.4"
 	},
 	"info": {
 		"0000": {
-			"ProductVersion": "{{.Info.ProductVersion}}",
-			"CompanyName": "{{.Info.CompanyName}}",
-			"FileDescription": "{{.Info.ProductName}}",
-			"LegalCopyright": "{{.Info.Copyright}}",
-			"ProductName": "{{.Info.ProductName}}",
-			"Comments": "{{.Info.Comments}}"
+			"ProductVersion": "0.0.4",
+			"CompanyName": "10958",
+			"FileDescription": "Cull Pear desktop application",
+			"LegalCopyright": "© 2026, 10958",
+			"ProductName": "Cull Pear",
+			"Comments": "Built with Wails v3"
 		}
 	}
 }

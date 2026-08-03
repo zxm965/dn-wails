@@ -6,8 +6,8 @@
 
 ## 目录与职责
 
-- `internal/notification/service.go`：消息校验、通知策略、正文摘要、初始化状态和点击响应。
-- `internal/platform/notification/wails.go`：Wails 原生通知适配。
+- `internal/notification/service.go`：消息校验、通知策略、正文摘要和点击响应。
+- `internal/platform/notification/wails.go`：Wails v3 notifications Service 适配。
 - `internal/application/notification.go`：Wails 绑定门面和设置策略映射。
 - `frontend/src/features/system-notification/api/`：前端 API 适配。
 - `frontend/src/features/system-notification/hooks/`：权限状态、发送和点击事件订阅。
@@ -21,7 +21,7 @@
 React 组件
   → useSystemNotification
   → systemNotificationApi
-  → Wails 生成绑定
+  → Wails v3 生成 bindings
   → application.App
   → notification.Service
   → platform/notification.Wails
@@ -30,7 +30,7 @@ React 组件
 
 ## 初始化与权限
 
-通知 runtime 在 `OnDomReady` 初始化。Service 使用互斥锁和完成 channel 处理并发初始化与状态查询。
+`notifications.NotificationService` 在应用创建时注册；窗口 runtime 就绪后，业务 Service 注册通知响应回调。授权状态和发送直接调用 v3 Service，不保留 v2 初始化状态机。
 
 ```text
 useSystemNotification.refreshStatus
@@ -79,10 +79,10 @@ showPreview=false   → Body="您收到一条消息"
 
 ```text
 用户点击通知
-  → runtime.OnNotificationResponse
+  → notifications.NotificationService.OnNotificationResponse
   → Service 转换 Activation
   → windowService.Activate
-  → EventsEmit("system-notification:activated")
+  → App.Event.Emit("system-notification:activated")
   → useSystemNotification
   → 业务页面按 conversationId 跳转
 ```
@@ -99,14 +99,13 @@ interface NotificationActivation {
 | 错误                  | 场景                   |
 | --------------------- | ---------------------- |
 | `ErrUnavailable`      | 平台不支持通知。       |
-| `ErrNotInitialized`   | 原生通知未完成初始化。 |
 | `ErrPermissionDenied` | 操作系统权限未授予。   |
 | `ErrDisabled`         | 应用设置关闭通知。     |
 | `ErrDoNotDisturb`     | 应用处于免打扰状态。   |
 | `ErrSenderRequired`   | 发送者为空。           |
 | `ErrContentRequired`  | 正文为空。             |
 
-业务模块只调用 `notification.Service`，不得直接调用 Wails runtime。
+业务模块只调用 `notification.Service`，不得直接调用 Wails v3 notifications Service。
 
 ## 响应式处理
 

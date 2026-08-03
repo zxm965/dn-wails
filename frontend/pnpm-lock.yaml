@@ -14,6 +14,9 @@ importers:
       '@vanilla-extract/css':
         specifier: ^1.21.2
         version: 1.21.2
+      '@wailsio/runtime':
+        specifier: 3.0.0-beta.1
+        version: 3.0.0-beta.1
       lucide-react:
         specifier: ^1.28.0
         version: 1.28.0(react@19.2.8)
@@ -761,6 +764,9 @@ packages:
         optional: true
       babel-plugin-react-compiler:
         optional: true
+
+  '@wailsio/runtime@3.0.0-beta.1':
+    resolution: {integrity: sha512-y0FFOONsaWyRbQItjERV9sjUFmO4M5XGrHE8aX+rdYQG3YclTfYkMrpalMQcdxEh1CUrrpyvLabHt/2zCFnv+Q==}
 
   acorn@8.18.0:
     resolution: {integrity: sha512-lGq+9yr1/GuAWaVYIHRjvvySG5/4VfKIvC8EWxStPdcDh/Ka7FG3twP6v4d5BkravUilhIAsG4Qj83t02LWUPQ==}
@@ -1720,6 +1726,8 @@ snapshots:
     dependencies:
       '@rolldown/pluginutils': 1.0.1
       vite: 8.2.0(@types/node@26.1.2)(esbuild@0.28.1)
+
+  '@wailsio/runtime@3.0.0-beta.1': {}
 
   acorn@8.18.0: {}
 

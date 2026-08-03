@@ -6,7 +6,8 @@
 
 ## 目录与职责
 
-- `internal/buildinfo/`：保存默认开发版本和 GitHub 仓库，正式构建通过 Go linker flags 注入版本和仓库。
+- `internal/buildinfo/`：保存无构建元数据时的兜底开发版本和 GitHub 仓库。
+- `scripts/resolve-development-version.mjs`：开发构建读取最近的稳定 Git 标签并追加 `-dev`，无标签时回退到 `build/config.yml`。
 - `internal/appupdate/`：版本比较、发布资源选择、更新状态和安装用例，不依赖 Wails 或具体操作系统。
 - `internal/platform/appupdate/github.go`：跟随 GitHub 最新 Release 网页重定向、读取静态更新清单、下载并校验资源。
 - `internal/platform/appupdate/installer_darwin.go`：解压新版 `.app`，退出当前进程后替换应用包并重新打开。
@@ -15,7 +16,8 @@
 - `frontend/src/features/app-update/`：根级更新状态、启动自动检查、确认弹窗和错误反馈。
 - `frontend/src/features/test-tools/components/DesktopOverview.tsx`：展示当前版本、平台、更新状态和手动检查按钮。
 - `.github/workflows/release.yml`：标签触发的双平台质量检查、构建和 GitHub Release 发布。
-- `scripts/configure-release.mjs`：校验 `vMAJOR.MINOR.PATCH` 标签并同步 Wails 平台包版本。
+- `Taskfile.yml` 与 `build/*/Taskfile.yml`：Wails v3 前端、bindings、平台构建和打包任务。
+- `scripts/configure-release.mjs`：校验 `vMAJOR.MINOR.PATCH` 标签并更新 `build/config.yml` 的平台包版本。
 - `scripts/generate-update-manifest.mjs`：计算发布资源大小和 SHA-256，生成静态 `latest.json`。
 
 ## 依赖关系
@@ -42,10 +44,11 @@ React AppUpdateProvider
 1. 推送 `v1.2.3` 形式的标签。
 2. 工作流校验标签、执行 Go 测试和前端格式、lint、build。
 3. 双端 build job 从 GitHub Environment `DATABASE` 读取 `secrets.DATABASE_URL`，生成不进入 Git 记录的临时 `.env.local`。
-4. macOS 构建 universal 应用，生成自动更新使用的 ZIP 和手动安装使用的 DMG。
-5. Windows runner 安装 NSIS 后构建 amd64、用户级安装器。
-6. 两端资源成功后为三个安装资源计算大小和 SHA-256，生成 `latest.json`。
-7. 创建或更新 GitHub Release，并上传安装资源、静态清单和人工校验文件。
+4. 工作流用 `wails3 task common:update:build-assets` 同步平台元数据，并通过 linker flags 注入运行时版本和仓库。
+5. macOS 使用 `wails3 task darwin:package:universal` 构建 universal `.app`，再生成自动更新 ZIP 和手动安装 DMG。
+6. Windows runner 安装 NSIS 后使用 `wails3 task windows:package ARCH=amd64 INSTALL_SCOPE=user` 构建用户级安装器。
+7. 两端资源成功后为三个安装资源计算大小和 SHA-256，生成 `latest.json`。
+8. 创建或更新 GitHub Release，并上传安装资源、静态清单和人工校验文件。
 
 ### 检查与安装
 
@@ -113,13 +116,13 @@ interface ApplicationUpdateManifest {
 
 ## 错误与边界
 
-- 开发版本为 `0.0.0-dev`，显示版本但不发起自动更新请求。
+- 开发版本为“当前稳定 Git 标签版本 + `-dev`”，例如标签 `v1.2.3` 对应 `1.2.3-dev`；开发版本只展示，不发起自动更新请求。
 - 只跟随 GitHub 最新正式 Release 重定向；客户端不请求 `api.github.com`，不注入访问令牌，也不消耗 REST API core 额度。
 - 版本必须是三段无前导零的稳定语义化版本；预发布标签不会进入发布流水线。
 - 最新 Release 必须包含 `latest.json`，清单 schema 当前固定为 `1`，仓库和版本必须与重定向标签一致。
 - Release URL 和每个资源 URL 必须精确指向配置仓库及当前标签，资源名不得包含路径或控制字符，且不得重复。
 - 下载只接受 HTTPS、声明大小不超过 1 GiB 且带 SHA-256 digest 的资源；大小或摘要不一致时删除临时文件并拒绝安装。
-- macOS 应用包所在目录必须允许当前用户写入；Windows 发布统一使用 `-installscope user`，避免自动更新请求管理员权限。
+- macOS 应用包所在目录必须允许当前用户写入；Windows 发布统一使用 Taskfile 的 `INSTALL_SCOPE=user`，避免自动更新请求管理员权限。
 - 同一进程只允许一个安装操作；安装前再次检查版本，避免确认期间 Release 发生变化。
 - Release build job 关联 GitHub Environment `DATABASE`；`DATABASE_URL` 缺失、超过 8192 字符或包含控制字符时立即失败。
 - 临时 `.env.local` 使用受限权限创建并由 Go embed 写入二进制，不进入 Git 记录，也不会主动输出到工作流日志。
@@ -129,7 +132,7 @@ interface ApplicationUpdateManifest {
 
 ## 接入与发布
 
-GitHub 更新源固定为 `zxm965/dn-wails`。项目继续以 GitLab 为主仓库时，镜像规则必须同步 Git 标签，并确保 GitHub 仓库启用 Actions、工作流拥有 `contents: write` 权限。双端 build job 必须能够访问 Environment `DATABASE` 中的 `DATABASE_URL` Secret。静态清单由 Release job 使用构建产物生成，不需要额外 GitHub API Key。Wails 构建继续使用仓库内已生成绑定，不依赖执行应用组合根。
+GitHub 更新源固定为 `zxm965/dn-wails`。项目继续以 GitLab 为主仓库时，镜像规则必须同步 Git 标签，并确保 GitHub 仓库启用 Actions、工作流拥有 `contents: write` 权限。双端 build job 必须能够访问 Environment `DATABASE` 中的 `DATABASE_URL` Secret。静态清单由 Release job 使用构建产物生成，不需要额外 GitHub API Key。构建使用锁定的 Wails v3 CLI，并重新生成 bindings。
 
 ```bash
 git tag v1.0.0

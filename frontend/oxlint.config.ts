@@ -8,5 +8,5 @@ export default defineConfig({
     'no-unused-expressions': 'warn',
     'no-unused-labels': 'warn',
   },
-  ignorePatterns: ['node_modules', 'dist', 'wailsjs'],
+  ignorePatterns: ['node_modules', 'bindings', 'dist'],
 })

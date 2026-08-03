@@ -1,5 +1,5 @@
-import { GetSettings, ResetSettings, UpdateSettings } from '@wails/go/application/App'
-import { settings as WailsSettings } from '@wails/go/models'
+import { GetSettings, ResetSettings, UpdateSettings } from '@bindings/dn-wails/internal/application/app'
+import { AppSettings as WailsAppSettings } from '@bindings/dn-wails/internal/settings/models'
 
 export type ThemeMode = 'system' | 'light' | 'dark'
 export type AccentColor = 'green' | 'blue' | 'purple' | 'orange'
@@ -64,7 +64,7 @@ export const DEFAULT_SETTINGS: AppSettings = {
   },
 }
 
-function normalizeSettings(value: WailsSettings.AppSettings): AppSettings {
+function normalizeSettings(value: WailsAppSettings): AppSettings {
   return {
     version: value.version,
     appearance: {
@@ -96,8 +96,8 @@ function normalizeSettings(value: WailsSettings.AppSettings): AppSettings {
   }
 }
 
-function toWailsSettings(value: AppSettings): WailsSettings.AppSettings {
-  return WailsSettings.AppSettings.createFrom(value)
+function toWailsSettings(value: AppSettings): WailsAppSettings {
+  return WailsAppSettings.createFrom(value)
 }
 
 export async function loadSettings(): Promise<AppSettings> {

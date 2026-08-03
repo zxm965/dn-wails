@@ -70,10 +70,10 @@ App
 
 ## 开发热更新
 
-- `frontend/vite.config.ts` 固定使用 `2233` 作为本项目开发端口，避免与 Vite 默认的 `5173` 及其他项目混用。
-- Vite WebSocket 客户端固定连接 `localhost:2233`。macOS Wails WebView 使用 `wails://` 自定义协议，不能依赖页面地址推断 HMR WebSocket 地址。
+- `frontend/vite.config.ts` 读取 Wails v3 注入的 `WAILS_VITE_PORT`；未注入时使用 Wails v3 默认端口 `9245`。
+- Vite 明确监听 `127.0.0.1`，与 Wails v3 dev proxy 强制使用的 IPv4 `localhost` 路径保持一致；HMR 客户端使用同一个动态端口。
 - `strictPort` 保证端口被占用时直接失败并给出错误，不再静默切换端口后让 WebView 连接到错误的服务。
-- `wails.json` 继续使用 `frontend:dev:serverUrl: "auto"`，由 Wails 自动发现固定端口上的前端开发服务。
+- `build/config.yml` 通过 Wails v3 dev mode 编排后端构建、Vite 和桌面进程；根 Taskfile 默认传入 `9245`，并在直接调用 `wails3 dev` 时跟随其 `WAILS_VITE_PORT`。
 - 修改 Vite 或 vanilla-extract 配置后，当前窗口需要重新加载一次；之后 React 和 `.css.ts` 修改由 Vite HMR 实时更新。
 
 ## 验证

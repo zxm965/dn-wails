@@ -173,7 +173,7 @@ func TestServiceDisablesDevelopmentAndUnsupportedBuilds(t *testing.T) {
 
 	development := NewService(Config{
 		AppName:    "dn-wails",
-		Version:    "0.0.0-dev",
+		Version:    "1.2.3-dev",
 		Repository: "zxm965/dn-wails",
 		Platform:   "darwin",
 		Arch:       "arm64",

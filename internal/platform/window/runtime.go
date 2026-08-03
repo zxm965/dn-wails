@@ -1,31 +1,32 @@
 package window
 
-import (
-	"context"
+import "github.com/wailsapp/wails/v3/pkg/application"
 
-	"github.com/wailsapp/wails/v2/pkg/runtime"
-)
-
-type Runtime struct{}
-
-func NewRuntime() *Runtime {
-	return &Runtime{}
+type Runtime struct {
+	app    *application.App
+	window *application.WebviewWindow
 }
 
-func (r *Runtime) Show(ctx context.Context)       { runtime.Show(ctx) }
-func (r *Runtime) Hide(ctx context.Context)       { runtime.WindowHide(ctx) }
-func (r *Runtime) Quit(ctx context.Context)       { runtime.Quit(ctx) }
-func (r *Runtime) Unminimise(ctx context.Context) { runtime.WindowUnminimise(ctx) }
-func (r *Runtime) Maximise(ctx context.Context)   { runtime.WindowMaximise(ctx) }
-func (r *Runtime) SetAlwaysOnTop(ctx context.Context, enabled bool) {
-	runtime.WindowSetAlwaysOnTop(ctx, enabled)
+func NewRuntime(app *application.App, window *application.WebviewWindow) *Runtime {
+	return &Runtime{app: app, window: window}
 }
-func (r *Runtime) SetPosition(ctx context.Context, x int, y int) {
-	runtime.WindowSetPosition(ctx, x, y)
+
+func (r *Runtime) Show() {
+	r.window.Show()
+	r.window.Focus()
 }
-func (r *Runtime) GetPosition(ctx context.Context) (int, int) { return runtime.WindowGetPosition(ctx) }
-func (r *Runtime) SetSize(ctx context.Context, width int, height int) {
-	runtime.WindowSetSize(ctx, width, height)
+
+func (r *Runtime) Hide()       { r.window.Hide() }
+func (r *Runtime) Quit()       { r.app.Quit() }
+func (r *Runtime) Unminimise() { r.window.UnMinimise() }
+func (r *Runtime) Maximise()   { r.window.Maximise() }
+func (r *Runtime) SetAlwaysOnTop(enabled bool) {
+	r.window.SetAlwaysOnTop(enabled)
 }
-func (r *Runtime) GetSize(ctx context.Context) (int, int) { return runtime.WindowGetSize(ctx) }
-func (r *Runtime) IsMaximised(ctx context.Context) bool   { return runtime.WindowIsMaximised(ctx) }
+func (r *Runtime) SetPosition(x int, y int) { r.window.SetPosition(x, y) }
+func (r *Runtime) GetPosition() (int, int)  { return r.window.Position() }
+func (r *Runtime) SetSize(width int, height int) {
+	r.window.SetSize(width, height)
+}
+func (r *Runtime) GetSize() (int, int) { return r.window.Size() }
+func (r *Runtime) IsMaximised() bool   { return r.window.IsMaximised() }

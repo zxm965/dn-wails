@@ -13,7 +13,7 @@
     "moduleResolution": "Bundler",
     "paths": {
       "@/*": ["./src/*"],
-      "@wails/*": ["./wailsjs/*"]
+      "@bindings/*": ["./bindings/*"]
     },
     "tsBuildInfoFile": "./node_modules/.tmp/tsconfig.tsbuildinfo",
     "resolveJsonModule": true,
@@ -21,7 +21,7 @@
     "noEmit": true,
     "jsx": "react-jsx"
   },
-  "include": ["src"],
+  "include": ["src", "bindings"],
   "references": [
     {
       "path": "./tsconfig.node.json"

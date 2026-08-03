@@ -2,8 +2,8 @@
 
 package window
 
-import "github.com/wailsapp/wails/v2/pkg/options"
+import "github.com/wailsapp/wails/v3/pkg/application"
 
-func Configure(appOptions *options.App) {
-	appOptions.Frameless = true
+func Configure(windowOptions *application.WebviewWindowOptions) {
+	windowOptions.Frameless = true
 }

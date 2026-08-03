@@ -39,7 +39,7 @@ AppSettings
 ## 核心链路
 
 ```text
-OnStartup → Settings.Initialize → Storage.Load
+App ServiceStartup → Settings.Initialize → Storage.Load
 React SettingsProvider → GetSettings
 用户修改任一控件 → 乐观更新全局状态 → 串行 UpdateSettings → 校验 → Storage.Save
   ├── ThemeProvider 应用外观

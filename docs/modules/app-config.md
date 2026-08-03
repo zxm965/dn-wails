@@ -55,8 +55,8 @@ DATABASE_URL='postgres://username:password@localhost:5432/database'
 ```text
 .env
   ├── APP_DISPLAY_NAME
-  │   ├── go:embed → appconfig.Parse → options.App.Title
-  │   └── Vite env → appConfig.displayName → TitleBar / AppSidebar / document.title / WindowSetTitle / 页面展示
+  │   ├── go:embed → appconfig.Parse → application.Options.Name / WebviewWindowOptions.Title
+  │   └── Vite env → appConfig.displayName → TitleBar / AppSidebar / document.title / Window.SetTitle / 页面展示
   └── APP_AUTHOR_NAME
       ├── go:embed → appconfig.Parse → 启动配置校验
       └── Vite env → appConfig.authorName → AppSidebar 左下角状态区
@@ -79,6 +79,7 @@ DATABASE_URL='postgres://username:password@localhost:5432/database'
 - React 新增应用名称展示时统一读取 `appConfig.displayName`，禁止再次硬编码 `dn-wails`。
 - React 展示作者名称时统一读取 `appConfig.authorName`，禁止在组件中硬编码。
 - Go 启动窗口名称读取 `appconfig.Config.DisplayName`。
+- 安装包元数据由 `build/config.yml` 管理；发布脚本写入 `info.version` 后执行 `wails3 task common:update:build-assets` 同步各平台文件。
 - 新增公开全局字段时，变量名必须使用 `APP_` 前缀，并同步更新 Go 类型与校验、前端环境类型、只读配置和本文档。
 - 环境相关但不敏感的构建值优先使用 GitHub Variables；密钥使用 GitHub Secrets，禁止通过 `APP_*` 暴露给前端。
 - `DATABASE_URL` 只允许出现在本地忽略文件、进程环境或 GitHub Environment Secret 中。Release 工作流仅在构建阶段生成临时 `.env.local`，不得输出完整值。

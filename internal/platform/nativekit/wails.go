@@ -1,103 +1,150 @@
 package nativekit
 
 import (
-	"context"
+	"errors"
 
 	"dn-wails/internal/nativekit"
 
-	"github.com/wailsapp/wails/v2/pkg/runtime"
+	"github.com/wailsapp/wails/v3/pkg/application"
 )
 
-type Wails struct{}
+var ErrClipboardUnavailable = errors.New("clipboard is unavailable")
 
-func NewWails() *Wails {
-	return &Wails{}
+type Wails struct {
+	app    *application.App
+	window *application.WebviewWindow
 }
 
-func (w *Wails) OpenExternalURL(ctx context.Context, rawURL string) {
-	runtime.BrowserOpenURL(ctx, rawURL)
+func NewWails(app *application.App, window *application.WebviewWindow) *Wails {
+	return &Wails{app: app, window: window}
 }
 
-func (w *Wails) ReadClipboard(ctx context.Context) (string, error) {
-	return runtime.ClipboardGetText(ctx)
+func (w *Wails) OpenExternalURL(rawURL string) error {
+	return w.app.Browser.OpenURL(rawURL)
 }
 
-func (w *Wails) WriteClipboard(ctx context.Context, text string) error {
-	return runtime.ClipboardSetText(ctx, text)
+func (w *Wails) OpenPath(path string) error {
+	return w.app.Browser.OpenFile(path)
 }
 
-func (w *Wails) OpenFiles(ctx context.Context, options nativekit.OpenFilesOptions) ([]string, error) {
-	dialogOptions := runtime.OpenDialogOptions{
-		Title:            options.Title,
-		DefaultDirectory: options.DefaultDirectory,
-		Filters:          toRuntimeFilters(options.Filters),
+func (w *Wails) ReadClipboard() (string, error) {
+	text, ok := w.app.Clipboard.Text()
+	if !ok {
+		return "", ErrClipboardUnavailable
 	}
+	return text, nil
+}
+
+func (w *Wails) WriteClipboard(text string) error {
+	if !w.app.Clipboard.SetText(text) {
+		return ErrClipboardUnavailable
+	}
+	return nil
+}
+
+func (w *Wails) OpenFiles(options nativekit.OpenFilesOptions) ([]string, error) {
+	dialog := w.app.Dialog.OpenFile().
+		AttachToWindow(w.window).
+		SetTitle(options.Title).
+		SetDirectory(options.DefaultDirectory).
+		CanChooseFiles(true).
+		CanChooseDirectories(false)
+	for _, filter := range options.Filters {
+		dialog.AddFilter(filter.DisplayName, filter.Pattern)
+	}
+
 	if options.Multiple {
-		return runtime.OpenMultipleFilesDialog(ctx, dialogOptions)
+		return dialog.PromptForMultipleSelection()
 	}
 
-	path, err := runtime.OpenFileDialog(ctx, dialogOptions)
+	path, err := dialog.PromptForSingleSelection()
 	if err != nil || path == "" {
 		return nil, err
 	}
 	return []string{path}, nil
 }
 
-func (w *Wails) OpenDirectory(ctx context.Context, title string, defaultDirectory string) (string, error) {
-	return runtime.OpenDirectoryDialog(ctx, runtime.OpenDialogOptions{
-		Title:            title,
-		DefaultDirectory: defaultDirectory,
-	})
+func (w *Wails) OpenDirectory(title string, defaultDirectory string) (string, error) {
+	return w.app.Dialog.OpenFile().
+		AttachToWindow(w.window).
+		SetTitle(title).
+		SetDirectory(defaultDirectory).
+		CanChooseFiles(false).
+		CanChooseDirectories(true).
+		PromptForSingleSelection()
 }
 
-func (w *Wails) SaveFile(ctx context.Context, options nativekit.SaveFileOptions) (string, error) {
-	return runtime.SaveFileDialog(ctx, runtime.SaveDialogOptions{
-		Title:            options.Title,
-		DefaultDirectory: options.DefaultDirectory,
-		DefaultFilename:  options.DefaultFilename,
-		Filters:          toRuntimeFilters(options.Filters),
+func (w *Wails) SaveFile(options nativekit.SaveFileOptions) (string, error) {
+	dialog := w.app.Dialog.SaveFile()
+	dialog.SetOptions(&application.SaveFileDialogOptions{
+		Title:     options.Title,
+		Directory: options.DefaultDirectory,
+		Filename:  options.DefaultFilename,
+		Window:    w.window,
 	})
+	for _, filter := range options.Filters {
+		dialog.AddFilter(filter.DisplayName, filter.Pattern)
+	}
+	return dialog.PromptForSingleSelection()
 }
 
-func (w *Wails) ShowMessageDialog(ctx context.Context, options nativekit.MessageDialogOptions) (string, error) {
-	return runtime.MessageDialog(ctx, runtime.MessageDialogOptions{
-		Type:          runtime.DialogType(options.Type),
-		Title:         options.Title,
-		Message:       options.Message,
-		Buttons:       options.Buttons,
-		DefaultButton: options.DefaultButton,
-		CancelButton:  options.CancelButton,
-	})
+func (w *Wails) ShowMessageDialog(options nativekit.MessageDialogOptions) (string, error) {
+	dialog := messageDialog(w.app, options.Type).
+		AttachToWindow(w.window).
+		SetTitle(options.Title).
+		SetMessage(options.Message)
+
+	buttons := options.Buttons
+	if len(buttons) == 0 {
+		buttons = []string{"OK"}
+	}
+	selected := ""
+	for _, label := range buttons {
+		button := dialog.AddButton(label)
+		button.OnClick(func() {
+			selected = label
+		})
+		if label == options.DefaultButton {
+			dialog.SetDefaultButton(button)
+		}
+		if label == options.CancelButton {
+			dialog.SetCancelButton(button)
+		}
+	}
+	dialog.Show()
+	return selected, nil
 }
 
-func (w *Wails) Screens(ctx context.Context) ([]nativekit.Screen, error) {
-	runtimeScreens, err := runtime.ScreenGetAll(ctx)
+func (w *Wails) Screens() ([]nativekit.Screen, error) {
+	currentScreen, err := w.window.GetScreen()
 	if err != nil {
 		return nil, err
 	}
 
-	screens := make([]nativekit.Screen, 0, len(runtimeScreens))
-	for _, screen := range runtimeScreens {
+	allScreens := w.app.Screen.GetAll()
+	screens := make([]nativekit.Screen, 0, len(allScreens))
+	for _, screen := range allScreens {
 		screens = append(screens, nativekit.Screen{
-			IsCurrent:      screen.IsCurrent,
+			IsCurrent:      currentScreen != nil && screen.ID == currentScreen.ID,
 			IsPrimary:      screen.IsPrimary,
 			Width:          screen.Size.Width,
 			Height:         screen.Size.Height,
-			PhysicalWidth:  screen.PhysicalSize.Width,
-			PhysicalHeight: screen.PhysicalSize.Height,
+			PhysicalWidth:  screen.PhysicalBounds.Width,
+			PhysicalHeight: screen.PhysicalBounds.Height,
 		})
 	}
-
 	return screens, nil
 }
 
-func toRuntimeFilters(filters []nativekit.FileFilter) []runtime.FileFilter {
-	result := make([]runtime.FileFilter, 0, len(filters))
-	for _, filter := range filters {
-		result = append(result, runtime.FileFilter{
-			DisplayName: filter.DisplayName,
-			Pattern:     filter.Pattern,
-		})
+func messageDialog(app *application.App, dialogType string) *application.MessageDialog {
+	switch dialogType {
+	case "warning":
+		return app.Dialog.Warning()
+	case "error":
+		return app.Dialog.Error()
+	case "question":
+		return app.Dialog.Question()
+	default:
+		return app.Dialog.Info()
 	}
-	return result
 }

@@ -7,7 +7,7 @@
 ## 目录与职责
 
 - `internal/nativekit/service.go`：平台无关类型、URL/path 校验和服务接口。
-- `internal/platform/nativekit/wails.go`：Wails runtime 适配。
+- `internal/platform/nativekit/wails.go`：Wails v3 App、WebviewWindow、Dialog、Clipboard、Browser 与 Screen API 适配。
 - `internal/application/native.go`：前端绑定门面。
 - `frontend/src/shared/native-kit/`：类型化前端 API 和拖放订阅。
 - `frontend/src/features/test-tools/`：集中提供 Native Kit 人工验证入口。
@@ -23,7 +23,7 @@
 | `chooseSavePath` | 选择保存路径。 |
 | `showNativeDialog` | 显示操作系统消息对话框。 |
 | `getScreens` | 获取逻辑与物理屏幕尺寸。 |
-| `subscribeFileDrop` | 监听 Wails 文件拖放。 |
+| `subscribeFileDrop` | 订阅 `native-kit:file-drop` typed event。 |
 
 ## 数据契约
 
@@ -44,7 +44,8 @@ interface FileFilter {
 - 打开本地路径只供内部诊断能力使用，要求绝对路径且目标存在。
 - 文件选择取消时返回空字符串或非 `null` 的空数组，不应当作异常；Go 服务与前端 API 都会将底层 `nil` / `null` 结果规范化为空数组。
 - 文件拖放数据仍应由业务模块校验扩展名、大小和用途。
-- Wails 生成绑定只在本模块 API 内使用，业务组件不得直接引用。
+- 主窗口启用 `EnableFileDrop`，页面根节点使用 `data-file-drop-target`；`WindowFilesDropped` 会转换成稳定的 typed event payload。
+- Wails v3 生成 bindings 只在本模块 API 内使用，业务组件不得直接引用。
 
 ## 验证
 

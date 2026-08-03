@@ -1,7 +1,6 @@
 package nativekit
 
 import (
-	"context"
 	"errors"
 	"fmt"
 	"net/url"
@@ -53,14 +52,15 @@ type Screen struct {
 }
 
 type Platform interface {
-	OpenExternalURL(ctx context.Context, rawURL string)
-	ReadClipboard(ctx context.Context) (string, error)
-	WriteClipboard(ctx context.Context, text string) error
-	OpenFiles(ctx context.Context, options OpenFilesOptions) ([]string, error)
-	OpenDirectory(ctx context.Context, title string, defaultDirectory string) (string, error)
-	SaveFile(ctx context.Context, options SaveFileOptions) (string, error)
-	ShowMessageDialog(ctx context.Context, options MessageDialogOptions) (string, error)
-	Screens(ctx context.Context) ([]Screen, error)
+	OpenExternalURL(rawURL string) error
+	OpenPath(path string) error
+	ReadClipboard() (string, error)
+	WriteClipboard(text string) error
+	OpenFiles(options OpenFilesOptions) ([]string, error)
+	OpenDirectory(title string, defaultDirectory string) (string, error)
+	SaveFile(options SaveFileOptions) (string, error)
+	ShowMessageDialog(options MessageDialogOptions) (string, error)
+	Screens() ([]Screen, error)
 }
 
 type Service struct {
@@ -71,17 +71,16 @@ func NewService(platform Platform) *Service {
 	return &Service{platform: platform}
 }
 
-func (s *Service) OpenExternalURL(ctx context.Context, rawURL string) error {
+func (s *Service) OpenExternalURL(rawURL string) error {
 	parsed, err := url.ParseRequestURI(strings.TrimSpace(rawURL))
 	if err != nil || parsed.Host == "" || (parsed.Scheme != "https" && parsed.Scheme != "http") {
 		return ErrInvalidURL
 	}
 
-	s.platform.OpenExternalURL(ctx, parsed.String())
-	return nil
+	return s.platform.OpenExternalURL(parsed.String())
 }
 
-func (s *Service) OpenPath(ctx context.Context, path string) error {
+func (s *Service) OpenPath(path string) error {
 	path = filepath.Clean(strings.TrimSpace(path))
 	if !filepath.IsAbs(path) {
 		return ErrInvalidPath
@@ -90,21 +89,19 @@ func (s *Service) OpenPath(ctx context.Context, path string) error {
 		return fmt.Errorf("%w: %v", ErrInvalidPath, err)
 	}
 
-	pathURL := url.URL{Scheme: "file", Path: filepath.ToSlash(path)}
-	s.platform.OpenExternalURL(ctx, pathURL.String())
-	return nil
+	return s.platform.OpenPath(path)
 }
 
-func (s *Service) ReadClipboard(ctx context.Context) (string, error) {
-	return s.platform.ReadClipboard(ctx)
+func (s *Service) ReadClipboard() (string, error) {
+	return s.platform.ReadClipboard()
 }
 
-func (s *Service) WriteClipboard(ctx context.Context, text string) error {
-	return s.platform.WriteClipboard(ctx, text)
+func (s *Service) WriteClipboard(text string) error {
+	return s.platform.WriteClipboard(text)
 }
 
-func (s *Service) OpenFiles(ctx context.Context, options OpenFilesOptions) ([]string, error) {
-	paths, err := s.platform.OpenFiles(ctx, options)
+func (s *Service) OpenFiles(options OpenFilesOptions) ([]string, error) {
+	paths, err := s.platform.OpenFiles(options)
 	if err != nil {
 		return nil, err
 	}
@@ -114,18 +111,18 @@ func (s *Service) OpenFiles(ctx context.Context, options OpenFilesOptions) ([]st
 	return paths, nil
 }
 
-func (s *Service) OpenDirectory(ctx context.Context, title string, defaultDirectory string) (string, error) {
-	return s.platform.OpenDirectory(ctx, title, defaultDirectory)
+func (s *Service) OpenDirectory(title string, defaultDirectory string) (string, error) {
+	return s.platform.OpenDirectory(title, defaultDirectory)
 }
 
-func (s *Service) SaveFile(ctx context.Context, options SaveFileOptions) (string, error) {
-	return s.platform.SaveFile(ctx, options)
+func (s *Service) SaveFile(options SaveFileOptions) (string, error) {
+	return s.platform.SaveFile(options)
 }
 
-func (s *Service) ShowMessageDialog(ctx context.Context, options MessageDialogOptions) (string, error) {
-	return s.platform.ShowMessageDialog(ctx, options)
+func (s *Service) ShowMessageDialog(options MessageDialogOptions) (string, error) {
+	return s.platform.ShowMessageDialog(options)
 }
 
-func (s *Service) Screens(ctx context.Context) ([]Screen, error) {
-	return s.platform.Screens(ctx)
+func (s *Service) Screens() ([]Screen, error) {
+	return s.platform.Screens()
 }

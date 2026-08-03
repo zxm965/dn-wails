@@ -37,19 +37,19 @@ type updateWindowStub struct {
 	quit chan struct{}
 }
 
-func (s *updateWindowStub) Restore(context.Context, windowmanager.Preferences) {}
-func (s *updateWindowStub) Capture(context.Context) windowmanager.Bounds {
+func (s *updateWindowStub) Restore(windowmanager.Preferences) {}
+func (s *updateWindowStub) Capture() windowmanager.Bounds {
 	return windowmanager.Bounds{}
 }
-func (s *updateWindowStub) ApplyPreferences(context.Context, windowmanager.Preferences) {}
-func (s *updateWindowStub) Activate(context.Context)                                    {}
-func (s *updateWindowStub) Quit(context.Context) {
+func (s *updateWindowStub) ApplyPreferences(windowmanager.Preferences) {}
+func (s *updateWindowStub) Activate()                                  {}
+func (s *updateWindowStub) Quit() {
 	select {
 	case s.quit <- struct{}{}:
 	default:
 	}
 }
-func (s *updateWindowStub) HandleClose(context.Context, string) bool { return false }
+func (s *updateWindowStub) HandleClose(string) bool { return false }
 
 func TestApplicationUpdateFacade(t *testing.T) {
 	t.Parallel()

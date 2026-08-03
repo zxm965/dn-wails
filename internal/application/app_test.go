@@ -1,7 +1,6 @@
 package application
 
 import (
-	"context"
 	"testing"
 
 	"dn-wails/internal/lifecycle"
@@ -10,73 +9,69 @@ import (
 	"dn-wails/internal/windowmanager"
 )
 
-type domReadySettingsStub struct{}
+type runtimeReadySettingsStub struct{}
 
-func (domReadySettingsStub) Initialize() error { return nil }
-func (domReadySettingsStub) Get() settings.AppSettings {
+func (runtimeReadySettingsStub) Initialize() error { return nil }
+func (runtimeReadySettingsStub) Get() settings.AppSettings {
 	return settings.Default()
 }
-func (domReadySettingsStub) Update(next settings.AppSettings) (settings.AppSettings, error) {
+func (runtimeReadySettingsStub) Update(next settings.AppSettings) (settings.AppSettings, error) {
 	return next, nil
 }
-func (domReadySettingsStub) Reset() (settings.AppSettings, error) {
+func (runtimeReadySettingsStub) Reset() (settings.AppSettings, error) {
 	return settings.Default(), nil
 }
-func (domReadySettingsStub) UpdateWindowBounds(settings.WindowBounds) error { return nil }
+func (runtimeReadySettingsStub) UpdateWindowBounds(settings.WindowBounds) error { return nil }
 
-type domReadyWindowStub struct{}
+type runtimeReadyWindowStub struct{}
 
-func (domReadyWindowStub) Restore(context.Context, windowmanager.Preferences) {}
-func (domReadyWindowStub) Capture(context.Context) windowmanager.Bounds {
+func (runtimeReadyWindowStub) Restore(windowmanager.Preferences) {}
+func (runtimeReadyWindowStub) Capture() windowmanager.Bounds {
 	return windowmanager.Bounds{}
 }
-func (domReadyWindowStub) ApplyPreferences(context.Context, windowmanager.Preferences) {}
-func (domReadyWindowStub) Activate(context.Context)                                    {}
-func (domReadyWindowStub) Quit(context.Context)                                        {}
-func (domReadyWindowStub) HandleClose(context.Context, string) bool                    { return false }
+func (runtimeReadyWindowStub) ApplyPreferences(windowmanager.Preferences) {}
+func (runtimeReadyWindowStub) Activate()                                  {}
+func (runtimeReadyWindowStub) Quit()                                      {}
+func (runtimeReadyWindowStub) HandleClose(string) bool                    { return false }
 
-type domReadyNotificationStub struct {
+type runtimeReadyNotificationStub struct {
 	lifecycle         *lifecycle.Service
 	readyAtInitialize bool
 }
 
-func (s *domReadyNotificationStub) Initialize(
-	context.Context,
+func (s *runtimeReadyNotificationStub) Initialize(
 	func(notification.Activation),
 	func(error),
-) error {
+) {
 	s.readyAtInitialize = s.lifecycle.Status().Ready
-	return nil
 }
 
-func (*domReadyNotificationStub) Cleanup(context.Context) {}
-func (*domReadyNotificationStub) Status(context.Context) (notification.Status, error) {
+func (*runtimeReadyNotificationStub) Status() (notification.Status, error) {
 	return notification.Status{}, nil
 }
-func (*domReadyNotificationStub) RequestAuthorization(context.Context) (bool, error) {
+func (*runtimeReadyNotificationStub) RequestAuthorization() (bool, error) {
 	return false, nil
 }
-func (*domReadyNotificationStub) SendMessage(
-	context.Context,
+func (*runtimeReadyNotificationStub) SendMessage(
 	notification.Message,
 	notification.Policy,
 ) (string, error) {
 	return "", nil
 }
 
-func TestOnDomReadyMarksLifecycleReadyBeforeNotificationInitialization(t *testing.T) {
+func TestRuntimeReadyMarksLifecycleReadyBeforeNotificationInitialization(t *testing.T) {
 	t.Parallel()
 
 	lifecycleService := lifecycle.NewService()
-	notificationService := &domReadyNotificationStub{lifecycle: lifecycleService}
+	notificationService := &runtimeReadyNotificationStub{lifecycle: lifecycleService}
 	app := New(Dependencies{
 		SystemNotification: notificationService,
-		Settings:           domReadySettingsStub{},
+		Settings:           runtimeReadySettingsStub{},
 		Lifecycle:          lifecycleService,
-		Window:             domReadyWindowStub{},
+		Window:             runtimeReadyWindowStub{},
 	})
 
-	app.OnDomReady(context.Background())
+	app.RuntimeReady()
 
 	if !notificationService.readyAtInitialize {
 		t.Fatal("expected lifecycle to be ready before notification initialization")

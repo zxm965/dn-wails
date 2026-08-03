@@ -6,7 +6,7 @@
 
 ## 目录与职责
 
-- `internal/diagnostics/service.go`：日志文件、轮转、标准日志输出和诊断信息，版本来自构建期 `buildinfo.Version`。
+- `internal/diagnostics/service.go`：日志文件、轮转、标准日志输出和诊断信息，版本来自构建期 `buildinfo.Version`；开发构建由当前 Git 标签生成 `x.y.z-dev`。
 - `internal/application/diagnostics.go`：Wails 查询与打开日志目录接口。
 - `frontend/src/shared/diagnostics/`：类型化诊断 API。
 - 测试工具中的 `DesktopOverview`：展示只读运行信息。
@@ -37,7 +37,7 @@ interface DiagnosticsInfo {
 
 ## 生命周期
 
-诊断服务在 `OnStartup` 初始化，在 `OnShutdown` 清理。绑定生成阶段不会创建日志文件。
+诊断服务在 App Service 的 `ServiceStartup` 初始化，在 `ServiceShutdown` 清理。bindings 生成阶段不会创建日志文件。
 
 ## 边界
 

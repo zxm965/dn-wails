@@ -1,5 +1,9 @@
 .DS_Store
+.task
+bin
 build/bin
+build/ios
+build/android
 node_modules
 frontend/dist
 .env.local

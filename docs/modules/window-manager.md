@@ -2,12 +2,12 @@
 
 ## 模块目标
 
-统一管理主窗口激活、位置尺寸恢复、置顶和关闭策略。当前项目保持单原生窗口，不实现 Wails v2 原生多窗口。
+统一管理 Wails v3 主窗口激活、位置尺寸恢复、置顶和关闭策略。当前项目保持单主窗口，其他应用内窗口继续使用 Overlay Manager。
 
 ## 目录与职责
 
 - `internal/windowmanager/service.go`：窗口状态规则和平台接口。
-- `internal/platform/window/runtime.go`：Wails runtime 适配。
+- `internal/platform/window/runtime.go`：Wails v3 App 与 WebviewWindow 适配。
 - `internal/platform/window/configure_*.go`：不同操作系统的窗口启动配置。
 - `internal/application/app.go`：生命周期恢复、关闭前保存和强制退出协调。
 - `frontend/src/shared/window/`：前端窗口操作封装。
@@ -15,7 +15,7 @@
 ## 核心链路
 
 ```text
-OnDomReady
+WindowRuntimeReady
   → Settings.Window
   → windowmanager.Restore
   → 恢复位置、尺寸、最大化和置顶
@@ -25,6 +25,11 @@ OnDomReady
   → 保存窗口边界
   → closeBehavior=hide：隐藏窗口
   → closeBehavior=quit：退出应用
+
+系统托盘“显示主窗口” / 托盘点击
+  → Show
+  → UnMinimise
+  → Focus
 ```
 
 ## 设置契约
@@ -49,7 +54,7 @@ interface WindowSettings {
 
 ## 边界
 
-- 隐藏到后台后可通过再次启动应用唤醒。
+- 隐藏到后台后可通过系统托盘或再次启动应用唤醒。
 - 窗口位置是否完全恢复受操作系统和多屏布局变化影响。
 - 原生多窗口不属于本模块当前范围。
 

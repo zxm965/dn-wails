@@ -7,9 +7,13 @@ import {
   SaveFile,
   ShowMessageDialog,
   WriteClipboard,
-} from '@wails/go/application/App'
-import { nativekit as WailsNativeKit } from '@wails/go/models'
-import { OnFileDrop, OnFileDropOff } from '@wails/runtime/runtime'
+} from '@bindings/dn-wails/internal/application/app'
+import { OpenFilesOptions as WailsOpenFilesOptions } from '@bindings/dn-wails/internal/nativekit/models'
+import { SaveFileOptions as WailsSaveFileOptions } from '@bindings/dn-wails/internal/nativekit/models'
+import { MessageDialogOptions as WailsMessageDialogOptions } from '@bindings/dn-wails/internal/nativekit/models'
+import { Events } from '@wailsio/runtime'
+
+const FILE_DROP_EVENT = 'native-kit:file-drop'
 
 export interface FileFilter {
   displayName: string
@@ -48,10 +52,6 @@ export interface ScreenInfo {
   physicalHeight: number
 }
 
-function toWailsFilters(filters: FileFilter[] = []): WailsNativeKit.FileFilter[] {
-  return filters.map((filter) => WailsNativeKit.FileFilter.createFrom(filter))
-}
-
 export function openExternalURL(url: string): Promise<void> {
   return OpenExternalURL(url)
 }
@@ -66,10 +66,10 @@ export function writeClipboard(text: string): Promise<void> {
 
 export async function pickFiles(options: OpenFilesOptions): Promise<string[]> {
   const paths = await OpenFiles(
-    WailsNativeKit.OpenFilesOptions.createFrom({
+    new WailsOpenFilesOptions({
       title: options.title,
       defaultDirectory: options.defaultDirectory ?? '',
-      filters: toWailsFilters(options.filters),
+      filters: options.filters ?? [],
       multiple: options.multiple ?? false,
     }),
   )
@@ -82,18 +82,18 @@ export function pickDirectory(title: string, defaultDirectory = ''): Promise<str
 
 export function chooseSavePath(options: SaveFileOptions): Promise<string> {
   return SaveFile(
-    WailsNativeKit.SaveFileOptions.createFrom({
+    new WailsSaveFileOptions({
       title: options.title,
       defaultDirectory: options.defaultDirectory ?? '',
       defaultFilename: options.defaultFilename ?? '',
-      filters: toWailsFilters(options.filters),
+      filters: options.filters ?? [],
     }),
   )
 }
 
 export function showNativeDialog(options: MessageDialogOptions): Promise<string> {
   return ShowMessageDialog(
-    WailsNativeKit.MessageDialogOptions.createFrom({
+    new WailsMessageDialogOptions({
       type: options.type,
       title: options.title,
       message: options.message,
@@ -116,10 +116,9 @@ export async function getScreens(): Promise<ScreenInfo[]> {
   }))
 }
 
-export function subscribeFileDrop(
-  callback: (position: { x: number; y: number }, paths: string[]) => void,
-  useDropTarget = true,
-): () => void {
-  OnFileDrop((x, y, paths) => callback({ x, y }, paths), useDropTarget)
-  return () => OnFileDropOff()
+export function subscribeFileDrop(callback: (position: { x: number; y: number }, paths: string[]) => void): () => void {
+  return Events.On(FILE_DROP_EVENT, (event) => {
+    const drop = event.data
+    callback({ x: drop.x, y: drop.y }, drop.paths)
+  })
 }

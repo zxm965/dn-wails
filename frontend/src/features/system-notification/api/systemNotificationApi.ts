@@ -2,7 +2,7 @@ import {
   GetSystemNotificationStatus,
   RequestSystemNotificationPermission,
   SendMessageNotification,
-} from '@wails/go/application/App'
+} from '@bindings/dn-wails/internal/application/app'
 
 export interface SystemNotificationStatus {
   available: boolean

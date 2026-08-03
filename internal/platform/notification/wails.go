@@ -1,47 +1,34 @@
 package notification
 
 import (
-	"context"
-
 	systemnotification "dn-wails/internal/notification"
 
-	"github.com/wailsapp/wails/v2/pkg/runtime"
+	"github.com/wailsapp/wails/v3/pkg/services/notifications"
 )
 
-// Wails implements native notifications with the notification runtime bundled with Wails.
-type Wails struct{}
-
-func NewWails() *Wails {
-	return &Wails{}
+type Wails struct {
+	service *notifications.NotificationService
 }
 
-func (w *Wails) Initialize(ctx context.Context) error {
-	return runtime.InitializeNotifications(ctx)
+func NewWails(service *notifications.NotificationService) *Wails {
+	return &Wails{service: service}
 }
 
-func (w *Wails) Cleanup(ctx context.Context) {
-	runtime.CleanupNotifications(ctx)
+func (w *Wails) CheckAuthorization() (bool, error) {
+	return w.service.CheckNotificationAuthorization()
 }
 
-func (w *Wails) IsAvailable(ctx context.Context) bool {
-	return runtime.IsNotificationAvailable(ctx)
+func (w *Wails) RequestAuthorization() (bool, error) {
+	return w.service.RequestNotificationAuthorization()
 }
 
-func (w *Wails) CheckAuthorization(ctx context.Context) (bool, error) {
-	return runtime.CheckNotificationAuthorization(ctx)
-}
-
-func (w *Wails) RequestAuthorization(ctx context.Context) (bool, error) {
-	return runtime.RequestNotificationAuthorization(ctx)
-}
-
-func (w *Wails) Send(ctx context.Context, notification systemnotification.NativeNotification) error {
+func (w *Wails) Send(notification systemnotification.NativeNotification) error {
 	data := make(map[string]interface{}, len(notification.Data))
 	for key, value := range notification.Data {
 		data[key] = value
 	}
 
-	return runtime.SendNotification(ctx, runtime.NotificationOptions{
+	return w.service.SendNotification(notifications.NotificationOptions{
 		ID:       notification.ID,
 		Title:    notification.Title,
 		Subtitle: notification.Subtitle,
@@ -50,8 +37,8 @@ func (w *Wails) Send(ctx context.Context, notification systemnotification.Native
 	})
 }
 
-func (w *Wails) OnResponse(ctx context.Context, callback func(response systemnotification.Response)) {
-	runtime.OnNotificationResponse(ctx, func(result runtime.NotificationResult) {
+func (w *Wails) OnResponse(callback func(response systemnotification.Response)) {
+	w.service.OnNotificationResponse(func(result notifications.NotificationResult) {
 		data := make(map[string]string, len(result.Response.UserInfo))
 		for key, value := range result.Response.UserInfo {
 			if text, ok := value.(string); ok {

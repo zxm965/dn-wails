@@ -24,8 +24,8 @@ import {
   SyncDnOfficialMessages,
   SyncDnWeeklyPlans,
   UpdateDnProfile,
-} from '@wails/go/application/App'
-import { dn as WailsDn } from '@wails/go/models'
+} from '@bindings/dn-wails/internal/application/app'
+import * as WailsDn from '@bindings/dn-wails/internal/dn/models'
 
 export interface ListMeta {
   total: number

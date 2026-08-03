@@ -27,7 +27,7 @@
 ```text
 React DN page / provider
   → dn-system/api
-  → frontend/wailsjs
+  → frontend/bindings
   → application.App
   → dn.PostgresService
       → pgxpool
@@ -61,7 +61,7 @@ React DN page / provider
 1. 进程环境变量 `DATABASE_URL`。
 2. Go embed 收集的 `.env.local` 中的 `DATABASE_URL`。
 
-本地 `.env.local` 和 `.env.*.local` 均被 Git 忽略。Release 工作流从 Environment `DATABASE` 的 `secrets.DATABASE_URL` 生成临时 `.env.local`，随后执行 Wails build。运行时不扫描或读取 `dn-next`，也不依赖旧的 `dn-database-connection.json` 缓存。未配置连接时不会再在窗口创建前退出，而是降级为 `UnavailableService`。
+本地 `.env.local` 和 `.env.*.local` 均被 Git 忽略。Release 工作流从 Environment `DATABASE` 的 `secrets.DATABASE_URL` 生成临时 `.env.local`，随后执行 Wails v3 Taskfile 构建。运行时不扫描或读取 `dn-next`，也不依赖旧的 `dn-database-connection.json` 缓存。未配置连接时不会再在窗口创建前退出，而是降级为 `UnavailableService`。
 
 完整连接串不得出现在 Git 记录、构建日志、错误提示、文档示例或前端接口中。由于连接串存在于正式二进制中，应视为可提取配置，并配套最小权限、网络访问限制、数据库审计和凭据轮换。
 
@@ -164,7 +164,7 @@ DATABASE_URL='postgres://username:password@localhost:5432/database'
 Go 方法或 DTO 变化后执行：
 
 ```bash
-wails generate module
+wails3 generate bindings -clean=true -ts
 ```
 
 ## 验证
@@ -178,4 +178,4 @@ pnpm lint
 pnpm build
 ```
 
-未启动 `wails dev`；登录表单、侧栏展开、Dialog 焦点、5 分钟轮询、头像选择、官网真实网络和原生外链仍需人工桌面验证。
+未启动 `wails3 dev`；登录表单、侧栏展开、Dialog 焦点、5 分钟轮询、头像选择、官网真实网络和原生外链仍需人工桌面验证。

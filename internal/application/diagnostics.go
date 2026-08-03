@@ -34,11 +34,7 @@ func (a *App) GetDiagnosticsInfo() DiagnosticsInfo {
 }
 
 func (a *App) OpenDiagnosticsDirectory() error {
-	ctx, err := a.runtimeContext()
-	if err != nil {
-		return err
-	}
-	return a.nativeService.OpenPath(ctx, a.diagnosticsService.Info().LogDirectory)
+	return a.nativeService.OpenPath(a.diagnosticsService.Info().LogDirectory)
 }
 
 func (a *App) GetLifecycleStatus() LifecycleStatus {

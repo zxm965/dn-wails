@@ -1,4 +1,4 @@
-import { EventsOn } from '@wails/runtime/runtime'
+import { Events } from '@wailsio/runtime'
 import { useCallback, useEffect, useState } from 'react'
 
 import {
@@ -63,9 +63,9 @@ export function useSystemNotification({ onActivated }: UseSystemNotificationOpti
   }, [refreshStatus])
 
   useEffect(() => {
-    return EventsOn(SYSTEM_NOTIFICATION_ACTIVATED_EVENT, (payload: unknown) => {
-      if (isNotificationActivation(payload)) {
-        onActivated?.(payload)
+    return Events.On(SYSTEM_NOTIFICATION_ACTIVATED_EVENT, (event) => {
+      if (isNotificationActivation(event.data)) {
+        onActivated?.(event.data)
       }
     })
   }, [onActivated])

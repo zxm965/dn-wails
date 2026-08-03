@@ -5,17 +5,17 @@ package singleinstance
 import (
 	"testing"
 
-	"github.com/wailsapp/wails/v2/pkg/options"
+	"github.com/wailsapp/wails/v3/pkg/application"
 )
 
-func TestConfigureDisablesSingleInstanceLockDuringDevelopment(t *testing.T) {
+func TestConfigureDisablesSingleInstanceDuringDevelopment(t *testing.T) {
 	t.Parallel()
 
-	appOptions := &options.App{}
+	appOptions := &application.Options{}
 
-	Configure(appOptions, func(options.SecondInstanceData) {})
+	Configure(appOptions, func(application.SecondInstanceData) {})
 
-	if appOptions.SingleInstanceLock != nil {
-		t.Fatal("expected single instance lock to be disabled for development builds")
+	if appOptions.SingleInstance != nil {
+		t.Fatal("expected single instance options to be disabled for development builds")
 	}
 }

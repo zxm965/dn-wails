@@ -1,4 +1,4 @@
-import { GetDiagnosticsInfo, OpenDiagnosticsDirectory } from '@wails/go/application/App'
+import { GetDiagnosticsInfo, OpenDiagnosticsDirectory } from '@bindings/dn-wails/internal/application/app'
 
 export interface DiagnosticsInfo {
   appName: string

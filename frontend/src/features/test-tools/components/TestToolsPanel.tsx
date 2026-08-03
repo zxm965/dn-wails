@@ -268,7 +268,7 @@ export function TestToolsPanel() {
                   type='button'
                   onClick={() =>
                     runAction('打开外部链接', async () => {
-                      await openExternalURL('https://wails.io/docs/')
+                      await openExternalURL('https://v3.wails.io/')
                       return '已交给系统默认浏览器打开。'
                     })
                   }

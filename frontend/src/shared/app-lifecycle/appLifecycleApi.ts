@@ -1,5 +1,5 @@
-import { GetLifecycleStatus } from '@wails/go/application/App'
-import { EventsOn } from '@wails/runtime/runtime'
+import { GetLifecycleStatus } from '@bindings/dn-wails/internal/application/app'
+import { Events } from '@wailsio/runtime'
 
 const SECOND_INSTANCE_EVENT = 'app:second-instance'
 
@@ -36,9 +36,9 @@ export async function getLifecycleStatus(): Promise<LifecycleStatus> {
 }
 
 export function onSecondInstanceLaunch(callback: (launch: SecondInstanceLaunch) => void): () => void {
-  return EventsOn(SECOND_INSTANCE_EVENT, (payload: unknown) => {
-    if (isSecondInstanceLaunch(payload)) {
-      callback(payload)
+  return Events.On(SECOND_INSTANCE_EVENT, (event) => {
+    if (isSecondInstanceLaunch(event.data)) {
+      callback(event.data)
     }
   })
 }

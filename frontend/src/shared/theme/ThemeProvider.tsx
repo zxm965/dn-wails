@@ -1,4 +1,3 @@
-import { WindowSetDarkTheme, WindowSetLightTheme, WindowSetSystemDefaultTheme } from '@wails/runtime/runtime'
 import { type ReactNode, useEffect, useMemo, useState } from 'react'
 
 import { useSettings } from '@/features/settings'
@@ -36,14 +35,6 @@ export function ThemeProvider({ children }: ThemeProviderProps) {
     root.dataset.density = settings.appearance.density
     root.dataset.buttonSize = settings.appearance.buttonSize
     root.style.setProperty('--font-scale', String(settings.appearance.fontScale))
-
-    if (settings.appearance.themeMode === 'system') {
-      WindowSetSystemDefaultTheme()
-    } else if (effectiveTheme === 'dark') {
-      WindowSetDarkTheme()
-    } else {
-      WindowSetLightTheme()
-    }
   }, [effectiveTheme, settings.appearance])
 
   return children

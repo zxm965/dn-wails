@@ -2,13 +2,8 @@
 
 package window
 
-import (
-	"github.com/wailsapp/wails/v2/pkg/options"
-	"github.com/wailsapp/wails/v2/pkg/options/mac"
-)
+import "github.com/wailsapp/wails/v3/pkg/application"
 
-func Configure(appOptions *options.App) {
-	appOptions.Mac = &mac.Options{
-		TitleBar: mac.TitleBarHidden(),
-	}
+func Configure(windowOptions *application.WebviewWindowOptions) {
+	windowOptions.Mac.TitleBar = application.MacTitleBarHidden
 }

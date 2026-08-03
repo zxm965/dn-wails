@@ -5,24 +5,24 @@ package singleinstance
 import (
 	"testing"
 
-	"github.com/wailsapp/wails/v2/pkg/options"
+	"github.com/wailsapp/wails/v3/pkg/application"
 )
 
-func TestConfigureEnablesSingleInstanceLockOutsideDevelopment(t *testing.T) {
+func TestConfigureEnablesSingleInstanceOutsideDevelopment(t *testing.T) {
 	t.Parallel()
 
-	appOptions := &options.App{}
-	handler := func(options.SecondInstanceData) {}
+	appOptions := &application.Options{}
+	handler := func(application.SecondInstanceData) {}
 
 	Configure(appOptions, handler)
 
-	if appOptions.SingleInstanceLock == nil {
-		t.Fatal("expected single instance lock to be configured")
+	if appOptions.SingleInstance == nil {
+		t.Fatal("expected single instance options to be configured")
 	}
-	if appOptions.SingleInstanceLock.UniqueId != applicationUniqueID {
-		t.Fatalf("unexpected unique ID: %q", appOptions.SingleInstanceLock.UniqueId)
+	if appOptions.SingleInstance.UniqueID != applicationUniqueID {
+		t.Fatalf("unexpected unique ID: %q", appOptions.SingleInstance.UniqueID)
 	}
-	if appOptions.SingleInstanceLock.OnSecondInstanceLaunch == nil {
+	if appOptions.SingleInstance.OnSecondInstanceLaunch == nil {
 		t.Fatal("expected second instance handler to be configured")
 	}
 }

@@ -9,5 +9,5 @@ export default defineConfig({
   sortImports: true,
   singleAttributePerLine: false,
   trailingComma: 'all',
-  ignorePatterns: ['dist', 'wailsjs', 'pnpm-lock.yaml'],
+  ignorePatterns: ['bindings', 'dist', 'pnpm-lock.yaml'],
 })

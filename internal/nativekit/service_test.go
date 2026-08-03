@@ -1,7 +1,6 @@
 package nativekit
 
 import (
-	"context"
 	"errors"
 	"testing"
 )
@@ -10,22 +9,23 @@ type platformStub struct {
 	openedURL string
 }
 
-func (p *platformStub) OpenExternalURL(_ context.Context, rawURL string) { p.openedURL = rawURL }
-func (p *platformStub) ReadClipboard(context.Context) (string, error)    { return "clipboard", nil }
-func (p *platformStub) WriteClipboard(context.Context, string) error     { return nil }
-func (p *platformStub) OpenFiles(context.Context, OpenFilesOptions) ([]string, error) {
+func (p *platformStub) OpenExternalURL(rawURL string) error { p.openedURL = rawURL; return nil }
+func (p *platformStub) OpenPath(string) error               { return nil }
+func (p *platformStub) ReadClipboard() (string, error)      { return "clipboard", nil }
+func (p *platformStub) WriteClipboard(string) error         { return nil }
+func (p *platformStub) OpenFiles(OpenFilesOptions) ([]string, error) {
 	return nil, nil
 }
-func (p *platformStub) OpenDirectory(context.Context, string, string) (string, error) {
+func (p *platformStub) OpenDirectory(string, string) (string, error) {
 	return "", nil
 }
-func (p *platformStub) SaveFile(context.Context, SaveFileOptions) (string, error) {
+func (p *platformStub) SaveFile(SaveFileOptions) (string, error) {
 	return "", nil
 }
-func (p *platformStub) ShowMessageDialog(context.Context, MessageDialogOptions) (string, error) {
+func (p *platformStub) ShowMessageDialog(MessageDialogOptions) (string, error) {
 	return "", nil
 }
-func (p *platformStub) Screens(context.Context) ([]Screen, error) { return nil, nil }
+func (p *platformStub) Screens() ([]Screen, error) { return nil, nil }
 
 func TestServiceValidatesExternalURLs(t *testing.T) {
 	t.Parallel()
@@ -33,7 +33,7 @@ func TestServiceValidatesExternalURLs(t *testing.T) {
 	platform := &platformStub{}
 	service := NewService(platform)
 
-	if err := service.OpenExternalURL(context.Background(), "https://wails.io/docs"); err != nil {
+	if err := service.OpenExternalURL("https://wails.io/docs"); err != nil {
 		t.Fatalf("open valid URL: %v", err)
 	}
 	if platform.openedURL != "https://wails.io/docs" {
@@ -41,7 +41,7 @@ func TestServiceValidatesExternalURLs(t *testing.T) {
 	}
 
 	for _, rawURL := range []string{"javascript:alert(1)", "file:///tmp/test", "not-a-url"} {
-		if err := service.OpenExternalURL(context.Background(), rawURL); !errors.Is(err, ErrInvalidURL) {
+		if err := service.OpenExternalURL(rawURL); !errors.Is(err, ErrInvalidURL) {
 			t.Fatalf("expected invalid URL error for %q, got %v", rawURL, err)
 		}
 	}
@@ -51,7 +51,7 @@ func TestServiceOpenFilesNormalizesCancelledSelection(t *testing.T) {
 	t.Parallel()
 
 	service := NewService(&platformStub{})
-	paths, err := service.OpenFiles(context.Background(), OpenFilesOptions{Title: "Select files"})
+	paths, err := service.OpenFiles(OpenFilesOptions{Title: "Select files"})
 	if err != nil {
 		t.Fatalf("open files: %v", err)
 	}

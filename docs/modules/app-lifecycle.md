@@ -2,33 +2,35 @@
 
 ## 模块目标
 
-统一管理应用启动、DOM 就绪、关闭前处理和退出清理，并向前端提供可查询的运行状态。
+基于 Wails v3 Service 和窗口事件统一管理服务启动、WebView runtime 就绪、关闭协调与退出清理，并向前端提供可查询状态。
 
 ## 目录与职责
 
 - `internal/lifecycle/service.go`：保存启动时间、就绪状态和第二实例启动次数。
-- `internal/application/app.go`：承接 Wails 的 `OnStartup`、`OnDomReady`、`OnBeforeClose`、`OnShutdown`。
-- `frontend/src/shared/app-lifecycle/`：查询生命周期状态并订阅第二实例事件。
-- 测试工具中的 `DesktopOverview` 展示运行状态，`TestToolsPanel` 处理第二实例验证结果。
+- `internal/application/app.go`：实现 `ServiceStartup`、`RuntimeReady`、`ServiceShutdown`、窗口关闭和第二实例协调。
+- `main.go`：注册 App Service，并把 `WindowRuntimeReady`、`WindowClosing`、`WindowFilesDropped` 接到应用门面。
+- `frontend/src/shared/app-lifecycle/`：查询状态并订阅 `app:second-instance` typed event。
 
 ## 核心链路
 
 ```text
-Wails OnStartup
-  → 保存 runtime context
-  → 初始化诊断与设置
+App ServiceStartup
+  → 保存 Service context
+  → 初始化诊断、设置与 DN 服务
   → lifecycle.Start
 
-Wails OnDomReady
+WindowRuntimeReady
   → 恢复窗口
   → lifecycle.MarkReady
   → 回放第二实例事件
-  → 初始化通知
+  → 注册通知响应处理
 
-Wails OnShutdown
-  → 清理通知
+App ServiceShutdown
   → lifecycle.Stop
-  → 关闭诊断日志
+  → 关闭 DN 与诊断资源
+
+application.Options.OnShutdown
+  → 销毁 SystemTray
 ```
 
 ## 数据契约
@@ -41,23 +43,22 @@ interface LifecycleStatus {
 }
 ```
 
-前端通过 `GetLifecycleStatus` 查询，并通过 `useAppLifecycle` 消费。首次查询可能早于 `OnDomReady`，Hook 会在未就绪时短间隔重试，临时读取失败时降频重试，直到获得就绪状态。
+前端通过生成的 App Service binding 查询，并通过 `useAppLifecycle` 消费。首次查询可能早于窗口 runtime 就绪，Hook 会重试直到获得就绪状态。
 
-## 边界处理
+## 错误与边界
 
-- 只有保存了 Wails context 后才能调用 runtime。
-- DOM 未就绪时收到的第二实例数据会暂存，待 `OnDomReady` 后发送。
-- 生命周期在窗口恢复后立即标记为就绪；系统通知属于可选原生能力，其初始化失败或阻塞不得影响应用就绪状态和第二实例事件回放。
-- 生命周期状态使用互斥锁保护，允许 Wails 回调和绑定方法并发访问。
-- 概览页区分读取中、初始化中、读取失败和运行正常，避免首次读取到 `ready=false` 后长期停留在加载文案。
+- 依赖 WebView 的窗口恢复和前端事件只在 `WindowRuntimeReady` 后执行。
+- runtime 就绪前收到的第二实例数据会暂存并在就绪后按顺序发送。
+- 生命周期先标记为就绪，再注册可选通知响应；通知能力失败不得阻断窗口可用状态。
+- 并发状态使用互斥锁保护。
 
-## 接入方式
+## 接入与验证
 
-新增长期资源时，在合适的生命周期完成初始化和清理，不要在 `main.go` 中产生运行期副作用。
-
-## 验证
+长期资源应实现 Service 生命周期或挂到明确的 Wails v3 窗口事件，不在 `main.go` 堆积业务规则。
 
 ```bash
 go test ./internal/lifecycle ./internal/application
 cd frontend && pnpm build
 ```
+
+窗口事件的真实触发顺序仍需在获准启动桌面应用后人工验证。

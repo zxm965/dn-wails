@@ -17,23 +17,34 @@ import (
 	"dn-wails/internal/singleinstance"
 	"dn-wails/internal/windowmanager"
 
-	"github.com/wailsapp/wails/v2/pkg/options"
-	"github.com/wailsapp/wails/v2/pkg/runtime"
+	wailsapplication "github.com/wailsapp/wails/v3/pkg/application"
 )
 
 const (
 	SystemNotificationActivatedEvent = "system-notification:activated"
 	SecondInstanceLaunchedEvent      = "app:second-instance"
+	FileDropEvent                    = "native-kit:file-drop"
 )
 
 var ErrAppNotReady = errors.New("application is not ready")
 
+func init() {
+	wailsapplication.RegisterEvent[notification.Activation](SystemNotificationActivatedEvent)
+	wailsapplication.RegisterEvent[singleinstance.LaunchData](SecondInstanceLaunchedEvent)
+	wailsapplication.RegisterEvent[FileDrop](FileDropEvent)
+}
+
+type FileDrop struct {
+	X     int      `json:"x"`
+	Y     int      `json:"y"`
+	Paths []string `json:"paths"`
+}
+
 type SystemNotificationService interface {
-	Initialize(ctx context.Context, onActivation func(notification.Activation), onError func(error)) error
-	Cleanup(ctx context.Context)
-	Status(ctx context.Context) (notification.Status, error)
-	RequestAuthorization(ctx context.Context) (bool, error)
-	SendMessage(ctx context.Context, message notification.Message, policy notification.Policy) (string, error)
+	Initialize(onActivation func(notification.Activation), onError func(error))
+	Status() (notification.Status, error)
+	RequestAuthorization() (bool, error)
+	SendMessage(message notification.Message, policy notification.Policy) (string, error)
 }
 
 type SettingsService interface {
@@ -57,24 +68,24 @@ type SingleInstanceService interface {
 }
 
 type WindowService interface {
-	Restore(ctx context.Context, preferences windowmanager.Preferences)
-	Capture(ctx context.Context) windowmanager.Bounds
-	ApplyPreferences(ctx context.Context, preferences windowmanager.Preferences)
-	Activate(ctx context.Context)
-	Quit(ctx context.Context)
-	HandleClose(ctx context.Context, closeBehavior string) bool
+	Restore(preferences windowmanager.Preferences)
+	Capture() windowmanager.Bounds
+	ApplyPreferences(preferences windowmanager.Preferences)
+	Activate()
+	Quit()
+	HandleClose(closeBehavior string) bool
 }
 
 type NativeService interface {
-	OpenExternalURL(ctx context.Context, rawURL string) error
-	OpenPath(ctx context.Context, path string) error
-	ReadClipboard(ctx context.Context) (string, error)
-	WriteClipboard(ctx context.Context, text string) error
-	OpenFiles(ctx context.Context, options nativekit.OpenFilesOptions) ([]string, error)
-	OpenDirectory(ctx context.Context, title string, defaultDirectory string) (string, error)
-	SaveFile(ctx context.Context, options nativekit.SaveFileOptions) (string, error)
-	ShowMessageDialog(ctx context.Context, options nativekit.MessageDialogOptions) (string, error)
-	Screens(ctx context.Context) ([]nativekit.Screen, error)
+	OpenExternalURL(rawURL string) error
+	OpenPath(path string) error
+	ReadClipboard() (string, error)
+	WriteClipboard(text string) error
+	OpenFiles(options nativekit.OpenFilesOptions) ([]string, error)
+	OpenDirectory(title string, defaultDirectory string) (string, error)
+	SaveFile(options nativekit.SaveFileOptions) (string, error)
+	ShowMessageDialog(options nativekit.MessageDialogOptions) (string, error)
+	Screens() ([]nativekit.Screen, error)
 }
 
 type DiagnosticsService interface {
@@ -120,6 +131,7 @@ type DnService interface {
 }
 
 type Dependencies struct {
+	Runtime            *wailsapplication.App
 	SystemNotification SystemNotificationService
 	Settings           SettingsService
 	Lifecycle          LifecycleService
@@ -131,8 +143,9 @@ type Dependencies struct {
 	Dn                 DnService
 }
 
-// App is the Wails-facing application facade.
+// App is the Wails v3 service exposed to the frontend.
 type App struct {
+	runtime                   *wailsapplication.App
 	systemNotificationService SystemNotificationService
 	settingsService           SettingsService
 	lifecycleService          LifecycleService
@@ -145,13 +158,14 @@ type App struct {
 
 	mu                    sync.RWMutex
 	ctx                   context.Context
-	domReady              bool
+	runtimeReady          bool
 	forceQuit             bool
 	pendingSecondLaunches []singleinstance.LaunchData
 }
 
 func New(dependencies Dependencies) *App {
 	return &App{
+		runtime:                   dependencies.Runtime,
 		systemNotificationService: dependencies.SystemNotification,
 		settingsService:           dependencies.Settings,
 		lifecycleService:          dependencies.Lifecycle,
@@ -164,7 +178,7 @@ func New(dependencies Dependencies) *App {
 	}
 }
 
-func (a *App) OnStartup(ctx context.Context) {
+func (a *App) ServiceStartup(ctx context.Context, _ wailsapplication.ServiceOptions) error {
 	a.mu.Lock()
 	a.ctx = ctx
 	a.mu.Unlock()
@@ -179,87 +193,94 @@ func (a *App) OnStartup(ctx context.Context) {
 		log.Printf("initialize dn system data: %v", err)
 	}
 	a.lifecycleService.Start(time.Now())
+	return nil
 }
 
-func (a *App) OnDomReady(ctx context.Context) {
+//wails:ignore
+func (a *App) RuntimeReady() {
 	a.mu.Lock()
-	a.ctx = ctx
-	a.domReady = true
+	a.runtimeReady = true
 	pendingLaunches := append([]singleinstance.LaunchData(nil), a.pendingSecondLaunches...)
 	a.pendingSecondLaunches = nil
 	a.mu.Unlock()
 
-	a.windowService.Restore(ctx, windowPreferences(a.settingsService.Get().Window))
+	a.windowService.Restore(windowPreferences(a.settingsService.Get().Window))
 	a.lifecycleService.MarkReady()
 	for _, launch := range pendingLaunches {
-		a.emitSecondInstance(ctx, launch)
+		a.emitSecondInstance(launch)
 	}
 
-	if err := a.systemNotificationService.Initialize(ctx, a.handleNotificationActivation, func(err error) {
+	a.systemNotificationService.Initialize(a.handleNotificationActivation, func(err error) {
 		log.Printf("handle system notification response: %v", err)
-	}); err != nil {
-		log.Printf("initialize system notifications: %v", err)
-	}
+	})
 }
 
-func (a *App) OnBeforeClose(ctx context.Context) bool {
-	a.mu.Lock()
-	forceQuit := a.forceQuit
-	a.forceQuit = false
-	a.mu.Unlock()
-
+//wails:ignore
+func (a *App) HandleWindowClosing(event *wailsapplication.WindowEvent) {
 	currentSettings := a.settingsService.Get()
 	if currentSettings.Window.RememberBounds {
-		if err := a.saveWindowBounds(ctx); err != nil {
+		if err := a.saveWindowBounds(); err != nil {
 			log.Printf("save window bounds: %v", err)
 		}
 	}
 
+	a.mu.RLock()
+	forceQuit := a.forceQuit
+	a.mu.RUnlock()
 	if forceQuit {
-		return false
+		return
 	}
-	return a.windowService.HandleClose(ctx, currentSettings.Window.CloseBehavior)
+
+	event.Cancel()
+	if a.windowService.HandleClose(currentSettings.Window.CloseBehavior) {
+		return
+	}
+
+	a.mu.Lock()
+	a.forceQuit = true
+	a.mu.Unlock()
+	go a.windowService.Quit()
+}
+
+//wails:ignore
+func (a *App) ShouldQuit() bool {
+	currentSettings := a.settingsService.Get()
+	if currentSettings.Window.RememberBounds {
+		if err := a.saveWindowBounds(); err != nil {
+			log.Printf("save window bounds before quit: %v", err)
+		}
+	}
+	return true
 }
 
 func (a *App) RequestWindowClose() error {
-	ctx, err := a.runtimeContext()
-	if err != nil {
-		return err
-	}
-
 	currentSettings := a.settingsService.Get()
 	if currentSettings.Window.CloseBehavior == settings.CloseBehaviorHide {
 		if currentSettings.Window.RememberBounds {
-			if err := a.saveWindowBounds(ctx); err != nil {
+			if err := a.saveWindowBounds(); err != nil {
 				return err
 			}
 		}
-		a.windowService.HandleClose(ctx, currentSettings.Window.CloseBehavior)
+		a.windowService.HandleClose(currentSettings.Window.CloseBehavior)
 		return nil
 	}
 
 	a.mu.Lock()
 	a.forceQuit = true
 	a.mu.Unlock()
-	a.windowService.Quit(ctx)
+	a.windowService.Quit()
 	return nil
 }
 
 func (a *App) QuitApplication() error {
-	ctx, err := a.runtimeContext()
-	if err != nil {
-		return err
-	}
-
 	a.mu.Lock()
 	a.forceQuit = true
 	a.mu.Unlock()
-	a.windowService.Quit(ctx)
+	a.windowService.Quit()
 	return nil
 }
 
-func (a *App) OnShutdown(ctx context.Context) {
-	a.systemNotificationService.Cleanup(ctx)
+func (a *App) ServiceShutdown() error {
 	a.lifecycleService.Stop()
 	if err := a.dnService.Close(); err != nil {
 		log.Printf("close dn database: %v", err)
@@ -270,50 +291,57 @@ func (a *App) OnShutdown(ctx context.Context) {
 
 	a.mu.Lock()
 	a.ctx = nil
-	a.domReady = false
+	a.runtimeReady = false
 	a.mu.Unlock()
+	return nil
 }
 
-func SecondInstanceHandler(app *App) func(data options.SecondInstanceData) {
-	return func(data options.SecondInstanceData) {
-		app.handleSecondInstanceLaunch(data)
-	}
-}
-
-func (a *App) handleSecondInstanceLaunch(data options.SecondInstanceData) {
-	launch := a.singleInstanceService.Normalize(data.Args, data.WorkingDirectory)
+//wails:ignore
+func (a *App) HandleSecondInstanceLaunch(data wailsapplication.SecondInstanceData) {
+	launch := a.singleInstanceService.Normalize(data.Args, data.WorkingDir)
 	a.lifecycleService.RecordSecondInstance()
 
 	a.mu.Lock()
-	ctx := a.ctx
-	if ctx == nil || !a.domReady {
+	if !a.runtimeReady {
 		a.pendingSecondLaunches = append(a.pendingSecondLaunches, launch)
 		a.mu.Unlock()
 		return
 	}
 	a.mu.Unlock()
 
-	a.emitSecondInstance(ctx, launch)
+	a.emitSecondInstance(launch)
 }
 
-func (a *App) emitSecondInstance(ctx context.Context, launch singleinstance.LaunchData) {
-	a.windowService.Activate(ctx)
-	runtime.EventsEmit(ctx, SecondInstanceLaunchedEvent, launch)
-}
-
-func (a *App) handleNotificationActivation(activation notification.Activation) {
-	ctx, err := a.runtimeContext()
-	if err != nil {
-		log.Printf("activate system notification: %v", err)
+//wails:ignore
+func (a *App) HandleFileDrop(event *wailsapplication.WindowEvent) {
+	if event == nil || event.Context() == nil {
+		return
+	}
+	paths := event.Context().DroppedFiles()
+	if len(paths) == 0 {
 		return
 	}
 
-	a.windowService.Activate(ctx)
-	runtime.EventsEmit(ctx, SystemNotificationActivatedEvent, activation)
+	drop := FileDrop{Paths: append([]string(nil), paths...)}
+	if target := event.Context().DropTargetDetails(); target != nil {
+		drop.X = target.X
+		drop.Y = target.Y
+	}
+	a.runtime.Event.Emit(FileDropEvent, drop)
 }
 
-func (a *App) saveWindowBounds(ctx context.Context) error {
-	bounds := a.windowService.Capture(ctx)
+func (a *App) emitSecondInstance(launch singleinstance.LaunchData) {
+	a.windowService.Activate()
+	a.runtime.Event.Emit(SecondInstanceLaunchedEvent, launch)
+}
+
+func (a *App) handleNotificationActivation(activation notification.Activation) {
+	a.windowService.Activate()
+	a.runtime.Event.Emit(SystemNotificationActivatedEvent, activation)
+}
+
+func (a *App) saveWindowBounds() error {
+	bounds := a.windowService.Capture()
 	return a.settingsService.UpdateWindowBounds(settings.WindowBounds{
 		X:         bounds.X,
 		Y:         bounds.Y,

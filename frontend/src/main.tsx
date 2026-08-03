@@ -1,5 +1,6 @@
 import React from 'react'
 import { createRoot } from 'react-dom/client'
+import '@wailsio/runtime'
 
 import App from '@/app/App'
 import { AppUpdateProvider } from '@/features/app-update'

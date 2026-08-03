@@ -1,91 +1,80 @@
 # dn-wails
 
-基于 Wails v2、React 和 TypeScript 的桌面应用。项目采用轻量分层结构：Go 侧以应用门面连接业务能力，React 侧以功能模块组织页面逻辑。
+基于 Wails v3、React 和 TypeScript 的桌面应用。当前锁定 `github.com/wailsapp/wails/v3 v3.0.0-beta.2`，以 v3 Service、typed events、Taskfile 构建系统和原生系统托盘为基础，不保留 Wails v2 兼容层。
 
-界面采用标准桌面应用布局：顶部为系统标题栏，左侧为分组菜单，右侧为视图区域。通用能力的人工验证入口统一位于“系统设置 → 测试工具”。
+界面采用顶部自定义标题栏、左侧分组菜单和右侧视图区域。关闭行为设为隐藏时，主窗口会保留在后台，并可通过系统托盘的“显示主窗口”恢复；托盘菜单也提供“退出”。
 
 ## 目录结构
 
 ```text
 .
-├── .env                            # 应用展示名称等公开全局配置
-├── main.go                         # 组合根：装配依赖并启动 Wails
+├── Taskfile.yml                    # Wails v3 构建任务入口
+├── build/
+│   ├── config.yml                 # Wails v3 开发与平台元数据配置
+│   ├── darwin/                    # macOS 打包资源与任务
+│   ├── linux/                     # Linux 打包资源与任务
+│   └── windows/                   # Windows NSIS 资源与任务
+├── main.go                        # 组合根：App、Window、Service 与 SystemTray
 ├── internal/
-│   ├── application/                # 暴露给前端的 Wails 应用门面
-│   ├── appupdate/                  # GitHub Release 更新规则与版本比较
-│   ├── buildinfo/                  # 构建期版本和发布元数据
-│   ├── diagnostics/                # 日志与运行诊断
-│   ├── dn/                         # DN 认证、角色、周计划、消息与官网同步
-│   ├── lifecycle/                  # 应用生命周期状态
-│   ├── nativekit/                  # 原生能力规则与类型
-│   ├── notification/               # 系统消息通知规则与类型
-│   ├── settings/                   # 类型化应用设置
-│   ├── singleinstance/             # 单实例启动数据处理
-│   ├── storage/                    # 用户配置文件存储
-│   ├── windowmanager/              # 主窗口状态与关闭策略
-│   ├── platform/nativekit/         # Wails 原生能力适配
-│   ├── platform/appupdate/         # GitHub 更新源与双平台安装器
-│   ├── platform/notification/      # Wails 原生通知适配
-│   ├── platform/singleinstance/    # Wails 单实例配置
-│   └── platform/window/            # 跨平台窗口配置
+│   ├── application/               # 暴露给前端的 Wails v3 Service 门面
+│   ├── appupdate/                 # GitHub Release 更新规则与版本比较
+│   ├── buildinfo/                 # 构建期版本和发布元数据
+│   ├── diagnostics/               # 日志与运行诊断
+│   ├── dn/                        # DN 认证、角色、周计划与消息
+│   ├── lifecycle/                 # 应用生命周期状态
+│   ├── nativekit/                 # 原生能力规则与类型
+│   ├── notification/              # 系统通知规则与类型
+│   ├── settings/                  # 类型化应用设置
+│   ├── singleinstance/            # 单实例启动数据处理
+│   ├── storage/                   # 用户配置文件存储
+│   ├── windowmanager/             # 主窗口状态与关闭策略
+│   └── platform/                  # Wails v3 与操作系统适配
 ├── frontend/
-│   ├── src/
-│   │   ├── app/                    # 应用壳、全局 vanilla-extract 样式和顶层装配
-│   │   ├── features/               # 前端业务功能模块（含 DN 工作区）
-│   │   ├── shared/                 # 通用 UI 组件、共置 .css.ts 与基础工具
-│   │   └── assets/                 # 静态资源
-│   └── wailsjs/                    # Wails 自动生成绑定，禁止手动修改
-├── build/                          # 平台打包资源
-├── docs/                           # 架构与开发文档
-└── wails.json                      # Wails 项目配置
+│   ├── bindings/                  # Wails v3 自动生成绑定，禁止手动修改
+│   └── src/                       # React 功能模块与共享基础设施
+└── docs/                          # 架构与模块文档
 ```
 
-详细边界与扩展规则见 [docs/architecture.md](docs/architecture.md)，各业务模块的设计与调用链路见 `docs/modules/`。
+详细边界见 [docs/architecture.md](docs/architecture.md)。
 
 ## 常用命令
 
 ```bash
-# 重新生成 Go -> TypeScript 绑定
-wails generate module
+# 重新生成 Go Service -> TypeScript 绑定和 typed events
+wails3 generate bindings -clean=true -ts
+
+# Go 测试
+go test ./...
+go test -tags dev ./internal/platform/singleinstance
 
 # 前端质量检查
 cd frontend
 pnpm fmt:check
 pnpm lint
 pnpm build
-
-# Go 测试
 cd ..
-go test ./...
 
-# 本地开发（会启动开发服务）
-wails dev
+# 当前平台生产构建 / 打包
+wails3 task build
+wails3 task package
 
-# 生产构建
-wails build
+# 本地开发（会启动 Vite 和桌面应用）
+wails3 task dev
 ```
 
-本项目前端开发服务固定使用 `2233`，用于保证 macOS Wails WebView 的 HMR WebSocket 地址稳定。如果端口已被占用，Vite 会直接报错，请先释放该端口后再运行 `wails dev`。
+项目通过 `WAILS_VITE_PORT` 保持 Wails 后端与 Vite 端口一致，默认使用 Wails v3 的 `9245`；需要时可通过 `wails3 dev -port <端口>` 覆盖。端口被占用时 Vite 会直接失败。
 
-应用主名称通过根目录 `.env` 的 `APP_DISPLAY_NAME` 统一配置，侧栏左下角名称通过 `APP_AUTHOR_NAME` 配置。修改展示名称会同步影响自定义标题栏、侧边栏、页面标题、概览信息和原生窗口标题；内部存储与日志目录名称不会随之变化。该 `.env` 会进入前端与桌面程序，只能存放公开配置，禁止写入密钥。所有 `APP_*` 字段都会由 Vite 打进前端资源，同样必须按公开信息管理。
+开发构建的应用版本从最近的稳定 Git 标签读取并追加 `-dev`；例如标签为 `v1.2.3` 时，应用概览显示 `1.2.3-dev`。没有可用标签时回退到 `build/config.yml` 的 `info.version`。
 
-本地开发密钥直接写入被 Git 忽略的 `.env.local`。Go 构建会自动嵌入该文件，进程环境中的同名字段仍具有更高优先级：
+应用展示名称和作者来自根目录 `.env`。本地数据库连接写入被 Git 忽略的 `.env.local`；正式发布从 GitHub Environment `DATABASE` 的 `secrets.DATABASE_URL` 生成临时 `.env.local` 并嵌入二进制。嵌入值可以被最终用户提取，因此只能使用最小权限且可轮换的专用账号。
 
-```dotenv
-DATABASE_URL='postgres://username:password@localhost:5432/database'
-```
+## 发布与更新
 
-`DATABASE_URL` 禁止写入已提交的 `.env` 或 GitHub Actions Variables。本地值只存放在 `.env.local`；正式发布值存放在 GitHub Environment `DATABASE` 的 Secret 中，并在构建时嵌入安装包。完整分级规则见 [应用全局配置文档](docs/modules/app-config.md)。
-
-## GitHub 双端发布与自动更新
-
-GitHub 更新仓库固定为 `zxm965/dn-wails`。推送 `vMAJOR.MINOR.PATCH` 标签并由 GitLab 镜像同步到 GitHub 后，`.github/workflows/release.yml` 会执行质量检查，构建 macOS universal ZIP/DMG 和 Windows amd64 用户级 NSIS 安装器，生成带版本、下载地址、大小和 SHA-256 的 `latest.json`，再创建 GitHub Release。
+推送 `vMAJOR.MINOR.PATCH` 标签后，GitHub Actions 使用 Wails v3 Taskfile 构建 macOS universal ZIP/DMG 和 Windows amd64 用户级 NSIS 安装器，并生成 `latest.json` 与校验和：
 
 ```bash
 git tag v1.0.0
 git push origin v1.0.0
 ```
 
-正式版本启动后会通过 GitHub 最新 Release 重定向读取静态 `latest.json`，不调用 GitHub REST API，也不需要客户端 Token。用户也可在“系统设置 → 测试工具 → 应用概览”点击“检查最新版”。发现新版后必须确认才会下载、校验、安装并重启。普通代码提交不会发布更新。
-
-发布前请确认 GitLab 镜像同步 tags、GitHub Actions 已启用，并在仓库 Actions 设置中允许工作流写入 Contents。双端构建关联 GitHub Environment `DATABASE`，从 `secrets.DATABASE_URL` 生成临时 `.env.local` 并由 Go embed 写入安装包；Secret 不进入 Git 记录或工作流日志，但安装包中的值可被提取，应使用权限受限且可轮换的专用数据库账号。Secret 缺失时工作流直接失败；其他无数据库配置的构建仍可打开应用并明确显示 DN 功能不可用。当前默认产物未配置正式 Apple/Windows 代码签名，面向外部用户分发前应补齐签名与 macOS 公证，详细约定见 [应用更新与发布文档](docs/modules/app-update.md)。
+当前 Wails v3 仍是 beta，桌面原生行为和平台打包需要在目标系统上充分验证。默认发布尚未配置正式 Apple/Windows 代码签名。

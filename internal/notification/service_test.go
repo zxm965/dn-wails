@@ -1,49 +1,28 @@
 package notification
 
 import (
-	"context"
 	"errors"
 	"strings"
 	"testing"
 )
 
 type platformStub struct {
-	available        bool
 	authorized       bool
-	initializeErr    error
 	authorizationErr error
 	sendErr          error
-	initialized      bool
-	cleanedUp        bool
 	sent             []NativeNotification
 	responseCallback func(response Response)
 }
 
-func (p *platformStub) Initialize(context.Context) error {
-	if p.initializeErr != nil {
-		return p.initializeErr
-	}
-	p.initialized = true
-	return nil
-}
-
-func (p *platformStub) Cleanup(context.Context) {
-	p.cleanedUp = true
-}
-
-func (p *platformStub) IsAvailable(context.Context) bool {
-	return p.available
-}
-
-func (p *platformStub) CheckAuthorization(context.Context) (bool, error) {
+func (p *platformStub) CheckAuthorization() (bool, error) {
 	return p.authorized, p.authorizationErr
 }
 
-func (p *platformStub) RequestAuthorization(context.Context) (bool, error) {
+func (p *platformStub) RequestAuthorization() (bool, error) {
 	return p.authorized, p.authorizationErr
 }
 
-func (p *platformStub) Send(_ context.Context, notification NativeNotification) error {
+func (p *platformStub) Send(notification NativeNotification) error {
 	if p.sendErr != nil {
 		return p.sendErr
 	}
@@ -51,21 +30,19 @@ func (p *platformStub) Send(_ context.Context, notification NativeNotification) 
 	return nil
 }
 
-func (p *platformStub) OnResponse(_ context.Context, callback func(response Response)) {
+func (p *platformStub) OnResponse(callback func(response Response)) {
 	p.responseCallback = callback
 }
 
 func TestServiceSendMessage(t *testing.T) {
 	t.Parallel()
 
-	platform := &platformStub{available: true, authorized: true}
+	platform := &platformStub{authorized: true}
 	service := newService(platform, func() string { return "generated-id" })
-	if err := service.Initialize(context.Background(), nil, nil); err != nil {
-		t.Fatalf("initialize service: %v", err)
-	}
+	service.Initialize(nil, nil)
 
 	content := strings.Repeat("消息", maxContentPreviewRunes)
-	notificationID, err := service.SendMessage(context.Background(), Message{
+	notificationID, err := service.SendMessage(Message{
 		Sender:         "  产品小助手  ",
 		Content:        "  " + content + "  ",
 		ConversationID: "  conversation-1  ",
@@ -101,11 +78,9 @@ func TestServiceSendMessage(t *testing.T) {
 func TestServiceRejectsInvalidMessage(t *testing.T) {
 	t.Parallel()
 
-	platform := &platformStub{available: true, authorized: true}
+	platform := &platformStub{authorized: true}
 	service := newService(platform, func() string { return "generated-id" })
-	if err := service.Initialize(context.Background(), nil, nil); err != nil {
-		t.Fatalf("initialize service: %v", err)
-	}
+	service.Initialize(nil, nil)
 
 	tests := []struct {
 		name      string
@@ -128,7 +103,7 @@ func TestServiceRejectsInvalidMessage(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			t.Parallel()
 
-			_, err := service.SendMessage(context.Background(), test.message, Policy{Enabled: true, ShowPreview: true})
+			_, err := service.SendMessage(test.message, Policy{Enabled: true, ShowPreview: true})
 			if !errors.Is(err, test.expectErr) {
 				t.Fatalf("expected error %v, got %v", test.expectErr, err)
 			}
@@ -139,14 +114,11 @@ func TestServiceRejectsInvalidMessage(t *testing.T) {
 func TestServiceRequiresAuthorization(t *testing.T) {
 	t.Parallel()
 
-	platform := &platformStub{available: true, authorized: false}
+	platform := &platformStub{authorized: false}
 	service := newService(platform, func() string { return "generated-id" })
-	if err := service.Initialize(context.Background(), nil, nil); err != nil {
-		t.Fatalf("initialize service: %v", err)
-	}
+	service.Initialize(nil, nil)
 
 	_, err := service.SendMessage(
-		context.Background(),
 		Message{Sender: "小助手", Content: "你好"},
 		Policy{Enabled: true, ShowPreview: true},
 	)
@@ -171,14 +143,11 @@ func TestServiceAppliesNotificationPolicy(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			t.Parallel()
 
-			platform := &platformStub{available: true, authorized: true}
+			platform := &platformStub{authorized: true}
 			service := newService(platform, func() string { return "generated-id" })
-			if err := service.Initialize(context.Background(), nil, nil); err != nil {
-				t.Fatalf("initialize service: %v", err)
-			}
+			service.Initialize(nil, nil)
 
 			_, err := service.SendMessage(
-				context.Background(),
 				Message{Sender: "小助手", Content: "你好"},
 				test.policy,
 			)
@@ -192,14 +161,11 @@ func TestServiceAppliesNotificationPolicy(t *testing.T) {
 func TestServiceHidesMessagePreview(t *testing.T) {
 	t.Parallel()
 
-	platform := &platformStub{available: true, authorized: true}
+	platform := &platformStub{authorized: true}
 	service := newService(platform, func() string { return "generated-id" })
-	if err := service.Initialize(context.Background(), nil, nil); err != nil {
-		t.Fatalf("initialize service: %v", err)
-	}
+	service.Initialize(nil, nil)
 
 	_, err := service.SendMessage(
-		context.Background(),
 		Message{Sender: "小助手", Content: "敏感消息"},
 		Policy{Enabled: true, ShowPreview: false},
 	)
@@ -214,15 +180,13 @@ func TestServiceHidesMessagePreview(t *testing.T) {
 func TestServiceMapsNotificationActivation(t *testing.T) {
 	t.Parallel()
 
-	platform := &platformStub{available: true, authorized: true}
+	platform := &platformStub{authorized: true}
 	service := newService(platform, func() string { return "generated-id" })
 
 	var activation Activation
-	if err := service.Initialize(context.Background(), func(value Activation) {
+	service.Initialize(func(value Activation) {
 		activation = value
-	}, nil); err != nil {
-		t.Fatalf("initialize service: %v", err)
-	}
+	}, nil)
 
 	platform.responseCallback(Response{
 		NotificationID: "notification-1",

@@ -11,9 +11,7 @@ func (a *App) UpdateSettings(next settings.AppSettings) (settings.AppSettings, e
 	if err != nil {
 		return settings.AppSettings{}, err
 	}
-	if ctx, contextErr := a.runtimeContext(); contextErr == nil {
-		a.windowService.ApplyPreferences(ctx, windowPreferences(updated.Window))
-	}
+	a.windowService.ApplyPreferences(windowPreferences(updated.Window))
 	return updated, nil
 }
 
@@ -22,8 +20,6 @@ func (a *App) ResetSettings() (settings.AppSettings, error) {
 	if err != nil {
 		return settings.AppSettings{}, err
 	}
-	if ctx, contextErr := a.runtimeContext(); contextErr == nil {
-		a.windowService.ApplyPreferences(ctx, windowPreferences(updated.Window))
-	}
+	a.windowService.ApplyPreferences(windowPreferences(updated.Window))
 	return updated, nil
 }
