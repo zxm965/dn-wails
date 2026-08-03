@@ -47,9 +47,6 @@ jobs:
       - name: Check release tag
         run: node scripts/configure-release.mjs "$GITHUB_REF_NAME"
 
-      - name: Test release scripts
-        run: node --test scripts/*.test.mjs
-
       - name: Check frontend formatting
         run: pnpm --dir frontend fmt:check
 

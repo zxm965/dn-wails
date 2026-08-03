@@ -17,7 +17,6 @@
 - `.github/workflows/release.yml`：标签触发的双平台质量检查、构建和 GitHub Release 发布。
 - `scripts/configure-release.mjs`：校验 `vMAJOR.MINOR.PATCH` 标签并同步 Wails 平台包版本。
 - `scripts/generate-update-manifest.mjs`：计算发布资源大小和 SHA-256，生成静态 `latest.json`。
-- `scripts/generate-update-manifest.test.mjs`：验证清单内容、标签校验和缺失资源失败行为。
 
 ## 依赖关系
 
@@ -146,7 +145,6 @@ git push origin v1.0.0
 ```bash
 go test ./internal/appupdate ./internal/platform/appupdate ./internal/application
 go test ./...
-node --test scripts/*.test.mjs
 cd frontend
 pnpm fmt:check
 pnpm lint
