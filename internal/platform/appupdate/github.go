@@ -11,6 +11,7 @@ import (
 	"net/http"
 	"net/url"
 	"os"
+	"regexp"
 	"strings"
 	"time"
 
@@ -18,38 +19,48 @@ import (
 )
 
 const (
-	githubAPIBaseURL = "https://api.github.com"
-	githubAPIVersion = "2026-03-10"
-	maxReleaseBody   = 2 * 1024 * 1024
-	maxAssetSize     = int64(1024 * 1024 * 1024)
+	githubWebBaseURL  = "https://github.com"
+	updateManifest    = "latest.json"
+	manifestVersion   = 1
+	maxManifestBody   = 2 * 1024 * 1024
+	maxManifestAssets = 16
+	maxAssetSize      = int64(1024 * 1024 * 1024)
+)
+
+var (
+	releaseTagPattern     = regexp.MustCompile(`^v(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)$`)
+	repositoryPartPattern = regexp.MustCompile(`^[A-Za-z0-9_.-]+$`)
+	assetNamePattern      = regexp.MustCompile(`^[A-Za-z0-9._-]+$`)
 )
 
 type GitHubSource struct {
 	client     *http.Client
-	apiBaseURL string
+	webBaseURL string
 }
 
-type githubRelease struct {
-	TagName     string        `json:"tag_name"`
-	Name        string        `json:"name"`
-	Body        string        `json:"body"`
-	HTMLURL     string        `json:"html_url"`
-	PublishedAt time.Time     `json:"published_at"`
-	Assets      []githubAsset `json:"assets"`
+type releaseManifest struct {
+	SchemaVersion int                    `json:"schemaVersion"`
+	Repository    string                 `json:"repository"`
+	Version       string                 `json:"version"`
+	Name          string                 `json:"name"`
+	Notes         string                 `json:"notes"`
+	ReleaseURL    string                 `json:"releaseUrl"`
+	PublishedAt   string                 `json:"publishedAt"`
+	Assets        []releaseManifestAsset `json:"assets"`
 }
 
-type githubAsset struct {
-	Name               string `json:"name"`
-	BrowserDownloadURL string `json:"browser_download_url"`
-	Digest             string `json:"digest"`
-	Size               int64  `json:"size"`
+type releaseManifestAsset struct {
+	Name   string `json:"name"`
+	URL    string `json:"url"`
+	Digest string `json:"digest"`
+	Size   int64  `json:"size"`
 }
 
 func NewGitHubSource(client *http.Client) *GitHubSource {
 	if client == nil {
 		client = &http.Client{Timeout: 30 * time.Second}
 	}
-	return &GitHubSource{client: client, apiBaseURL: githubAPIBaseURL}
+	return &GitHubSource{client: client, webBaseURL: githubWebBaseURL}
 }
 
 func (s *GitHubSource) Latest(ctx context.Context, repository string) (coreupdate.Release, error) {
@@ -57,53 +68,165 @@ func (s *GitHubSource) Latest(ctx context.Context, repository string) (coreupdat
 	if err != nil {
 		return coreupdate.Release{}, err
 	}
+	normalizedRepository := owner + "/" + name
 
-	endpoint := fmt.Sprintf("%s/repos/%s/%s/releases/latest", strings.TrimRight(s.apiBaseURL, "/"), url.PathEscape(owner), url.PathEscape(name))
-	request, err := http.NewRequestWithContext(ctx, http.MethodGet, endpoint, nil)
+	tag, err := s.resolveLatestTag(ctx, owner, name)
 	if err != nil {
-		return coreupdate.Release{}, fmt.Errorf("create GitHub release request: %w", err)
+		return coreupdate.Release{}, err
 	}
-	setGitHubHeaders(request)
+	manifest, err := s.loadManifest(ctx, owner, name, tag)
+	if err != nil {
+		return coreupdate.Release{}, err
+	}
+	return s.releaseFromManifest(normalizedRepository, owner, name, tag, manifest)
+}
+
+func (s *GitHubSource) resolveLatestTag(ctx context.Context, owner string, name string) (string, error) {
+	baseURL, err := url.Parse(strings.TrimRight(s.webBaseURL, "/"))
+	if err != nil || baseURL.Scheme == "" || baseURL.Host == "" {
+		return "", fmt.Errorf("configure GitHub updates: invalid web base URL")
+	}
+	endpoint := fmt.Sprintf("%s/%s/%s/releases/latest", strings.TrimRight(s.webBaseURL, "/"), owner, name)
+	request, err := http.NewRequestWithContext(ctx, http.MethodHead, endpoint, nil)
+	if err != nil {
+		return "", fmt.Errorf("create latest GitHub release request: %w", err)
+	}
+	setGitHubWebHeaders(request, "text/html")
 
 	response, err := s.client.Do(request)
 	if err != nil {
-		return coreupdate.Release{}, fmt.Errorf("request latest GitHub release: %w", err)
+		return "", fmt.Errorf("request latest GitHub release: %w", err)
 	}
 	defer response.Body.Close()
 
 	if response.StatusCode == http.StatusNotFound {
-		return coreupdate.Release{}, coreupdate.ErrNoRelease
+		return "", coreupdate.ErrNoRelease
 	}
 	if response.StatusCode != http.StatusOK {
-		return coreupdate.Release{}, fmt.Errorf("request latest GitHub release: unexpected HTTP status %d", response.StatusCode)
+		return "", fmt.Errorf("request latest GitHub release: unexpected HTTP status %d", response.StatusCode)
+	}
+	if response.Request == nil || response.Request.URL == nil {
+		return "", fmt.Errorf("request latest GitHub release: missing final URL")
+	}
+	finalURL := response.Request.URL
+	if finalURL.Scheme != baseURL.Scheme || !strings.EqualFold(finalURL.Host, baseURL.Host) {
+		return "", fmt.Errorf("request latest GitHub release: redirected outside configured GitHub host")
+	}
+	expectedPrefix := fmt.Sprintf("/%s/%s/releases/tag/", owner, name)
+	if !strings.HasPrefix(finalURL.EscapedPath(), expectedPrefix) {
+		return "", fmt.Errorf("request latest GitHub release: invalid release redirect")
+	}
+	tag, err := url.PathUnescape(strings.TrimPrefix(finalURL.EscapedPath(), expectedPrefix))
+	if err != nil || !releaseTagPattern.MatchString(tag) {
+		return "", fmt.Errorf("request latest GitHub release: %w", coreupdate.ErrInvalidVersion)
+	}
+	return tag, nil
+}
+
+func (s *GitHubSource) loadManifest(ctx context.Context, owner string, name string, tag string) (releaseManifest, error) {
+	endpoint := s.releaseAssetURL(owner, name, tag, updateManifest)
+	request, err := http.NewRequestWithContext(ctx, http.MethodGet, endpoint, nil)
+	if err != nil {
+		return releaseManifest{}, fmt.Errorf("create application update manifest request: %w", err)
+	}
+	setGitHubWebHeaders(request, "application/json")
+
+	response, err := s.client.Do(request)
+	if err != nil {
+		return releaseManifest{}, fmt.Errorf("request application update manifest: %w", err)
+	}
+	defer response.Body.Close()
+	if response.StatusCode == http.StatusNotFound {
+		return releaseManifest{}, fmt.Errorf("request application update manifest: %w", coreupdate.ErrNoRelease)
+	}
+	if response.StatusCode != http.StatusOK {
+		return releaseManifest{}, fmt.Errorf("request application update manifest: unexpected HTTP status %d", response.StatusCode)
+	}
+	if response.Request != nil && response.Request.URL != nil && strings.HasPrefix(s.webBaseURL, "https://") && response.Request.URL.Scheme != "https" {
+		return releaseManifest{}, fmt.Errorf("request application update manifest: redirect downgraded HTTPS")
 	}
 
-	var payload githubRelease
-	decoder := json.NewDecoder(io.LimitReader(response.Body, maxReleaseBody))
-	if err := decoder.Decode(&payload); err != nil {
-		return coreupdate.Release{}, fmt.Errorf("decode latest GitHub release: %w", err)
+	data, err := io.ReadAll(io.LimitReader(response.Body, maxManifestBody+1))
+	if err != nil {
+		return releaseManifest{}, fmt.Errorf("read application update manifest: %w", err)
 	}
-	if strings.TrimSpace(payload.TagName) == "" {
-		return coreupdate.Release{}, fmt.Errorf("decode latest GitHub release: %w", coreupdate.ErrInvalidVersion)
+	if len(data) > maxManifestBody {
+		return releaseManifest{}, fmt.Errorf("read application update manifest: response exceeds %d bytes", maxManifestBody)
+	}
+	var manifest releaseManifest
+	if err := json.Unmarshal(data, &manifest); err != nil {
+		return releaseManifest{}, fmt.Errorf("decode application update manifest: %w", err)
+	}
+	return manifest, nil
+}
+
+func (s *GitHubSource) releaseFromManifest(repository string, owner string, name string, tag string, manifest releaseManifest) (coreupdate.Release, error) {
+	if manifest.SchemaVersion != manifestVersion {
+		return coreupdate.Release{}, fmt.Errorf("validate application update manifest: unsupported schema version %d", manifest.SchemaVersion)
+	}
+	if strings.TrimSpace(manifest.Repository) != repository {
+		return coreupdate.Release{}, fmt.Errorf("validate application update manifest: repository mismatch")
+	}
+	if strings.TrimSpace(manifest.Version) != strings.TrimPrefix(tag, "v") {
+		return coreupdate.Release{}, fmt.Errorf("validate application update manifest: version mismatch")
+	}
+	expectedReleaseURL := fmt.Sprintf("%s/%s/%s/releases/tag/%s", strings.TrimRight(s.webBaseURL, "/"), owner, name, tag)
+	if strings.TrimSpace(manifest.ReleaseURL) != expectedReleaseURL {
+		return coreupdate.Release{}, fmt.Errorf("validate application update manifest: release URL mismatch")
+	}
+	if len(manifest.Assets) == 0 || len(manifest.Assets) > maxManifestAssets {
+		return coreupdate.Release{}, fmt.Errorf("validate application update manifest: invalid asset count %d", len(manifest.Assets))
 	}
 
-	assets := make([]coreupdate.Asset, 0, len(payload.Assets))
-	for _, asset := range payload.Assets {
+	publishedAt := time.Time{}
+	if value := strings.TrimSpace(manifest.PublishedAt); value != "" {
+		publishedAt, _ = time.Parse(time.RFC3339, value)
+		if publishedAt.IsZero() {
+			return coreupdate.Release{}, fmt.Errorf("validate application update manifest: invalid published time")
+		}
+	}
+
+	assets := make([]coreupdate.Asset, 0, len(manifest.Assets))
+	seenAssets := make(map[string]struct{}, len(manifest.Assets))
+	for _, asset := range manifest.Assets {
+		assetName := strings.TrimSpace(asset.Name)
+		if !validAssetName(assetName) {
+			return coreupdate.Release{}, fmt.Errorf("validate application update manifest: invalid asset name %q", asset.Name)
+		}
+		if _, exists := seenAssets[assetName]; exists {
+			return coreupdate.Release{}, fmt.Errorf("validate application update manifest: duplicate asset %q", assetName)
+		}
+		seenAssets[assetName] = struct{}{}
+		if asset.Size <= 0 || asset.Size > maxAssetSize {
+			return coreupdate.Release{}, fmt.Errorf("validate application update manifest: invalid asset size %d", asset.Size)
+		}
+		if _, err := parseSHA256Digest(asset.Digest); err != nil {
+			return coreupdate.Release{}, fmt.Errorf("validate application update manifest: asset %q: %w", assetName, err)
+		}
+		expectedAssetURL := s.releaseAssetURL(owner, name, tag, assetName)
+		if strings.TrimSpace(asset.URL) != expectedAssetURL {
+			return coreupdate.Release{}, fmt.Errorf("validate application update manifest: asset URL mismatch for %q", assetName)
+		}
 		assets = append(assets, coreupdate.Asset{
-			Name:        asset.Name,
-			DownloadURL: asset.BrowserDownloadURL,
-			Digest:      asset.Digest,
+			Name:        assetName,
+			DownloadURL: expectedAssetURL,
+			Digest:      strings.TrimSpace(asset.Digest),
 			Size:        asset.Size,
 		})
 	}
+
 	return coreupdate.Release{
-		Version:     payload.TagName,
-		Name:        payload.Name,
-		Notes:       payload.Body,
-		URL:         payload.HTMLURL,
-		PublishedAt: payload.PublishedAt,
+		Version:     manifest.Version,
+		Name:        strings.TrimSpace(manifest.Name),
+		Notes:       strings.TrimSpace(manifest.Notes),
+		URL:         expectedReleaseURL,
+		PublishedAt: publishedAt,
 		Assets:      assets,
 	}, nil
+}
+
+func (s *GitHubSource) releaseAssetURL(owner string, name string, tag string, assetName string) string {
+	return fmt.Sprintf("%s/%s/%s/releases/download/%s/%s", strings.TrimRight(s.webBaseURL, "/"), owner, name, tag, url.PathEscape(assetName))
 }
 
 func (s *GitHubSource) Download(ctx context.Context, asset coreupdate.Asset, destination string) error {
@@ -175,9 +298,8 @@ func (s *GitHubSource) Download(ctx context.Context, asset coreupdate.Asset, des
 	return nil
 }
 
-func setGitHubHeaders(request *http.Request) {
-	request.Header.Set("Accept", "application/vnd.github+json")
-	request.Header.Set("X-GitHub-Api-Version", githubAPIVersion)
+func setGitHubWebHeaders(request *http.Request, accept string) {
+	request.Header.Set("Accept", accept)
 	request.Header.Set("User-Agent", "dn-wails-updater")
 }
 
@@ -188,6 +310,9 @@ func parseRepository(repository string) (string, string, error) {
 	}
 	name := strings.TrimSuffix(parts[1], ".git")
 	if name == "" {
+		return "", "", fmt.Errorf("configure GitHub updates: invalid repository %q", repository)
+	}
+	if !repositoryPartPattern.MatchString(parts[0]) || !repositoryPartPattern.MatchString(name) {
 		return "", "", fmt.Errorf("configure GitHub updates: invalid repository %q", repository)
 	}
 	return parts[0], name, nil
@@ -202,4 +327,8 @@ func parseSHA256Digest(value string) (string, error) {
 		return "", coreupdate.ErrDigestUnavailable
 	}
 	return digest, nil
+}
+
+func validAssetName(value string) bool {
+	return value != "." && value != ".." && len(value) <= 255 && assetNamePattern.MatchString(value)
 }

@@ -47,6 +47,9 @@ jobs:
       - name: Check release tag
         run: node scripts/configure-release.mjs "$GITHUB_REF_NAME"
 
+      - name: Test release scripts
+        run: node --test scripts/*.test.mjs
+
       - name: Check frontend formatting
         run: pnpm --dir frontend fmt:check
 
@@ -188,11 +191,19 @@ jobs:
       - name: Check out source
         uses: actions/checkout@v7
 
+      - name: Set up Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: 24
+
       - name: Download packages
         uses: actions/download-artifact@v8
         with:
           path: release
           merge-multiple: true
+
+      - name: Generate update manifest
+        run: node scripts/generate-update-manifest.mjs "$GITHUB_REF_NAME" "$GITHUB_REPOSITORY" release
 
       - name: Generate checksums
         shell: bash

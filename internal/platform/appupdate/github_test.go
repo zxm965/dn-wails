@@ -4,11 +4,13 @@ import (
 	"context"
 	"crypto/sha256"
 	"encoding/hex"
+	"errors"
 	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 
 	coreupdate "dn-wails/internal/appupdate"
@@ -17,38 +19,154 @@ import (
 func TestGitHubSourceLoadsLatestRelease(t *testing.T) {
 	t.Parallel()
 
-	server := httptest.NewServer(http.HandlerFunc(func(response http.ResponseWriter, request *http.Request) {
-		if request.URL.Path != "/repos/zxm965/dn-wails/releases/latest" {
-			t.Fatalf("unexpected request path %q", request.URL.Path)
-		}
-		if request.Header.Get("X-GitHub-Api-Version") != githubAPIVersion {
-			t.Fatalf("missing API version header")
-		}
-		response.Header().Set("Content-Type", "application/json")
-		fmt.Fprint(response, `{
-  "tag_name": "v1.2.0",
+	var server *httptest.Server
+	server = httptest.NewServer(http.HandlerFunc(func(response http.ResponseWriter, request *http.Request) {
+		switch request.URL.Path {
+		case "/zxm965/dn-wails/releases/latest":
+			if request.Method != http.MethodHead {
+				t.Fatalf("expected HEAD latest release request, got %s", request.Method)
+			}
+			http.Redirect(response, request, server.URL+"/zxm965/dn-wails/releases/tag/v1.2.0", http.StatusFound)
+		case "/zxm965/dn-wails/releases/tag/v1.2.0":
+			if request.Method != http.MethodHead {
+				t.Fatalf("expected HEAD release request, got %s", request.Method)
+			}
+			response.WriteHeader(http.StatusOK)
+		case "/zxm965/dn-wails/releases/download/v1.2.0/latest.json":
+			if request.Method != http.MethodGet {
+				t.Fatalf("expected GET manifest request, got %s", request.Method)
+			}
+			response.Header().Set("Content-Type", "application/json")
+			fmt.Fprintf(response, `{
+  "schemaVersion": 1,
+  "repository": "zxm965/dn-wails",
+  "version": "1.2.0",
   "name": "Version 1.2.0",
-  "body": "Notes",
-  "html_url": "https://github.com/zxm965/dn-wails/releases/tag/v1.2.0",
-  "published_at": "2026-07-31T02:30:00Z",
+  "notes": "Notes",
+  "releaseUrl": %q,
+  "publishedAt": "2026-07-31T02:30:00Z",
   "assets": [{
     "name": "dn-wails-darwin-universal.zip",
-    "browser_download_url": "https://example.com/update.zip",
+    "url": %q,
     "digest": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
     "size": 100
   }]
-}`)
+}`, server.URL+"/zxm965/dn-wails/releases/tag/v1.2.0", server.URL+"/zxm965/dn-wails/releases/download/v1.2.0/dn-wails-darwin-universal.zip")
+		default:
+			t.Fatalf("unexpected request path %q", request.URL.Path)
+		}
 	}))
 	defer server.Close()
 
 	source := NewGitHubSource(server.Client())
-	source.apiBaseURL = server.URL
+	source.webBaseURL = server.URL
 	release, err := source.Latest(context.Background(), "zxm965/dn-wails.git")
 	if err != nil {
 		t.Fatalf("load latest release: %v", err)
 	}
-	if release.Version != "v1.2.0" || len(release.Assets) != 1 || release.Assets[0].Size != 100 {
+	if release.Version != "1.2.0" || len(release.Assets) != 1 || release.Assets[0].Size != 100 {
 		t.Fatalf("unexpected release: %+v", release)
+	}
+	if release.URL != server.URL+"/zxm965/dn-wails/releases/tag/v1.2.0" || release.Notes != "Notes" {
+		t.Fatalf("unexpected release metadata: %+v", release)
+	}
+}
+
+func TestGitHubSourceRejectsMismatchedManifest(t *testing.T) {
+	t.Parallel()
+
+	var server *httptest.Server
+	server = httptest.NewServer(http.HandlerFunc(func(response http.ResponseWriter, request *http.Request) {
+		switch request.URL.Path {
+		case "/zxm965/dn-wails/releases/latest":
+			http.Redirect(response, request, server.URL+"/zxm965/dn-wails/releases/tag/v1.2.0", http.StatusFound)
+		case "/zxm965/dn-wails/releases/tag/v1.2.0":
+			response.WriteHeader(http.StatusOK)
+		case "/zxm965/dn-wails/releases/download/v1.2.0/latest.json":
+			fmt.Fprintf(response, `{
+  "schemaVersion": 1,
+  "repository": "other/repository",
+  "version": "1.2.0",
+  "releaseUrl": %q,
+  "assets": [{
+    "name": "dn-wails-darwin-universal.zip",
+    "url": %q,
+    "digest": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "size": 100
+  }]
+}`, server.URL+"/zxm965/dn-wails/releases/tag/v1.2.0", server.URL+"/zxm965/dn-wails/releases/download/v1.2.0/dn-wails-darwin-universal.zip")
+		default:
+			t.Fatalf("unexpected request path %q", request.URL.Path)
+		}
+	}))
+	defer server.Close()
+
+	source := NewGitHubSource(server.Client())
+	source.webBaseURL = server.URL
+	_, err := source.Latest(context.Background(), "zxm965/dn-wails")
+	if err == nil || !strings.Contains(err.Error(), "repository mismatch") {
+		t.Fatalf("expected manifest repository mismatch, got %v", err)
+	}
+}
+
+func TestGitHubSourceReportsMissingRelease(t *testing.T) {
+	t.Parallel()
+
+	server := httptest.NewServer(http.NotFoundHandler())
+	defer server.Close()
+	source := NewGitHubSource(server.Client())
+	source.webBaseURL = server.URL
+	_, err := source.Latest(context.Background(), "zxm965/dn-wails")
+	if !errors.Is(err, coreupdate.ErrNoRelease) {
+		t.Fatalf("expected no release error, got %v", err)
+	}
+}
+
+func TestGitHubSourceRejectsUnsafeManifestAssets(t *testing.T) {
+	t.Parallel()
+
+	baseAsset := releaseManifestAsset{
+		Name:   "dn-wails-darwin-universal.zip",
+		URL:    "https://github.com/zxm965/dn-wails/releases/download/v1.2.0/dn-wails-darwin-universal.zip",
+		Digest: "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+		Size:   100,
+	}
+	baseManifest := releaseManifest{
+		SchemaVersion: 1,
+		Repository:    "zxm965/dn-wails",
+		Version:       "1.2.0",
+		ReleaseURL:    "https://github.com/zxm965/dn-wails/releases/tag/v1.2.0",
+		Assets:        []releaseManifestAsset{baseAsset},
+	}
+
+	tests := map[string]func(*releaseManifest){
+		"path traversal": func(manifest *releaseManifest) {
+			manifest.Assets[0].Name = ".."
+		},
+		"duplicate asset": func(manifest *releaseManifest) {
+			manifest.Assets = append(manifest.Assets, manifest.Assets[0])
+		},
+		"external URL": func(manifest *releaseManifest) {
+			manifest.Assets[0].URL = "https://example.com/update.zip"
+		},
+		"missing digest": func(manifest *releaseManifest) {
+			manifest.Assets[0].Digest = ""
+		},
+		"empty asset": func(manifest *releaseManifest) {
+			manifest.Assets[0].Size = 0
+		},
+	}
+	for name, mutate := range tests {
+		name, mutate := name, mutate
+		t.Run(name, func(t *testing.T) {
+			t.Parallel()
+			manifest := baseManifest
+			manifest.Assets = append([]releaseManifestAsset(nil), baseManifest.Assets...)
+			mutate(&manifest)
+			if _, err := NewGitHubSource(nil).releaseFromManifest("zxm965/dn-wails", "zxm965", "dn-wails", "v1.2.0", manifest); err == nil {
+				t.Fatal("expected unsafe manifest to be rejected")
+			}
+		})
 	}
 }
 

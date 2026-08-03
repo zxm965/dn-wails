@@ -79,13 +79,13 @@ DATABASE_URL='postgres://username:password@localhost:5432/database'
 
 ## GitHub 双端发布与自动更新
 
-GitHub 更新仓库固定为 `zxm965/dn-wails`。推送 `vMAJOR.MINOR.PATCH` 标签并由 GitLab 镜像同步到 GitHub 后，`.github/workflows/release.yml` 会执行质量检查，构建 macOS universal ZIP/DMG 和 Windows amd64 用户级 NSIS 安装器，再创建 GitHub Release。
+GitHub 更新仓库固定为 `zxm965/dn-wails`。推送 `vMAJOR.MINOR.PATCH` 标签并由 GitLab 镜像同步到 GitHub 后，`.github/workflows/release.yml` 会执行质量检查，构建 macOS universal ZIP/DMG 和 Windows amd64 用户级 NSIS 安装器，生成带版本、下载地址、大小和 SHA-256 的 `latest.json`，再创建 GitHub Release。
 
 ```bash
 git tag v1.0.0
 git push origin v1.0.0
 ```
 
-正式版本启动后会自动检查最新正式 Release；用户也可在“系统设置 → 测试工具 → 应用概览”点击“检查最新版”。发现新版后必须确认才会下载、校验、安装并重启。普通代码提交不会发布更新。
+正式版本启动后会通过 GitHub 最新 Release 重定向读取静态 `latest.json`，不调用 GitHub REST API，也不需要客户端 Token。用户也可在“系统设置 → 测试工具 → 应用概览”点击“检查最新版”。发现新版后必须确认才会下载、校验、安装并重启。普通代码提交不会发布更新。
 
 发布前请确认 GitLab 镜像同步 tags、GitHub Actions 已启用，并在仓库 Actions 设置中允许工作流写入 Contents。双端构建关联 GitHub Environment `DATABASE`，从 `secrets.DATABASE_URL` 生成临时 `.env.local` 并由 Go embed 写入安装包；Secret 不进入 Git 记录或工作流日志，但安装包中的值可被提取，应使用权限受限且可轮换的专用数据库账号。Secret 缺失时工作流直接失败；其他无数据库配置的构建仍可打开应用并明确显示 DN 功能不可用。当前默认产物未配置正式 Apple/Windows 代码签名，面向外部用户分发前应补齐签名与 macOS 公证，详细约定见 [应用更新与发布文档](docs/modules/app-update.md)。
