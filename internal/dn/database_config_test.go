@@ -1,6 +1,7 @@
 package dn
 
 import (
+	"errors"
 	"strings"
 	"testing"
 )
@@ -17,24 +18,24 @@ func TestResolveDatabaseURLUsesProcessEnvironment(t *testing.T) {
 	}
 }
 
-func TestResolveDatabaseURLUsesEmbeddedProjectEnvironment(t *testing.T) {
+func TestResolveDatabaseURLUsesEmbeddedLocalEnvironment(t *testing.T) {
 	t.Setenv(databaseURLKey, "")
 
-	got, err := ResolveDatabaseURL([]byte("APP_DISPLAY_NAME=DN\nDATABASE_URL='postgres://project.example/database'\n"))
+	got, err := ResolveDatabaseURL([]byte("DATABASE_URL='postgres://embedded.example/database'\n"))
 	if err != nil {
-		t.Fatalf("resolve database URL: %v", err)
+		t.Fatalf("resolve embedded database URL: %v", err)
 	}
-	if got != "postgres://project.example/database" {
-		t.Fatalf("expected embedded project URL, got %q", got)
+	if got != "postgres://embedded.example/database" {
+		t.Fatalf("expected embedded URL, got %q", got)
 	}
 }
 
-func TestResolveDatabaseURLRequiresCurrentProjectConfiguration(t *testing.T) {
+func TestResolveDatabaseURLRequiresConfiguration(t *testing.T) {
 	t.Setenv(databaseURLKey, "")
 
-	_, err := ResolveDatabaseURL([]byte("APP_DISPLAY_NAME=DN\n"))
-	if err == nil || !strings.Contains(err.Error(), "dn-wails/.env.local") {
-		t.Fatalf("expected current project configuration error, got %v", err)
+	_, err := ResolveDatabaseURL(nil)
+	if !errors.Is(err, ErrDatabaseURLNotConfigured) {
+		t.Fatalf("expected missing database configuration error, got %v", err)
 	}
 }
 

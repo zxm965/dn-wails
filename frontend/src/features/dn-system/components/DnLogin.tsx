@@ -110,6 +110,13 @@ export function DnLogin({ onAuthenticated }: { onAuthenticated: () => void }) {
           ) : null}
         </CardHeader>
         <CardContent>
+          {auth.errorMessage ? (
+            <div className={cx('dn-alert dn-alert-warning')} role='alert'>
+              <strong>DN 服务不可用</strong>
+              <span>{auth.errorMessage}</span>
+            </div>
+          ) : null}
+
           <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as 'login' | 'register')}>
             <TabsList className={cx('dn-auth-tabs')}>
               <TabsTrigger value='login'>登录</TabsTrigger>

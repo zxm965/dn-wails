@@ -2,11 +2,12 @@
 
 ## 模块目标
 
-将 `dn-next` 的登录注册、角色职业、周计划、仪表盘、站内消息和个人中心完整迁移到 Wails 桌面应用。Go 服务通过 `pgxpool` 直接访问原 PostgreSQL，替代 Next Route Handler、Drizzle 和 Cookie 会话，同时沿用原数据库账号及业务数据。
+将 `dn-next` 的登录注册、角色职业、周计划、仪表盘、站内消息和个人中心迁移到 Wails 桌面应用。Go 服务通过 `pgxpool` 直连 PostgreSQL；本地构建从 `.env.local` 读取连接串，正式构建从 GitHub Environment Secret 生成并嵌入相同配置。
 
 ## 目录与职责
 
-- `internal/dn/database_config.go`：从进程环境或当前项目内嵌 `.env.local` 解析 PostgreSQL 连接配置。
+- `internal/dn/database_config.go`：按“进程环境优先、嵌入 `.env.local` 兜底”解析 PostgreSQL 连接配置。
+- `internal/dn/unavailable_service.go`：未配置安全连接时维持应用生命周期，并让 DN 用例返回明确的不可用错误。
 - `internal/dn/postgres_service.go`：数据库连接池、账号认证、`sys_session` 会话、资料和密码修改。
 - `internal/dn/postgres_roles.go`：`dn_role_profession` 角色职业查询和维护。
 - `internal/dn/postgres_weekly.go`：`dn_weekly_plan` 周计划查询、维护、同步和重置。
@@ -33,10 +34,10 @@ React DN page / provider
       → PostgreSQL
       → storage.Store（仅保存桌面会话令牌）
       → net/http（官网消息）
-  → dn-wails/.env.local / user configuration directory / Dragon Nest official site
+  → process environment / embedded .env.local / user configuration directory / Dragon Nest official site
 ```
 
-生产组合根使用 `dn.PostgresService`，业务页面不直接依赖数据库驱动。头像选择通过 Native Kit 获取用户明确选择的路径，再由 DN 服务校验文件大小与格式并转换为数据 URL。
+组合根在进程环境或嵌入配置提供 `DATABASE_URL` 时使用 `dn.PostgresService`；未提供或连接串无法解析时使用 `dn.UnavailableService`，应用窗口仍会正常创建，登录页显示 DN 服务不可用。业务页面不直接依赖数据库驱动。头像选择通过 Native Kit 获取用户明确选择的路径，再由 DN 服务校验文件大小与格式并转换为数据 URL。
 
 ## 数据契约
 
@@ -55,21 +56,22 @@ React DN page / provider
 
 ### 数据库配置
 
-`main.go` 通过 `all:.env*` 嵌入环境配置：仓库中始终存在的 `.env` 保证干净检出可以编译，本地 `.env.local` 存在时会一并嵌入。数据库连接配置按以下优先级解析：
+`main.go` 通过 `all:.env*` 收集公开 `.env` 和存在时的 `.env.local`。数据库连接按以下优先级读取：
 
 1. 进程环境变量 `DATABASE_URL`。
-2. 当前 `dn-wails/.env.local` 中的 `DATABASE_URL`。
+2. Go embed 收集的 `.env.local` 中的 `DATABASE_URL`。
 
-运行时不扫描或读取 `dn-next`，也不依赖旧的 `dn-database-connection.json` 缓存。`.env.local` 已被 Git 忽略；文件缺失时编译仍可完成，运行时必须通过进程环境变量提供 `DATABASE_URL`。不得在日志、错误提示、文档或前端接口中输出完整连接串。因为桌面应用需要直接连接数据库，包含 `.env.local` 的发布构建会携带连接凭据，应使用权限受限的数据库账号并建立凭据轮换机制。
+本地 `.env.local` 和 `.env.*.local` 均被 Git 忽略。Release 工作流从 Environment `DATABASE` 的 `secrets.DATABASE_URL` 生成临时 `.env.local`，随后执行 Wails build。运行时不扫描或读取 `dn-next`，也不依赖旧的 `dn-database-connection.json` 缓存。未配置连接时不会再在窗口创建前退出，而是降级为 `UnavailableService`。
+
+完整连接串不得出现在 Git 记录、构建日志、错误提示、文档示例或前端接口中。由于连接串存在于正式二进制中，应视为可提取配置，并配套最小权限、网络访问限制、数据库审计和凭据轮换。
 
 ### 登录与注册
 
 ```text
 应用启动
-  → 解析当前项目 DATABASE_URL
-  → 创建 pgxpool 并 Ping PostgreSQL
-  → 清理过期或已撤销的 sys_session
-  → 从本地桌面令牌恢复数据库会话
+  → 从进程环境或嵌入 .env.local 解析 DATABASE_URL
+  ├── 已配置：创建 pgxpool、Ping PostgreSQL、恢复数据库会话
+  └── 未配置：启用 UnavailableService，继续创建应用窗口
 
 注册
   → 校验账号、邮箱和密码
@@ -129,6 +131,7 @@ Go 返回当前用户的完整周计划 DTO；前端纯函数计算总完成度�
 
 ## 错误与边界
 
+- 缺少或无法解析 `DATABASE_URL` 时应用仍可启动；DN 登录页展示服务不可用，其余设置、诊断和更新功能不受影响。
 - 未登录时所有 DN 业务方法都会返回 `ErrUnauthenticated`。
 - 发布消息和官网强制同步要求管理员，否则返回 `ErrForbidden`。
 - 用户名和邮箱全局唯一；邮箱规范化为小写；密码至少 8 位。
@@ -149,6 +152,14 @@ Go 返回当前用户的完整周计划 DTO；前端纯函数计算总完成度�
 ## 接入方式
 
 `main.tsx` 装配 `DnAuthProvider`，`App.tsx` 对 DN 页面执行认证保护并装配 `DnMessageProvider`。侧栏“业务系统 → DN 周常管理”负责入口和五个子页面导航；标题栏在登录后显示全局消息盒子。
+
+本地配置：
+
+```dotenv
+DATABASE_URL='postgres://username:password@localhost:5432/database'
+```
+
+正式发布使用 GitHub Environment `DATABASE` 中的 `DATABASE_URL` Secret；工作流生成临时文件后嵌入安装包，不需要提交 `.env.local`。
 
 Go 方法或 DTO 变化后执行：
 

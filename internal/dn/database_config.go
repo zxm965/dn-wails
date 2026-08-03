@@ -3,12 +3,15 @@ package dn
 import (
 	"bufio"
 	"bytes"
+	"errors"
 	"fmt"
 	"os"
 	"strings"
 )
 
 const databaseURLKey = "DATABASE_URL"
+
+var ErrDatabaseURLNotConfigured = errors.New("DATABASE_URL is not configured in the process environment or embedded .env.local")
 
 func ResolveDatabaseURL(configData []byte) (string, error) {
 	if value := strings.TrimSpace(os.Getenv(databaseURLKey)); value != "" {
@@ -23,7 +26,7 @@ func ResolveDatabaseURL(configData []byte) (string, error) {
 		return value, nil
 	}
 
-	return "", fmt.Errorf("%s is not configured in the process environment or dn-wails/.env.local", databaseURLKey)
+	return "", ErrDatabaseURLNotConfigured
 }
 
 func readDatabaseURL(data []byte) (string, error) {

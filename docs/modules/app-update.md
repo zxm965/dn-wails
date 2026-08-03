@@ -40,9 +40,10 @@ React AppUpdateProvider
 
 1. 推送 `v1.2.3` 形式的标签。
 2. 工作流校验标签、执行 Go 测试和前端格式、lint、build。
-3. macOS 构建 universal 应用，生成自动更新使用的 ZIP 和手动安装使用的 DMG。
-4. Windows runner 安装 NSIS 后构建 amd64、用户级安装器。
-5. 两端资源全部成功后创建 GitHub Release，并附带校验和文件。
+3. 双端 build job 从 GitHub Environment `DATABASE` 读取 `secrets.DATABASE_URL`，生成不进入 Git 记录的临时 `.env.local`。
+4. macOS 构建 universal 应用，生成自动更新使用的 ZIP 和手动安装使用的 DMG。
+5. Windows runner 安装 NSIS 后构建 amd64、用户级安装器。
+6. 两端资源全部成功后创建 GitHub Release，并附带校验和文件。
 
 ### 检查与安装
 
@@ -93,11 +94,15 @@ interface ApplicationUpdateStatus {
 - 下载只接受 HTTPS、声明大小不超过 1 GiB 且带 SHA-256 digest 的资源；大小或摘要不一致时删除临时文件并拒绝安装。
 - macOS 应用包所在目录必须允许当前用户写入；Windows 发布统一使用 `-installscope user`，避免自动更新请求管理员权限。
 - 同一进程只允许一个安装操作；安装前再次检查版本，避免确认期间 Release 发生变化。
+- Release build job 关联 GitHub Environment `DATABASE`；`DATABASE_URL` 缺失、超过 8192 字符或包含控制字符时立即失败。
+- 临时 `.env.local` 使用受限权限创建并由 Go embed 写入二进制，不进入 Git 记录，也不会主动输出到工作流日志。
+- GitHub Secret 只能保护构建前和构建过程中的值；发布后的桌面二进制可被分析，因此数据库账号必须最小权限、限制来源并支持轮换。
+- GitHub Variables 只用于公开且随环境变化的构建值；代码签名、公证和部署凭据继续使用独立 Secrets，并限制在实际需要的步骤。
 - 当前工作流只做 macOS ad-hoc 签名，Windows 也未配置 Authenticode。正式外部分发前需要配置 Apple Developer ID/公证和 Windows 代码签名，否则系统可能显示来源或信誉警告。
 
 ## 接入与发布
 
-GitHub 更新源固定为 `zxm965/dn-wails`。项目继续以 GitLab 为主仓库时，镜像规则必须同步 Git 标签，并确保 GitHub 仓库启用 Actions、工作流拥有 `contents: write` 权限。双端构建 job 关联 GitHub Environment `DATABASE`，并将其中的 Environment Secret `DATABASE_URL` 显式映射到构建进程；该值不会作为 Vite 公共变量暴露。Wails 构建继续使用仓库内已生成绑定，不依赖执行应用组合根。
+GitHub 更新源固定为 `zxm965/dn-wails`。项目继续以 GitLab 为主仓库时，镜像规则必须同步 Git 标签，并确保 GitHub 仓库启用 Actions、工作流拥有 `contents: write` 权限。双端 build job 必须能够访问 Environment `DATABASE` 中的 `DATABASE_URL` Secret。Wails 构建继续使用仓库内已生成绑定，不依赖执行应用组合根。
 
 ```bash
 git tag v1.0.0

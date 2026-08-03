@@ -63,13 +63,17 @@ func main() {
 		log.Fatal("create settings store: ", err)
 	}
 	settingsService := settings.NewService(settingsStore)
-	databaseURL, err := dn.ResolveDatabaseURL(databaseConfigData)
-	if err != nil {
-		log.Fatal("resolve DN database connection: ", err)
-	}
-	dnService, err := dn.NewPostgresService(databaseURL, settingsStore)
-	if err != nil {
-		log.Fatal("create DN database service: ", err)
+	dnService := application.DnService(dn.NewUnavailableService())
+	databaseURL, databaseConfigErr := dn.ResolveDatabaseURL(databaseConfigData)
+	if databaseConfigErr == nil {
+		postgresService, postgresErr := dn.NewPostgresService(databaseURL, settingsStore)
+		if postgresErr != nil {
+			log.Printf("DN database service is unavailable: invalid DATABASE_URL")
+		} else {
+			dnService = postgresService
+		}
+	} else {
+		log.Printf("DN database service is unavailable: %v", databaseConfigErr)
 	}
 
 	diagnosticsService, err := diagnostics.NewService(internalApplicationName, buildinfo.Version, startedAt)

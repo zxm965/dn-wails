@@ -67,7 +67,15 @@ wails build
 
 本项目前端开发服务固定使用 `2233`，用于保证 macOS Wails WebView 的 HMR WebSocket 地址稳定。如果端口已被占用，Vite 会直接报错，请先释放该端口后再运行 `wails dev`。
 
-应用主名称通过根目录 `.env` 的 `APP_DISPLAY_NAME` 统一配置，侧栏左下角名称通过 `APP_AUTHOR_NAME` 配置。修改展示名称会同步影响自定义标题栏、侧边栏、页面标题、概览信息和原生窗口标题；内部存储与日志目录名称不会随之变化。该 `.env` 会进入前端与桌面程序，只能存放公开配置，禁止写入密钥。
+应用主名称通过根目录 `.env` 的 `APP_DISPLAY_NAME` 统一配置，侧栏左下角名称通过 `APP_AUTHOR_NAME` 配置。修改展示名称会同步影响自定义标题栏、侧边栏、页面标题、概览信息和原生窗口标题；内部存储与日志目录名称不会随之变化。该 `.env` 会进入前端与桌面程序，只能存放公开配置，禁止写入密钥。所有 `APP_*` 字段都会由 Vite 打进前端资源，同样必须按公开信息管理。
+
+本地开发密钥直接写入被 Git 忽略的 `.env.local`。Go 构建会自动嵌入该文件，进程环境中的同名字段仍具有更高优先级：
+
+```dotenv
+DATABASE_URL='postgres://username:password@localhost:5432/database'
+```
+
+`DATABASE_URL` 禁止写入已提交的 `.env` 或 GitHub Actions Variables。本地值只存放在 `.env.local`；正式发布值存放在 GitHub Environment `DATABASE` 的 Secret 中，并在构建时嵌入安装包。完整分级规则见 [应用全局配置文档](docs/modules/app-config.md)。
 
 ## GitHub 双端发布与自动更新
 
@@ -80,4 +88,4 @@ git push origin v1.0.0
 
 正式版本启动后会自动检查最新正式 Release；用户也可在“系统设置 → 测试工具 → 应用概览”点击“检查最新版”。发现新版后必须确认才会下载、校验、安装并重启。普通代码提交不会发布更新。
 
-发布前请确认 GitLab 镜像同步 tags、GitHub Actions 已启用，并在仓库 Actions 设置中允许工作流写入 Contents。双端构建会关联 GitHub Environment `DATABASE`，其中的 Environment Secret `DATABASE_URL` 会显式注入构建进程，但不会暴露给前端。当前默认产物未配置正式 Apple/Windows 代码签名，面向外部用户分发前应补齐签名与 macOS 公证，详细约定见 [应用更新与发布文档](docs/modules/app-update.md)。
+发布前请确认 GitLab 镜像同步 tags、GitHub Actions 已启用，并在仓库 Actions 设置中允许工作流写入 Contents。双端构建关联 GitHub Environment `DATABASE`，从 `secrets.DATABASE_URL` 生成临时 `.env.local` 并由 Go embed 写入安装包；Secret 不进入 Git 记录或工作流日志，但安装包中的值可被提取，应使用权限受限且可轮换的专用数据库账号。Secret 缺失时工作流直接失败；其他无数据库配置的构建仍可打开应用并明确显示 DN 功能不可用。当前默认产物未配置正式 Apple/Windows 代码签名，面向外部用户分发前应补齐签名与 macOS 公证，详细约定见 [应用更新与发布文档](docs/modules/app-update.md)。

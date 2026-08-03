@@ -66,8 +66,6 @@ jobs:
     name: Build ${{ matrix.name }}
     needs: quality
     environment: DATABASE
-    env:
-      DATABASE_URL: ${{ secrets.DATABASE_URL }}
     strategy:
       fail-fast: false
       matrix:
@@ -116,6 +114,32 @@ jobs:
 
       - name: Configure release version
         run: node scripts/configure-release.mjs "${{ github.ref_name }}"
+
+      - name: Prepare embedded database configuration
+        shell: bash
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        run: |
+          node --input-type=module <<'NODE'
+          import { writeFile } from 'node:fs/promises'
+
+          const databaseURL = process.env.DATABASE_URL?.trim() ?? ''
+          if (!databaseURL) throw new Error('DATABASE_URL is required')
+          if (databaseURL.length > 8192) throw new Error('DATABASE_URL cannot exceed 8192 characters')
+          if (Array.from(databaseURL).some((character) => {
+            const codePoint = character.codePointAt(0)
+            return codePoint !== undefined && (
+              codePoint <= 0x1f ||
+              (codePoint >= 0x7f && codePoint <= 0x9f) ||
+              codePoint === 0x2028 ||
+              codePoint === 0x2029
+            )
+          })) {
+            throw new Error('DATABASE_URL cannot contain control characters')
+          }
+
+          await writeFile('.env.local', `DATABASE_URL=${databaseURL}\n`, { encoding: 'utf8', mode: 0o600 })
+          NODE
 
       - name: Build macOS application
         if: runner.os == 'macOS'
