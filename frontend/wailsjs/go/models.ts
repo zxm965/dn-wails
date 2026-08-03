@@ -78,7 +78,7 @@ export namespace application {
 }
 
 export namespace appupdate {
-
+	
 	export class Info {
 	    currentVersion: string;
 	    repository: string;
@@ -86,11 +86,11 @@ export namespace appupdate {
 	    arch: string;
 	    configured: boolean;
 	    canInstall: boolean;
-
+	
 	    static createFrom(source: any = {}) {
 	        return new Info(source);
 	    }
-
+	
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.currentVersion = source["currentVersion"];
@@ -109,11 +109,11 @@ export namespace appupdate {
 	    releaseNotes: string;
 	    releaseUrl: string;
 	    publishedAt: string;
-
+	
 	    static createFrom(source: any = {}) {
 	        return new Status(source);
 	    }
-
+	
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.currentVersion = source["currentVersion"];
@@ -1120,3 +1120,4 @@ export namespace settings {
 	
 
 }
+

@@ -5,7 +5,6 @@ const disableImageDrag = { WebkitUserDrag: 'none' } as const
 const disableWindowDrag = { WebkitAppRegion: 'no-drag' } as const
 
 const titlebarMacos = style({
-  flexBasis: '32px',
   paddingRight: '82px',
   paddingLeft: '82px',
 })
@@ -24,6 +23,9 @@ const titlebar = style({
     '--wails-draggable': 'drag',
   },
   selectors: {
+    [`&${titlebarMacos}`]: {
+      flexBasis: '32px',
+    },
     [`&:not(${titlebarMacos})`]: {
       '@media': {
         '(max-width: 480px)': {
