@@ -60,6 +60,7 @@ const uiPageHeaderActions = style([
     position: 'relative',
     zIndex: '1',
     display: 'flex',
+    alignItems: 'center',
     flexWrap: 'wrap',
     justifyContent: 'flex-end',
     gap: '8px',

@@ -65,10 +65,6 @@ const uiTextarea = style({
   resize: 'vertical',
 })
 
-const uiSelect = style({
-  appearance: 'auto',
-})
-
 const uiCheckbox = style({
   width: '18px',
   height: '18px',
@@ -171,7 +167,6 @@ export const styles = {
   'ui-password-input-control': uiPasswordInputControl,
   'ui-password-input-toggle': uiPasswordInputToggle,
   'ui-textarea': uiTextarea,
-  'ui-select': uiSelect,
   'ui-checkbox': uiCheckbox,
   'ui-switch': uiSwitch,
   'ui-checkbox-indicator': uiCheckboxIndicator,

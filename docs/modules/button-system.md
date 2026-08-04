@@ -42,6 +42,8 @@ import { Button } from '@/shared/components/ui'
 - 模块样式只控制按钮宽度、颜色、边框、内边距和布局，不重复声明高度。
 - 图标按钮仍必须提供 `aria-label`。
 - `Button` 提供 `primary`、`secondary`、`outline`、`ghost`、`danger` 视觉变体和 reduced-motion 兼容的点击波纹。
+- 按钮 DOM 通过 `data-button-variant` 暴露当前视觉变体；共享样式统一保证各变体 hover 状态的文字对比度，业务样式不得把中性按钮继续保留为默认 `primary`。
+- 导航、分类和窗口控制使用 `ghost`，中性操作使用 `secondary` 或 `outline`，强调操作才使用 `primary`，危险操作使用 `danger`。
 - Base UI 的 Trigger、Close 等组合场景通过 `render={<Button />}` 复用同一底层按钮。
 - 新增按钮视觉类型时优先扩展 variant，不新增高度档位。
 

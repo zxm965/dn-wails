@@ -283,28 +283,22 @@ export function DnWeeklyPlans({ onNavigateRoles }: { onNavigateRoles: () => void
             <Field label='职业'>
               <Select
                 value={filters.profession}
-                onChange={(event) => setFilters((current) => ({ ...current, profession: event.target.value }))}
-              >
-                <option value=''>全部</option>
-                {PROFESSION_OPTIONS.map((item) => (
-                  <option key={item.id} value={item.label}>
-                    {item.label}
-                  </option>
-                ))}
-              </Select>
+                options={[
+                  { value: '', label: '全部' },
+                  ...PROFESSION_OPTIONS.map((item) => ({ value: item.label, label: item.label })),
+                ]}
+                onValueChange={(profession) => setFilters((current) => ({ ...current, profession }))}
+              />
             </Field>
             <Field label='角色权重'>
               <Select
                 value={filters.priority}
-                onChange={(event) => setFilters((current) => ({ ...current, priority: Number(event.target.value) }))}
-              >
-                <option value={-1}>全部</option>
-                {PRIORITY_OPTIONS.map((item) => (
-                  <option key={item.value} value={item.value}>
-                    {item.label}
-                  </option>
-                ))}
-              </Select>
+                options={[
+                  { value: -1, label: '全部' },
+                  ...PRIORITY_OPTIONS.map((item) => ({ value: item.value, label: item.label })),
+                ]}
+                onValueChange={(priority) => setFilters((current) => ({ ...current, priority }))}
+              />
             </Field>
             <Field label='巢穴委托'>
               <Input
@@ -558,14 +552,12 @@ function PlanEditor({
                 <Field label='角色职业'>
                   <Select
                     value={form.roleProfessionId}
-                    onChange={(event) => update('roleProfessionId', Number(event.target.value))}
-                  >
-                    {roles.map((role) => (
-                      <option key={role.id} value={role.id}>
-                        {role.roleName} / {role.profession}
-                      </option>
-                    ))}
-                  </Select>
+                    options={roles.map((role) => ({
+                      value: role.id,
+                      label: `${role.roleName} / ${role.profession}`,
+                    }))}
+                    onValueChange={(roleProfessionId) => update('roleProfessionId', roleProfessionId)}
+                  />
                 </Field>
                 <Field label='排序'>
                   <Input
@@ -622,14 +614,9 @@ function PlanEditor({
                     <div key={index}>
                       <Select
                         value={ticket.id}
-                        onChange={(event) => updateTicket(index, { id: Number(event.target.value) })}
-                      >
-                        {NEST_OPTIONS.map((nest) => (
-                          <option key={nest.id} value={nest.id}>
-                            {nest.label}
-                          </option>
-                        ))}
-                      </Select>
+                        options={NEST_OPTIONS.map((nest) => ({ value: nest.id, label: nest.label }))}
+                        onValueChange={(id) => updateTicket(index, { id })}
+                      />
                       <Input
                         value={ticket.expiresAt}
                         placeholder='5-20'

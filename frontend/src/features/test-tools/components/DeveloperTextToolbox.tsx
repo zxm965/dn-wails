@@ -202,14 +202,9 @@ export function DeveloperTextToolbox() {
               className={cx('text-toolbox-hash-select')}
               aria-label='哈希算法'
               value={hashAlgorithm}
-              onChange={(event) => setHashAlgorithm(event.target.value as HashAlgorithm)}
-            >
-              {HASH_ALGORITHMS.map((algorithm) => (
-                <option key={algorithm} value={algorithm}>
-                  {algorithm}
-                </option>
-              ))}
-            </Select>
+              options={HASH_ALGORITHMS.map((algorithm) => ({ value: algorithm, label: algorithm }))}
+              onValueChange={setHashAlgorithm}
+            />
             <Button type='button' disabled={isProcessing} onClick={() => void runHash()}>
               {isProcessing ? '正在计算…' : '计算哈希'}
             </Button>

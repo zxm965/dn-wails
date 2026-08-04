@@ -133,8 +133,11 @@ const windowControl = style([
 ])
 
 const windowControlClose = style({
-  ':hover': {
-    background: '#c42b1c',
+  selectors: {
+    '&[data-button-variant="ghost"]:hover:not(:disabled)': {
+      color: '#ffffff',
+      background: '#c42b1c',
+    },
   },
 })
 

@@ -62,7 +62,7 @@ React SettingsProvider → GetSettings
 
 ## 接入方式
 
-React 组件通过 `useSettings` 读取和更新设置。所有配置项取消独立保存按钮，主题、强调色、密度、按钮尺寸、文字缩放、通知和窗口行为在控件变化时立即更新并自动持久化。Go 模块通过 `SettingsService` 获取当前快照，不直接读写 JSON 文件。
+React 组件通过 `useSettings` 读取和更新设置。所有配置项取消独立保存按钮，主题、强调色、密度、按钮尺寸、文字缩放、通知和窗口行为在控件变化时立即更新并自动持久化。主题、强调色和按钮尺寸使用共享 `RadioGroup`，文字缩放使用共享 `Slider`，布尔设置使用共享 `Switch`，下拉选项使用共享 `Select`；设置页不直接渲染原生交互控件。Go 模块通过 `SettingsService` 获取当前快照，不直接读写 JSON 文件。
 
 ## 响应式处理
 

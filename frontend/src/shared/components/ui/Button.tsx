@@ -60,6 +60,7 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(function Button
       ref={ref}
       className={resolvedClassName}
       data-button-size={size}
+      data-button-variant={variant}
       disabled={disabled}
       onClick={handleClick}
     />

@@ -86,7 +86,7 @@ export function TestToolsPanel() {
       ({ close }) => (
         <div className={cx('test-tools-overlay-demo')}>
           <p>这是应用内 Overlay 子视图。它不会创建新的操作系统窗口。</p>
-          <Button className={cx('test-tools-button is-primary')} type='button' onClick={close}>
+          <Button className={cx('test-tools-button is-primary')} type='button' variant='primary' onClick={close}>
             关闭子视图
           </Button>
         </div>
@@ -125,6 +125,7 @@ export function TestToolsPanel() {
               className={cx(activeCategory === category.id ? 'is-active' : '')}
               size='md'
               type='button'
+              variant='ghost'
               aria-pressed={activeCategory === category.id}
               onClick={() => setActiveCategory(category.id)}
             >
@@ -158,18 +159,20 @@ export function TestToolsPanel() {
                   <div className={cx('test-tools-actions')}>
                     <Button
                       type='button'
+                      variant='secondary'
                       onClick={() => notify({ title: 'Toast 测试', message: '应用内反馈模块工作正常。', tone: 'info' })}
                     >
                       显示 Toast
                     </Button>
-                    <Button type='button' onClick={openConfirmTest}>
+                    <Button type='button' variant='secondary' onClick={openConfirmTest}>
                       确认对话框
                     </Button>
-                    <Button type='button' onClick={openOverlayTest}>
+                    <Button type='button' variant='secondary' onClick={openOverlayTest}>
                       打开 Overlay
                     </Button>
                     <Button
                       type='button'
+                      variant='secondary'
                       onClick={() => {
                         windowManager.center()
                         setResult('窗口已移动到当前屏幕中央。')
@@ -179,6 +182,7 @@ export function TestToolsPanel() {
                     </Button>
                     <Button
                       type='button'
+                      variant='secondary'
                       onClick={() =>
                         runAction('读取窗口状态', async () => {
                           const snapshot = await windowManager.snapshot()
@@ -203,12 +207,14 @@ export function TestToolsPanel() {
                   <div className={cx('test-tools-actions')}>
                     <Button
                       type='button'
+                      variant='secondary'
                       onClick={() => runAction('读取剪贴板', async () => (await readClipboard()) || '剪贴板为空。')}
                     >
                       读取剪贴板
                     </Button>
                     <Button
                       type='button'
+                      variant='secondary'
                       onClick={() =>
                         runAction('写入剪贴板', async () => {
                           const content = `${appConfig.displayName} Native Kit`
@@ -221,6 +227,7 @@ export function TestToolsPanel() {
                     </Button>
                     <Button
                       type='button'
+                      variant='secondary'
                       onClick={() =>
                         runAction('选择文件', async () => {
                           const paths = await pickFiles({ title: '选择文件', multiple: true })
@@ -232,6 +239,7 @@ export function TestToolsPanel() {
                     </Button>
                     <Button
                       type='button'
+                      variant='secondary'
                       onClick={() =>
                         runAction('选择目录', async () => (await pickDirectory('选择目录')) || '已取消选择。')
                       }
@@ -240,6 +248,7 @@ export function TestToolsPanel() {
                     </Button>
                     <Button
                       type='button'
+                      variant='secondary'
                       onClick={() =>
                         runAction('选择保存路径', async () => {
                           const path = await chooseSavePath({
@@ -255,6 +264,7 @@ export function TestToolsPanel() {
                     </Button>
                     <Button
                       type='button'
+                      variant='secondary'
                       onClick={() =>
                         runAction('读取屏幕', async () => {
                           const screens = await getScreens()
@@ -271,6 +281,7 @@ export function TestToolsPanel() {
                     </Button>
                     <Button
                       type='button'
+                      variant='secondary'
                       onClick={() =>
                         runAction('原生对话框', async () => {
                           const selected = await showNativeDialog({
@@ -288,6 +299,7 @@ export function TestToolsPanel() {
                     </Button>
                     <Button
                       type='button'
+                      variant='secondary'
                       onClick={() =>
                         runAction('打开日志目录', async () => {
                           await openDiagnosticsDirectory()
@@ -299,6 +311,7 @@ export function TestToolsPanel() {
                     </Button>
                     <Button
                       type='button'
+                      variant='secondary'
                       onClick={() =>
                         runAction('打开外部链接', async () => {
                           await openExternalURL('https://v3.wails.io/')

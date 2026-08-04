@@ -207,6 +207,7 @@ export function SystemNotificationPanel({ embedded = false }: SystemNotification
               <Button
                 className={cx('notification-button notification-button-secondary')}
                 type='button'
+                variant='secondary'
                 onClick={handlePermissionRequest}
                 disabled={isRequestingPermission}
               >
@@ -216,6 +217,7 @@ export function SystemNotificationPanel({ embedded = false }: SystemNotification
             <Button
               className={cx('notification-button notification-button-primary')}
               type='submit'
+              variant='primary'
               disabled={capability !== 'ready' || !notificationPolicyReady || isSending}
             >
               {isSending ? '正在发送…' : '发送测试消息'}

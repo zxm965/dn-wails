@@ -1,8 +1,8 @@
-import { Button, PageHeader } from '@/shared/components/ui'
+import { Button, PageHeader, RadioGroup, Select, Slider, Switch } from '@/shared/components/ui'
 import { useFeedback } from '@/shared/feedback'
 import { createScopedClassNames } from '@/shared/lib/classNames'
 
-import { type AccentColor, type AppSettings, type ButtonSize, type Density, type ThemeMode } from '../api/settingsApi'
+import { type AccentColor, type AppSettings, type ButtonSize, type ThemeMode } from '../api/settingsApi'
 import { useSettings } from '../context/SettingsProvider'
 
 import { styles } from './SettingsPanel.css'
@@ -91,7 +91,7 @@ export function SettingsPanel() {
         actions={
           <>
             <span className={cx('settings-save-status')} aria-live='polite'>
-              {isSaving ? '正在同步…' : '修改自动保存'}
+              {isSaving ? '正在同步…' : '修改后自动保存'}
             </span>
             <Button
               className={cx('settings-button settings-button-secondary')}
@@ -121,85 +121,64 @@ export function SettingsPanel() {
         <div className={cx('settings-grid')}>
           <fieldset className={cx('settings-fieldset')}>
             <legend>主题模式</legend>
-            <div className={cx('settings-segmented')}>
-              {THEME_OPTIONS.map((option) => (
-                <label
-                  key={option.value}
-                  className={cx(settings.appearance.themeMode === option.value ? 'is-selected' : '')}
-                >
-                  <input
-                    type='radio'
-                    name='theme-mode'
-                    value={option.value}
-                    checked={settings.appearance.themeMode === option.value}
-                    onChange={() => updateAppearance('themeMode', option.value)}
-                  />
-                  {option.label}
-                </label>
-              ))}
-            </div>
+            <RadioGroup
+              aria-label='主题模式'
+              name='theme-mode'
+              value={settings.appearance.themeMode}
+              options={THEME_OPTIONS}
+              onValueChange={(themeMode) => updateAppearance('themeMode', themeMode)}
+            />
           </fieldset>
 
           <fieldset className={cx('settings-fieldset')}>
             <legend>强调色</legend>
-            <div className={cx('settings-accents')}>
-              {ACCENT_OPTIONS.map((option) => (
-                <label key={option.value} title={option.label}>
-                  <input
-                    type='radio'
-                    name='accent-color'
-                    value={option.value}
-                    checked={settings.appearance.accent === option.value}
-                    onChange={() => updateAppearance('accent', option.value)}
-                  />
-                  <span className={cx(`settings-accent is-${option.value}`)} aria-hidden='true' />
-                  <span>{option.label}</span>
-                </label>
-              ))}
-            </div>
+            <RadioGroup
+              aria-label='强调色'
+              name='accent-color'
+              variant='chips'
+              value={settings.appearance.accent}
+              options={ACCENT_OPTIONS.map((option) => ({
+                ...option,
+                title: option.label,
+                leading: <span className={cx(`settings-accent is-${option.value}`)} />,
+              }))}
+              onValueChange={(accent) => updateAppearance('accent', accent)}
+            />
           </fieldset>
 
           <label className={cx('settings-field')}>
             <span>界面密度</span>
-            <select
+            <Select
+              aria-label='界面密度'
               value={settings.appearance.density}
-              onChange={(event) => updateAppearance('density', event.target.value as Density)}
-            >
-              <option value='comfortable'>舒适</option>
-              <option value='compact'>紧凑</option>
-            </select>
+              options={[
+                { value: 'comfortable', label: '舒适' },
+                { value: 'compact', label: '紧凑' },
+              ]}
+              onValueChange={(density) => updateAppearance('density', density)}
+            />
           </label>
 
           <fieldset className={cx('settings-fieldset')}>
             <legend>默认按钮尺寸</legend>
-            <div className={cx('settings-segmented')}>
-              {BUTTON_SIZE_OPTIONS.map((option) => (
-                <label
-                  key={option.value}
-                  className={cx(settings.appearance.buttonSize === option.value ? 'is-selected' : '')}
-                >
-                  <input
-                    type='radio'
-                    name='button-size'
-                    value={option.value}
-                    checked={settings.appearance.buttonSize === option.value}
-                    onChange={() => updateAppearance('buttonSize', option.value)}
-                  />
-                  {option.label}
-                </label>
-              ))}
-            </div>
+            <RadioGroup
+              aria-label='默认按钮尺寸'
+              name='button-size'
+              value={settings.appearance.buttonSize}
+              options={BUTTON_SIZE_OPTIONS}
+              onValueChange={(buttonSize) => updateAppearance('buttonSize', buttonSize)}
+            />
           </fieldset>
 
-          <label className={cx('settings-field settings-range')}>
+          <label className={cx('settings-field')}>
             <span>文字缩放：{Math.round(settings.appearance.fontScale * 100)}%</span>
-            <input
-              type='range'
-              min='0.85'
-              max='1.25'
-              step='0.05'
+            <Slider
+              aria-label='文字缩放'
+              min={0.85}
+              max={1.25}
+              step={0.05}
               value={settings.appearance.fontScale}
-              onChange={(event) => updateAppearance('fontScale', Number(event.target.value))}
+              onValueChange={(fontScale) => updateAppearance('fontScale', fontScale)}
             />
           </label>
         </div>
@@ -242,15 +221,15 @@ export function SettingsPanel() {
         <div className={cx('settings-grid')}>
           <label className={cx('settings-field')}>
             <span>关闭窗口时</span>
-            <select
+            <Select
+              aria-label='关闭窗口时'
               value={settings.window.closeBehavior}
-              onChange={(event) =>
-                updateWindow('closeBehavior', event.target.value as AppSettings['window']['closeBehavior'])
-              }
-            >
-              <option value='quit'>退出应用</option>
-              <option value='hide'>隐藏到后台</option>
-            </select>
+              options={[
+                { value: 'quit', label: '退出应用' },
+                { value: 'hide', label: '隐藏到后台' },
+              ]}
+              onValueChange={(closeBehavior) => updateWindow('closeBehavior', closeBehavior)}
+            />
           </label>
         </div>
         <div className={cx('settings-toggles')}>
@@ -287,13 +266,7 @@ function ToggleRow({ title, description, checked, disabled = false, onChange }: 
         <strong>{title}</strong>
         <small>{description}</small>
       </span>
-      <input
-        type='checkbox'
-        checked={checked}
-        disabled={disabled}
-        onChange={(event) => onChange(event.target.checked)}
-      />
-      <span className={cx('settings-switch')} aria-hidden='true' />
+      <Switch aria-label={title} checked={checked} disabled={disabled} onCheckedChange={onChange} />
     </label>
   )
 }

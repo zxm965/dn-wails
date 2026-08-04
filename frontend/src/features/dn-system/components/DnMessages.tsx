@@ -246,14 +246,13 @@ export function DnMessages({ onNavigate }: { onNavigate: (target: DnInternalTarg
               <Label>阅读状态</Label>
               <Select
                 value={filters.readStatus}
-                onChange={(event) =>
-                  setFilters((current) => ({ ...current, readStatus: event.target.value as 'all' | 'read' | 'unread' }))
-                }
-              >
-                <option value='all'>全部消息</option>
-                <option value='unread'>仅未读</option>
-                <option value='read'>仅已读</option>
-              </Select>
+                options={[
+                  { value: 'all', label: '全部消息' },
+                  { value: 'unread', label: '仅未读' },
+                  { value: 'read', label: '仅已读' },
+                ]}
+                onValueChange={(readStatus) => setFilters((current) => ({ ...current, readStatus }))}
+              />
             </label>
             <div className={cx('dn-filter-actions')}>
               <Button variant='secondary' disabled={loading} onClick={() => setAppliedFilters({ ...filters })}>
@@ -348,15 +347,14 @@ export function DnMessages({ onNavigate }: { onNavigate: (target: DnInternalTarg
                 <Label>消息级别</Label>
                 <Select
                   value={form.level}
-                  onChange={(event) =>
-                    setForm((current) => ({ ...current, level: event.target.value as SiteMessageLevel }))
-                  }
-                >
-                  <option value='info'>信息</option>
-                  <option value='success'>成功</option>
-                  <option value='warning'>警告</option>
-                  <option value='error'>错误</option>
-                </Select>
+                  options={[
+                    { value: 'info', label: '信息' },
+                    { value: 'success', label: '成功' },
+                    { value: 'warning', label: '警告' },
+                    { value: 'error', label: '错误' },
+                  ]}
+                  onValueChange={(level: SiteMessageLevel) => setForm((current) => ({ ...current, level }))}
+                />
               </label>
               <label className={cx('dn-field')}>
                 <Label>发布时间</Label>
@@ -407,16 +405,12 @@ export function DnMessages({ onNavigate }: { onNavigate: (target: DnInternalTarg
                 <Label>打开方式</Label>
                 <Select
                   value={form.actionTarget}
-                  onChange={(event) =>
-                    setForm((current) => ({
-                      ...current,
-                      actionTarget: event.target.value as '_self' | '_blank',
-                    }))
-                  }
-                >
-                  <option value='_self'>应用内处理</option>
-                  <option value='_blank'>系统浏览器</option>
-                </Select>
+                  options={[
+                    { value: '_self', label: '应用内处理' },
+                    { value: '_blank', label: '系统浏览器' },
+                  ]}
+                  onValueChange={(actionTarget) => setForm((current) => ({ ...current, actionTarget }))}
+                />
               </label>
               <label className={cx('dn-switch-row dn-form-full')}>
                 <span>

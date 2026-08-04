@@ -40,6 +40,7 @@ export function TitleBar({ title, actions }: TitleBarProps) {
             className={cx('window-control')}
             size='lg'
             type='button'
+            variant='ghost'
             aria-label='最小化'
             title='最小化'
             onClick={windowManager.minimise}
@@ -52,6 +53,7 @@ export function TitleBar({ title, actions }: TitleBarProps) {
             className={cx('window-control')}
             size='lg'
             type='button'
+            variant='ghost'
             aria-label='最大化或还原'
             title='最大化或还原'
             onClick={windowManager.toggleMaximise}
@@ -64,6 +66,7 @@ export function TitleBar({ title, actions }: TitleBarProps) {
             className={cx('window-control window-control-close')}
             size='lg'
             type='button'
+            variant='ghost'
             aria-label='关闭'
             title='关闭'
             onClick={windowManager.close}

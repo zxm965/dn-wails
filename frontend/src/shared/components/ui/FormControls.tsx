@@ -1,7 +1,7 @@
 import { Checkbox as CheckboxPrimitive } from '@base-ui/react/checkbox'
 import { Switch as SwitchPrimitive } from '@base-ui/react/switch'
 import { Check, Eye, EyeOff } from 'lucide-react'
-import type { InputHTMLAttributes, LabelHTMLAttributes, SelectHTMLAttributes, TextareaHTMLAttributes } from 'react'
+import type { InputHTMLAttributes, LabelHTMLAttributes, TextareaHTMLAttributes } from 'react'
 import { useState } from 'react'
 
 import { createScopedClassNames } from '@/shared/lib/classNames'
@@ -42,14 +42,6 @@ export function PasswordInput({ className, ...props }: Omit<InputHTMLAttributes<
 
 export function Textarea({ className, ...props }: TextareaHTMLAttributes<HTMLTextAreaElement>) {
   return <textarea data-ui='textarea' className={cx('ui-input', 'ui-textarea', className)} {...props} />
-}
-
-export function Select({ className, children, ...props }: SelectHTMLAttributes<HTMLSelectElement>) {
-  return (
-    <select data-ui='select' className={cx('ui-input', 'ui-select', className)} {...props}>
-      {children}
-    </select>
-  )
 }
 
 export function Checkbox({ className, ...props }: CheckboxPrimitive.Root.Props) {

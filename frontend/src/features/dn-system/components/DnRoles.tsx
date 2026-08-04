@@ -174,28 +174,25 @@ export function DnRoles() {
             <Field label='职业'>
               <Select
                 value={filters.profession}
-                onChange={(event) => setFilters((current) => ({ ...current, profession: event.target.value }))}
-              >
-                <option value=''>全部</option>
-                {PROFESSION_OPTIONS.map((item) => (
-                  <option key={item.id} value={item.label}>
-                    {item.label}（{item.group}）
-                  </option>
-                ))}
-              </Select>
+                options={[
+                  { value: '', label: '全部' },
+                  ...PROFESSION_OPTIONS.map((item) => ({
+                    value: item.label,
+                    label: `${item.label}（${item.group}）`,
+                  })),
+                ]}
+                onValueChange={(profession) => setFilters((current) => ({ ...current, profession }))}
+              />
             </Field>
             <Field label='角色权重'>
               <Select
                 value={filters.priority}
-                onChange={(event) => setFilters((current) => ({ ...current, priority: Number(event.target.value) }))}
-              >
-                <option value={-1}>全部</option>
-                {PRIORITY_OPTIONS.map((item) => (
-                  <option key={item.value} value={item.value}>
-                    {item.label}
-                  </option>
-                ))}
-              </Select>
+                options={[
+                  { value: -1, label: '全部' },
+                  ...PRIORITY_OPTIONS.map((item) => ({ value: item.value, label: item.label })),
+                ]}
+                onValueChange={(priority) => setFilters((current) => ({ ...current, priority }))}
+              />
             </Field>
             <div className={cx('dn-filter-actions')}>
               <Button variant='secondary' disabled={loading} onClick={applyFilters}>
@@ -262,27 +259,22 @@ export function DnRoles() {
               <Field label='职业'>
                 <Select
                   value={form.profession}
-                  onChange={(event) => setForm((current) => ({ ...current, profession: event.target.value }))}
-                >
-                  <option value=''>请选择职业</option>
-                  {PROFESSION_OPTIONS.map((item) => (
-                    <option key={item.id} value={item.label}>
-                      {item.label}（{item.group}）
-                    </option>
-                  ))}
-                </Select>
+                  options={[
+                    { value: '', label: '请选择职业' },
+                    ...PROFESSION_OPTIONS.map((item) => ({
+                      value: item.label,
+                      label: `${item.label}（${item.group}）`,
+                    })),
+                  ]}
+                  onValueChange={(profession) => setForm((current) => ({ ...current, profession }))}
+                />
               </Field>
               <Field label='角色权重'>
                 <Select
                   value={form.priority}
-                  onChange={(event) => setForm((current) => ({ ...current, priority: Number(event.target.value) }))}
-                >
-                  {PRIORITY_OPTIONS.map((item) => (
-                    <option key={item.value} value={item.value}>
-                      {item.label}
-                    </option>
-                  ))}
-                </Select>
+                  options={PRIORITY_OPTIONS.map((item) => ({ value: item.value, label: item.label }))}
+                  onValueChange={(priority) => setForm((current) => ({ ...current, priority }))}
+                />
               </Field>
               <Field label='排序'>
                 <Input

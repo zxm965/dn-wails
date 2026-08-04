@@ -102,35 +102,10 @@ const settingsFieldset = style({
 
 const settingsField = style({})
 
-const settingsSegmented = style({
-  display: 'grid',
-  gridTemplateColumns: 'repeat(3, 1fr)',
-  padding: '3px',
-  background: 'var(--surface-muted)',
-  border: '1px solid var(--border-subtle)',
-  borderRadius: '10px',
-})
-
-const isSelected = style({
-  selectors: {
-    [`${settingsSegmented} label&`]: {
-      color: 'var(--text-primary)',
-      background: 'var(--surface-elevated)',
-      boxShadow: '0 2px 8px rgba(0, 0, 0, 0.12)',
-    },
-  },
-})
-
-const settingsAccents = style({
-  display: 'flex',
-  flexWrap: 'wrap',
-  gap: '12px',
-})
-
 const settingsAccent = style({
-  width: '24px',
-  height: '24px',
-  border: '3px solid var(--surface-elevated)',
+  width: '20px',
+  height: '20px',
+  border: '2px solid var(--surface-elevated)',
   borderRadius: '50%',
   boxShadow: '0 0 0 1px var(--border-strong)',
 })
@@ -150,8 +125,6 @@ const isPurple = style({
 const isOrange = style({
   background: '#ef8b2c',
 })
-
-const settingsRange = style({})
 
 const settingsToggles = style({
   display: 'flex',
@@ -182,40 +155,6 @@ const settingsToggleRow = style([
   },
 ])
 
-const settingsSwitch = style({
-  position: 'relative',
-  width: '42px',
-  height: '24px',
-  flex: '0 0 auto',
-  background: 'var(--switch-background)',
-  borderRadius: '999px',
-  transition: 'background-color 150ms ease',
-  '::after': {
-    position: 'absolute',
-    top: '3px',
-    left: '3px',
-    width: '18px',
-    height: '18px',
-    background: '#ffffff',
-    borderRadius: '50%',
-    boxShadow: '0 1px 4px rgba(0, 0, 0, 0.28)',
-    transition: 'transform 150ms ease',
-    content: "''",
-  },
-  selectors: {
-    [`${settingsToggleRow} input:checked + &`]: {
-      background: 'var(--accent)',
-    },
-    [`${settingsToggleRow} input:checked + &::after`]: {
-      transform: 'translateX(18px)',
-    },
-    [`${settingsToggleRow} input:focus-visible + &`]: {
-      outline: '2px solid var(--focus-ring)',
-      outlineOffset: '2px',
-    },
-  },
-})
-
 const isDisabled = style({
   selectors: {
     [`${settingsToggleRow}&`]: {
@@ -238,18 +177,13 @@ export const styles = {
   'settings-grid': settingsGrid,
   'settings-fieldset': settingsFieldset,
   'settings-field': settingsField,
-  'settings-segmented': settingsSegmented,
-  'is-selected': isSelected,
-  'settings-accents': settingsAccents,
   'settings-accent': settingsAccent,
   'is-green': isGreen,
   'is-blue': isBlue,
   'is-purple': isPurple,
   'is-orange': isOrange,
-  'settings-range': settingsRange,
   'settings-toggles': settingsToggles,
   'settings-toggle-row': settingsToggleRow,
-  'settings-switch': settingsSwitch,
   'is-disabled': isDisabled,
 } as const
 
@@ -277,58 +211,6 @@ ${settingsField} > span`,
   },
 )
 
-globalStyle(`${settingsSegmented} label`, {
-  display: 'grid',
-  minHeight: 'var(--control-height)',
-  placeItems: 'center',
-  color: 'var(--text-secondary)',
-  fontSize: '12px',
-  borderRadius: '7px',
-  cursor: 'pointer',
-})
-
-globalStyle(
-  `${settingsSegmented} input,
-${settingsAccents} input`,
-  {
-    position: 'absolute',
-    width: '1px',
-    height: '1px',
-    opacity: '0',
-    pointerEvents: 'none',
-  },
-)
-
-globalStyle(`${settingsAccents} label`, {
-  display: 'flex',
-  alignItems: 'center',
-  gap: '7px',
-  color: 'var(--text-secondary)',
-  fontSize: '12px',
-  cursor: 'pointer',
-})
-
-globalStyle(`${settingsAccents} label:has(input:checked)`, {
-  color: 'var(--text-primary)',
-  fontWeight: '700',
-})
-
-globalStyle(`${settingsField} select`, {
-  width: '100%',
-  height: 'var(--control-height)',
-  padding: '0 11px',
-  color: 'var(--text-primary)',
-  background: 'var(--surface-muted)',
-  border: '1px solid var(--border-strong)',
-  borderRadius: '9px',
-  outline: 'none',
-})
-
-globalStyle(`${settingsRange} input`, {
-  width: '100%',
-  accentColor: 'var(--accent)',
-})
-
 globalStyle(`${settingsToggleRow} > span:first-child`, {
   minWidth: '0',
 })
@@ -349,11 +231,6 @@ globalStyle(`${settingsToggleRow} small`, {
   marginTop: '5px',
   color: 'var(--text-tertiary)',
   lineHeight: '1.45',
-})
-
-globalStyle(`${settingsToggleRow} input`, {
-  position: 'absolute',
-  opacity: '0',
 })
 
 globalStyle(`${settingsToggleRow} small`, {

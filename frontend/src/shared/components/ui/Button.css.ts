@@ -40,6 +40,12 @@ const root = style({
     '&:active:not(:disabled)': {
       transform: 'translateY(1px)',
     },
+    '&[data-button-variant="primary"]:hover:not(:disabled)': {
+      color: 'var(--button-primary-text)',
+    },
+    '&[data-button-variant="danger"]:hover:not(:disabled)': {
+      color: '#ffffff',
+    },
     '&[aria-disabled="true"]': {
       cursor: 'not-allowed',
       opacity: '0.5',

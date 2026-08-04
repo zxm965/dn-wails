@@ -78,6 +78,13 @@ const isActive = style({
       borderColor: 'color-mix(in srgb, var(--accent) 28%, var(--border-subtle))',
       boxShadow: 'inset 2px 0 0 var(--accent)',
     },
+    [`${textToolboxMenu} button&[data-button-variant='ghost']:hover`]: {
+      color: 'var(--text-primary)',
+      background:
+        'linear-gradient(135deg, var(--accent-muted), color-mix(in srgb, var(--accent-muted) 34%, transparent))',
+      borderColor: 'color-mix(in srgb, var(--accent) 28%, var(--border-subtle))',
+      boxShadow: 'inset 2px 0 0 var(--accent)',
+    },
   },
 })
 

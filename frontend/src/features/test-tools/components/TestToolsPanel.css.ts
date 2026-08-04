@@ -68,6 +68,13 @@ const isActive = style({
       borderColor: 'color-mix(in srgb, var(--accent) 28%, var(--border-subtle))',
       boxShadow: 'inset 0 0 0 1px color-mix(in srgb, var(--accent) 8%, transparent)',
     },
+    [`${testToolsCategories} button&[data-button-variant='ghost']:hover`]: {
+      color: 'var(--text-primary)',
+      background:
+        'linear-gradient(135deg, var(--accent-muted), color-mix(in srgb, var(--accent-muted) 35%, transparent))',
+      borderColor: 'color-mix(in srgb, var(--accent) 28%, var(--border-subtle))',
+      boxShadow: 'inset 0 0 0 1px color-mix(in srgb, var(--accent) 8%, transparent)',
+    },
   },
 })
 
@@ -278,7 +285,7 @@ globalStyle(`${testToolsCategories} button`, {
   borderRadius: '8px',
 })
 
-globalStyle(`${testToolsCategories} button:hover`, {
+globalStyle(`${testToolsCategories} button[data-button-variant='ghost']:hover`, {
   color: 'var(--text-primary)',
   background: 'var(--surface-hover)',
 })
