@@ -3,11 +3,12 @@ import { useCallback, useEffect, useState } from 'react'
 import { appConfig } from '@/app/appConfig'
 import { SystemNotificationPanel } from '@/features/system-notification'
 import { useAppLifecycle, type SecondInstanceLaunch } from '@/shared/app-lifecycle'
-import { Button } from '@/shared/components/ui'
+import { Button, PageHeader } from '@/shared/components/ui'
 import { getDiagnosticsInfo, openDiagnosticsDirectory, type DiagnosticsInfo } from '@/shared/diagnostics'
 import { useFeedback } from '@/shared/feedback'
 import { createScopedClassNames } from '@/shared/lib/classNames'
 import {
+  chooseSavePath,
   getScreens,
   openExternalURL,
   pickDirectory,
@@ -21,18 +22,18 @@ import { useOverlay } from '@/shared/overlay'
 import { windowManager } from '@/shared/window'
 
 import { DesktopOverview } from './DesktopOverview'
+import { DeveloperTextToolbox } from './DeveloperTextToolbox'
 
 import { styles } from './TestToolsPanel.css'
 
 const cx = createScopedClassNames(styles)
 
-type ToolCategory = 'overview' | 'interaction' | 'native' | 'notification'
+type ToolCategory = 'overview' | 'desktop' | 'text'
 
 const TOOL_CATEGORIES: Array<{ id: ToolCategory; label: string; description: string }> = [
-  { id: 'overview', label: '应用概览', description: '运行状态、模块和环境信息' },
-  { id: 'interaction', label: '交互窗口', description: 'Toast、反馈和主窗口能力' },
-  { id: 'native', label: '原生能力', description: '文件、剪贴板、屏幕和诊断' },
-  { id: 'notification', label: '系统通知', description: '权限、消息预览和点击回传' },
+  { id: 'overview', label: '应用概览', description: '版本、平台与更新' },
+  { id: 'desktop', label: '桌面能力', description: '窗口、系统集成与通知' },
+  { id: 'text', label: '文本工具', description: 'JSON、编码与哈希' },
 ]
 
 export function TestToolsPanel() {
@@ -64,7 +65,7 @@ export function TestToolsPanel() {
     return subscribeFileDrop((_position, paths) => {
       setDroppedFiles(paths)
       setResult(`已接收 ${paths.length} 个拖放文件。`)
-      setActiveCategory('native')
+      setActiveCategory('desktop')
     })
   }, [])
 
@@ -104,33 +105,40 @@ export function TestToolsPanel() {
 
   return (
     <section className={cx('test-tools-panel')}>
-      <header className={cx('test-tools-heading')}>
-        <div>
-          <p>System settings</p>
-          <h1>测试工具</h1>
-          <span>开发和验收阶段使用，不承载正式业务入口。</span>
-        </div>
-        <span className={cx('test-tools-badge')}>Developer tools</span>
-      </header>
+      <PageHeader
+        eyebrow='Desktop lab'
+        title='测试工具'
+        subtitle='集中验证桌面运行、系统集成与原生交互。'
+        actions={
+          <span className={cx('test-tools-badge')}>
+            <span aria-hidden='true' />
+            Developer mode
+          </span>
+        }
+      />
 
       <div className={cx('test-tools-layout')}>
         <nav className={cx('test-tools-categories')} aria-label='测试工具分类'>
-          {TOOL_CATEGORIES.map((category) => (
+          {TOOL_CATEGORIES.map((category, index) => (
             <Button
               key={category.id}
               className={cx(activeCategory === category.id ? 'is-active' : '')}
               size='md'
               type='button'
+              aria-pressed={activeCategory === category.id}
               onClick={() => setActiveCategory(category.id)}
             >
-              <strong>{category.label}</strong>
-              <small>{category.description}</small>
+              <span className={cx('test-tools-category-index')}>{String(index + 1).padStart(2, '0')}</span>
+              <span className={cx('test-tools-category-copy')}>
+                <strong>{category.label}</strong>
+                <small>{category.description}</small>
+              </span>
             </Button>
           ))}
         </nav>
 
         <div className={cx('test-tools-view')}>
-          {activeCategory !== 'overview' && activeCategory !== 'notification' && (
+          {activeCategory === 'desktop' && (
             <article className={cx('test-tools-result')}>
               <span>最近一次结果</span>
               <p>{result}</p>
@@ -139,159 +147,188 @@ export function TestToolsPanel() {
 
           {activeCategory === 'overview' && <DesktopOverview embedded />}
 
-          {activeCategory === 'interaction' && (
-            <ToolSection title='交互窗口' description='验证应用内反馈、子视图和主窗口控制。'>
-              <div className={cx('test-tools-actions')}>
-                <Button
-                  type='button'
-                  onClick={() => notify({ title: 'Toast 测试', message: '应用内反馈模块工作正常。', tone: 'info' })}
+          {activeCategory === 'desktop' && (
+            <div className={cx('test-tools-capability-content')}>
+              <div className={cx('test-tools-capability-grid')}>
+                <ToolSection
+                  eyebrow='Interaction / 01'
+                  title='交互窗口'
+                  description='验证应用内反馈、子视图和主窗口控制。'
                 >
-                  显示 Toast
-                </Button>
-                <Button type='button' onClick={openConfirmTest}>
-                  确认对话框
-                </Button>
-                <Button type='button' onClick={openOverlayTest}>
-                  打开 Overlay
-                </Button>
-                <Button
-                  type='button'
-                  onClick={() => {
-                    windowManager.center()
-                    setResult('窗口已移动到当前屏幕中央。')
-                  }}
+                  <div className={cx('test-tools-actions')}>
+                    <Button
+                      type='button'
+                      onClick={() => notify({ title: 'Toast 测试', message: '应用内反馈模块工作正常。', tone: 'info' })}
+                    >
+                      显示 Toast
+                    </Button>
+                    <Button type='button' onClick={openConfirmTest}>
+                      确认对话框
+                    </Button>
+                    <Button type='button' onClick={openOverlayTest}>
+                      打开 Overlay
+                    </Button>
+                    <Button
+                      type='button'
+                      onClick={() => {
+                        windowManager.center()
+                        setResult('窗口已移动到当前屏幕中央。')
+                      }}
+                    >
+                      窗口居中
+                    </Button>
+                    <Button
+                      type='button'
+                      onClick={() =>
+                        runAction('读取窗口状态', async () => {
+                          const snapshot = await windowManager.snapshot()
+                          return `位置 ${snapshot.x}, ${snapshot.y}；尺寸 ${snapshot.width} × ${snapshot.height}；最大化：${snapshot.maximised ? '是' : '否'}`
+                        })
+                      }
+                    >
+                      读取窗口状态
+                    </Button>
+                  </div>
+
+                  <div className={cx('test-tools-note')}>
+                    单实例测试：再次启动当前应用，已有窗口应恢复并显示，结果会记录在本页。
+                  </div>
+                </ToolSection>
+
+                <ToolSection
+                  eyebrow='Native / 02'
+                  title='原生能力'
+                  description='验证文件、剪贴板、屏幕、对话框和系统集成。'
                 >
-                  窗口居中
-                </Button>
-                <Button
-                  type='button'
-                  onClick={() =>
-                    runAction('读取窗口状态', async () => {
-                      const snapshot = await windowManager.snapshot()
-                      return `位置 ${snapshot.x}, ${snapshot.y}；尺寸 ${snapshot.width} × ${snapshot.height}；最大化：${snapshot.maximised ? '是' : '否'}`
-                    })
-                  }
-                >
-                  读取窗口状态
-                </Button>
+                  <div className={cx('test-tools-actions')}>
+                    <Button
+                      type='button'
+                      onClick={() => runAction('读取剪贴板', async () => (await readClipboard()) || '剪贴板为空。')}
+                    >
+                      读取剪贴板
+                    </Button>
+                    <Button
+                      type='button'
+                      onClick={() =>
+                        runAction('写入剪贴板', async () => {
+                          const content = `${appConfig.displayName} Native Kit`
+                          await writeClipboard(content)
+                          return `已写入剪贴板：${content}`
+                        })
+                      }
+                    >
+                      写入剪贴板
+                    </Button>
+                    <Button
+                      type='button'
+                      onClick={() =>
+                        runAction('选择文件', async () => {
+                          const paths = await pickFiles({ title: '选择文件', multiple: true })
+                          return paths.length > 0 ? paths.join('\n') : '已取消选择。'
+                        })
+                      }
+                    >
+                      选择文件
+                    </Button>
+                    <Button
+                      type='button'
+                      onClick={() =>
+                        runAction('选择目录', async () => (await pickDirectory('选择目录')) || '已取消选择。')
+                      }
+                    >
+                      选择目录
+                    </Button>
+                    <Button
+                      type='button'
+                      onClick={() =>
+                        runAction('选择保存路径', async () => {
+                          const path = await chooseSavePath({
+                            title: '选择保存路径',
+                            defaultFilename: 'diagnostics-report.json',
+                            filters: [{ displayName: 'JSON 文件', pattern: '*.json' }],
+                          })
+                          return path || '已取消选择。'
+                        })
+                      }
+                    >
+                      选择保存路径
+                    </Button>
+                    <Button
+                      type='button'
+                      onClick={() =>
+                        runAction('读取屏幕', async () => {
+                          const screens = await getScreens()
+                          return screens
+                            .map(
+                              (screen, index) =>
+                                `屏幕 ${index + 1}：${screen.width} × ${screen.height}${screen.isPrimary ? '（主屏幕）' : ''}`,
+                            )
+                            .join('\n')
+                        })
+                      }
+                    >
+                      读取屏幕
+                    </Button>
+                    <Button
+                      type='button'
+                      onClick={() =>
+                        runAction('原生对话框', async () => {
+                          const selected = await showNativeDialog({
+                            type: 'info',
+                            title: 'Native Kit',
+                            message: '这是 Wails 原生消息对话框。',
+                            buttons: ['知道了'],
+                            defaultButton: '知道了',
+                          })
+                          return selected || '对话框已关闭。'
+                        })
+                      }
+                    >
+                      原生对话框
+                    </Button>
+                    <Button
+                      type='button'
+                      onClick={() =>
+                        runAction('打开日志目录', async () => {
+                          await openDiagnosticsDirectory()
+                          return diagnostics?.logDirectory ?? '日志目录已打开。'
+                        })
+                      }
+                    >
+                      打开日志目录
+                    </Button>
+                    <Button
+                      type='button'
+                      onClick={() =>
+                        runAction('打开外部链接', async () => {
+                          await openExternalURL('https://v3.wails.io/')
+                          return '已交给系统默认浏览器打开。'
+                        })
+                      }
+                    >
+                      打开 Wails 文档
+                    </Button>
+                  </div>
+
+                  <div className={cx('test-tools-dropzone')}>
+                    <strong>文件拖放区域</strong>
+                    <span>将文件拖到这里验证 Wails Drag &amp; Drop</span>
+                    {droppedFiles.length > 0 && (
+                      <ul>
+                        {droppedFiles.slice(0, 5).map((path) => (
+                          <li key={path}>{path}</li>
+                        ))}
+                      </ul>
+                    )}
+                  </div>
+                </ToolSection>
               </div>
 
-              <div className={cx('test-tools-note')}>
-                单实例测试：再次启动当前应用，已有窗口应恢复并显示，结果会记录在本页。
-              </div>
-            </ToolSection>
+              <SystemNotificationPanel embedded />
+            </div>
           )}
 
-          {activeCategory === 'native' && (
-            <ToolSection title='原生能力' description='验证 Wails 文件、剪贴板、屏幕、对话框和系统集成。'>
-              <div className={cx('test-tools-actions')}>
-                <Button
-                  type='button'
-                  onClick={() => runAction('读取剪贴板', async () => (await readClipboard()) || '剪贴板为空。')}
-                >
-                  读取剪贴板
-                </Button>
-                <Button
-                  type='button'
-                  onClick={() =>
-                    runAction('写入剪贴板', async () => {
-                      const content = `${appConfig.displayName} Native Kit`
-                      await writeClipboard(content)
-                      return `已写入剪贴板：${content}`
-                    })
-                  }
-                >
-                  写入剪贴板
-                </Button>
-                <Button
-                  type='button'
-                  onClick={() =>
-                    runAction('选择文件', async () => {
-                      const paths = await pickFiles({ title: '选择文件', multiple: true })
-                      return paths.length > 0 ? paths.join('\n') : '已取消选择。'
-                    })
-                  }
-                >
-                  选择文件
-                </Button>
-                <Button
-                  type='button'
-                  onClick={() => runAction('选择目录', async () => (await pickDirectory('选择目录')) || '已取消选择。')}
-                >
-                  选择目录
-                </Button>
-                <Button
-                  type='button'
-                  onClick={() =>
-                    runAction('读取屏幕', async () => {
-                      const screens = await getScreens()
-                      return screens
-                        .map(
-                          (screen, index) =>
-                            `屏幕 ${index + 1}：${screen.width} × ${screen.height}${screen.isPrimary ? '（主屏幕）' : ''}`,
-                        )
-                        .join('\n')
-                    })
-                  }
-                >
-                  读取屏幕
-                </Button>
-                <Button
-                  type='button'
-                  onClick={() =>
-                    runAction('原生对话框', async () => {
-                      const selected = await showNativeDialog({
-                        type: 'info',
-                        title: 'Native Kit',
-                        message: '这是 Wails 原生消息对话框。',
-                        buttons: ['知道了'],
-                        defaultButton: '知道了',
-                      })
-                      return selected || '对话框已关闭。'
-                    })
-                  }
-                >
-                  原生对话框
-                </Button>
-                <Button
-                  type='button'
-                  onClick={() =>
-                    runAction('打开日志目录', async () => {
-                      await openDiagnosticsDirectory()
-                      return diagnostics?.logDirectory ?? '日志目录已打开。'
-                    })
-                  }
-                >
-                  打开日志目录
-                </Button>
-                <Button
-                  type='button'
-                  onClick={() =>
-                    runAction('打开外部链接', async () => {
-                      await openExternalURL('https://v3.wails.io/')
-                      return '已交给系统默认浏览器打开。'
-                    })
-                  }
-                >
-                  打开 Wails 文档
-                </Button>
-              </div>
-
-              <div className={cx('test-tools-dropzone')}>
-                <strong>文件拖放区域</strong>
-                <span>将文件拖到这里验证 Wails Drag &amp; Drop</span>
-                {droppedFiles.length > 0 && (
-                  <ul>
-                    {droppedFiles.slice(0, 5).map((path) => (
-                      <li key={path}>{path}</li>
-                    ))}
-                  </ul>
-                )}
-              </div>
-            </ToolSection>
-          )}
-
-          {activeCategory === 'notification' && <SystemNotificationPanel embedded />}
+          {activeCategory === 'text' && <DeveloperTextToolbox />}
         </div>
       </div>
     </section>
@@ -299,15 +336,17 @@ export function TestToolsPanel() {
 }
 
 interface ToolSectionProps {
+  eyebrow: string
   title: string
   description: string
   children: React.ReactNode
 }
 
-function ToolSection({ title, description, children }: ToolSectionProps) {
+function ToolSection({ eyebrow, title, description, children }: ToolSectionProps) {
   return (
     <section className={cx('test-tools-section')}>
       <header>
+        <span>{eyebrow}</span>
         <h2>{title}</h2>
         <p>{description}</p>
       </header>

@@ -1,45 +1,37 @@
 import { globalStyle, style } from '@vanilla-extract/css'
 
 const testToolsPanel = style({
-  width: 'min(1120px, 100%)',
+  width: 'min(var(--page-content-max-width), 100%)',
+  display: 'grid',
+  gap: '14px',
   margin: '0 auto',
   padding: 'var(--page-padding-start) var(--page-padding-inline) var(--page-padding-end)',
   containerName: 'test-tools-panel',
   containerType: 'inline-size',
 })
 
-const testToolsHeading = style([
-  {
-    display: 'flex',
-    alignItems: 'flex-start',
-    justifyContent: 'space-between',
-    gap: '24px',
-    marginBottom: '26px',
-  },
-  {
-    '@container': {
-      'test-tools-panel (max-width: 700px)': {
-        flexDirection: 'column',
-      },
-    },
-  },
-])
-
 const testToolsBadge = style([
   {
-    padding: '8px 11px',
-    color: 'var(--text-tertiary)',
+    position: 'relative',
+    zIndex: '1',
+    minHeight: '30px',
+    display: 'inline-flex',
+    alignItems: 'center',
+    gap: '8px',
+    padding: '0 11px',
+    color: 'var(--text-secondary)',
     fontSize: '9px',
     fontWeight: '800',
     letterSpacing: '0.08em',
     textTransform: 'uppercase',
-    background: 'var(--surface-elevated)',
-    border: '1px solid var(--border-subtle)',
+    background: 'color-mix(in srgb, var(--surface-muted) 84%, transparent)',
+    border: '1px solid var(--border-strong)',
     borderRadius: '999px',
+    backdropFilter: 'blur(12px)',
   },
   {
     '@container': {
-      'test-tools-panel (max-width: 700px)': {
+      'test-tools-panel (max-width: 600px)': {
         alignSelf: 'flex-start',
       },
     },
@@ -49,31 +41,50 @@ const testToolsBadge = style([
 const testToolsLayout = style({
   display: 'grid',
   gridTemplateColumns: 'minmax(0, 1fr)',
-  gap: '18px',
+  gap: '14px',
 })
 
 const testToolsCategories = style({
   position: 'sticky',
   top: '12px',
   zIndex: '20',
-  display: 'flex',
-  overflowX: 'auto',
-  gap: '6px',
-  padding: '8px',
-  background: 'var(--surface-elevated)',
+  display: 'grid',
+  gridTemplateColumns: 'repeat(3, minmax(0, 1fr))',
+  gap: '5px',
+  padding: '5px',
+  background: 'color-mix(in srgb, var(--surface-elevated) 90%, transparent)',
   border: '1px solid var(--border-subtle)',
-  borderRadius: '13px',
-  boxShadow: 'var(--surface-shadow)',
-  scrollbarWidth: 'thin',
+  borderRadius: '12px',
+  boxShadow: '0 12px 30px rgba(6, 12, 21, 0.12)',
+  backdropFilter: 'blur(18px)',
 })
 
 const isActive = style({
   selectors: {
     [`${testToolsCategories} button&`]: {
       color: 'var(--text-primary)',
-      background: 'var(--accent-muted)',
+      background:
+        'linear-gradient(135deg, var(--accent-muted), color-mix(in srgb, var(--accent-muted) 35%, transparent))',
+      borderColor: 'color-mix(in srgb, var(--accent) 28%, var(--border-subtle))',
+      boxShadow: 'inset 0 0 0 1px color-mix(in srgb, var(--accent) 8%, transparent)',
     },
   },
+})
+
+const testToolsCategoryIndex = style({
+  flex: '0 0 auto',
+  color: 'var(--accent)',
+  fontSize: '9px',
+  fontWeight: '800',
+  fontVariantNumeric: 'tabular-nums',
+  letterSpacing: '0.08em',
+})
+
+const testToolsCategoryCopy = style({
+  minWidth: '0',
+  display: 'flex',
+  alignItems: 'baseline',
+  gap: '8px',
 })
 
 const testToolsView = style({
@@ -84,41 +95,81 @@ const testToolsView = style({
 
 const testToolsResult = style([
   {
-    padding: 'var(--panel-padding)',
-    background: 'var(--surface-elevated)',
+    display: 'grid',
+    gridTemplateColumns: 'auto minmax(0, 1fr)',
+    alignItems: 'center',
+    gap: '14px',
+    marginBottom: '14px',
+    padding: '10px 14px',
+    background:
+      'linear-gradient(90deg, color-mix(in srgb, var(--accent-muted) 72%, var(--surface-elevated)), var(--surface-elevated) 42%)',
     border: '1px solid var(--border-subtle)',
-    borderRadius: 'var(--panel-radius)',
-    boxShadow: 'var(--surface-shadow)',
+    borderRadius: '11px',
   },
   {
-    marginBottom: '14px',
+    '@container': {
+      'test-tools-view (max-width: 440px)': {
+        gridTemplateColumns: '1fr',
+        gap: '4px',
+      },
+    },
   },
 ])
 
 const testToolsSection = style({
+  position: 'relative',
+  minWidth: '0',
+  overflow: 'hidden',
   padding: 'var(--panel-padding)',
-  background: 'var(--surface-elevated)',
+  background:
+    'linear-gradient(145deg, color-mix(in srgb, var(--surface-elevated) 96%, var(--accent) 4%), var(--surface-elevated))',
   border: '1px solid var(--border-subtle)',
   borderRadius: 'var(--panel-radius)',
   boxShadow: 'var(--surface-shadow)',
+  selectors: {
+    '&::after': {
+      position: 'absolute',
+      top: '0',
+      right: '0',
+      width: '72px',
+      height: '1px',
+      content: '""',
+      background: 'linear-gradient(90deg, transparent, var(--accent))',
+      pointerEvents: 'none',
+    },
+  },
 })
+
+const testToolsCapabilityContent = style({
+  display: 'grid',
+  gap: '14px',
+})
+
+const testToolsCapabilityGrid = style([
+  {
+    display: 'grid',
+    gridTemplateColumns: 'minmax(0, 0.82fr) minmax(0, 1.18fr)',
+    gap: '14px',
+    alignItems: 'stretch',
+  },
+  {
+    '@container': {
+      'test-tools-view (max-width: 840px)': {
+        gridTemplateColumns: '1fr',
+      },
+    },
+  },
+])
 
 const testToolsActions = style([
   {
     display: 'grid',
-    gridTemplateColumns: 'repeat(3, minmax(0, 1fr))',
-    gap: '9px',
+    gridTemplateColumns: 'repeat(2, minmax(0, 1fr))',
+    gap: '8px',
   },
   {
     '@container': {
-      'test-tools-panel (max-width: 700px)': {
-        gridTemplateColumns: 'repeat(2, minmax(0, 1fr))',
-      },
-    },
-  },
-  {
-    '@container': {
-      'test-tools-panel (max-width: 480px)': {
+      'test-tools-view (max-width: 440px)': {
         gridTemplateColumns: '1fr',
       },
     },
@@ -126,7 +177,7 @@ const testToolsActions = style([
 ])
 
 const testToolsButton = style({
-  padding: '8px 12px',
+  padding: '0 12px',
   color: 'var(--text-primary)',
   fontSize: '11px',
   fontWeight: '700',
@@ -146,28 +197,30 @@ const isPrimary = style({
 })
 
 const testToolsNote = style({
-  marginTop: '16px',
-  padding: '12px 14px',
+  marginTop: '14px',
+  padding: '11px 13px',
   color: 'var(--text-tertiary)',
   fontSize: '10px',
   lineHeight: '1.55',
-  background: 'var(--surface-muted)',
-  borderRadius: '8px',
+  background: 'color-mix(in srgb, var(--surface-muted) 78%, transparent)',
+  borderLeft: '2px solid color-mix(in srgb, var(--accent) 54%, transparent)',
+  borderRadius: '0 8px 8px 0',
 })
 
 const testToolsDropzone = style([
   {
-    minHeight: '100px',
+    minHeight: '82px',
     display: 'flex',
     flexDirection: 'column',
     alignItems: 'center',
     justifyContent: 'center',
-    marginTop: '18px',
-    padding: '18px',
+    marginTop: '14px',
+    padding: '15px',
     color: 'var(--text-secondary)',
     textAlign: 'center',
-    background: 'var(--surface-muted)',
-    border: '1px dashed var(--border-strong)',
+    background:
+      'linear-gradient(135deg, color-mix(in srgb, var(--accent-muted) 36%, var(--surface-muted)), var(--surface-muted))',
+    border: '1px dashed color-mix(in srgb, var(--accent) 34%, var(--border-strong))',
     borderRadius: '10px',
     vars: {
       '--wails-drop-target': 'drop',
@@ -175,8 +228,8 @@ const testToolsDropzone = style([
   },
   {
     '@container': {
-      'test-tools-panel (max-width: 480px)': {
-        padding: '16px 12px',
+      'test-tools-view (max-width: 440px)': {
+        padding: '14px 10px',
       },
     },
   },
@@ -186,14 +239,17 @@ const testToolsOverlayDemo = style({})
 
 export const styles = {
   'test-tools-panel': testToolsPanel,
-  'test-tools-heading': testToolsHeading,
   'test-tools-badge': testToolsBadge,
   'test-tools-layout': testToolsLayout,
   'test-tools-categories': testToolsCategories,
   'is-active': isActive,
+  'test-tools-category-index': testToolsCategoryIndex,
+  'test-tools-category-copy': testToolsCategoryCopy,
   'test-tools-view': testToolsView,
   'test-tools-result': testToolsResult,
   'test-tools-section': testToolsSection,
+  'test-tools-capability-content': testToolsCapabilityContent,
+  'test-tools-capability-grid': testToolsCapabilityGrid,
   'test-tools-actions': testToolsActions,
   'test-tools-button': testToolsButton,
   'is-primary': isPrimary,
@@ -202,90 +258,78 @@ export const styles = {
   'test-tools-overlay-demo': testToolsOverlayDemo,
 } as const
 
-globalStyle(`${testToolsHeading} > div:first-child`, {
-  minWidth: '0',
-})
-
-globalStyle(`${testToolsHeading} p`, {
-  margin: '0 0 8px',
-  color: 'var(--accent)',
-  fontSize: '11px',
-  fontWeight: '800',
-  letterSpacing: '0.14em',
-  textTransform: 'uppercase',
-})
-
-globalStyle(`${testToolsHeading} h1`, {
-  margin: '0',
-  fontSize: 'clamp(28px, 4vw, 38px)',
-})
-
-globalStyle(`${testToolsHeading} div > span`, {
-  display: 'block',
-  marginTop: '10px',
-  color: 'var(--text-secondary)',
+globalStyle(`${testToolsBadge} > span`, {
+  width: '6px',
+  height: '6px',
+  background: 'var(--accent)',
+  borderRadius: '50%',
+  boxShadow: '0 0 0 4px var(--accent-muted)',
 })
 
 globalStyle(`${testToolsCategories} button`, {
   minWidth: '0',
-  flex: '1 1 0',
-  padding: '6px 10px',
+  justifyContent: 'flex-start',
+  gap: '10px',
+  padding: '0 12px',
   color: 'var(--text-secondary)',
   textAlign: 'left',
   background: 'transparent',
-  border: '0',
+  borderColor: 'transparent',
   borderRadius: '8px',
-  cursor: 'pointer',
 })
 
 globalStyle(`${testToolsCategories} button:hover`, {
-  color: 'var(--button-primary-text)',
+  color: 'var(--text-primary)',
   background: 'var(--surface-hover)',
 })
 
-globalStyle(`${testToolsCategories} button:hover small`, {
-  color: 'color-mix(in srgb, var(--button-primary-text) 72%, transparent)',
-})
-
-globalStyle(
-  `${testToolsCategories} strong,
-${testToolsCategories} small`,
-  {
-    display: 'block',
-  },
-)
-
-globalStyle(`${testToolsCategories} strong`, {
+globalStyle(`${testToolsCategoryCopy} strong`, {
+  overflow: 'hidden',
   fontSize: '11px',
+  textOverflow: 'ellipsis',
+  whiteSpace: 'nowrap',
 })
 
-globalStyle(`${testToolsCategories} small`, {
-  marginTop: '2px',
+globalStyle(`${testToolsCategoryCopy} small`, {
+  overflow: 'hidden',
   color: 'var(--text-tertiary)',
   fontSize: '9px',
-  lineHeight: '1.4',
+  textOverflow: 'ellipsis',
+  whiteSpace: 'nowrap',
 })
 
-globalStyle(`${testToolsResult} span`, {
-  color: 'var(--text-tertiary)',
+globalStyle(`${testToolsResult} > span`, {
+  color: 'var(--accent)',
   fontSize: '9px',
   fontWeight: '800',
-  letterSpacing: '0.08em',
+  letterSpacing: '0.1em',
   textTransform: 'uppercase',
 })
 
 globalStyle(`${testToolsResult} p`, {
-  minHeight: '20px',
-  margin: '9px 0 0',
+  minWidth: '0',
+  margin: '0',
   color: 'var(--text-secondary)',
-  fontSize: '11px',
-  lineHeight: '1.6',
+  fontSize: '10px',
+  lineHeight: '1.55',
   overflowWrap: 'anywhere',
   whiteSpace: 'pre-wrap',
 })
 
 globalStyle(`${testToolsSection} > header`, {
-  marginBottom: '18px',
+  marginBottom: '16px',
+  paddingBottom: '14px',
+  borderBottom: '1px solid var(--border-subtle)',
+})
+
+globalStyle(`${testToolsSection} > header > span`, {
+  display: 'block',
+  marginBottom: '6px',
+  color: 'var(--accent)',
+  fontSize: '8px',
+  fontWeight: '800',
+  letterSpacing: '0.14em',
+  textTransform: 'uppercase',
 })
 
 globalStyle(`${testToolsSection} h2`, {
@@ -294,32 +338,46 @@ globalStyle(`${testToolsSection} h2`, {
 })
 
 globalStyle(`${testToolsSection} header p`, {
-  margin: '6px 0 0',
+  margin: '5px 0 0',
   color: 'var(--text-secondary)',
   fontSize: '10px',
+  lineHeight: '1.5',
 })
 
 globalStyle(`${testToolsActions} button`, {
-  padding: '8px 12px',
+  justifyContent: 'flex-start',
+  padding: '0 11px',
   color: 'var(--text-primary)',
-  fontSize: '11px',
+  fontSize: '10px',
   fontWeight: '700',
-  background: 'var(--surface-muted)',
-  border: '1px solid var(--border-strong)',
+  background: 'color-mix(in srgb, var(--surface-muted) 84%, transparent)',
+  borderColor: 'var(--border-subtle)',
   borderRadius: '8px',
-  cursor: 'pointer',
+})
+
+globalStyle(`${testToolsActions} button::before`, {
+  width: '5px',
+  height: '5px',
+  flex: '0 0 auto',
+  content: '""',
+  background: 'color-mix(in srgb, var(--accent) 72%, var(--text-tertiary))',
+  borderRadius: '50%',
+  boxShadow: '0 0 0 3px color-mix(in srgb, var(--accent-muted) 70%, transparent)',
 })
 
 globalStyle(`${testToolsActions} button:hover`, {
   background: 'var(--surface-hover)',
+  borderColor: 'color-mix(in srgb, var(--accent) 28%, var(--border-strong))',
+  boxShadow: '0 8px 18px rgba(6, 12, 21, 0.1)',
+  transform: 'translateY(-1px)',
 })
 
 globalStyle(`${testToolsDropzone} strong`, {
-  fontSize: '11px',
+  fontSize: '10px',
 })
 
 globalStyle(`${testToolsDropzone} > span`, {
-  marginTop: '5px',
+  marginTop: '4px',
   color: 'var(--text-tertiary)',
   fontSize: '9px',
 })
@@ -328,8 +386,8 @@ globalStyle(`${testToolsDropzone} ul`, {
   width: '100%',
   maxHeight: '88px',
   overflow: 'auto',
-  margin: '12px 0 0',
-  padding: '10px 10px 0 26px',
+  margin: '10px 0 0',
+  padding: '9px 10px 0 26px',
   textAlign: 'left',
   borderTop: '1px solid var(--border-subtle)',
 })
@@ -348,25 +406,9 @@ globalStyle(`${testToolsOverlayDemo} p`, {
   lineHeight: '1.65',
 })
 
-globalStyle(`${testToolsHeading} h1`, {
+globalStyle(`${testToolsCategoryCopy} small`, {
   '@container': {
-    'test-tools-panel (max-width: 480px)': {
-      fontSize: 'clamp(26px, 9vw, 34px)',
-    },
-  },
-})
-
-globalStyle(`${testToolsCategories} button`, {
-  '@container': {
-    'test-tools-panel (max-width: 480px)': {
-      minWidth: '112px',
-    },
-  },
-})
-
-globalStyle(`${testToolsCategories} small`, {
-  '@container': {
-    'test-tools-panel (max-width: 480px)': {
+    'test-tools-panel (max-width: 520px)': {
       display: 'none',
     },
   },

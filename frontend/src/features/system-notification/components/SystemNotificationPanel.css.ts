@@ -10,8 +10,10 @@ const notificationPulseKeyframes = keyframes({
 })
 
 const systemNotificationPanel = style({
-  width: 'min(980px, 100%)',
+  position: 'relative',
+  width: 'min(var(--page-content-max-width), 100%)',
   minHeight: '100%',
+  overflow: 'hidden',
   margin: '0 auto',
   padding: 'var(--page-padding-start) var(--page-padding-inline) var(--page-padding-end)',
   containerName: 'system-notification',
@@ -24,10 +26,21 @@ const isEmbedded = style({
       width: '100%',
       minHeight: 'auto',
       padding: 'var(--panel-padding)',
-      background: 'var(--surface-elevated)',
+      background:
+        'radial-gradient(circle at 8% 0%, var(--accent-muted), transparent 28%), linear-gradient(145deg, var(--surface-elevated), color-mix(in srgb, var(--surface-elevated) 96%, var(--accent) 4%))',
       border: '1px solid var(--border-subtle)',
       borderRadius: 'var(--panel-radius)',
       boxShadow: 'var(--surface-shadow)',
+    },
+    [`${systemNotificationPanel}&::after`]: {
+      position: 'absolute',
+      top: '0',
+      right: '0',
+      width: '110px',
+      height: '1px',
+      content: '""',
+      background: 'linear-gradient(90deg, transparent, var(--accent))',
+      pointerEvents: 'none',
     },
   },
 })

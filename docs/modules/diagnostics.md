@@ -9,7 +9,7 @@
 - `internal/diagnostics/service.go`：日志文件、轮转、标准日志输出和诊断信息，版本来自构建期 `buildinfo.Version`；开发构建由当前 Git 标签生成 `x.y.z-dev`。
 - `internal/application/diagnostics.go`：Wails 查询与打开日志目录接口。
 - `frontend/src/shared/diagnostics/`：类型化诊断 API。
-- 测试工具中的 `DesktopOverview`：展示只读运行信息。
+- 测试工具中的 `DesktopOverview`：展示应用版本、运行平台和 Go 版本摘要。
 - `TestToolsPanel`：提供打开日志目录的验证入口。
 
 ## 诊断数据

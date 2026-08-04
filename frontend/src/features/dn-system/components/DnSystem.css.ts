@@ -4,7 +4,7 @@ import { styles as buttonStyles } from '../../../shared/components/ui/Button.css
 import { styles as cardStyles } from '../../../shared/components/ui/Card.css'
 
 const dnPage = style({
-  width: 'min(1180px, 100%)',
+  width: 'min(var(--page-content-max-width), 100%)',
   display: 'grid',
   gap: '18px',
   margin: '0 auto',
@@ -835,10 +835,6 @@ const dnMessagePopupContent = style({
   whiteSpace: 'pre-wrap',
 })
 
-const dnAccountPage = style({
-  width: 'min(900px, 100%)',
-})
-
 const dnAccountForm = style([
   {
     display: 'grid',
@@ -981,7 +977,6 @@ export const styles = {
   'dn-message-center-item': dnMessageCenterItem,
   'dn-message-center-footer': dnMessageCenterFooter,
   'dn-message-popup-content': dnMessagePopupContent,
-  'dn-account-page': dnAccountPage,
   'dn-account-form': dnAccountForm,
   'dn-avatar-panel': dnAvatarPanel,
   'dn-account-footer': dnAccountFooter,

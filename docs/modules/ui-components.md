@@ -11,7 +11,7 @@
 - `frontend/src/shared/components/ui/AlertDialog.tsx`、`AlertDialog.css.ts`：确认对话框及自身尺寸样式，复用 Dialog 基础样式。
 - `frontend/src/shared/components/ui/FormControls.tsx`、`FormControls.css.ts`：Input、PasswordInput、Textarea、Select、Label、Checkbox、Switch。
 - `frontend/src/shared/components/ui/Card.tsx`、`Card.css.ts`：页面容器；Badge、Avatar、Progress、Tabs 也分别维护同名 `.css.ts`。
-- `frontend/src/shared/components/ui/Layout.tsx`、`Layout.css.ts`：PageHeader、Pagination、ListState 和 Skeleton。
+- `frontend/src/shared/components/ui/Layout.tsx`、`Layout.css.ts`：统一渐变页头 PageHeader、Pagination、ListState 和 Skeleton。
 - `frontend/src/shared/components/ui/Spinner.tsx`、`Spinner.css.ts`：可复用的图标旋转状态和 reduced-motion 降级。
 - `frontend/src/shared/components/ui/Toaster.tsx`：Sonner Toast 主题适配，无独立样式时不创建空样式文件。
 
@@ -35,7 +35,7 @@ Base UI 的弹层和组合组件使用 `render={<Button />}`，避免业务模�
 
 - 所有组件读取 `--surface-*`、`--text-*`、`--border-*`、`--accent`、`--danger-*` 和全局间距变量。
 - Dialog 在窄窗口下贴近底部并让操作按钮纵向全宽；内容区域独立滚动。
-- PageHeader、Pagination、表单和列表状态可在 Container Query 下自动收窄。
+- PageHeader 统一主要视图的紧凑渐变背景、eyebrow、标题、说明和操作区，并在 Container Query 下自动切换为纵向布局。
 - reduced motion 下关闭 Dialog、进度、Switch、Spinner 和 Skeleton 动画。
 
 ## 接入方式

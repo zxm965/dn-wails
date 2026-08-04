@@ -1,7 +1,7 @@
 import { globalStyle, style } from '@vanilla-extract/css'
 
 const desktopOverview = style({
-  width: 'min(1080px, 100%)',
+  width: 'min(var(--page-content-max-width), 100%)',
   margin: '0 auto',
   padding: 'var(--page-padding-start) var(--page-padding-inline) var(--page-padding-end)',
   containerName: 'desktop-overview',
@@ -17,14 +17,16 @@ const isEmbedded = style({
 const desktopOverviewHeading = style([
   {
     display: 'flex',
-    alignItems: 'flex-start',
+    alignItems: 'center',
     justifyContent: 'space-between',
     gap: '24px',
-    marginBottom: '28px',
+    marginBottom: '18px',
+    padding: '0 2px',
   },
   {
     '@container': {
       'desktop-overview (max-width: 520px)': {
+        alignItems: 'flex-start',
         flexDirection: 'column',
       },
     },
@@ -56,10 +58,9 @@ const desktopOverviewReady = style({
   padding: '0 12px',
   color: 'var(--text-secondary)',
   fontSize: '11px',
-  background: 'var(--surface-elevated)',
-  border: '1px solid var(--border-subtle)',
+  background: 'color-mix(in srgb, var(--surface-muted) 80%, transparent)',
+  border: '1px solid var(--border-strong)',
   borderRadius: '999px',
-  boxShadow: 'var(--surface-shadow)',
   '@container': {
     'desktop-overview (max-width: 520px)': {
       alignSelf: 'flex-start',
@@ -108,36 +109,28 @@ const desktopOverviewSummary = style([
 ])
 
 const desktopOverviewSection = style({
+  position: 'relative',
+  overflow: 'hidden',
   marginTop: '18px',
   padding: 'var(--panel-padding)',
-  background: 'var(--surface-elevated)',
+  background:
+    'linear-gradient(135deg, color-mix(in srgb, var(--surface-elevated) 95%, var(--accent) 5%), var(--surface-elevated))',
   border: '1px solid var(--border-subtle)',
   borderRadius: 'var(--panel-radius)',
   boxShadow: 'var(--surface-shadow)',
-})
-
-const desktopOverviewCapabilities = style([
-  {
-    display: 'grid',
-    gridTemplateColumns: 'repeat(3, minmax(0, 1fr))',
-    gap: '14px',
-  },
-  {
-    '@container': {
-      'desktop-overview (max-width: 680px)': {
-        gridTemplateColumns: '1fr',
-      },
+  selectors: {
+    '&::after': {
+      position: 'absolute',
+      top: '0',
+      right: '0',
+      width: '90px',
+      height: '1px',
+      content: '""',
+      background: 'linear-gradient(90deg, transparent, var(--accent))',
+      pointerEvents: 'none',
     },
   },
-])
-
-const desktopOverviewCapabilityIndex = style({
-  color: 'var(--accent)',
-  fontSize: '10px',
-  fontWeight: '800',
 })
-
-const desktopOverviewRuntime = style({})
 
 const desktopOverviewUpdateContent = style([
   {
@@ -172,9 +165,6 @@ export const styles = {
   'is-error': isError,
   'desktop-overview-summary': desktopOverviewSummary,
   'desktop-overview-section': desktopOverviewSection,
-  'desktop-overview-capabilities': desktopOverviewCapabilities,
-  'desktop-overview-capability-index': desktopOverviewCapabilityIndex,
-  'desktop-overview-runtime': desktopOverviewRuntime,
   'desktop-overview-update-content': desktopOverviewUpdateContent,
   'desktop-overview-error': desktopOverviewError,
 } as const
@@ -201,6 +191,11 @@ globalStyle(`${desktopOverviewHeading} h1`, {
   fontSize: 'clamp(28px, 4vw, 38px)',
 })
 
+globalStyle(`${desktopOverviewHeading} h2`, {
+  margin: '0',
+  fontSize: '18px',
+})
+
 globalStyle(`${desktopOverviewHeading} div > span`, {
   display: 'block',
   color: 'var(--text-secondary)',
@@ -215,12 +210,26 @@ globalStyle(`${desktopOverviewReady} > span`, {
 })
 
 globalStyle(`${desktopOverviewSummary} article`, {
+  position: 'relative',
   minWidth: '0',
-  padding: '18px',
-  background: 'var(--surface-elevated)',
+  overflow: 'hidden',
+  padding: '17px',
+  background:
+    'linear-gradient(145deg, color-mix(in srgb, var(--surface-elevated) 96%, var(--accent) 4%), var(--surface-elevated))',
   border: '1px solid var(--border-subtle)',
   borderRadius: '13px',
   boxShadow: 'var(--surface-shadow)',
+})
+
+globalStyle(`${desktopOverviewSummary} article::before`, {
+  position: 'absolute',
+  top: '0',
+  left: '17px',
+  width: '28px',
+  height: '2px',
+  content: '""',
+  background: 'var(--accent)',
+  borderRadius: '0 0 999px 999px',
 })
 
 globalStyle(
@@ -237,13 +246,15 @@ ${desktopOverviewSummary} small`,
 
 globalStyle(`${desktopOverviewSummary} span`, {
   color: 'var(--text-tertiary)',
-  fontSize: '10px',
+  fontSize: '9px',
   fontWeight: '700',
+  letterSpacing: '0.06em',
 })
 
 globalStyle(`${desktopOverviewSummary} strong`, {
-  marginTop: '12px',
+  marginTop: '11px',
   fontSize: '17px',
+  letterSpacing: '-0.02em',
 })
 
 globalStyle(`${desktopOverviewSummary} small`, {
@@ -270,60 +281,6 @@ globalStyle(`${desktopOverviewSectionHeading} > span`, {
   fontWeight: '800',
   letterSpacing: '0.08em',
   textTransform: 'uppercase',
-})
-
-globalStyle(`${desktopOverviewCapabilities} article`, {
-  minWidth: '0',
-  padding: '18px',
-  background: 'var(--surface-muted)',
-  border: '1px solid var(--border-subtle)',
-  borderRadius: '12px',
-})
-
-globalStyle(`${desktopOverviewCapabilities} h3`, {
-  margin: '12px 0 0',
-  fontSize: '14px',
-})
-
-globalStyle(`${desktopOverviewCapabilities} article > p`, {
-  minHeight: '34px',
-  margin: '7px 0 0',
-  color: 'var(--text-tertiary)',
-  fontSize: '10px',
-  lineHeight: '1.5',
-})
-
-globalStyle(`${desktopOverviewCapabilities} ul`, {
-  display: 'flex',
-  flexDirection: 'column',
-  gap: '8px',
-  margin: '16px 0 0',
-  padding: '14px 0 0',
-  borderTop: '1px solid var(--border-subtle)',
-  listStyle: 'none',
-})
-
-globalStyle(`${desktopOverviewCapabilities} li`, {
-  display: 'flex',
-  alignItems: 'center',
-  gap: '8px',
-  color: 'var(--text-secondary)',
-  fontSize: '11px',
-})
-
-globalStyle(`${desktopOverviewCapabilities} li span`, {
-  width: '5px',
-  height: '5px',
-  flex: '0 0 auto',
-  background: 'var(--accent)',
-  borderRadius: '50%',
-})
-
-globalStyle(`${desktopOverviewRuntime} dl`, {
-  display: 'grid',
-  gridTemplateColumns: 'repeat(2, minmax(0, 1fr))',
-  gap: '0 24px',
-  margin: '0',
 })
 
 globalStyle(`${desktopOverviewUpdateContent} > div`, {
@@ -361,37 +318,6 @@ globalStyle(`${desktopOverviewUpdateContent} button`, {
   },
 })
 
-globalStyle(`${desktopOverviewRuntime} dl > div`, {
-  minWidth: '0',
-  display: 'flex',
-  justifyContent: 'space-between',
-  gap: '18px',
-  padding: '11px 0',
-  borderBottom: '1px solid var(--border-subtle)',
-})
-
-globalStyle(`${desktopOverviewRuntime} dt`, {
-  color: 'var(--text-tertiary)',
-  fontSize: '11px',
-})
-
-globalStyle(`${desktopOverviewRuntime} dd`, {
-  minWidth: '0',
-  overflow: 'hidden',
-  margin: '0',
-  fontSize: '11px',
-  textOverflow: 'ellipsis',
-  whiteSpace: 'nowrap',
-})
-
-globalStyle(`${desktopOverviewRuntime} dl`, {
-  '@container': {
-    'desktop-overview (max-width: 680px)': {
-      gridTemplateColumns: '1fr',
-    },
-  },
-})
-
 globalStyle(`${desktopOverviewSectionHeading} > span`, {
   '@container': {
     'desktop-overview (max-width: 520px)': {
@@ -408,34 +334,10 @@ globalStyle(`${desktopOverviewHeading} h1`, {
   },
 })
 
-globalStyle(
-  `${desktopOverviewSummary} article,
-  ${desktopOverviewCapabilities} article`,
-  {
-    '@container': {
-      'desktop-overview (max-width: 400px)': {
-        padding: '16px',
-      },
-    },
-  },
-)
-
-globalStyle(`${desktopOverviewRuntime} dl > div`, {
+globalStyle(`${desktopOverviewSummary} article`, {
   '@container': {
     'desktop-overview (max-width: 400px)': {
-      alignItems: 'flex-start',
-      flexDirection: 'column',
-      gap: '5px',
-    },
-  },
-})
-
-globalStyle(`${desktopOverviewRuntime} dd`, {
-  '@container': {
-    'desktop-overview (max-width: 400px)': {
-      width: '100%',
-      whiteSpace: 'normal',
-      overflowWrap: 'anywhere',
+      padding: '16px',
     },
   },
 })

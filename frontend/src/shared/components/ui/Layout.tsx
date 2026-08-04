@@ -1,6 +1,6 @@
 import type { HTMLAttributes, ReactNode } from 'react'
 
-import { createScopedClassNames } from '@/shared/lib/classNames'
+import { classNames, createScopedClassNames } from '@/shared/lib/classNames'
 
 import { Button } from './Button'
 import { SpinnerIcon } from './Spinner'
@@ -9,10 +9,19 @@ import { styles } from './Layout.css'
 
 const cx = createScopedClassNames(styles)
 
-export function PageHeader({ title, subtitle, actions }: { title: string; subtitle?: string; actions?: ReactNode }) {
+export interface PageHeaderProps {
+  eyebrow?: string
+  title: string
+  subtitle?: string
+  actions?: ReactNode
+  className?: string
+}
+
+export function PageHeader({ eyebrow, title, subtitle, actions, className }: PageHeaderProps) {
   return (
-    <header className={cx('ui-page-header')}>
+    <header className={classNames(cx('ui-page-header'), className)}>
       <div>
+        {eyebrow && <span className={cx('ui-page-header-eyebrow')}>{eyebrow}</span>}
         <h1>{title}</h1>
         {subtitle && <p>{subtitle}</p>}
       </div>

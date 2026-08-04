@@ -1,7 +1,9 @@
 import { globalStyle, style } from '@vanilla-extract/css'
 
 const settingsPanel = style({
-  width: 'min(940px, 100%)',
+  width: 'min(var(--page-content-max-width), 100%)',
+  display: 'grid',
+  gap: '16px',
   margin: '0 auto',
   padding: 'var(--page-padding-start) var(--page-padding-inline) var(--page-padding-end)',
   containerName: 'settings-panel',
@@ -14,47 +16,6 @@ const settingsState = style({
   placeItems: 'center',
   color: 'var(--text-secondary)',
 })
-
-const settingsHeading = style([
-  {
-    display: 'flex',
-    alignItems: 'flex-start',
-    justifyContent: 'space-between',
-    gap: '24px',
-    marginBottom: '28px',
-  },
-  {
-    '@container': {
-      'settings-panel (max-width: 700px)': {
-        flexDirection: 'column',
-      },
-    },
-  },
-])
-
-const settingsHeadingActions = style([
-  {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '10px',
-  },
-  {
-    '@container': {
-      'settings-panel (max-width: 700px)': {
-        width: '100%',
-        justifyContent: 'space-between',
-      },
-    },
-  },
-  {
-    '@container': {
-      'settings-panel (max-width: 440px)': {
-        alignItems: 'stretch',
-        flexDirection: 'column',
-      },
-    },
-  },
-])
 
 const settingsSaveStatus = style({
   margin: '0',
@@ -78,7 +39,7 @@ const settingsButton = style([
   },
   {
     '@container': {
-      'settings-panel (max-width: 700px)': {
+      'settings-panel (max-width: 440px)': {
         width: '100%',
         whiteSpace: 'nowrap',
       },
@@ -111,11 +72,6 @@ const settingsSection = style({
   border: '1px solid var(--border-subtle)',
   borderRadius: 'var(--panel-radius)',
   boxShadow: 'var(--surface-shadow)',
-  selectors: {
-    '& + &': {
-      marginTop: '18px',
-    },
-  },
 })
 
 const settingsSectionTitle = style({
@@ -272,8 +228,6 @@ const isDisabled = style({
 export const styles = {
   'settings-panel': settingsPanel,
   'settings-state': settingsState,
-  'settings-heading': settingsHeading,
-  'settings-heading-actions': settingsHeadingActions,
   'settings-save-status': settingsSaveStatus,
   'settings-button': settingsButton,
   'settings-button-primary': settingsButtonPrimary,
@@ -298,29 +252,6 @@ export const styles = {
   'settings-switch': settingsSwitch,
   'is-disabled': isDisabled,
 } as const
-
-globalStyle(`${settingsHeading} > div:first-child`, {
-  minWidth: '0',
-})
-
-globalStyle(`${settingsHeading} p`, {
-  margin: '0 0 8px',
-  color: 'var(--accent)',
-  fontSize: '12px',
-  fontWeight: '800',
-  letterSpacing: '0.14em',
-  textTransform: 'uppercase',
-})
-
-globalStyle(`${settingsHeading} h1`, {
-  margin: '0',
-  fontSize: 'clamp(28px, 4vw, 38px)',
-})
-
-globalStyle(`${settingsHeading} span`, {
-  display: 'block',
-  color: 'var(--text-secondary)',
-})
 
 globalStyle(`${settingsSectionTitle} h2`, {
   margin: '0',
@@ -423,14 +354,6 @@ globalStyle(`${settingsToggleRow} small`, {
 globalStyle(`${settingsToggleRow} input`, {
   position: 'absolute',
   opacity: '0',
-})
-
-globalStyle(`${settingsHeading} h1`, {
-  '@container': {
-    'settings-panel (max-width: 440px)': {
-      fontSize: 'clamp(26px, 9vw, 34px)',
-    },
-  },
 })
 
 globalStyle(`${settingsToggleRow} small`, {

@@ -175,8 +175,9 @@ export function DnAccount() {
   }
 
   return (
-    <div className={cx('dn-page dn-account-page')}>
+    <div className={cx('dn-page')}>
       <PageHeader
+        eyebrow='DN workspace'
         title='个人中心'
         subtitle='管理个人资料、登录密码和本地数据。'
         actions={

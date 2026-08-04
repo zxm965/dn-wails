@@ -51,6 +51,7 @@ export function DnDashboard({ onNavigateWeekly }: { onNavigateWeekly: () => void
   return (
     <div className={cx('dn-page')}>
       <PageHeader
+        eyebrow='DN workspace'
         title='仪表盘'
         subtitle='查看本周进度和需要优先处理的内容。'
         actions={

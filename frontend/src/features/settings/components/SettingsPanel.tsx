@@ -1,4 +1,4 @@
-import { Button } from '@/shared/components/ui'
+import { Button, PageHeader } from '@/shared/components/ui'
 import { useFeedback } from '@/shared/feedback'
 import { createScopedClassNames } from '@/shared/lib/classNames'
 
@@ -79,32 +79,32 @@ export function SettingsPanel() {
   }
 
   if (isLoading) {
-    return <div className={cx('settings-state')}>正在读取应用设置…</div>
+    return <div className={cx('settings-panel settings-state')}>正在读取应用设置…</div>
   }
 
   return (
     <div className={cx('settings-panel')}>
-      <header className={cx('settings-heading')}>
-        <div>
-          <p>Preferences</p>
-          <h1>设置与外观</h1>
-          <span>设置会保存到当前用户的应用配置目录。</span>
-        </div>
-        <div className={cx('settings-heading-actions')}>
-          <span className={cx('settings-save-status')} aria-live='polite'>
-            {isSaving ? '正在同步…' : '修改自动保存'}
-          </span>
-          <Button
-            className={cx('settings-button settings-button-secondary')}
-            variant='outline'
-            type='button'
-            onClick={handleReset}
-            disabled={isSaving}
-          >
-            恢复默认
-          </Button>
-        </div>
-      </header>
+      <PageHeader
+        eyebrow='Preferences'
+        title='设置与外观'
+        subtitle='设置会保存到当前用户的应用配置目录。'
+        actions={
+          <>
+            <span className={cx('settings-save-status')} aria-live='polite'>
+              {isSaving ? '正在同步…' : '修改自动保存'}
+            </span>
+            <Button
+              className={cx('settings-button settings-button-secondary')}
+              variant='outline'
+              type='button'
+              onClick={handleReset}
+              disabled={isSaving}
+            >
+              恢复默认
+            </Button>
+          </>
+        }
+      />
 
       {error && (
         <p className={cx('settings-error')} role='alert'>

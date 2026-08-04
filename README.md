@@ -1,6 +1,6 @@
 # dn-wails
 
-基于 Wails v3、React 和 TypeScript 的桌面应用。当前锁定 `github.com/wailsapp/wails/v3 v3.0.0-beta.2`，以 v3 Service、typed events、Taskfile 构建系统和原生系统托盘为基础，不保留 Wails v2 兼容层。
+基于 Wails v3、React 和 TypeScript 的桌面应用。当前锁定 `github.com/wailsapp/wails/v3 v3.0.0-beta.3`，前端使用 npm 最新发布的 `@wailsio/runtime v3.0.0-beta.1`，以 v3 Service、typed events、Taskfile 构建系统和原生系统托盘为基础，不保留 Wails v2 兼容层。
 
 界面采用顶部自定义标题栏、左侧分组菜单和右侧视图区域。关闭行为设为隐藏时，主窗口会保留在后台，并可通过系统托盘的“显示主窗口”恢复；托盘菜单也提供“退出”。
 

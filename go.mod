@@ -4,7 +4,7 @@ go 1.25.0
 
 require (
 	github.com/jackc/pgx/v5 v5.10.0
-	github.com/wailsapp/wails/v3 v3.0.0-beta.2
+	github.com/wailsapp/wails/v3 v3.0.0-beta.3
 	golang.org/x/crypto v0.51.0
 )
 

@@ -203,6 +203,7 @@ export function DnMessages({ onNavigate }: { onNavigate: (target: DnInternalTarg
   return (
     <div className={cx('dn-page')}>
       <PageHeader
+        eyebrow='DN workspace'
         title='站内消息'
         subtitle='查看桌面工作区公告与提醒。'
         actions={
