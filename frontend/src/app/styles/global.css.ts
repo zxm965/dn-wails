@@ -38,8 +38,8 @@ globalStyle(':root', {
     '--control-height': '42px',
     '--page-content-max-width': '1180px',
     '--page-padding-inline': 'clamp(18px, 3vw, 32px)',
-    '--page-padding-start': 'clamp(22px, 3vw, 36px)',
-    '--page-padding-end': '56px',
+    '--page-padding-start': 'var(--page-padding-inline)',
+    '--page-padding-end': 'var(--page-padding-inline)',
     '--panel-padding': 'clamp(18px, 2.5vw, 24px)',
     '--panel-radius': '16px',
   },
@@ -162,8 +162,6 @@ globalStyle(':root', {
     '(max-width: 640px)': {
       vars: {
         '--page-padding-inline': '16px',
-        '--page-padding-start': '24px',
-        '--page-padding-end': '48px',
         '--panel-padding': '16px',
         '--panel-radius': '13px',
       },
