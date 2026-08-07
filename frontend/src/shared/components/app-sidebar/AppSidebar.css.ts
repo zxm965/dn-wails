@@ -18,7 +18,7 @@ const appSidebar = style({
   flex: '0 0 var(--app-sidebar-width)',
   display: 'flex',
   flexDirection: 'column',
-  overflow: 'hidden',
+  overflow: 'visible',
   padding: '16px 12px 14px',
   background: 'var(--navigation-background)',
   borderRight: '1px solid var(--border-subtle)',
@@ -99,6 +99,9 @@ const appSidebarMenuItem = style({
     '& + &': {
       marginTop: '4px',
     },
+    [`${appSidebar}${isCollapsed} & + &`]: {
+      marginTop: '8px',
+    },
   },
 })
 
@@ -139,6 +142,60 @@ const appSidebarSubmenu = style({
       display: 'none',
     },
   },
+})
+
+const appSidebarFlyout = style({
+  position: 'fixed',
+  zIndex: '30',
+  width: '168px',
+  padding: '8px',
+  color: 'var(--text-primary)',
+  background: 'var(--surface-elevated)',
+  border: '1px solid var(--border-subtle)',
+  borderRadius: '12px',
+  boxShadow: 'var(--surface-shadow)',
+})
+
+const appSidebarFlyoutTitle = style({
+  display: 'block',
+  padding: '4px 8px 8px',
+  color: 'var(--text-tertiary)',
+  fontSize: '10px',
+  fontWeight: '800',
+  letterSpacing: '0.06em',
+})
+
+const appSidebarFlyoutItems = style({
+  display: 'grid',
+  gap: '6px',
+})
+
+const appSidebarFlyoutItem = style({
+  selectors: {
+    [`${appSidebar}${isCollapsed} ${appSidebarGroup} &`]: {
+      width: '100%',
+      justifyContent: 'flex-start',
+      margin: '0',
+      padding: '0 10px',
+    },
+  },
+})
+
+const isFlyoutActive = style({
+  selectors: {
+    [`${appSidebarFlyoutItem}&`]: {
+      color: 'var(--text-primary)',
+      background: 'var(--accent-muted)',
+    },
+  },
+})
+
+const appSidebarFlyoutLabel = style({
+  overflow: 'hidden',
+  fontSize: '11px',
+  fontWeight: '700',
+  textOverflow: 'ellipsis',
+  whiteSpace: 'nowrap',
 })
 
 const appSidebarStatusDot = style({
@@ -196,6 +253,12 @@ export const styles = {
   'app-sidebar-chevron': appSidebarChevron,
   'is-expanded': isExpanded,
   'app-sidebar-submenu': appSidebarSubmenu,
+  'app-sidebar-flyout': appSidebarFlyout,
+  'app-sidebar-flyout-title': appSidebarFlyoutTitle,
+  'app-sidebar-flyout-items': appSidebarFlyoutItems,
+  'app-sidebar-flyout-item': appSidebarFlyoutItem,
+  'app-sidebar-flyout-label': appSidebarFlyoutLabel,
+  'is-flyout-active': isFlyoutActive,
   'app-sidebar-status-dot': appSidebarStatusDot,
   'app-sidebar-resizer': appSidebarResizer,
   'is-resizing': isResizing,
@@ -359,4 +422,13 @@ globalStyle(`${appSidebar}${isCollapsed} ${appSidebarGroup} button`, {
 globalStyle(`${appSidebar}${isCollapsed} ${appSidebarGroup} button svg`, {
   width: '20px',
   height: '20px',
+})
+
+globalStyle(`${appSidebarFlyoutItem} svg`, {
+  width: '16px !important',
+  height: '16px !important',
+})
+
+globalStyle(`${appSidebarFlyoutItem}${isFlyoutActive} svg`, {
+  color: 'var(--accent)',
 })

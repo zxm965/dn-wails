@@ -1,6 +1,6 @@
 package settings
 
-const CurrentVersion = 2
+const CurrentVersion = 5
 
 const (
 	ThemeSystem = "system"

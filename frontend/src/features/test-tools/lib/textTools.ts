@@ -1,4 +1,31 @@
+import JSON5 from 'json5'
+
 export type HashAlgorithm = 'MD5' | 'SHA-1' | 'SHA-256' | 'SHA-384' | 'SHA-512'
+
+type JsonValue = null | boolean | number | string | JsonValue[] | { [key: string]: JsonValue }
+
+function assertJsonValue(value: unknown, path = '$'): asserts value is JsonValue {
+  if (value === null || typeof value === 'string' || typeof value === 'boolean') return
+
+  if (typeof value === 'number') {
+    if (!Number.isFinite(value)) {
+      throw new Error(`${path} 包含 JSON 无法表示的数字。`)
+    }
+    return
+  }
+
+  if (Array.isArray(value)) {
+    value.forEach((item, index) => assertJsonValue(item, `${path}[${index}]`))
+    return
+  }
+
+  if (typeof value === 'object') {
+    Object.entries(value).forEach(([key, item]) => assertJsonValue(item, `${path}.${key}`))
+    return
+  }
+
+  throw new Error(`${path} 包含 JSON 无法表示的值。`)
+}
 
 const MD5_SHIFTS = [
   7, 12, 17, 22, 7, 12, 17, 22, 7, 12, 17, 22, 7, 12, 17, 22, 5, 9, 14, 20, 5, 9, 14, 20, 5, 9, 14, 20, 5, 9, 14, 20, 4,
@@ -88,6 +115,25 @@ export function formatJson(input: string, compact = false): string {
   }
   const value: unknown = JSON.parse(input)
   return JSON.stringify(value, null, compact ? 0 : 2)
+}
+
+export function objectLiteralToJson(input: string): string {
+  if (!input.trim()) {
+    throw new Error('请输入对象内容。')
+  }
+
+  const value: unknown = JSON5.parse(input)
+  assertJsonValue(value)
+  return JSON.stringify(value, null, 2)
+}
+
+export function jsonToObjectLiteral(input: string): string {
+  if (!input.trim()) {
+    throw new Error('请输入 JSON 内容。')
+  }
+
+  const value: unknown = JSON.parse(input)
+  return JSON5.stringify(value, null, 2)
 }
 
 export function encodeBase64(input: string): string {

@@ -17,6 +17,7 @@
     "@base-ui/react": "^1.6.0",
     "@vanilla-extract/css": "^1.21.2",
     "@wailsio/runtime": "3.0.0-beta.1",
+    "json5": "^2.2.3",
     "lucide-react": "^1.28.0",
     "react": "^19.2.8",
     "react-dom": "^19.2.8",

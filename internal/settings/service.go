@@ -67,6 +67,9 @@ func migrate(value AppSettings) (AppSettings, bool, error) {
 			value.Appearance.ButtonSize = ButtonSizeMD
 			value.Version = 2
 			migrated = true
+		case 2, 3, 4:
+			value.Version++
+			migrated = true
 		default:
 			return AppSettings{}, false, fmt.Errorf("%w: unsupported version %d", ErrInvalidSettings, value.Version)
 		}

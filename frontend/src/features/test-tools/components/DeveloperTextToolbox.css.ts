@@ -1,43 +1,35 @@
 import { globalStyle, style } from '@vanilla-extract/css'
 
-const textToolbox = style([
+const textToolbox = style({
+  minWidth: '0',
+  display: 'grid',
+  gap: '12px',
+  containerName: 'text-toolbox',
+  containerType: 'inline-size',
+})
+
+const textToolboxToolbar = style([
   {
+    position: 'sticky',
+    top: '64px',
+    zIndex: '19',
     minWidth: '0',
     display: 'grid',
-    gridTemplateColumns: '220px minmax(0, 1fr)',
-    overflow: 'hidden',
+    gridTemplateColumns: 'auto minmax(0, 1fr) auto',
+    alignItems: 'center',
+    gap: '12px',
+    padding: '8px',
     background:
-      'radial-gradient(circle at 4% 0%, var(--accent-muted), transparent 25%), linear-gradient(145deg, var(--surface-elevated), color-mix(in srgb, var(--surface-elevated) 96%, var(--accent) 4%))',
+      'linear-gradient(135deg, color-mix(in srgb, var(--surface-elevated) 91%, var(--accent) 9%), color-mix(in srgb, var(--surface-elevated) 94%, transparent))',
     border: '1px solid color-mix(in srgb, var(--accent) 14%, var(--border-subtle))',
-    borderRadius: 'calc(var(--panel-radius) + 2px)',
-    boxShadow: 'var(--surface-shadow)',
-    containerName: 'text-toolbox',
-    containerType: 'inline-size',
+    borderRadius: '12px',
+    boxShadow: '0 12px 30px rgba(6, 12, 21, 0.12)',
+    backdropFilter: 'blur(18px)',
   },
   {
     '@container': {
-      'test-tools-view (max-width: 780px)': {
-        gridTemplateColumns: '1fr',
-      },
-    },
-  },
-])
-
-const textToolboxSidebar = style([
-  {
-    minWidth: '0',
-    display: 'flex',
-    flexDirection: 'column',
-    padding: '16px 12px',
-    background:
-      'linear-gradient(180deg, color-mix(in srgb, var(--surface-muted) 86%, var(--accent) 14%), color-mix(in srgb, var(--surface-muted) 68%, transparent))',
-    borderRight: '1px solid var(--border-subtle)',
-  },
-  {
-    '@container': {
-      'text-toolbox (max-width: 780px)': {
-        borderRight: '0',
-        borderBottom: '1px solid var(--border-subtle)',
+      'text-toolbox (max-width: 900px)': {
+        gridTemplateColumns: 'minmax(0, 1fr)',
       },
     },
   },
@@ -47,19 +39,25 @@ const textToolboxBrand = style({
   display: 'flex',
   alignItems: 'center',
   gap: '10px',
-  padding: '2px 5px 15px',
-  borderBottom: '1px solid var(--border-subtle)',
+  padding: '0 12px 0 2px',
+  borderRight: '1px solid var(--border-subtle)',
+  '@container': {
+    'text-toolbox (max-width: 900px)': {
+      display: 'none',
+    },
+  },
 })
 
 const textToolboxMenu = style([
   {
     display: 'grid',
+    gridTemplateColumns: 'repeat(4, minmax(0, 1fr))',
     gap: '5px',
-    marginTop: '12px',
+    minWidth: '0',
   },
   {
     '@container': {
-      'text-toolbox (max-width: 780px)': {
+      'text-toolbox (max-width: 620px)': {
         gridTemplateColumns: 'repeat(4, minmax(112px, 1fr))',
         overflowX: 'auto',
         paddingBottom: '3px',
@@ -76,14 +74,14 @@ const isActive = style({
       background:
         'linear-gradient(135deg, var(--accent-muted), color-mix(in srgb, var(--accent-muted) 34%, transparent))',
       borderColor: 'color-mix(in srgb, var(--accent) 28%, var(--border-subtle))',
-      boxShadow: 'inset 2px 0 0 var(--accent)',
+      boxShadow: 'inset 0 -2px 0 var(--accent)',
     },
     [`${textToolboxMenu} button&[data-button-variant='ghost']:hover`]: {
       color: 'var(--text-primary)',
       background:
         'linear-gradient(135deg, var(--accent-muted), color-mix(in srgb, var(--accent-muted) 34%, transparent))',
       borderColor: 'color-mix(in srgb, var(--accent) 28%, var(--border-subtle))',
-      boxShadow: 'inset 2px 0 0 var(--accent)',
+      boxShadow: 'inset 0 -2px 0 var(--accent)',
     },
   },
 })
@@ -111,33 +109,40 @@ const textToolboxMenuIndex = style({
   fontSize: '8px',
   fontWeight: '900',
   fontVariantNumeric: 'tabular-nums',
-})
-
-const textToolboxPrivacy = style([
-  {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '7px',
-    marginTop: 'auto',
-    padding: '14px 5px 2px',
-    color: 'var(--text-tertiary)',
-    fontSize: '8px',
-    fontWeight: '800',
-    letterSpacing: '0.08em',
-    textTransform: 'uppercase',
-  },
-  {
-    '@container': {
-      'text-toolbox (max-width: 780px)': {
-        display: 'none',
-      },
+  '@container': {
+    'text-toolbox (max-width: 620px)': {
+      display: 'none',
     },
   },
-])
+})
+
+const textToolboxPrivacy = style({
+  display: 'flex',
+  alignItems: 'center',
+  gap: '7px',
+  padding: '0 4px',
+  color: 'var(--text-tertiary)',
+  fontSize: '8px',
+  fontWeight: '800',
+  letterSpacing: '0.08em',
+  textTransform: 'uppercase',
+  whiteSpace: 'nowrap',
+  '@container': {
+    'text-toolbox (max-width: 900px)': {
+      display: 'none',
+    },
+  },
+})
 
 const textToolboxWorkspace = style({
   minWidth: '0',
+  overflow: 'hidden',
   padding: 'clamp(18px, 2.8vw, 26px)',
+  background:
+    'radial-gradient(circle at 4% 0%, var(--accent-muted), transparent 25%), linear-gradient(145deg, var(--surface-elevated), color-mix(in srgb, var(--surface-elevated) 96%, var(--accent) 4%))',
+  border: '1px solid color-mix(in srgb, var(--accent) 14%, var(--border-subtle))',
+  borderRadius: 'calc(var(--panel-radius) + 2px)',
+  boxShadow: 'var(--surface-shadow)',
   containerName: 'text-tools-view',
   containerType: 'inline-size',
 })
@@ -245,7 +250,7 @@ const textToolboxFooter = style({
 
 export const styles = {
   'text-toolbox': textToolbox,
-  'text-toolbox-sidebar': textToolboxSidebar,
+  'text-toolbox-toolbar': textToolboxToolbar,
   'text-toolbox-brand': textToolboxBrand,
   'text-toolbox-menu': textToolboxMenu,
   'is-active': isActive,

@@ -1,6 +1,7 @@
 package settings
 
 import (
+	"bytes"
 	"encoding/json"
 	"errors"
 	"testing"
@@ -144,5 +145,125 @@ func TestServiceMigratesVersionOneButtonSize(t *testing.T) {
 	}
 	if persisted.Version != CurrentVersion || persisted.Appearance.ButtonSize != ButtonSizeMD {
 		t.Fatalf("migrated settings were not persisted: %+v", persisted.Appearance)
+	}
+}
+
+func TestServiceMigratesVersionTwoSettings(t *testing.T) {
+	t.Parallel()
+
+	store := newMemoryStore()
+	store.data[storageKey] = []byte(`{
+  "version": 2,
+  "appearance": {
+    "themeMode": "system",
+    "accent": "green",
+    "density": "comfortable",
+    "buttonSize": "md",
+    "fontScale": 1
+  },
+  "notifications": {
+    "enabled": true,
+    "showPreview": true,
+    "doNotDisturb": false
+  },
+  "window": {
+    "closeBehavior": "quit",
+    "alwaysOnTop": false,
+    "rememberBounds": true
+  }
+}`)
+
+	service := NewService(store)
+	if err := service.Initialize(); err != nil {
+		t.Fatalf("initialize migrated settings: %v", err)
+	}
+
+	current := service.Get()
+	if current.Version != CurrentVersion {
+		t.Fatalf("expected version %d, got %d", CurrentVersion, current.Version)
+	}
+}
+
+func TestServiceMigratesVersionThreeLegacySettings(t *testing.T) {
+	t.Parallel()
+
+	store := newMemoryStore()
+	store.data[storageKey] = []byte(`{
+  "version": 3,
+  "appearance": {
+    "themeMode": "system",
+    "accent": "green",
+    "density": "comfortable",
+    "buttonSize": "md",
+    "fontScale": 1
+  },
+  "notifications": {
+    "enabled": true,
+    "showPreview": true,
+    "doNotDisturb": false
+  },
+  "window": {
+    "closeBehavior": "quit",
+    "alwaysOnTop": false,
+    "rememberBounds": true
+  },
+  "floatingClock": {
+    "enabled": true
+  }
+}`)
+
+	service := NewService(store)
+	if err := service.Initialize(); err != nil {
+		t.Fatalf("initialize migrated settings: %v", err)
+	}
+
+	current := service.Get()
+	if current.Version != CurrentVersion {
+		t.Fatalf("expected version %d, got %d", CurrentVersion, current.Version)
+	}
+	if bytes.Contains(store.data[storageKey], []byte(`"floatingClock"`)) {
+		t.Fatal("expected legacy floating clock settings to be removed")
+	}
+}
+
+func TestServiceMigratesVersionFourLegacySettings(t *testing.T) {
+	t.Parallel()
+
+	store := newMemoryStore()
+	store.data[storageKey] = []byte(`{
+  "version": 4,
+  "appearance": {
+    "themeMode": "system",
+    "accent": "green",
+    "density": "comfortable",
+    "buttonSize": "md",
+    "fontScale": 1
+  },
+  "notifications": {
+    "enabled": true,
+    "showPreview": true,
+    "doNotDisturb": false
+  },
+  "window": {
+    "closeBehavior": "quit",
+    "alwaysOnTop": false,
+    "rememberBounds": true
+  },
+  "floatingClock": {
+    "enabled": true,
+    "backgroundOpacity": 0.45
+  }
+}`)
+
+	service := NewService(store)
+	if err := service.Initialize(); err != nil {
+		t.Fatalf("initialize migrated settings: %v", err)
+	}
+
+	if current := service.Get(); current.Version != CurrentVersion {
+		t.Fatalf("expected version %d, got %d", CurrentVersion, current.Version)
+	}
+	if bytes.Contains(store.data[storageKey], []byte(`"floatingClock"`)) {
+		t.Fatal("expected legacy floating clock settings to be removed")
 	}
 }

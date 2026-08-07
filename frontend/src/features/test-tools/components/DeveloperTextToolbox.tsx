@@ -22,6 +22,8 @@ import {
   encodeBase64,
   encodeUrl,
   formatJson,
+  jsonToObjectLiteral,
+  objectLiteralToJson,
   type HashAlgorithm,
 } from '../lib/textTools'
 
@@ -50,9 +52,9 @@ const TEXT_TOOLS: TextToolDefinition[] = [
   {
     id: 'json',
     label: 'JSON 工具',
-    description: '格式化与压缩',
+    description: '对象与 JSON 互转、格式化与压缩',
     eyebrow: 'JSON / 01',
-    inputPlaceholder: '{"name":"Cull Pear","enabled":true}',
+    inputPlaceholder: "{ name: 'Cull Pear', enabled: true }",
     icon: Braces,
   },
   {
@@ -161,8 +163,18 @@ export function DeveloperTextToolbox() {
       case 'json':
         return (
           <>
-            <Button type='button' onClick={() => runTransform('JSON 美化', (input) => formatJson(input))}>
-              格式化 / 美化
+            <Button type='button' onClick={() => runTransform('对象转 JSON', objectLiteralToJson)}>
+              对象转 JSON
+            </Button>
+            <Button type='button' variant='outline' onClick={() => runTransform('JSON 转对象', jsonToObjectLiteral)}>
+              JSON 转对象
+            </Button>
+            <Button
+              type='button'
+              variant='outline'
+              onClick={() => runTransform('JSON 美化', (input) => formatJson(input))}
+            >
+              美化 JSON
             </Button>
             <Button
               type='button'
@@ -215,7 +227,7 @@ export function DeveloperTextToolbox() {
 
   return (
     <section className={cx('text-toolbox')}>
-      <aside className={cx('text-toolbox-sidebar')}>
+      <div className={cx('text-toolbox-toolbar')}>
         <header className={cx('text-toolbox-brand')}>
           <span aria-hidden='true'>
             <SquareTerminal />
@@ -260,7 +272,7 @@ export function DeveloperTextToolbox() {
           <LockKeyhole aria-hidden='true' />
           <span>Local processing</span>
         </div>
-      </aside>
+      </div>
 
       <main className={cx('text-toolbox-workspace')}>
         <header className={cx('text-toolbox-heading')}>
@@ -277,6 +289,7 @@ export function DeveloperTextToolbox() {
 
         <div className={cx('text-toolbox-operations')}>
           <div>{renderOperations()}</div>
+          {activeTool === 'json' && <small>对象文本支持单引号、无引号属性名、注释和尾随逗号，不会执行代码。</small>}
           {activeTool === 'hash' && <small>MD5 与 SHA-1 仅适合兼容性校验，不应用于密码或安全签名。</small>}
         </div>
 

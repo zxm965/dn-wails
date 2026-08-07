@@ -44,7 +44,7 @@ export interface AppSettings {
 }
 
 export const DEFAULT_SETTINGS: AppSettings = {
-  version: 2,
+  version: 5,
   appearance: {
     themeMode: 'system',
     accent: 'green',
