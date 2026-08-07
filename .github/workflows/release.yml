@@ -320,19 +320,47 @@ jobs:
           region="$(jq --raw-output '.region' <<< "$config")"
           prefix="$(jq --raw-output '.prefix' <<< "$config")"
           version_target="cos://${bucket}/${prefix}/${GITHUB_REF_NAME}/"
-          version_release_dir="$RUNNER_TEMP/cos-version-release"
-          mkdir -p "$version_release_dir"
-          find release -maxdepth 1 -type f ! -name latest.json -exec cp {} "$version_release_dir/" \;
 
-          coscli cp "$version_release_dir/" "$version_target" \
-            --recursive \
-            --endpoint "cos.${region}.myqcloud.com" \
-            --secret-id "$COS_SECRET_ID" \
-            --secret-key "$COS_SECRET_KEY" \
-            --init-skip \
-            --disable-log \
-            --bucket-type COS \
-            --meta "Cache-Control:public,max-age=31536000,immutable"
+          upload_release_file() {
+            local file_name="$1"
+            local attempt=1
+
+            while (( attempt <= 3 )); do
+              echo "Uploading $file_name to Tencent Cloud COS (attempt $attempt/3)"
+              if timeout --signal=TERM --kill-after=30s 10m \
+                coscli cp "release/$file_name" "${version_target}${file_name}" \
+                  --endpoint "cos.${region}.myqcloud.com" \
+                  --secret-id "$COS_SECRET_ID" \
+                  --secret-key "$COS_SECRET_KEY" \
+                  --init-skip \
+                  --disable-log \
+                  --bucket-type COS \
+                  --part-size 4 \
+                  --max-thread 8 \
+                  --meta "Cache-Control:public,max-age=31536000,immutable"; then
+                return 0
+              fi
+
+              if (( attempt == 3 )); then
+                echo "::error::Upload $file_name to Tencent Cloud COS failed after 3 attempts"
+                return 1
+              fi
+
+              echo "::warning::Upload $file_name failed on attempt $attempt; retrying"
+              sleep "$((attempt * 5))"
+              attempt=$((attempt + 1))
+            done
+          }
+
+          release_files=(
+            dn-wails-darwin-universal.zip
+            dn-wails-darwin-universal.dmg
+            dn-wails-windows-amd64-installer.exe
+            SHA256SUMS.txt
+          )
+          for file_name in "${release_files[@]}"; do
+            upload_release_file "$file_name"
+          done
 
           echo "Uploaded release packages to \`$version_target\`." >> "$GITHUB_STEP_SUMMARY"
 

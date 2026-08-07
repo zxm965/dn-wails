@@ -54,7 +54,7 @@ React AppUpdateProvider
 5. macOS 使用 `wails3 task darwin:package:universal` 构建 universal `.app`，再生成自动更新 ZIP 和手动安装 DMG。
 6. Windows runner 安装 NSIS 后使用 `wails3 task windows:package ARCH=amd64 INSTALL_SCOPE=user` 构建用户级安装器。
 7. 两端资源成功后先生成并暂存使用 GitHub 下载地址的兼容 `latest.json` 和 `SHA256SUMS.txt`。
-8. 重新生成使用 COS 下载地址的清单与校验文件，下载并校验固定版本的 COSCLI；版本目录仅上传安装包和 `SHA256SUMS.txt`，并清理同目录遗留的 `latest.json`。未配置前缀时使用 `dn-wails/vX.Y.Z/`。
+8. 重新生成使用 COS 下载地址的清单与校验文件，下载并校验固定版本的 COSCLI；版本目录仅上传安装包和 `SHA256SUMS.txt`，并清理同目录遗留的 `latest.json`。各文件使用分块上传，单次最多等待 10 分钟并最多重试 3 次；未配置前缀时使用 `dn-wails/vX.Y.Z/`。
 9. 恢复 GitHub 兼容清单，创建或更新 GitHub Release，保证旧客户端仍可升级；COS 版本目录上传失败时不会发布 GitHub Release。
 10. GitHub Release 成功后比较桶内现有根清单版本；仅当当前标签版本不低于现有版本时，将 COS 清单提升为 `${TENCENT_COS_PREFIX}/latest.json`，并通过公开 HTTPS 地址回读校验。
 
@@ -138,7 +138,7 @@ interface ApplicationUpdateManifest {
 - 临时 `.env.local` 使用受限权限创建并由 Go embed 写入二进制，其中保存数据库地址和拼接前缀后的完整更新基础地址；文件不进入 Git 记录，也不会主动输出到工作流日志。
 - GitHub Secret 只能保护构建前和构建过程中的值；发布后的桌面二进制可被分析，因此数据库账号必须最小权限、限制来源并支持轮换。
 - GitHub Variables 只用于公开且随环境变化的构建值；代码签名、公证和部署凭据继续使用独立 Secrets，并限制在实际需要的步骤。
-- COS 上传仅在双平台构建成功后执行；缺少密钥或更新根域名、COSCLI 下载校验失败、公开读取失败，或任一文件上传失败时，Release job 会失败。
+- COS 上传仅在双平台构建成功后执行；缺少密钥或更新根域名、COSCLI 下载校验失败、公开读取失败，或任一文件在限定次数内上传失败时，Release job 会失败。
 - COS 中的安装包和校验文件按标签保存在独立目录，不清理历史版本；重新运行同一标签的工作流会覆盖该标签目录下的同名对象，并删除该目录中遗留的 `latest.json`。
 - 重新运行低于桶内当前最新版的旧标签只更新对应版本目录，不会把根 `latest.json` 降级到旧版本。
 - GitHub Release 中保留 GitHub 下载地址的兼容清单，COS 中保存 COS 下载地址的正式清单；新客户端只使用 COS。
