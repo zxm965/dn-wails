@@ -139,6 +139,7 @@ jobs:
           version="${GITHUB_REF_NAME#v}"
           ldflags="-X dn-wails/internal/buildinfo.Version=$version -X dn-wails/internal/buildinfo.Repository=$GITHUB_REPOSITORY"
           wails3 task darwin:package:universal LD_FLAGS="$ldflags"
+          ditto -c -k --sequesterRsrc --keepParent bin/dn-wails.app bin/dn-wails-darwin-universal.zip
           hdiutil create -volname "dn-wails" -srcfolder bin/dn-wails.app -ov -format UDZO bin/dn-wails-darwin-universal.dmg
 
       - name: Build Windows installer
@@ -156,7 +157,9 @@ jobs:
         uses: actions/upload-artifact@v6
         with:
           name: ${{ matrix.artifact }}
-          path: bin/dn-wails-darwin-universal.dmg
+          path: |
+            bin/dn-wails-darwin-universal.zip
+            bin/dn-wails-darwin-universal.dmg
           if-no-files-found: error
 
       - name: Upload Windows package
@@ -352,7 +355,8 @@ jobs:
           }
 
           release_files=(
-            # GitHub generates Source code archives itself; only these application files are copied to COS.
+            # GitHub generates Source code archives itself; only these application packages are copied to COS.
+            dn-wails-darwin-universal.zip
             dn-wails-darwin-universal.dmg
             dn-wails-windows-amd64-installer.exe
             SHA256SUMS.txt

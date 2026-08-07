@@ -29,7 +29,7 @@
 Git tag vX.Y.Z
   → GitLab 镜像同步标签到 GitHub
   → GitHub Actions
-      ├── macOS universal .dmg
+      ├── macOS universal .zip / .dmg
       ├── Windows amd64 NSIS installer
       ├── GitHub Release（安装包、更新元数据和自动 Source code 下载）
       └── 腾讯云 COS
@@ -51,10 +51,10 @@ React AppUpdateProvider
 2. 工作流校验标签、执行 Go 测试和前端格式、lint、build。
 3. 双端 build job 从 GitHub Environment `RELEASE` 读取 `secrets.DATABASE_URL` 和 `secrets.APP_UPDATE_BASE_URL`，结合可选的 `vars.TENCENT_COS_PREFIX` 生成不进入 Git 记录的临时 `.env.local`。
 4. 工作流用 `wails3 task common:update:build-assets` 同步平台元数据，并通过 linker flags 注入运行时版本和仓库。
-5. macOS 使用 `wails3 task darwin:package:universal` 构建 universal `.app`，再生成同时用于自动更新和手动安装的 DMG。
+5. macOS 使用 `wails3 task darwin:package:universal` 构建 universal `.app`，再生成供旧客户端迁移的自动更新 ZIP 和供新客户端自动更新、手动安装的 DMG。
 6. Windows runner 安装 NSIS 后使用 `wails3 task windows:package ARCH=amd64 INSTALL_SCOPE=user` 构建用户级安装器。
 7. 两端资源成功后先生成并暂存使用 GitHub 下载地址的 `latest.json` 和 `SHA256SUMS.txt`。
-8. 重新生成使用 COS 下载地址的清单与校验文件，下载并校验固定版本的 COSCLI；版本目录只按白名单上传 DMG、EXE 和 `SHA256SUMS.txt`，并清理同目录遗留的 `latest.json`。各文件使用分块上传，单次最多等待 10 分钟并最多重试 3 次；未配置前缀时使用 `dn-wails/vX.Y.Z/`。
+8. 重新生成使用 COS 下载地址的清单与校验文件，下载并校验固定版本的 COSCLI；版本目录只按白名单上传应用 ZIP、DMG、EXE 和 `SHA256SUMS.txt`，并清理同目录遗留的 `latest.json`。各文件使用分块上传，单次最多等待 10 分钟并最多重试 3 次；未配置前缀时使用 `dn-wails/vX.Y.Z/`。
 9. 恢复 GitHub 下载地址的元数据并创建或更新 GitHub Release。GitHub 自动提供的 Source code 归档不属于工作流下载产物，因此不会进入 COS 上传白名单。
 10. GitHub Release 成功后比较桶内现有根清单版本；仅当当前标签版本不低于现有版本时，将 COS 清单提升为 `${TENCENT_COS_PREFIX}/latest.json`，并通过公开 HTTPS 地址回读校验。
 
@@ -114,7 +114,8 @@ interface ApplicationUpdateManifest {
 
 ## 发布资源约定
 
-- macOS 自动更新与手动安装：`dn-wails-darwin-universal.dmg`
+- macOS 旧客户端兼容更新：`dn-wails-darwin-universal.zip`
+- macOS 新客户端自动更新与手动安装：`dn-wails-darwin-universal.dmg`
 - Windows 自动更新与手动安装：`dn-wails-windows-amd64-installer.exe`
 - 自动更新发现与资源元数据：仅位于发布前缀一级目录的 `latest.json`
 - 人工校验：`SHA256SUMS.txt`
@@ -138,9 +139,9 @@ interface ApplicationUpdateManifest {
 - GitHub Secret 只能保护构建前和构建过程中的值；发布后的桌面二进制可被分析，因此数据库账号必须最小权限、限制来源并支持轮换。
 - GitHub Variables 只用于公开且随环境变化的构建值；代码签名、公证和部署凭据继续使用独立 Secrets，并限制在实际需要的步骤。
 - COS 上传仅在双平台构建成功后执行；缺少密钥或更新根域名、COSCLI 下载校验失败、公开读取失败，或任一文件在限定次数内上传失败时，Release job 会失败。
-- COS 中的 DMG、EXE 和校验文件按标签保存在独立目录，不清理历史版本；重新运行同一标签的工作流会覆盖该标签目录下的同名对象，并删除该目录中遗留的 `latest.json`。
+- COS 中的应用 ZIP、DMG、EXE 和校验文件按标签保存在独立目录，不清理历史版本；重新运行同一标签的工作流会覆盖该标签目录下的同名对象，并删除该目录中遗留的 `latest.json`。
 - 重新运行低于桶内当前最新版的旧标签只更新对应版本目录，不会把根 `latest.json` 降级到旧版本。
-- GitHub Release 包含 DMG、EXE、`latest.json`、`SHA256SUMS.txt`，并保留 GitHub 自动生成的 Source code 归档；COS 不上传 Source code，只保存更新所需的白名单文件。
+- GitHub Release 包含应用 ZIP、DMG、EXE、`latest.json`、`SHA256SUMS.txt`，并保留 GitHub 自动生成的 Source code 归档；COS 不上传 Source code，只保存更新所需的白名单文件。
 - 当前工作流只做 macOS ad-hoc 签名，Windows 也未配置 Authenticode。正式外部分发前需要配置 Apple Developer ID/公证和 Windows 代码签名，否则系统可能显示来源或信誉警告。
 
 ## 接入与发布
@@ -166,11 +167,12 @@ git push origin v1.0.0
 ```text
 https://i96-1310103823.cos.ap-guangzhou.myqcloud.com/dn-wails/latest.json
 https://i96-1310103823.cos.ap-guangzhou.myqcloud.com/dn-wails/v1.2.3/SHA256SUMS.txt
+https://i96-1310103823.cos.ap-guangzhou.myqcloud.com/dn-wails/v1.2.3/dn-wails-darwin-universal.zip
 https://i96-1310103823.cos.ap-guangzhou.myqcloud.com/dn-wails/v1.2.3/dn-wails-darwin-universal.dmg
 https://i96-1310103823.cos.ap-guangzhou.myqcloud.com/dn-wails/v1.2.3/dn-wails-windows-amd64-installer.exe
 ```
 
-`v0.0.7` Windows 客户端仍可通过 GitHub Release 中的 EXE 自动升级；`v0.0.7` macOS 客户端仍查找已取消的 ZIP，需要首次手动安装 DMG。升级到 `v0.0.8` 后，后续检查和安装包下载全部改走 COS。
+`v0.0.7` 客户端仍可通过 GitHub Release 中的 ZIP 或 EXE 自动升级；升级到 `v0.0.8` 后，后续检查和安装包下载全部改走 COS，其中 macOS 新客户端使用 DMG。兼容 ZIP 必须至少保留到不再支持旧客户端直接升级为止。
 
 ## 验证
 
