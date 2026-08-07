@@ -93,16 +93,16 @@ export function DesktopOverview({ embedded = false }: { embedded?: boolean }) {
         <div className={cx('desktop-overview-section-heading')}>
           <div>
             <h2>版本与更新</h2>
-            <p>正式版本启动后会自动检查 GitHub Releases，也可以在这里主动检查。</p>
+            <p>正式版本启动后会自动检查腾讯云 COS，也可以在这里主动检查。</p>
           </div>
-          <span>{updateStatus?.latestVersion ? `latest ${updateStatus.latestVersion}` : 'GitHub Releases'}</span>
+          <span>{updateStatus?.latestVersion ? `latest ${updateStatus.latestVersion}` : '腾讯云 COS'}</span>
         </div>
         <div className={cx('desktop-overview-update-content')}>
           <div>
             <strong>{updateSummary}</strong>
             <small>
-              {updateInfo?.repository
-                ? `${updateInfo.repository} · ${updateInfo.platform}/${updateInfo.arch}`
+              {updateInfo?.updateBaseUrl
+                ? `${updateInfo.updateBaseUrl} · ${updateInfo.platform}/${updateInfo.arch}`
                 : '正在读取发布配置'}
             </small>
             {updateError && <p className={cx('desktop-overview-error')}>{updateError}</p>}

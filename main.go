@@ -54,9 +54,9 @@ func main() {
 	if err != nil {
 		log.Fatal("load application config: ", err)
 	}
-	databaseConfigData, err := environmentFiles.ReadFile(".env.local")
+	runtimeConfigData, err := environmentFiles.ReadFile(".env.local")
 	if err != nil && !errors.Is(err, fs.ErrNotExist) {
-		log.Fatal("read embedded database config: ", err)
+		log.Fatal("read embedded runtime config: ", err)
 	}
 
 	settingsStore, err := storage.NewFileStore(internalApplicationName)
@@ -65,7 +65,7 @@ func main() {
 	}
 	settingsService := settings.NewService(settingsStore)
 	dnService := appservice.DnService(dn.NewUnavailableService())
-	databaseURL, databaseConfigErr := dn.ResolveDatabaseURL(databaseConfigData)
+	databaseURL, databaseConfigErr := dn.ResolveDatabaseURL(runtimeConfigData)
 	if databaseConfigErr == nil {
 		postgresService, postgresErr := dn.NewPostgresService(databaseURL, settingsStore)
 		if postgresErr != nil {
@@ -88,14 +88,27 @@ func main() {
 	notificationService := notification.NewService(notificationPlatform)
 	lifecycleService := lifecycle.NewService()
 	singleInstanceService := singleinstance.NewService()
-	applicationUpdateSource := platformappupdate.NewGitHubSource(&http.Client{Timeout: 30 * time.Second})
+	updateBaseURL, updateConfigErr := appupdate.ResolveUpdateBaseURL(runtimeConfigData)
+	var applicationUpdateSource appupdate.ReleaseSource
+	if updateConfigErr != nil {
+		log.Printf("Application update service is unavailable: %v", updateConfigErr)
+	} else {
+		applicationUpdateSource, err = platformappupdate.NewStaticSource(
+			&http.Client{Timeout: 30 * time.Second},
+			updateBaseURL,
+			buildinfo.Repository,
+		)
+		if err != nil {
+			log.Printf("Application update service is unavailable: %v", err)
+		}
+	}
 	applicationUpdateInstaller := platformappupdate.NewInstaller(internalApplicationName)
 	applicationUpdateService := appupdate.NewService(appupdate.Config{
-		AppName:    internalApplicationName,
-		Version:    buildinfo.Version,
-		Repository: buildinfo.Repository,
-		Platform:   runtime.GOOS,
-		Arch:       runtime.GOARCH,
+		AppName:       internalApplicationName,
+		Version:       buildinfo.Version,
+		UpdateBaseURL: updateBaseURL,
+		Platform:      runtime.GOOS,
+		Arch:          runtime.GOARCH,
 	}, applicationUpdateSource, applicationUpdateInstaller)
 
 	var facade *appservice.App

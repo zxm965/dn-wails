@@ -6,7 +6,7 @@ import {
 
 export interface ApplicationUpdateInfo {
   currentVersion: string
-  repository: string
+  updateBaseUrl: string
   platform: string
   arch: string
   configured: boolean
@@ -27,7 +27,7 @@ export async function getApplicationUpdateInfo(): Promise<ApplicationUpdateInfo>
   const value = await GetApplicationUpdateInfo()
   return {
     currentVersion: value.currentVersion,
-    repository: value.repository,
+    updateBaseUrl: value.updateBaseUrl,
     platform: value.platform,
     arch: value.arch,
     configured: value.configured,

@@ -19,7 +19,7 @@ type sourceStub struct {
 	downloadValue string
 }
 
-func (s *sourceStub) Latest(context.Context, string) (Release, error) {
+func (s *sourceStub) Latest(context.Context) (Release, error) {
 	return s.release, s.latestErr
 }
 
@@ -59,15 +59,15 @@ func TestServiceChecksLatestRelease(t *testing.T) {
 		Version:     "v1.3.0",
 		Name:        "Release 1.3.0",
 		Notes:       " New release notes. ",
-		URL:         "https://github.com/zxm965/dn-wails/releases/tag/v1.3.0",
+		URL:         "https://updates.example/dn-wails/v1.3.0/",
 		PublishedAt: publishedAt,
 	}}
 	service := NewService(Config{
-		AppName:    "dn-wails",
-		Version:    "1.2.3",
-		Repository: "zxm965/dn-wails",
-		Platform:   "windows",
-		Arch:       "amd64",
+		AppName:       "dn-wails",
+		Version:       "1.2.3",
+		UpdateBaseURL: "https://updates.example/dn-wails",
+		Platform:      "windows",
+		Arch:          "amd64",
 	}, source, &installerStub{supported: true})
 
 	status, err := service.Check(context.Background())
@@ -92,11 +92,11 @@ func TestServiceTreatsSameOrOlderReleaseAsCurrent(t *testing.T) {
 		t.Run(latest, func(t *testing.T) {
 			t.Parallel()
 			service := NewService(Config{
-				AppName:    "dn-wails",
-				Version:    "1.2.3",
-				Repository: "zxm965/dn-wails",
-				Platform:   "darwin",
-				Arch:       "arm64",
+				AppName:       "dn-wails",
+				Version:       "1.2.3",
+				UpdateBaseURL: "https://updates.example/dn-wails",
+				Platform:      "darwin",
+				Arch:          "arm64",
 			}, &sourceStub{release: Release{Version: latest}}, &installerStub{supported: true})
 
 			status, err := service.Check(context.Background())
@@ -127,11 +127,11 @@ func TestServiceDownloadsMatchingAssetBeforeInstallation(t *testing.T) {
 	}
 	installer := &installerStub{supported: true}
 	service := NewService(Config{
-		AppName:    "dn-wails",
-		Version:    "1.3.0",
-		Repository: "zxm965/dn-wails",
-		Platform:   "windows",
-		Arch:       "amd64",
+		AppName:       "dn-wails",
+		Version:       "1.3.0",
+		UpdateBaseURL: "https://updates.example/dn-wails",
+		Platform:      "windows",
+		Arch:          "amd64",
 	}, source, installer)
 
 	if err := service.Install(context.Background(), "v1.4.0"); err != nil {
@@ -150,11 +150,11 @@ func TestServiceRejectsChangedVersionAndMissingDigest(t *testing.T) {
 		Assets:  []Asset{{Name: "dn-wails-darwin-universal.zip"}},
 	}}
 	service := NewService(Config{
-		AppName:    "dn-wails",
-		Version:    "1.3.0",
-		Repository: "zxm965/dn-wails",
-		Platform:   "darwin",
-		Arch:       "arm64",
+		AppName:       "dn-wails",
+		Version:       "1.3.0",
+		UpdateBaseURL: "https://updates.example/dn-wails",
+		Platform:      "darwin",
+		Arch:          "arm64",
 	}, source, &installerStub{supported: true})
 
 	if err := service.Install(context.Background(), "1.3.9"); !errors.Is(err, ErrVersionChanged) {
@@ -172,22 +172,22 @@ func TestServiceDisablesDevelopmentAndUnsupportedBuilds(t *testing.T) {
 	t.Parallel()
 
 	development := NewService(Config{
-		AppName:    "dn-wails",
-		Version:    "1.2.3-dev",
-		Repository: "zxm965/dn-wails",
-		Platform:   "darwin",
-		Arch:       "arm64",
+		AppName:       "dn-wails",
+		Version:       "1.2.3-dev",
+		UpdateBaseURL: "https://updates.example/dn-wails",
+		Platform:      "darwin",
+		Arch:          "arm64",
 	}, &sourceStub{}, &installerStub{supported: true})
 	if development.Info().Configured {
 		t.Fatal("expected development version not to enable updates")
 	}
 
 	unsupported := NewService(Config{
-		AppName:    "dn-wails",
-		Version:    "1.0.0",
-		Repository: "zxm965/dn-wails",
-		Platform:   "linux",
-		Arch:       "amd64",
+		AppName:       "dn-wails",
+		Version:       "1.0.0",
+		UpdateBaseURL: "https://updates.example/dn-wails",
+		Platform:      "linux",
+		Arch:          "amd64",
 	}, &sourceStub{}, &installerStub{supported: false})
 	info := unsupported.Info()
 	if !info.Configured || info.CanInstall {

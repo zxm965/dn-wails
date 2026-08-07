@@ -16,23 +16,13 @@ import (
 	coreupdate "dn-wails/internal/appupdate"
 )
 
-func TestGitHubSourceLoadsLatestRelease(t *testing.T) {
+func TestStaticSourceLoadsLatestRelease(t *testing.T) {
 	t.Parallel()
 
 	var server *httptest.Server
-	server = httptest.NewServer(http.HandlerFunc(func(response http.ResponseWriter, request *http.Request) {
+	server = httptest.NewTLSServer(http.HandlerFunc(func(response http.ResponseWriter, request *http.Request) {
 		switch request.URL.Path {
-		case "/zxm965/dn-wails/releases/latest":
-			if request.Method != http.MethodHead {
-				t.Fatalf("expected HEAD latest release request, got %s", request.Method)
-			}
-			http.Redirect(response, request, server.URL+"/zxm965/dn-wails/releases/tag/v1.2.0", http.StatusFound)
-		case "/zxm965/dn-wails/releases/tag/v1.2.0":
-			if request.Method != http.MethodHead {
-				t.Fatalf("expected HEAD release request, got %s", request.Method)
-			}
-			response.WriteHeader(http.StatusOK)
-		case "/zxm965/dn-wails/releases/download/v1.2.0/latest.json":
+		case "/dn-wails/latest.json":
 			if request.Method != http.MethodGet {
 				t.Fatalf("expected GET manifest request, got %s", request.Method)
 			}
@@ -51,83 +41,71 @@ func TestGitHubSourceLoadsLatestRelease(t *testing.T) {
     "digest": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
     "size": 100
   }]
-}`, server.URL+"/zxm965/dn-wails/releases/tag/v1.2.0", server.URL+"/zxm965/dn-wails/releases/download/v1.2.0/dn-wails-darwin-universal.zip")
+}`, server.URL+"/dn-wails/v1.2.0/", server.URL+"/dn-wails/v1.2.0/dn-wails-darwin-universal.zip")
 		default:
 			t.Fatalf("unexpected request path %q", request.URL.Path)
 		}
 	}))
 	defer server.Close()
 
-	source := NewGitHubSource(server.Client())
-	source.webBaseURL = server.URL
-	release, err := source.Latest(context.Background(), "zxm965/dn-wails.git")
+	source := mustStaticSource(t, server.Client(), server.URL+"/dn-wails/", "zxm965/dn-wails.git")
+	release, err := source.Latest(context.Background())
 	if err != nil {
 		t.Fatalf("load latest release: %v", err)
 	}
 	if release.Version != "1.2.0" || len(release.Assets) != 1 || release.Assets[0].Size != 100 {
 		t.Fatalf("unexpected release: %+v", release)
 	}
-	if release.URL != server.URL+"/zxm965/dn-wails/releases/tag/v1.2.0" || release.Notes != "Notes" {
+	if release.URL != server.URL+"/dn-wails/v1.2.0/" || release.Notes != "Notes" {
 		t.Fatalf("unexpected release metadata: %+v", release)
 	}
 }
 
-func TestGitHubSourceRejectsMismatchedManifest(t *testing.T) {
+func TestStaticSourceRejectsMismatchedManifest(t *testing.T) {
 	t.Parallel()
 
-	var server *httptest.Server
-	server = httptest.NewServer(http.HandlerFunc(func(response http.ResponseWriter, request *http.Request) {
-		switch request.URL.Path {
-		case "/zxm965/dn-wails/releases/latest":
-			http.Redirect(response, request, server.URL+"/zxm965/dn-wails/releases/tag/v1.2.0", http.StatusFound)
-		case "/zxm965/dn-wails/releases/tag/v1.2.0":
-			response.WriteHeader(http.StatusOK)
-		case "/zxm965/dn-wails/releases/download/v1.2.0/latest.json":
-			fmt.Fprintf(response, `{
+	server := httptest.NewTLSServer(http.HandlerFunc(func(response http.ResponseWriter, _ *http.Request) {
+		fmt.Fprintf(response, `{
   "schemaVersion": 1,
   "repository": "other/repository",
   "version": "1.2.0",
-  "releaseUrl": %q,
+  "releaseUrl": "https://updates.example/dn-wails/v1.2.0/",
   "assets": [{
     "name": "dn-wails-darwin-universal.zip",
-    "url": %q,
+    "url": "https://updates.example/dn-wails/v1.2.0/dn-wails-darwin-universal.zip",
     "digest": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
     "size": 100
   }]
-}`, server.URL+"/zxm965/dn-wails/releases/tag/v1.2.0", server.URL+"/zxm965/dn-wails/releases/download/v1.2.0/dn-wails-darwin-universal.zip")
-		default:
-			t.Fatalf("unexpected request path %q", request.URL.Path)
-		}
+}`)
 	}))
 	defer server.Close()
 
-	source := NewGitHubSource(server.Client())
-	source.webBaseURL = server.URL
-	_, err := source.Latest(context.Background(), "zxm965/dn-wails")
+	source := mustStaticSource(t, server.Client(), server.URL+"/dn-wails", "zxm965/dn-wails")
+	_, err := source.Latest(context.Background())
 	if err == nil || !strings.Contains(err.Error(), "repository mismatch") {
 		t.Fatalf("expected manifest repository mismatch, got %v", err)
 	}
 }
 
-func TestGitHubSourceReportsMissingRelease(t *testing.T) {
+func TestStaticSourceReportsMissingRelease(t *testing.T) {
 	t.Parallel()
 
-	server := httptest.NewServer(http.NotFoundHandler())
+	server := httptest.NewTLSServer(http.NotFoundHandler())
 	defer server.Close()
-	source := NewGitHubSource(server.Client())
-	source.webBaseURL = server.URL
-	_, err := source.Latest(context.Background(), "zxm965/dn-wails")
+	source := mustStaticSource(t, server.Client(), server.URL+"/dn-wails", "zxm965/dn-wails")
+	_, err := source.Latest(context.Background())
 	if !errors.Is(err, coreupdate.ErrNoRelease) {
 		t.Fatalf("expected no release error, got %v", err)
 	}
 }
 
-func TestGitHubSourceRejectsUnsafeManifestAssets(t *testing.T) {
+func TestStaticSourceRejectsUnsafeManifestAssets(t *testing.T) {
 	t.Parallel()
 
+	source := mustStaticSource(t, nil, "https://updates.example/dn-wails", "zxm965/dn-wails")
 	baseAsset := releaseManifestAsset{
 		Name:   "dn-wails-darwin-universal.zip",
-		URL:    "https://github.com/zxm965/dn-wails/releases/download/v1.2.0/dn-wails-darwin-universal.zip",
+		URL:    "https://updates.example/dn-wails/v1.2.0/dn-wails-darwin-universal.zip",
 		Digest: "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
 		Size:   100,
 	}
@@ -135,7 +113,7 @@ func TestGitHubSourceRejectsUnsafeManifestAssets(t *testing.T) {
 		SchemaVersion: 1,
 		Repository:    "zxm965/dn-wails",
 		Version:       "1.2.0",
-		ReleaseURL:    "https://github.com/zxm965/dn-wails/releases/tag/v1.2.0",
+		ReleaseURL:    "https://updates.example/dn-wails/v1.2.0/",
 		Assets:        []releaseManifestAsset{baseAsset},
 	}
 
@@ -163,14 +141,14 @@ func TestGitHubSourceRejectsUnsafeManifestAssets(t *testing.T) {
 			manifest := baseManifest
 			manifest.Assets = append([]releaseManifestAsset(nil), baseManifest.Assets...)
 			mutate(&manifest)
-			if _, err := NewGitHubSource(nil).releaseFromManifest("zxm965/dn-wails", "zxm965", "dn-wails", "v1.2.0", manifest); err == nil {
+			if _, err := source.releaseFromManifest(manifest); err == nil {
 				t.Fatal("expected unsafe manifest to be rejected")
 			}
 		})
 	}
 }
 
-func TestGitHubSourceDownloadsAndVerifiesAsset(t *testing.T) {
+func TestStaticSourceDownloadsAndVerifiesAsset(t *testing.T) {
 	t.Parallel()
 
 	payload := []byte("verified update")
@@ -181,11 +159,11 @@ func TestGitHubSourceDownloadsAndVerifiesAsset(t *testing.T) {
 	}))
 	defer server.Close()
 
-	source := NewGitHubSource(server.Client())
+	source := mustStaticSource(t, server.Client(), server.URL+"/dn-wails", "zxm965/dn-wails")
 	destination := filepath.Join(t.TempDir(), "update.zip")
 	err := source.Download(context.Background(), coreupdate.Asset{
 		Name:        "update.zip",
-		DownloadURL: server.URL,
+		DownloadURL: server.URL + "/dn-wails/v1.2.0/update.zip",
 		Digest:      "sha256:" + hex.EncodeToString(digest[:]),
 		Size:        int64(len(payload)),
 	}, destination)
@@ -201,7 +179,7 @@ func TestGitHubSourceDownloadsAndVerifiesAsset(t *testing.T) {
 	}
 }
 
-func TestGitHubSourceRejectsDigestMismatch(t *testing.T) {
+func TestStaticSourceRejectsDigestMismatchAndExternalURL(t *testing.T) {
 	t.Parallel()
 
 	payload := []byte("tampered update")
@@ -210,10 +188,11 @@ func TestGitHubSourceRejectsDigestMismatch(t *testing.T) {
 	}))
 	defer server.Close()
 
+	source := mustStaticSource(t, server.Client(), server.URL+"/dn-wails", "zxm965/dn-wails")
 	destination := filepath.Join(t.TempDir(), "update.zip")
-	err := NewGitHubSource(server.Client()).Download(context.Background(), coreupdate.Asset{
+	err := source.Download(context.Background(), coreupdate.Asset{
 		Name:        "update.zip",
-		DownloadURL: server.URL,
+		DownloadURL: server.URL + "/dn-wails/v1.2.0/update.zip",
 		Digest:      "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
 		Size:        int64(len(payload)),
 	}, destination)
@@ -223,4 +202,23 @@ func TestGitHubSourceRejectsDigestMismatch(t *testing.T) {
 	if _, statErr := os.Stat(destination); !os.IsNotExist(statErr) {
 		t.Fatalf("expected invalid download to be removed, got %v", statErr)
 	}
+
+	err = source.Download(context.Background(), coreupdate.Asset{
+		Name:        "update.zip",
+		DownloadURL: "https://example.com/update.zip",
+		Digest:      "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+		Size:        int64(len(payload)),
+	}, filepath.Join(t.TempDir(), "external.zip"))
+	if err == nil || !strings.Contains(err.Error(), "outside configured update source") {
+		t.Fatalf("expected external URL rejection, got %v", err)
+	}
+}
+
+func mustStaticSource(t *testing.T, client *http.Client, baseURL string, repository string) *StaticSource {
+	t.Helper()
+	source, err := NewStaticSource(client, baseURL, repository)
+	if err != nil {
+		t.Fatalf("create static update source: %v", err)
+	}
+	return source
 }

@@ -3,6 +3,9 @@ import { createReadStream } from 'node:fs'
 import { lstat, writeFile } from 'node:fs/promises'
 import { resolve } from 'node:path'
 
+import { resolveCOSReleaseConfig } from './cos-release-config.mjs'
+import { updateObjectURL } from './update-base-url.mjs'
+
 const maximumAssetSize = 1024 * 1024 * 1024
 const assetNames = [
   'dn-wails-darwin-universal.dmg',
@@ -13,6 +16,10 @@ const assetNames = [
 const tag = process.argv[2]?.trim() ?? ''
 const repository = process.argv[3]?.trim() ?? ''
 const releaseDirectory = resolve(process.argv[4]?.trim() || 'release')
+const updateBaseURLInput = process.argv[5]?.trim() ?? ''
+const updateBaseURL = updateBaseURLInput
+  ? resolveCOSReleaseConfig(updateBaseURLInput, process.argv[6]?.trim() || 'dn-wails').updateBaseURL
+  : ''
 
 const versionMatch = tag.match(/^v(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)$/)
 if (!versionMatch) throw new Error(`Release tag must use vMAJOR.MINOR.PATCH, received: ${tag || '(empty)'}`)
@@ -38,7 +45,9 @@ for (const name of assetNames) {
   for await (const chunk of createReadStream(filePath)) hash.update(chunk)
   assets.push({
     name,
-    url: `https://github.com/${repository}/releases/download/${tag}/${encodeURIComponent(name)}`,
+    url: updateBaseURL
+      ? updateObjectURL(updateBaseURL, tag, name)
+      : `https://github.com/${repository}/releases/download/${tag}/${encodeURIComponent(name)}`,
     digest: `sha256:${hash.digest('hex')}`,
     size: fileInfo.size,
   })
@@ -50,7 +59,7 @@ const manifest = {
   version: tag.slice(1),
   name: tag,
   notes: '',
-  releaseUrl: `https://github.com/${repository}/releases/tag/${tag}`,
+  releaseUrl: updateBaseURL ? `${updateObjectURL(updateBaseURL, tag)}/` : `https://github.com/${repository}/releases/tag/${tag}`,
   publishedAt,
   assets,
 }

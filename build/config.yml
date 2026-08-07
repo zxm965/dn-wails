@@ -7,7 +7,7 @@ info:
   description: 'Cull Pear desktop application'
   copyright: '© 2026, 10958'
   comments: 'Built with Wails v3'
-  version: '0.0.7'
+  version: '0.0.8'
 
 dev_mode:
   root_path: .

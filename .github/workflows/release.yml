@@ -124,31 +124,13 @@ jobs:
           node scripts/configure-release.mjs "${{ github.ref_name }}"
           wails3 task common:update:build-assets
 
-      - name: Prepare embedded database configuration
+      - name: Prepare embedded runtime configuration
         shell: bash
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
-        run: |
-          node --input-type=module <<'NODE'
-          import { writeFile } from 'node:fs/promises'
-
-          const databaseURL = process.env.DATABASE_URL?.trim() ?? ''
-          if (!databaseURL) throw new Error('DATABASE_URL is required')
-          if (databaseURL.length > 8192) throw new Error('DATABASE_URL cannot exceed 8192 characters')
-          if (Array.from(databaseURL).some((character) => {
-            const codePoint = character.codePointAt(0)
-            return codePoint !== undefined && (
-              codePoint <= 0x1f ||
-              (codePoint >= 0x7f && codePoint <= 0x9f) ||
-              codePoint === 0x2028 ||
-              codePoint === 0x2029
-            )
-          })) {
-            throw new Error('DATABASE_URL cannot contain control characters')
-          }
-
-          await writeFile('.env.local', `DATABASE_URL=${databaseURL}\n`, { encoding: 'utf8', mode: 0o600 })
-          NODE
+          APP_UPDATE_BASE_URL: ${{ secrets.APP_UPDATE_BASE_URL }}
+          TENCENT_COS_PREFIX: ${{ vars.TENCENT_COS_PREFIX }}
+        run: node scripts/prepare-release-environment.mjs
 
       - name: Build macOS application
         if: runner.os == 'macOS'
@@ -189,9 +171,13 @@ jobs:
           if-no-files-found: error
 
   release:
-    name: Publish GitHub Release
+    name: Publish release
     needs: build
     runs-on: ubuntu-latest
+    environment: DATABASE
+    env:
+      COSCLI_VERSION: v1.0.8
+      COSCLI_LINUX_AMD64_SHA256: 7165f2ae16c5f7ac495864c963ca574a76e04ec72680d7bc8a8eee3234d8cf91
     steps:
       - name: Check out source
         uses: actions/checkout@v7
@@ -207,14 +193,102 @@ jobs:
           path: release
           merge-multiple: true
 
-      - name: Generate update manifest
+      - name: Generate GitHub compatibility manifest
         run: node scripts/generate-update-manifest.mjs "$GITHUB_REF_NAME" "$GITHUB_REPOSITORY" release
 
-      - name: Generate checksums
+      - name: Generate GitHub compatibility checksums
         shell: bash
-        run: sha256sum release/* > release/SHA256SUMS.txt
+        run: |
+          set -euo pipefail
+          find release -maxdepth 1 -type f ! -name SHA256SUMS.txt -print0 | sort -z | xargs -0 sha256sum > release/SHA256SUMS.txt
+          mkdir -p "$RUNNER_TEMP/github-release-metadata"
+          cp release/latest.json release/SHA256SUMS.txt "$RUNNER_TEMP/github-release-metadata/"
 
-      - name: Create or update release
+      - name: Validate Tencent Cloud COS configuration
+        shell: bash
+        env:
+          COS_SECRET_ID: ${{ secrets.TENCENT_SECRET_ID }}
+          COS_SECRET_KEY: ${{ secrets.TENCENT_SECRET_KEY }}
+          APP_UPDATE_BASE_URL: ${{ secrets.APP_UPDATE_BASE_URL }}
+          COS_PREFIX: ${{ vars.TENCENT_COS_PREFIX }}
+        run: |
+          set -euo pipefail
+
+          if [[ -z "$COS_SECRET_ID" ]]; then
+            echo "::error::GitHub Secret TENCENT_SECRET_ID is required"
+            exit 1
+          fi
+          if [[ -z "$COS_SECRET_KEY" ]]; then
+            echo "::error::GitHub Secret TENCENT_SECRET_KEY is required"
+            exit 1
+          fi
+          node scripts/print-cos-release-config.mjs "$APP_UPDATE_BASE_URL" "${COS_PREFIX:-dn-wails}" >/dev/null
+
+      - name: Generate Tencent Cloud COS update manifest
+        shell: bash
+        env:
+          APP_UPDATE_BASE_URL: ${{ secrets.APP_UPDATE_BASE_URL }}
+          COS_PREFIX: ${{ vars.TENCENT_COS_PREFIX }}
+        run: |
+          set -euo pipefail
+          node scripts/generate-update-manifest.mjs \
+            "$GITHUB_REF_NAME" \
+            "$GITHUB_REPOSITORY" \
+            release \
+            "$APP_UPDATE_BASE_URL" \
+            "${COS_PREFIX:-dn-wails}"
+          find release -maxdepth 1 -type f ! -name SHA256SUMS.txt -print0 | sort -z | xargs -0 sha256sum > release/SHA256SUMS.txt
+          mkdir -p "$RUNNER_TEMP/cos-release-metadata"
+          cp release/latest.json "$RUNNER_TEMP/cos-release-metadata/latest.json"
+
+      - name: Install Tencent Cloud COSCLI
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          install_dir="$RUNNER_TEMP/coscli"
+          coscli_path="$install_dir/coscli"
+          mkdir -p "$install_dir"
+          curl --fail --location --retry 3 --silent --show-error \
+            "https://github.com/tencentyun/coscli/releases/download/${COSCLI_VERSION}/coscli-${COSCLI_VERSION}-linux-amd64" \
+            --output "$coscli_path"
+          echo "$COSCLI_LINUX_AMD64_SHA256  $coscli_path" | sha256sum --check
+          chmod 755 "$coscli_path"
+          echo "$install_dir" >> "$GITHUB_PATH"
+
+      - name: Upload version packages to Tencent Cloud COS
+        shell: bash
+        env:
+          COS_SECRET_ID: ${{ secrets.TENCENT_SECRET_ID }}
+          COS_SECRET_KEY: ${{ secrets.TENCENT_SECRET_KEY }}
+          APP_UPDATE_BASE_URL: ${{ secrets.APP_UPDATE_BASE_URL }}
+          COS_PREFIX: ${{ vars.TENCENT_COS_PREFIX }}
+        run: |
+          set -euo pipefail
+
+          config="$(node scripts/print-cos-release-config.mjs "$APP_UPDATE_BASE_URL" "${COS_PREFIX:-dn-wails}")"
+          bucket="$(jq --raw-output '.bucket' <<< "$config")"
+          region="$(jq --raw-output '.region' <<< "$config")"
+          prefix="$(jq --raw-output '.prefix' <<< "$config")"
+          version_target="cos://${bucket}/${prefix}/${GITHUB_REF_NAME}/"
+
+          coscli cp release/ "$version_target" \
+            --recursive \
+            --endpoint "cos.${region}.myqcloud.com" \
+            --secret-id "$COS_SECRET_ID" \
+            --secret-key "$COS_SECRET_KEY" \
+            --init-skip \
+            --disable-log \
+            --bucket-type COS \
+            --meta "Cache-Control:public,max-age=31536000,immutable"
+
+          echo "Uploaded release packages to \`$version_target\`." >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Restore GitHub compatibility metadata
+        shell: bash
+        run: cp "$RUNNER_TEMP/github-release-metadata/latest.json" "$RUNNER_TEMP/github-release-metadata/SHA256SUMS.txt" release/
+
+      - name: Create or update GitHub release
         shell: bash
         env:
           GH_TOKEN: ${{ github.token }}
@@ -224,3 +298,70 @@ jobs:
           else
             gh release create "$GITHUB_REF_NAME" release/* --verify-tag --generate-notes --title "$GITHUB_REF_NAME"
           fi
+
+      - name: Promote latest Tencent Cloud COS manifest
+        shell: bash
+        env:
+          COS_SECRET_ID: ${{ secrets.TENCENT_SECRET_ID }}
+          COS_SECRET_KEY: ${{ secrets.TENCENT_SECRET_KEY }}
+          APP_UPDATE_BASE_URL: ${{ secrets.APP_UPDATE_BASE_URL }}
+          COS_PREFIX: ${{ vars.TENCENT_COS_PREFIX }}
+        run: |
+          set -euo pipefail
+
+          config="$(node scripts/print-cos-release-config.mjs "$APP_UPDATE_BASE_URL" "${COS_PREFIX:-dn-wails}")"
+          bucket="$(jq --raw-output '.bucket' <<< "$config")"
+          region="$(jq --raw-output '.region' <<< "$config")"
+          prefix="$(jq --raw-output '.prefix' <<< "$config")"
+          update_base_url="$(jq --raw-output '.updateBaseURL' <<< "$config")"
+          latest_target="cos://${bucket}/${prefix}/latest.json"
+          candidate_manifest="$RUNNER_TEMP/cos-release-metadata/latest.json"
+          current_manifest="$RUNNER_TEMP/current-update-manifest.json"
+          latest_status="$(curl \
+            --max-filesize 2097152 \
+            --output "$current_manifest" \
+            --proto '=https' \
+            --silent \
+            --show-error \
+            --write-out '%{http_code}' \
+            "${update_base_url}/latest.json?github_run_id=${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}")"
+
+          promote_latest=true
+          case "$latest_status" in
+            200)
+              promote_latest="$(node scripts/should-promote-update-manifest.mjs "$GITHUB_REF_NAME" "$current_manifest" "$GITHUB_REPOSITORY")"
+              ;;
+            404)
+              ;;
+            *)
+              echo "::error::Read current COS update manifest failed with HTTP status $latest_status"
+              exit 1
+              ;;
+          esac
+
+          if [[ "$promote_latest" == "true" ]]; then
+            coscli cp "$candidate_manifest" "$latest_target" \
+              --endpoint "cos.${region}.myqcloud.com" \
+              --secret-id "$COS_SECRET_ID" \
+              --secret-key "$COS_SECRET_KEY" \
+              --init-skip \
+              --disable-log \
+              --bucket-type COS \
+              --meta "Cache-Control:no-cache"
+
+            published_manifest="$RUNNER_TEMP/published-update-manifest.json"
+            curl \
+              --fail \
+              --max-filesize 2097152 \
+              --proto '=https' \
+              --retry 5 \
+              --retry-all-errors \
+              --retry-delay 2 \
+              --silent \
+              --show-error \
+              "${update_base_url}/latest.json?github_run_id=${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}-verify" \
+              --output "$published_manifest"
+            cmp "$candidate_manifest" "$published_manifest"
+          fi
+
+          echo "Update manifest: \`${update_base_url}/latest.json\` (promoted: \`$promote_latest\`)." >> "$GITHUB_STEP_SUMMARY"
