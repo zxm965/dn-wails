@@ -49,7 +49,7 @@ React AppUpdateProvider
 
 1. 推送 `v1.2.3` 形式的标签。
 2. 工作流校验标签、执行 Go 测试和前端格式、lint、build。
-3. 双端 build job 从 GitHub Environment `DATABASE` 读取 `secrets.DATABASE_URL` 和 `secrets.APP_UPDATE_BASE_URL`，结合可选的 `vars.TENCENT_COS_PREFIX` 生成不进入 Git 记录的临时 `.env.local`。
+3. 双端 build job 从 GitHub Environment `RELEASE` 读取 `secrets.DATABASE_URL` 和 `secrets.APP_UPDATE_BASE_URL`，结合可选的 `vars.TENCENT_COS_PREFIX` 生成不进入 Git 记录的临时 `.env.local`。
 4. 工作流用 `wails3 task common:update:build-assets` 同步平台元数据，并通过 linker flags 注入运行时版本和仓库。
 5. macOS 使用 `wails3 task darwin:package:universal` 构建 universal `.app`，再生成自动更新 ZIP 和手动安装 DMG。
 6. Windows runner 安装 NSIS 后使用 `wails3 task windows:package ARCH=amd64 INSTALL_SCOPE=user` 构建用户级安装器。
@@ -133,7 +133,7 @@ interface ApplicationUpdateManifest {
 - 下载只接受 HTTPS、声明大小不超过 1 GiB 且带 SHA-256 digest 的资源；大小或摘要不一致时删除临时文件并拒绝安装。
 - macOS 应用包所在目录必须允许当前用户写入；Windows 发布统一使用 Taskfile 的 `INSTALL_SCOPE=user`，避免自动更新请求管理员权限。
 - 同一进程只允许一个安装操作；安装前再次检查版本，避免确认期间 COS 根清单发生变化。
-- Build 与 Release job 均关联 GitHub Environment `DATABASE`；`DATABASE_URL` 或 `APP_UPDATE_BASE_URL` 缺失、格式非法时立即失败。
+- Build 与 Release job 均关联 GitHub Environment `RELEASE`；`DATABASE_URL` 或 `APP_UPDATE_BASE_URL` 缺失、格式非法时立即失败。
 - `APP_UPDATE_BASE_URL` 必须是标准 COS 根域名，例如 `https://i96-1310103823.cos.ap-guangzhou.myqcloud.com`，不得携带对象路径、凭据、查询参数或片段。
 - 临时 `.env.local` 使用受限权限创建并由 Go embed 写入二进制，其中保存数据库地址和拼接前缀后的完整更新基础地址；文件不进入 Git 记录，也不会主动输出到工作流日志。
 - GitHub Secret 只能保护构建前和构建过程中的值；发布后的桌面二进制可被分析，因此数据库账号必须最小权限、限制来源并支持轮换。
@@ -146,7 +146,7 @@ interface ApplicationUpdateManifest {
 
 ## 接入与发布
 
-发布仓库标识固定为 `zxm965/dn-wails`。项目继续以 GitLab 为主仓库时，镜像规则必须同步 Git 标签，并确保 GitHub 仓库启用 Actions、工作流拥有 `contents: write` 权限。构建和发布 job 必须能够访问 Environment `DATABASE` 中的运行配置。静态清单由 Release job 使用构建产物生成，不需要额外 GitHub API Key。构建使用锁定的 Wails v3 CLI，并重新生成 bindings。
+发布仓库标识固定为 `zxm965/dn-wails`。项目继续以 GitLab 为主仓库时，镜像规则必须同步 Git 标签，并确保 GitHub 仓库启用 Actions、工作流拥有 `contents: write` 权限。构建和发布 job 必须能够访问 Environment `RELEASE` 中的运行配置。静态清单由 Release job 使用构建产物生成，不需要额外 GitHub API Key。构建使用锁定的 Wails v3 CLI，并重新生成 bindings。
 
 腾讯云 COS 接入在 GitHub 仓库的 `Settings → Secrets and variables → Actions` 中配置：
 

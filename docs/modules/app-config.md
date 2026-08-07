@@ -36,7 +36,7 @@ DATABASE_URL='postgres://username:password@localhost:5432/database'
 | 仓库公开配置 | `APP_DISPLAY_NAME`、`APP_AUTHOR_NAME`，以及未来公开 API 地址、更新通道等 | 已提交的 `.env` | 是 |
 | GitHub Actions Variables | 随部署环境变化但本身公开的名称、URL、渠道标识 | Repository/Environment Variables，工作流通过 `vars.*` 读取 | 若注入构建则是 |
 | GitHub Actions Secrets | Apple/Windows 签名材料、公证凭据、部署 Token | Repository/Environment Secrets，工作流通过 `secrets.*` 读取 | 签名工具临时使用，不写入应用 |
-| 嵌入式运行配置 | `DATABASE_URL` | 本地 `.env.local`；正式发布使用 Environment `DATABASE` 的 `secrets.DATABASE_URL` | 是 |
+| 嵌入式运行配置 | `DATABASE_URL` | 本地 `.env.local`；正式发布使用 Environment `RELEASE` 的 `secrets.DATABASE_URL` | 是 |
 | 其他本地私密配置 | 个人 Token、测试账号 | `.env.*.local` 或操作系统密钥存储 | 默认不应进入安装包 |
 
 判断原则：凡是安装包运行时能读取到的值，最终用户也有能力提取，不能视为真正保密。`DATABASE_URL` 是当前策略中的明确例外，因此必须使用最小权限、限制网络来源和数据范围、可随时轮换的专用账号，不能使用管理员或迁移账号。
