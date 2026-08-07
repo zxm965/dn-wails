@@ -9,7 +9,6 @@ import { updateObjectURL } from './update-base-url.mjs'
 const maximumAssetSize = 1024 * 1024 * 1024
 const assetNames = [
   'dn-wails-darwin-universal.dmg',
-  'dn-wails-darwin-universal.zip',
   'dn-wails-windows-amd64-installer.exe',
 ]
 

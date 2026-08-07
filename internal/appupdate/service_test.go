@@ -147,7 +147,7 @@ func TestServiceRejectsChangedVersionAndMissingDigest(t *testing.T) {
 
 	source := &sourceStub{release: Release{
 		Version: "1.4.0",
-		Assets:  []Asset{{Name: "dn-wails-darwin-universal.zip"}},
+		Assets:  []Asset{{Name: "dn-wails-darwin-universal.dmg"}},
 	}}
 	service := NewService(Config{
 		AppName:       "dn-wails",

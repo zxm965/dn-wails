@@ -36,12 +36,12 @@ func TestStaticSourceLoadsLatestRelease(t *testing.T) {
   "releaseUrl": %q,
   "publishedAt": "2026-07-31T02:30:00Z",
   "assets": [{
-    "name": "dn-wails-darwin-universal.zip",
+    "name": "dn-wails-darwin-universal.dmg",
     "url": %q,
     "digest": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
     "size": 100
   }]
-}`, server.URL+"/dn-wails/v1.2.0/", server.URL+"/dn-wails/v1.2.0/dn-wails-darwin-universal.zip")
+}`, server.URL+"/dn-wails/v1.2.0/", server.URL+"/dn-wails/v1.2.0/dn-wails-darwin-universal.dmg")
 		default:
 			t.Fatalf("unexpected request path %q", request.URL.Path)
 		}
@@ -71,8 +71,8 @@ func TestStaticSourceRejectsMismatchedManifest(t *testing.T) {
   "version": "1.2.0",
   "releaseUrl": "https://updates.example/dn-wails/v1.2.0/",
   "assets": [{
-    "name": "dn-wails-darwin-universal.zip",
-    "url": "https://updates.example/dn-wails/v1.2.0/dn-wails-darwin-universal.zip",
+    "name": "dn-wails-darwin-universal.dmg",
+    "url": "https://updates.example/dn-wails/v1.2.0/dn-wails-darwin-universal.dmg",
     "digest": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
     "size": 100
   }]
@@ -104,8 +104,8 @@ func TestStaticSourceRejectsUnsafeManifestAssets(t *testing.T) {
 
 	source := mustStaticSource(t, nil, "https://updates.example/dn-wails", "zxm965/dn-wails")
 	baseAsset := releaseManifestAsset{
-		Name:   "dn-wails-darwin-universal.zip",
-		URL:    "https://updates.example/dn-wails/v1.2.0/dn-wails-darwin-universal.zip",
+		Name:   "dn-wails-darwin-universal.dmg",
+		URL:    "https://updates.example/dn-wails/v1.2.0/dn-wails-darwin-universal.dmg",
 		Digest: "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
 		Size:   100,
 	}

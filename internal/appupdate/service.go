@@ -149,7 +149,7 @@ func releaseAssetName(appName string, platform string, arch string) string {
 	switch platform {
 	case "darwin":
 		if arch == "amd64" || arch == "arm64" {
-			return appName + "-darwin-universal.zip"
+			return appName + "-darwin-universal.dmg"
 		}
 	case "windows":
 		if arch == "amd64" {

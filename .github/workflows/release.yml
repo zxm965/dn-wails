@@ -139,7 +139,6 @@ jobs:
           version="${GITHUB_REF_NAME#v}"
           ldflags="-X dn-wails/internal/buildinfo.Version=$version -X dn-wails/internal/buildinfo.Repository=$GITHUB_REPOSITORY"
           wails3 task darwin:package:universal LD_FLAGS="$ldflags"
-          ditto -c -k --sequesterRsrc --keepParent bin/dn-wails.app bin/dn-wails-darwin-universal.zip
           hdiutil create -volname "dn-wails" -srcfolder bin/dn-wails.app -ov -format UDZO bin/dn-wails-darwin-universal.dmg
 
       - name: Build Windows installer
@@ -157,9 +156,7 @@ jobs:
         uses: actions/upload-artifact@v6
         with:
           name: ${{ matrix.artifact }}
-          path: |
-            bin/dn-wails-darwin-universal.zip
-            bin/dn-wails-darwin-universal.dmg
+          path: bin/dn-wails-darwin-universal.dmg
           if-no-files-found: error
 
       - name: Upload Windows package
@@ -193,10 +190,10 @@ jobs:
           path: release
           merge-multiple: true
 
-      - name: Generate GitHub compatibility manifest
+      - name: Generate GitHub release manifest
         run: node scripts/generate-update-manifest.mjs "$GITHUB_REF_NAME" "$GITHUB_REPOSITORY" release
 
-      - name: Generate GitHub compatibility checksums
+      - name: Generate GitHub release checksums
         shell: bash
         run: |
           set -euo pipefail
@@ -336,7 +333,9 @@ jobs:
                   --disable-log \
                   --bucket-type COS \
                   --part-size 4 \
-                  --max-thread 8 \
+                  --thread-num 8 \
+                  --err-retry-num 5 \
+                  --err-retry-interval 2 \
                   --meta "Cache-Control:public,max-age=31536000,immutable"; then
                 return 0
               fi
@@ -353,7 +352,7 @@ jobs:
           }
 
           release_files=(
-            dn-wails-darwin-universal.zip
+            # GitHub generates Source code archives itself; only these application files are copied to COS.
             dn-wails-darwin-universal.dmg
             dn-wails-windows-amd64-installer.exe
             SHA256SUMS.txt
@@ -364,7 +363,7 @@ jobs:
 
           echo "Uploaded release packages to \`$version_target\`." >> "$GITHUB_STEP_SUMMARY"
 
-      - name: Restore GitHub compatibility metadata
+      - name: Restore GitHub release metadata
         shell: bash
         run: cp "$RUNNER_TEMP/github-release-metadata/latest.json" "$RUNNER_TEMP/github-release-metadata/SHA256SUMS.txt" release/
 

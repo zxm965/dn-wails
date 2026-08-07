@@ -70,7 +70,7 @@ wails3 task dev
 
 ## 发布与更新
 
-推送 `vMAJOR.MINOR.PATCH` 标签后，GitHub Actions 使用 Wails v3 Taskfile 构建 macOS universal ZIP/DMG 和 Windows amd64 用户级 NSIS 安装器，并生成 `latest.json` 与校验和：
+推送 `vMAJOR.MINOR.PATCH` 标签后，GitHub Actions 使用 Wails v3 Taskfile 构建 macOS universal DMG 和 Windows amd64 用户级 NSIS 安装器，并同时发布 GitHub Release 与腾讯云 COS。GitHub Release 保留平台自动生成的 Source code 下载；COS 仅上传 DMG、EXE、`SHA256SUMS.txt`，并在发布前缀一级目录保存 `latest.json`：
 
 ```bash
 git tag v1.0.0

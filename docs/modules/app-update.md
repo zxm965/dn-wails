@@ -2,7 +2,7 @@
 
 ## 模块目标
 
-以腾讯云 COS 静态资源作为正式更新源，为 macOS 与 Windows 提供版本展示、启动自动检查、手动检查、确认更新、下载校验和更新后重启能力；GitHub Releases 继续保留发布记录和旧客户端迁移入口。
+以腾讯云 COS 静态资源作为客户端正式更新源，为 macOS 与 Windows 提供版本展示、启动自动检查、手动检查、确认更新、下载校验和更新后重启能力；GitHub Release 继续保留发布记录、安装包和平台自动生成的 Source code 下载。
 
 ## 目录与职责
 
@@ -10,15 +10,15 @@
 - `scripts/resolve-development-version.mjs`：开发构建读取最近的稳定 Git 标签并追加 `-dev`，无标签时回退到 `build/config.yml`。
 - `internal/appupdate/`：版本比较、发布资源选择、更新状态和安装用例，不依赖 Wails 或具体操作系统。
 - `internal/platform/appupdate/static.go`：从配置的 COS HTTPS 地址读取静态更新清单，下载并校验资源。
-- `internal/platform/appupdate/installer_darwin.go`：解压新版 `.app`，退出当前进程后替换应用包并重新打开。
+- `internal/platform/appupdate/installer_darwin.go`：挂载新版 DMG，退出当前进程后替换应用包、卸载镜像并重新打开。
 - `internal/platform/appupdate/installer_windows.go`：退出当前进程后静默运行用户级 NSIS 安装器并重新打开应用。
 - `internal/application/update.go`：向前端暴露版本信息、检查和安装三个 Wails 用例。
 - `frontend/src/features/app-update/`：根级更新状态、启动自动检查、确认弹窗和错误反馈。
 - `frontend/src/features/test-tools/components/DesktopOverview.tsx`：展示当前版本、平台、更新状态和手动检查按钮。
-- `.github/workflows/release.yml`：标签触发的双平台质量检查、构建、GitHub Release 兼容发布、腾讯云 COS 版本归档和最新清单提升。
+- `.github/workflows/release.yml`：标签触发的双平台质量检查、构建、GitHub Release 发布、腾讯云 COS 版本归档和最新清单提升。
 - `Taskfile.yml` 与 `build/*/Taskfile.yml`：Wails v3 前端、bindings、平台构建和打包任务。
 - `scripts/configure-release.mjs`：校验 `vMAJOR.MINOR.PATCH` 标签并更新 `build/config.yml` 的平台包版本。
-- `scripts/generate-update-manifest.mjs`：计算发布资源大小和 SHA-256，分别生成 GitHub 兼容清单和 COS 更新清单。
+- `scripts/generate-update-manifest.mjs`：计算 DMG 与 EXE 的大小和 SHA-256，分别生成 GitHub 与 COS 下载地址的更新清单。
 - `scripts/cos-release-config.mjs`：从标准 COS 根域名解析桶名、地域、对象前缀和客户端更新基础地址。
 - `scripts/prepare-release-environment.mjs`：校验并生成构建期嵌入的 `.env.local`。
 - `scripts/should-promote-update-manifest.mjs`：避免重新运行旧版本时覆盖 COS 中更高版本的根清单。
@@ -29,9 +29,9 @@
 Git tag vX.Y.Z
   → GitLab 镜像同步标签到 GitHub
   → GitHub Actions
-      ├── macOS universal .zip / .dmg
+      ├── macOS universal .dmg
       ├── Windows amd64 NSIS installer
-      ├── GitHub Release（旧客户端兼容清单）
+      ├── GitHub Release（安装包、更新元数据和自动 Source code 下载）
       └── 腾讯云 COS
           ├── dn-wails/vX.Y.Z/（版本资源与校验文件）
           └── dn-wails/latest.json（稳定更新入口）
@@ -51,11 +51,11 @@ React AppUpdateProvider
 2. 工作流校验标签、执行 Go 测试和前端格式、lint、build。
 3. 双端 build job 从 GitHub Environment `RELEASE` 读取 `secrets.DATABASE_URL` 和 `secrets.APP_UPDATE_BASE_URL`，结合可选的 `vars.TENCENT_COS_PREFIX` 生成不进入 Git 记录的临时 `.env.local`。
 4. 工作流用 `wails3 task common:update:build-assets` 同步平台元数据，并通过 linker flags 注入运行时版本和仓库。
-5. macOS 使用 `wails3 task darwin:package:universal` 构建 universal `.app`，再生成自动更新 ZIP 和手动安装 DMG。
+5. macOS 使用 `wails3 task darwin:package:universal` 构建 universal `.app`，再生成同时用于自动更新和手动安装的 DMG。
 6. Windows runner 安装 NSIS 后使用 `wails3 task windows:package ARCH=amd64 INSTALL_SCOPE=user` 构建用户级安装器。
-7. 两端资源成功后先生成并暂存使用 GitHub 下载地址的兼容 `latest.json` 和 `SHA256SUMS.txt`。
-8. 重新生成使用 COS 下载地址的清单与校验文件，下载并校验固定版本的 COSCLI；版本目录仅上传安装包和 `SHA256SUMS.txt`，并清理同目录遗留的 `latest.json`。各文件使用分块上传，单次最多等待 10 分钟并最多重试 3 次；未配置前缀时使用 `dn-wails/vX.Y.Z/`。
-9. 恢复 GitHub 兼容清单，创建或更新 GitHub Release，保证旧客户端仍可升级；COS 版本目录上传失败时不会发布 GitHub Release。
+7. 两端资源成功后先生成并暂存使用 GitHub 下载地址的 `latest.json` 和 `SHA256SUMS.txt`。
+8. 重新生成使用 COS 下载地址的清单与校验文件，下载并校验固定版本的 COSCLI；版本目录只按白名单上传 DMG、EXE 和 `SHA256SUMS.txt`，并清理同目录遗留的 `latest.json`。各文件使用分块上传，单次最多等待 10 分钟并最多重试 3 次；未配置前缀时使用 `dn-wails/vX.Y.Z/`。
+9. 恢复 GitHub 下载地址的元数据并创建或更新 GitHub Release。GitHub 自动提供的 Source code 归档不属于工作流下载产物，因此不会进入 COS 上传白名单。
 10. GitHub Release 成功后比较桶内现有根清单版本；仅当当前标签版本不低于现有版本时，将 COS 清单提升为 `${TENCENT_COS_PREFIX}/latest.json`，并通过公开 HTTPS 地址回读校验。
 
 ### 检查与安装
@@ -66,8 +66,8 @@ React AppUpdateProvider
 4. 业务服务比较 `MAJOR.MINOR.PATCH`，只在远端版本更高时返回可更新状态。
 5. 自动检查和手动检查发现新版后都通过统一确认窗口询问用户，不静默安装。
 6. 用户确认后重新读取最新清单，确保确认期间版本未发生变化。
-7. 客户端按平台精确选择资源，下载后校验清单声明的字节数和 SHA-256。
-8. 校验成功后启动平台更新助手，当前应用退出，替换或安装完成后重新启动。
+7. 客户端按平台精确选择 DMG 或 EXE，下载后校验清单声明的字节数和 SHA-256。
+8. 校验成功后启动平台更新助手；macOS 挂载 DMG 并在当前应用退出后替换 `.app`，Windows 静默运行用户级安装器，完成后重新启动。
 
 ## 数据契约
 
@@ -114,8 +114,7 @@ interface ApplicationUpdateManifest {
 
 ## 发布资源约定
 
-- macOS 自动更新：`dn-wails-darwin-universal.zip`
-- macOS 手动安装：`dn-wails-darwin-universal.dmg`
+- macOS 自动更新与手动安装：`dn-wails-darwin-universal.dmg`
 - Windows 自动更新与手动安装：`dn-wails-windows-amd64-installer.exe`
 - 自动更新发现与资源元数据：仅位于发布前缀一级目录的 `latest.json`
 - 人工校验：`SHA256SUMS.txt`
@@ -139,9 +138,9 @@ interface ApplicationUpdateManifest {
 - GitHub Secret 只能保护构建前和构建过程中的值；发布后的桌面二进制可被分析，因此数据库账号必须最小权限、限制来源并支持轮换。
 - GitHub Variables 只用于公开且随环境变化的构建值；代码签名、公证和部署凭据继续使用独立 Secrets，并限制在实际需要的步骤。
 - COS 上传仅在双平台构建成功后执行；缺少密钥或更新根域名、COSCLI 下载校验失败、公开读取失败，或任一文件在限定次数内上传失败时，Release job 会失败。
-- COS 中的安装包和校验文件按标签保存在独立目录，不清理历史版本；重新运行同一标签的工作流会覆盖该标签目录下的同名对象，并删除该目录中遗留的 `latest.json`。
+- COS 中的 DMG、EXE 和校验文件按标签保存在独立目录，不清理历史版本；重新运行同一标签的工作流会覆盖该标签目录下的同名对象，并删除该目录中遗留的 `latest.json`。
 - 重新运行低于桶内当前最新版的旧标签只更新对应版本目录，不会把根 `latest.json` 降级到旧版本。
-- GitHub Release 中保留 GitHub 下载地址的兼容清单，COS 中保存 COS 下载地址的正式清单；新客户端只使用 COS。
+- GitHub Release 包含 DMG、EXE、`latest.json`、`SHA256SUMS.txt`，并保留 GitHub 自动生成的 Source code 归档；COS 不上传 Source code，只保存更新所需的白名单文件。
 - 当前工作流只做 macOS ad-hoc 签名，Windows 也未配置 Authenticode。正式外部分发前需要配置 Apple Developer ID/公证和 Windows 代码签名，否则系统可能显示来源或信誉警告。
 
 ## 接入与发布
@@ -167,12 +166,11 @@ git push origin v1.0.0
 ```text
 https://i96-1310103823.cos.ap-guangzhou.myqcloud.com/dn-wails/latest.json
 https://i96-1310103823.cos.ap-guangzhou.myqcloud.com/dn-wails/v1.2.3/SHA256SUMS.txt
-https://i96-1310103823.cos.ap-guangzhou.myqcloud.com/dn-wails/v1.2.3/dn-wails-darwin-universal.zip
 https://i96-1310103823.cos.ap-guangzhou.myqcloud.com/dn-wails/v1.2.3/dn-wails-darwin-universal.dmg
 https://i96-1310103823.cos.ap-guangzhou.myqcloud.com/dn-wails/v1.2.3/dn-wails-windows-amd64-installer.exe
 ```
 
-首个包含 COS 静态清单读取能力的版本应使用高于当前线上版本的新版本号发布。旧客户端仍会通过 GitHub Release 中的兼容 `latest.json` 下载该版本；升级完成后，后续检查和安装包下载全部改走 COS。
+`v0.0.7` Windows 客户端仍可通过 GitHub Release 中的 EXE 自动升级；`v0.0.7` macOS 客户端仍查找已取消的 ZIP，需要首次手动安装 DMG。升级到 `v0.0.8` 后，后续检查和安装包下载全部改走 COS。
 
 ## 验证
 
@@ -185,4 +183,4 @@ pnpm lint
 pnpm build
 ```
 
-实际替换 macOS `.app`、静默运行 Windows 安装器和系统签名提示必须分别在对应桌面系统上人工验证。
+实际挂载 DMG 并替换 macOS `.app`、静默运行 Windows 安装器和系统签名提示必须分别在对应桌面系统上人工验证。
