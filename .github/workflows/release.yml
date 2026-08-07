@@ -273,9 +273,14 @@ jobs:
           update_base_url="$(jq --raw-output '.updateBaseURL' <<< "$config")"
           version_manifest_target="cos://${bucket}/${prefix}/${GITHUB_REF_NAME}/latest.json"
           version_manifest_status="$(curl \
+            --connect-timeout 15 \
+            --max-time 120 \
             --max-filesize 2097152 \
             --output /dev/null \
             --proto '=https' \
+            --retry 5 \
+            --retry-all-errors \
+            --retry-delay 2 \
             --silent \
             --show-error \
             --write-out '%{http_code}' \
