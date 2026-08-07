@@ -237,7 +237,7 @@ jobs:
             release \
             "$APP_UPDATE_BASE_URL" \
             "${COS_PREFIX:-dn-wails}"
-          find release -maxdepth 1 -type f ! -name SHA256SUMS.txt -print0 | sort -z | xargs -0 sha256sum > release/SHA256SUMS.txt
+          find release -maxdepth 1 -type f ! -name latest.json ! -name SHA256SUMS.txt -print0 | sort -z | xargs -0 sha256sum > release/SHA256SUMS.txt
           mkdir -p "$RUNNER_TEMP/cos-release-metadata"
           cp release/latest.json "$RUNNER_TEMP/cos-release-metadata/latest.json"
 
@@ -256,6 +256,50 @@ jobs:
           chmod 755 "$coscli_path"
           echo "$install_dir" >> "$GITHUB_PATH"
 
+      - name: Remove legacy version manifest from Tencent Cloud COS
+        shell: bash
+        env:
+          COS_SECRET_ID: ${{ secrets.TENCENT_SECRET_ID }}
+          COS_SECRET_KEY: ${{ secrets.TENCENT_SECRET_KEY }}
+          APP_UPDATE_BASE_URL: ${{ secrets.APP_UPDATE_BASE_URL }}
+          COS_PREFIX: ${{ vars.TENCENT_COS_PREFIX }}
+        run: |
+          set -euo pipefail
+
+          config="$(node scripts/print-cos-release-config.mjs "$APP_UPDATE_BASE_URL" "${COS_PREFIX:-dn-wails}")"
+          bucket="$(jq --raw-output '.bucket' <<< "$config")"
+          region="$(jq --raw-output '.region' <<< "$config")"
+          prefix="$(jq --raw-output '.prefix' <<< "$config")"
+          update_base_url="$(jq --raw-output '.updateBaseURL' <<< "$config")"
+          version_manifest_target="cos://${bucket}/${prefix}/${GITHUB_REF_NAME}/latest.json"
+          version_manifest_status="$(curl \
+            --max-filesize 2097152 \
+            --output /dev/null \
+            --proto '=https' \
+            --silent \
+            --show-error \
+            --write-out '%{http_code}' \
+            "${update_base_url}/${GITHUB_REF_NAME}/latest.json?github_run_id=${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}-cleanup")"
+
+          case "$version_manifest_status" in
+            200)
+              coscli rm "$version_manifest_target" \
+                --force \
+                --endpoint "cos.${region}.myqcloud.com" \
+                --secret-id "$COS_SECRET_ID" \
+                --secret-key "$COS_SECRET_KEY" \
+                --init-skip \
+                --disable-log \
+                --bucket-type COS
+              ;;
+            404)
+              ;;
+            *)
+              echo "::error::Read version-scoped COS update manifest failed with HTTP status $version_manifest_status"
+              exit 1
+              ;;
+          esac
+
       - name: Upload version packages to Tencent Cloud COS
         shell: bash
         env:
@@ -271,8 +315,11 @@ jobs:
           region="$(jq --raw-output '.region' <<< "$config")"
           prefix="$(jq --raw-output '.prefix' <<< "$config")"
           version_target="cos://${bucket}/${prefix}/${GITHUB_REF_NAME}/"
+          version_release_dir="$RUNNER_TEMP/cos-version-release"
+          mkdir -p "$version_release_dir"
+          find release -maxdepth 1 -type f ! -name latest.json -exec cp {} "$version_release_dir/" \;
 
-          coscli cp release/ "$version_target" \
+          coscli cp "$version_release_dir/" "$version_target" \
             --recursive \
             --endpoint "cos.${region}.myqcloud.com" \
             --secret-id "$COS_SECRET_ID" \

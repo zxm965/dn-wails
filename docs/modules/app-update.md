@@ -33,7 +33,7 @@ Git tag vX.Y.Z
       ├── Windows amd64 NSIS installer
       ├── GitHub Release（旧客户端兼容清单）
       └── 腾讯云 COS
-          ├── dn-wails/vX.Y.Z/（版本资源与版本清单）
+          ├── dn-wails/vX.Y.Z/（版本资源与校验文件）
           └── dn-wails/latest.json（稳定更新入口）
 
 React AppUpdateProvider
@@ -54,7 +54,7 @@ React AppUpdateProvider
 5. macOS 使用 `wails3 task darwin:package:universal` 构建 universal `.app`，再生成自动更新 ZIP 和手动安装 DMG。
 6. Windows runner 安装 NSIS 后使用 `wails3 task windows:package ARCH=amd64 INSTALL_SCOPE=user` 构建用户级安装器。
 7. 两端资源成功后先生成并暂存使用 GitHub 下载地址的兼容 `latest.json` 和 `SHA256SUMS.txt`。
-8. 重新生成使用 COS 下载地址的清单与校验文件，下载并校验固定版本的 COSCLI，将资源上传到 `${TENCENT_COS_PREFIX}/vX.Y.Z/`；未配置前缀时使用 `dn-wails/vX.Y.Z/`。
+8. 重新生成使用 COS 下载地址的清单与校验文件，下载并校验固定版本的 COSCLI；版本目录仅上传安装包和 `SHA256SUMS.txt`，并清理同目录遗留的 `latest.json`。未配置前缀时使用 `dn-wails/vX.Y.Z/`。
 9. 恢复 GitHub 兼容清单，创建或更新 GitHub Release，保证旧客户端仍可升级；COS 版本目录上传失败时不会发布 GitHub Release。
 10. GitHub Release 成功后比较桶内现有根清单版本；仅当当前标签版本不低于现有版本时，将 COS 清单提升为 `${TENCENT_COS_PREFIX}/latest.json`，并通过公开 HTTPS 地址回读校验。
 
@@ -117,17 +117,17 @@ interface ApplicationUpdateManifest {
 - macOS 自动更新：`dn-wails-darwin-universal.zip`
 - macOS 手动安装：`dn-wails-darwin-universal.dmg`
 - Windows 自动更新与手动安装：`dn-wails-windows-amd64-installer.exe`
-- 自动更新发现与资源元数据：`latest.json`
+- 自动更新发现与资源元数据：仅位于发布前缀一级目录的 `latest.json`
 - 人工校验：`SHA256SUMS.txt`
 
-版本资源位于 `${APP_UPDATE_BASE_URL}/${TENCENT_COS_PREFIX}/vX.Y.Z/`，稳定发现入口位于 `${APP_UPDATE_BASE_URL}/${TENCENT_COS_PREFIX}/latest.json`。资源名是客户端与发布流水线的数据契约，修改时必须同步更新两端和本模块文档。
+版本资源和校验文件位于 `${APP_UPDATE_BASE_URL}/${TENCENT_COS_PREFIX}/vX.Y.Z/`，稳定发现入口仅位于 `${APP_UPDATE_BASE_URL}/${TENCENT_COS_PREFIX}/latest.json`，版本目录不得保存 `latest.json`。资源名是客户端与发布流水线的数据契约，修改时必须同步更新两端和本模块文档。
 
 ## 错误与边界
 
 - 开发版本为“当前稳定 Git 标签版本 + `-dev`”，例如标签 `v1.2.3` 对应 `1.2.3-dev`；开发版本只展示，不发起自动更新请求。
 - 客户端只访问构建时嵌入的 COS HTTPS 基础地址，不请求 GitHub API，也不携带腾讯云或 GitHub 凭据。
 - 版本必须是三段无前导零的稳定语义化版本；预发布标签不会进入发布流水线。
-- COS 根目录必须包含 `latest.json`，清单 schema 当前固定为 `1`，仓库标识必须匹配构建元数据，版本必须能映射到唯一的 `vX.Y.Z` 目录。
+- COS 发布前缀一级目录必须包含唯一的 `latest.json`，版本目录不得包含该清单；清单 schema 当前固定为 `1`，仓库标识必须匹配构建元数据，版本必须能映射到唯一的 `vX.Y.Z` 目录。
 - Release URL 和每个资源 URL 必须精确指向配置 COS 基础地址下的当前版本目录，资源名不得包含路径或控制字符，且不得重复。
 - 清单请求和资源下载发生重定向时，最终 URL 仍必须位于同一 HTTPS 主机和配置路径下，否则拒绝更新。
 - 下载只接受 HTTPS、声明大小不超过 1 GiB 且带 SHA-256 digest 的资源；大小或摘要不一致时删除临时文件并拒绝安装。
@@ -139,7 +139,7 @@ interface ApplicationUpdateManifest {
 - GitHub Secret 只能保护构建前和构建过程中的值；发布后的桌面二进制可被分析，因此数据库账号必须最小权限、限制来源并支持轮换。
 - GitHub Variables 只用于公开且随环境变化的构建值；代码签名、公证和部署凭据继续使用独立 Secrets，并限制在实际需要的步骤。
 - COS 上传仅在双平台构建成功后执行；缺少密钥或更新根域名、COSCLI 下载校验失败、公开读取失败，或任一文件上传失败时，Release job 会失败。
-- COS 中的对象按标签保存在独立目录，不清理历史版本；重新运行同一标签的工作流会覆盖该标签目录下的同名对象。
+- COS 中的安装包和校验文件按标签保存在独立目录，不清理历史版本；重新运行同一标签的工作流会覆盖该标签目录下的同名对象，并删除该目录中遗留的 `latest.json`。
 - 重新运行低于桶内当前最新版的旧标签只更新对应版本目录，不会把根 `latest.json` 降级到旧版本。
 - GitHub Release 中保留 GitHub 下载地址的兼容清单，COS 中保存 COS 下载地址的正式清单；新客户端只使用 COS。
 - 当前工作流只做 macOS ad-hoc 签名，Windows 也未配置 Authenticode。正式外部分发前需要配置 Apple Developer ID/公证和 Windows 代码签名，否则系统可能显示来源或信誉警告。
@@ -155,7 +155,7 @@ interface ApplicationUpdateManifest {
 - Environment Secret `APP_UPDATE_BASE_URL`：标准 COS 根域名；工作流会自动解析完整桶名和地域。当前值为 `https://i96-1310103823.cos.ap-guangzhou.myqcloud.com`。
 - 可选 Repository 或 Environment Variable `TENCENT_COS_PREFIX`：桶内发布目录，不带首尾 `/`；未配置时为 `dn-wails`。
 
-部署账号只应拥有目标桶与发布前缀所需的查询、普通上传和分块上传权限。不要把 SecretId 或 SecretKey 写入仓库、工作流明文、Issue 或聊天记录；密钥轮换后只需更新 GitHub Secrets。
+部署账号只应拥有目标桶与发布前缀所需的查询、删除、普通上传和分块上传权限，其中删除权限用于清理版本目录中遗留的 `latest.json`。不要把 SecretId 或 SecretKey 写入仓库、工作流明文、Issue 或聊天记录；密钥轮换后只需更新 GitHub Secrets。
 
 ```bash
 git tag v1.0.0
@@ -166,7 +166,7 @@ git push origin v1.0.0
 
 ```text
 https://i96-1310103823.cos.ap-guangzhou.myqcloud.com/dn-wails/latest.json
-https://i96-1310103823.cos.ap-guangzhou.myqcloud.com/dn-wails/v1.2.3/latest.json
+https://i96-1310103823.cos.ap-guangzhou.myqcloud.com/dn-wails/v1.2.3/SHA256SUMS.txt
 https://i96-1310103823.cos.ap-guangzhou.myqcloud.com/dn-wails/v1.2.3/dn-wails-darwin-universal.zip
 https://i96-1310103823.cos.ap-guangzhou.myqcloud.com/dn-wails/v1.2.3/dn-wails-darwin-universal.dmg
 https://i96-1310103823.cos.ap-guangzhou.myqcloud.com/dn-wails/v1.2.3/dn-wails-windows-amd64-installer.exe
