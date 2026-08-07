@@ -100,11 +100,6 @@ export function DesktopOverview({ embedded = false }: { embedded?: boolean }) {
         <div className={cx('desktop-overview-update-content')}>
           <div>
             <strong>{updateSummary}</strong>
-            <small>
-              {updateInfo?.updateBaseUrl
-                ? `${updateInfo.updateBaseUrl} · ${updateInfo.platform}/${updateInfo.arch}`
-                : '正在读取发布配置'}
-            </small>
             {updateError && <p className={cx('desktop-overview-error')}>{updateError}</p>}
           </div>
           <Button

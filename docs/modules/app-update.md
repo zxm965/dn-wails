@@ -14,7 +14,7 @@
 - `internal/platform/appupdate/installer_windows.go`：退出当前进程后静默运行用户级 NSIS 安装器并重新打开应用。
 - `internal/application/update.go`：向前端暴露版本信息、检查和安装三个 Wails 用例。
 - `frontend/src/features/app-update/`：根级更新状态、启动自动检查、确认弹窗和错误反馈。
-- `frontend/src/features/test-tools/components/DesktopOverview.tsx`：展示当前版本、平台、更新状态和手动检查按钮。
+- `frontend/src/features/test-tools/components/DesktopOverview.tsx`：展示当前版本、更新状态和手动检查按钮，不展示更新源地址等发布配置。
 - `.github/workflows/release.yml`：标签触发的双平台质量检查、构建、GitHub Release 发布、腾讯云 COS 版本归档和最新清单提升。
 - `Taskfile.yml` 与 `build/*/Taskfile.yml`：Wails v3 前端、bindings、平台构建和打包任务。
 - `scripts/configure-release.mjs`：校验 `vMAJOR.MINOR.PATCH` 标签并更新 `build/config.yml` 的平台包版本。
