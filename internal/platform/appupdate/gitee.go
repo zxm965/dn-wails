@@ -19,7 +19,8 @@ import (
 )
 
 const (
-	githubWebBaseURL  = "https://github.com"
+	giteeAPIBaseURL   = "https://gitee.com/api/v5"
+	giteeWebBaseURL   = "https://gitee.com"
 	updateManifest    = "latest.json"
 	manifestVersion   = 1
 	maxManifestBody   = 2 * 1024 * 1024
@@ -33,9 +34,14 @@ var (
 	assetNamePattern      = regexp.MustCompile(`^[A-Za-z0-9._-]+$`)
 )
 
-type GitHubSource struct {
+type GiteeSource struct {
 	client     *http.Client
+	apiBaseURL string
 	webBaseURL string
+}
+
+type giteeRelease struct {
+	TagName string `json:"tag_name"`
 }
 
 type releaseManifest struct {
@@ -56,14 +62,18 @@ type releaseManifestAsset struct {
 	Size   int64  `json:"size"`
 }
 
-func NewGitHubSource(client *http.Client) *GitHubSource {
+func NewGiteeSource(client *http.Client) *GiteeSource {
 	if client == nil {
 		client = &http.Client{Timeout: 30 * time.Second}
 	}
-	return &GitHubSource{client: client, webBaseURL: githubWebBaseURL}
+	return &GiteeSource{
+		client:     client,
+		apiBaseURL: giteeAPIBaseURL,
+		webBaseURL: giteeWebBaseURL,
+	}
 }
 
-func (s *GitHubSource) Latest(ctx context.Context, repository string) (coreupdate.Release, error) {
+func (s *GiteeSource) Latest(ctx context.Context, repository string) (coreupdate.Release, error) {
 	owner, name, err := parseRepository(repository)
 	if err != nil {
 		return coreupdate.Release{}, err
@@ -81,21 +91,21 @@ func (s *GitHubSource) Latest(ctx context.Context, repository string) (coreupdat
 	return s.releaseFromManifest(normalizedRepository, owner, name, tag, manifest)
 }
 
-func (s *GitHubSource) resolveLatestTag(ctx context.Context, owner string, name string) (string, error) {
-	baseURL, err := url.Parse(strings.TrimRight(s.webBaseURL, "/"))
+func (s *GiteeSource) resolveLatestTag(ctx context.Context, owner string, name string) (string, error) {
+	baseURL, err := url.Parse(strings.TrimRight(s.apiBaseURL, "/"))
 	if err != nil || baseURL.Scheme == "" || baseURL.Host == "" {
-		return "", fmt.Errorf("configure GitHub updates: invalid web base URL")
+		return "", fmt.Errorf("configure Gitee updates: invalid API base URL")
 	}
-	endpoint := fmt.Sprintf("%s/%s/%s/releases/latest", strings.TrimRight(s.webBaseURL, "/"), owner, name)
-	request, err := http.NewRequestWithContext(ctx, http.MethodHead, endpoint, nil)
+	endpoint := fmt.Sprintf("%s/repos/%s/%s/releases/latest", strings.TrimRight(s.apiBaseURL, "/"), owner, name)
+	request, err := http.NewRequestWithContext(ctx, http.MethodGet, endpoint, nil)
 	if err != nil {
-		return "", fmt.Errorf("create latest GitHub release request: %w", err)
+		return "", fmt.Errorf("create latest Gitee release request: %w", err)
 	}
-	setGitHubWebHeaders(request, "text/html")
+	setGiteeHeaders(request, "application/json")
 
 	response, err := s.client.Do(request)
 	if err != nil {
-		return "", fmt.Errorf("request latest GitHub release: %w", err)
+		return "", fmt.Errorf("request latest Gitee release: %w", err)
 	}
 	defer response.Body.Close()
 
@@ -103,33 +113,41 @@ func (s *GitHubSource) resolveLatestTag(ctx context.Context, owner string, name 
 		return "", coreupdate.ErrNoRelease
 	}
 	if response.StatusCode != http.StatusOK {
-		return "", fmt.Errorf("request latest GitHub release: unexpected HTTP status %d", response.StatusCode)
+		return "", fmt.Errorf("request latest Gitee release: unexpected HTTP status %d", response.StatusCode)
 	}
 	if response.Request == nil || response.Request.URL == nil {
-		return "", fmt.Errorf("request latest GitHub release: missing final URL")
+		return "", fmt.Errorf("request latest Gitee release: missing final URL")
 	}
 	finalURL := response.Request.URL
 	if finalURL.Scheme != baseURL.Scheme || !strings.EqualFold(finalURL.Host, baseURL.Host) {
-		return "", fmt.Errorf("request latest GitHub release: redirected outside configured GitHub host")
+		return "", fmt.Errorf("request latest Gitee release: redirected outside configured Gitee API host")
 	}
-	expectedPrefix := fmt.Sprintf("/%s/%s/releases/tag/", owner, name)
-	if !strings.HasPrefix(finalURL.EscapedPath(), expectedPrefix) {
-		return "", fmt.Errorf("request latest GitHub release: invalid release redirect")
+
+	data, err := io.ReadAll(io.LimitReader(response.Body, maxManifestBody+1))
+	if err != nil {
+		return "", fmt.Errorf("read latest Gitee release: %w", err)
 	}
-	tag, err := url.PathUnescape(strings.TrimPrefix(finalURL.EscapedPath(), expectedPrefix))
-	if err != nil || !releaseTagPattern.MatchString(tag) {
-		return "", fmt.Errorf("request latest GitHub release: %w", coreupdate.ErrInvalidVersion)
+	if len(data) > maxManifestBody {
+		return "", fmt.Errorf("read latest Gitee release: response exceeds %d bytes", maxManifestBody)
+	}
+	var release giteeRelease
+	if err := json.Unmarshal(data, &release); err != nil {
+		return "", fmt.Errorf("decode latest Gitee release: %w", err)
+	}
+	tag := strings.TrimSpace(release.TagName)
+	if !releaseTagPattern.MatchString(tag) {
+		return "", fmt.Errorf("request latest Gitee release: %w", coreupdate.ErrInvalidVersion)
 	}
 	return tag, nil
 }
 
-func (s *GitHubSource) loadManifest(ctx context.Context, owner string, name string, tag string) (releaseManifest, error) {
+func (s *GiteeSource) loadManifest(ctx context.Context, owner string, name string, tag string) (releaseManifest, error) {
 	endpoint := s.releaseAssetURL(owner, name, tag, updateManifest)
 	request, err := http.NewRequestWithContext(ctx, http.MethodGet, endpoint, nil)
 	if err != nil {
 		return releaseManifest{}, fmt.Errorf("create application update manifest request: %w", err)
 	}
-	setGitHubWebHeaders(request, "application/json")
+	setGiteeHeaders(request, "application/json")
 
 	response, err := s.client.Do(request)
 	if err != nil {
@@ -142,7 +160,10 @@ func (s *GitHubSource) loadManifest(ctx context.Context, owner string, name stri
 	if response.StatusCode != http.StatusOK {
 		return releaseManifest{}, fmt.Errorf("request application update manifest: unexpected HTTP status %d", response.StatusCode)
 	}
-	if response.Request != nil && response.Request.URL != nil && strings.HasPrefix(s.webBaseURL, "https://") && response.Request.URL.Scheme != "https" {
+	if response.Request == nil || response.Request.URL == nil {
+		return releaseManifest{}, fmt.Errorf("request application update manifest: missing final URL")
+	}
+	if strings.HasPrefix(s.webBaseURL, "https://") && response.Request.URL.Scheme != "https" {
 		return releaseManifest{}, fmt.Errorf("request application update manifest: redirect downgraded HTTPS")
 	}
 
@@ -160,7 +181,7 @@ func (s *GitHubSource) loadManifest(ctx context.Context, owner string, name stri
 	return manifest, nil
 }
 
-func (s *GitHubSource) releaseFromManifest(repository string, owner string, name string, tag string, manifest releaseManifest) (coreupdate.Release, error) {
+func (s *GiteeSource) releaseFromManifest(repository string, owner string, name string, tag string, manifest releaseManifest) (coreupdate.Release, error) {
 	if manifest.SchemaVersion != manifestVersion {
 		return coreupdate.Release{}, fmt.Errorf("validate application update manifest: unsupported schema version %d", manifest.SchemaVersion)
 	}
@@ -225,11 +246,11 @@ func (s *GitHubSource) releaseFromManifest(repository string, owner string, name
 	}, nil
 }
 
-func (s *GitHubSource) releaseAssetURL(owner string, name string, tag string, assetName string) string {
+func (s *GiteeSource) releaseAssetURL(owner string, name string, tag string, assetName string) string {
 	return fmt.Sprintf("%s/%s/%s/releases/download/%s/%s", strings.TrimRight(s.webBaseURL, "/"), owner, name, tag, url.PathEscape(assetName))
 }
 
-func (s *GitHubSource) Download(ctx context.Context, asset coreupdate.Asset, destination string) error {
+func (s *GiteeSource) Download(ctx context.Context, asset coreupdate.Asset, destination string) error {
 	downloadURL, err := url.Parse(strings.TrimSpace(asset.DownloadURL))
 	if err != nil || downloadURL.Scheme != "https" || downloadURL.Host == "" {
 		return fmt.Errorf("download update asset: invalid HTTPS URL")
@@ -246,8 +267,7 @@ func (s *GitHubSource) Download(ctx context.Context, asset coreupdate.Asset, des
 	if err != nil {
 		return fmt.Errorf("create update download request: %w", err)
 	}
-	request.Header.Set("Accept", "application/octet-stream")
-	request.Header.Set("User-Agent", "dn-wails-updater")
+	setGiteeHeaders(request, "application/octet-stream")
 
 	response, err := s.client.Do(request)
 	if err != nil {
@@ -256,6 +276,9 @@ func (s *GitHubSource) Download(ctx context.Context, asset coreupdate.Asset, des
 	defer response.Body.Close()
 	if response.StatusCode != http.StatusOK {
 		return fmt.Errorf("download update asset: unexpected HTTP status %d", response.StatusCode)
+	}
+	if response.Request == nil || response.Request.URL == nil {
+		return fmt.Errorf("download update asset: missing final URL")
 	}
 	if response.Request.URL.Scheme != "https" {
 		return fmt.Errorf("download update asset: redirect downgraded HTTPS")
@@ -298,7 +321,7 @@ func (s *GitHubSource) Download(ctx context.Context, asset coreupdate.Asset, des
 	return nil
 }
 
-func setGitHubWebHeaders(request *http.Request, accept string) {
+func setGiteeHeaders(request *http.Request, accept string) {
 	request.Header.Set("Accept", accept)
 	request.Header.Set("User-Agent", "dn-wails-updater")
 }
@@ -306,14 +329,14 @@ func setGitHubWebHeaders(request *http.Request, accept string) {
 func parseRepository(repository string) (string, string, error) {
 	parts := strings.Split(strings.TrimSpace(repository), "/")
 	if len(parts) != 2 || parts[0] == "" || parts[1] == "" || strings.ContainsAny(repository, "?#\\") {
-		return "", "", fmt.Errorf("configure GitHub updates: invalid repository %q", repository)
+		return "", "", fmt.Errorf("configure Gitee updates: invalid repository %q", repository)
 	}
 	name := strings.TrimSuffix(parts[1], ".git")
 	if name == "" {
-		return "", "", fmt.Errorf("configure GitHub updates: invalid repository %q", repository)
+		return "", "", fmt.Errorf("configure Gitee updates: invalid repository %q", repository)
 	}
 	if !repositoryPartPattern.MatchString(parts[0]) || !repositoryPartPattern.MatchString(name) {
-		return "", "", fmt.Errorf("configure GitHub updates: invalid repository %q", repository)
+		return "", "", fmt.Errorf("configure Gitee updates: invalid repository %q", repository)
 	}
 	return parts[0], name, nil
 }

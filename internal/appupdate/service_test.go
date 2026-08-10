@@ -59,7 +59,7 @@ func TestServiceChecksLatestRelease(t *testing.T) {
 		Version:     "v1.3.0",
 		Name:        "Release 1.3.0",
 		Notes:       " New release notes. ",
-		URL:         "https://github.com/zxm965/dn-wails/releases/tag/v1.3.0",
+		URL:         "https://gitee.com/zxm965/dn-wails/releases/tag/v1.3.0",
 		PublishedAt: publishedAt,
 	}}
 	service := NewService(Config{

@@ -13,11 +13,15 @@ const assetNames = [
 const tag = process.argv[2]?.trim() ?? ''
 const repository = process.argv[3]?.trim() ?? ''
 const releaseDirectory = resolve(process.argv[4]?.trim() || 'release')
+const releaseBaseURL = (process.argv[5]?.trim() || 'https://github.com').replace(/\/+$/, '')
 
 const versionMatch = tag.match(/^v(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)$/)
 if (!versionMatch) throw new Error(`Release tag must use vMAJOR.MINOR.PATCH, received: ${tag || '(empty)'}`)
 if (!/^[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+$/.test(repository)) {
   throw new Error(`Repository must use OWNER/NAME, received: ${repository || '(empty)'}`)
+}
+if (releaseBaseURL !== 'https://github.com' && releaseBaseURL !== 'https://gitee.com') {
+  throw new Error(`Unsupported release base URL: ${releaseBaseURL || '(empty)'}`)
 }
 
 const publishedAtInput = process.env.RELEASE_PUBLISHED_AT?.trim() || new Date().toISOString()
@@ -38,7 +42,7 @@ for (const name of assetNames) {
   for await (const chunk of createReadStream(filePath)) hash.update(chunk)
   assets.push({
     name,
-    url: `https://github.com/${repository}/releases/download/${tag}/${encodeURIComponent(name)}`,
+    url: `${releaseBaseURL}/${repository}/releases/download/${tag}/${encodeURIComponent(name)}`,
     digest: `sha256:${hash.digest('hex')}`,
     size: fileInfo.size,
   })
@@ -50,7 +54,7 @@ const manifest = {
   version: tag.slice(1),
   name: tag,
   notes: '',
-  releaseUrl: `https://github.com/${repository}/releases/tag/${tag}`,
+  releaseUrl: `${releaseBaseURL}/${repository}/releases/tag/${tag}`,
   publishedAt,
   assets,
 }

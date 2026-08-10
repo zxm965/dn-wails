@@ -14,6 +14,7 @@ concurrency:
 
 env:
   NODE_OPTIONS: --max-old-space-size=4096
+  GITEE_REPOSITORY: zxm965/dn-wails
 
 jobs:
   quality:
@@ -135,7 +136,7 @@ jobs:
         shell: bash
         run: |
           version="${GITHUB_REF_NAME#v}"
-          ldflags="-X dn-wails/internal/buildinfo.Version=$version -X dn-wails/internal/buildinfo.Repository=$GITHUB_REPOSITORY"
+          ldflags="-X dn-wails/internal/buildinfo.Version=$version -X dn-wails/internal/buildinfo.Repository=$GITEE_REPOSITORY"
           wails3 task darwin:package:universal LD_FLAGS="$ldflags"
           ditto -c -k --sequesterRsrc --keepParent bin/dn-wails.app bin/dn-wails-darwin-universal.zip
           hdiutil create -volname "dn-wails" -srcfolder bin/dn-wails.app -ov -format UDZO bin/dn-wails-darwin-universal.dmg
@@ -145,7 +146,7 @@ jobs:
         shell: pwsh
         run: |
           $version = $env:GITHUB_REF_NAME.TrimStart('v')
-          $ldflags = "-X dn-wails/internal/buildinfo.Version=$version -X dn-wails/internal/buildinfo.Repository=$env:GITHUB_REPOSITORY"
+          $ldflags = "-X dn-wails/internal/buildinfo.Version=$version -X dn-wails/internal/buildinfo.Repository=$env:GITEE_REPOSITORY"
           wails3 task windows:package ARCH=amd64 INSTALL_SCOPE=user LD_FLAGS=$ldflags
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           Move-Item bin/dn-wails-amd64-installer.exe bin/dn-wails-windows-amd64-installer.exe
@@ -169,13 +170,15 @@ jobs:
           if-no-files-found: error
 
   release:
-    name: Publish GitHub Release
+    name: Publish GitHub and Gitee Releases
     needs: build
     runs-on: ubuntu-latest
     environment: RELEASE
     steps:
       - name: Check out source
         uses: actions/checkout@v7.0.1
+        with:
+          fetch-depth: 0
 
       - name: Set up Node.js
         uses: actions/setup-node@v7.0.0
@@ -188,10 +191,15 @@ jobs:
           path: release
           merge-multiple: true
 
-      - name: Generate update manifest
-        run: node scripts/generate-update-manifest.mjs "$GITHUB_REF_NAME" "$GITHUB_REPOSITORY" release
+      - name: Generate GitHub update manifest
+        run: |
+          node scripts/generate-update-manifest.mjs \
+            "$GITHUB_REF_NAME" \
+            "$GITEE_REPOSITORY" \
+            release \
+            https://github.com
 
-      - name: Generate checksums
+      - name: Generate GitHub checksums
         shell: bash
         run: find release -maxdepth 1 -type f ! -name SHA256SUMS.txt -print0 | sort -z | xargs -0 sha256sum > release/SHA256SUMS.txt
 
@@ -205,3 +213,38 @@ jobs:
           else
             gh release create "$GITHUB_REF_NAME" release/* --verify-tag --generate-notes --title "$GITHUB_REF_NAME"
           fi
+
+      - name: Sync release tag to Gitee
+        shell: bash
+        env:
+          GITEE_TOKEN: ${{ secrets.GITEE_TOKEN }}
+        run: |
+          test -n "$GITEE_TOKEN"
+          git remote add gitee "https://oauth2:${GITEE_TOKEN}@gitee.com/${GITEE_REPOSITORY}.git"
+          git push gitee --force "refs/tags/${GITHUB_REF_NAME}:refs/tags/${GITHUB_REF_NAME}"
+
+      - name: Generate Gitee update manifest
+        run: |
+          node scripts/generate-update-manifest.mjs \
+            "$GITHUB_REF_NAME" \
+            "$GITEE_REPOSITORY" \
+            release \
+            https://gitee.com
+
+      - name: Generate Gitee checksums
+        shell: bash
+        run: find release -maxdepth 1 -type f ! -name SHA256SUMS.txt -print0 | sort -z | xargs -0 sha256sum > release/SHA256SUMS.txt
+
+      - name: Publish Gitee release
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GITEE_TOKEN: ${{ secrets.GITEE_TOKEN }}
+          RELEASE_NOTES_FILE: ${{ runner.temp }}/gitee-release-notes.md
+        run: |
+          gh release view "$GITHUB_REF_NAME" --json body --jq '.body' > "$RELEASE_NOTES_FILE"
+          node scripts/publish-gitee-release.mjs \
+            "$GITHUB_REF_NAME" \
+            "$GITEE_REPOSITORY" \
+            release \
+            "$GITHUB_SHA"

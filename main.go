@@ -88,7 +88,7 @@ func main() {
 	notificationService := notification.NewService(notificationPlatform)
 	lifecycleService := lifecycle.NewService()
 	singleInstanceService := singleinstance.NewService()
-	applicationUpdateSource := platformappupdate.NewGitHubSource(&http.Client{Timeout: 30 * time.Second})
+	applicationUpdateSource := platformappupdate.NewGiteeSource(&http.Client{Timeout: 30 * time.Second})
 	applicationUpdateInstaller := platformappupdate.NewInstaller(internalApplicationName)
 	applicationUpdateService := appupdate.NewService(appupdate.Config{
 		AppName:    internalApplicationName,
