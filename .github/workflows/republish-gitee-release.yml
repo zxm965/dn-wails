@@ -1,0 +1,78 @@
+name: Republish Gitee release
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Stable release tag to republish
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: republish-gitee-${{ inputs.tag }}
+  cancel-in-progress: false
+
+env:
+  NODE_OPTIONS: --max-old-space-size=4096
+  GITEE_REPOSITORY: zxm965/dn-wails
+  RELEASE_TAG: ${{ inputs.tag }}
+
+jobs:
+  publish:
+    name: Republish ${{ inputs.tag }} to Gitee
+    if: github.repository == 'zxm965/dn-wails'
+    runs-on: ubuntu-latest
+    environment: RELEASE
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v7.0.1
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v7.0.0
+        with:
+          node-version: 26.7.0
+
+      - name: Validate release tag
+        run: node scripts/configure-release.mjs "$RELEASE_TAG"
+
+      - name: Download GitHub release packages
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p release
+          gh release download "$RELEASE_TAG" \
+            --repo "$GITHUB_REPOSITORY" \
+            --dir release \
+            --pattern 'dn-wails-*'
+          published_at="$(gh release view "$RELEASE_TAG" --repo "$GITHUB_REPOSITORY" --json publishedAt --jq '.publishedAt')"
+          echo "RELEASE_PUBLISHED_AT=$published_at" >> "$GITHUB_ENV"
+
+      - name: Generate Gitee update manifest
+        run: |
+          node scripts/generate-update-manifest.mjs \
+            "$RELEASE_TAG" \
+            "$GITEE_REPOSITORY" \
+            release \
+            https://gitee.com
+
+      - name: Generate Gitee checksums
+        shell: bash
+        run: find release -maxdepth 1 -type f ! -name SHA256SUMS.txt -print0 | sort -z | xargs -0 sha256sum > release/SHA256SUMS.txt
+
+      - name: Publish Gitee release
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GITEE_TOKEN: ${{ secrets.GITEE_TOKEN }}
+          RELEASE_NOTES_FILE: ${{ runner.temp }}/gitee-release-notes.md
+        run: |
+          gh release view "$RELEASE_TAG" --repo "$GITHUB_REPOSITORY" --json body --jq '.body' > "$RELEASE_NOTES_FILE"
+          node scripts/publish-gitee-release.mjs \
+            "$RELEASE_TAG" \
+            "$GITEE_REPOSITORY" \
+            release \
+            "$RELEASE_TAG"

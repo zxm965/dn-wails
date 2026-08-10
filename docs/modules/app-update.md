@@ -17,10 +17,11 @@
 - `frontend/src/features/test-tools/components/DesktopOverview.tsx`：展示当前版本、更新状态和手动检查按钮，不展示更新源地址等发布配置。
 - `.github/workflows/sync-gitee.yml`：GitHub push 触发的分支、标签源码同步。
 - `.github/workflows/release.yml`：标签触发的双平台质量检查、构建以及 GitHub、Gitee Release 发布。
+- `.github/workflows/republish-gitee-release.yml`：从已有 GitHub Release 下载安装包并补发指定标签的 Gitee Release，不重建桌面应用或移动标签。
 - `Taskfile.yml` 与 `build/*/Taskfile.yml`：Wails v3 前端、bindings、平台构建和打包任务。
 - `scripts/configure-release.mjs`：校验 `vMAJOR.MINOR.PATCH` 标签并更新 `build/config.yml` 的平台包版本。
 - `scripts/generate-update-manifest.mjs`：计算发布资源大小和 SHA-256，按目标 Release 基地址生成 GitHub 或 Gitee 对应的 `latest.json`。
-- `scripts/publish-gitee-release.mjs`：通过 Gitee OpenAPI 创建或更新 Release，覆盖同名附件并上传构建产物。
+- `scripts/publish-gitee-release.mjs`：通过 Gitee OpenAPI 创建或更新 Release，复用大小一致的同名附件，覆盖不一致附件并上传缺失产物。
 - `scripts/prepare-release-environment.mjs`：校验 `DATABASE_URL` 并生成构建期临时 `.env.local`。
 
 ## 依赖关系
@@ -55,6 +56,7 @@ React AppUpdateProvider
 8. 创建或更新 GitHub Release，并上传应用安装资源、GitHub 更新清单和校验文件；这组资源继续供尚未切换更新源的旧客户端迁移，GitHub 自动生成的 Source code 归档也继续保留。
 9. 将发布标签推送到 Gitee，覆盖生成指向 Gitee Release 的 `latest.json` 和对应 `SHA256SUMS.txt`，再通过 Gitee OpenAPI 创建或更新同标签 Release，删除同名旧附件后上传当前 ZIP、DMG、EXE、清单和校验文件；`latest.json` 最后上传，避免新 Release 在安装包未完整上传时被客户端消费。
 10. 普通 GitHub push 由独立同步工作流将全部 GitHub 分支和标签强制同步到 Gitee；Gitee 作为只读镜像使用，不回写 GitHub。
+11. Gitee 发布中断时可手动运行 `Republish Gitee release`，输入稳定标签后从对应 GitHub Release 恢复安装包，并只补齐缺失或大小不一致的 Gitee 附件。
 
 ### 检查与安装
 

@@ -46,7 +46,7 @@ for (const entry of directoryEntries) {
       `Gitee release attachment must be between 1 byte and 100 MB: ${entry.name} (${fileInfo.size} bytes)`,
     )
   }
-  attachments.push({ name: entry.name, path: filePath })
+  attachments.push({ name: entry.name, path: filePath, size: fileInfo.size })
 }
 if (!attachments.some((attachment) => attachment.name === manifestName)) {
   throw new Error(`Release directory is missing ${manifestName}`)
@@ -173,6 +173,7 @@ async function deleteAttachment(releaseIDValue, attachmentID, attachmentName) {
 }
 
 async function uploadAttachment(releaseIDValue, attachment) {
+  console.log(`Uploading ${attachment.name} to Gitee release ${tag}...`)
   const form = new FormData()
   form.set('access_token', token)
   form.set('file', await openAsBlob(attachment.path), attachment.name)
@@ -184,9 +185,11 @@ async function uploadAttachment(releaseIDValue, attachment) {
       method: 'POST',
       headers: { Accept: 'application/json', 'User-Agent': 'dn-wails-release-publisher' },
       body: form,
+      signal: AbortSignal.timeout(30 * 60 * 1000),
     },
   )
   await responsePayload(response, `upload Gitee release attachment ${attachment.name}`, [200, 201])
+  console.log(`Uploaded ${attachment.name}.`)
 }
 
 let release = await getReleaseByTag()
@@ -196,17 +199,26 @@ if (release) {
   release = await createRelease()
 }
 const id = releaseID(release)
-const attachmentNames = new Set(attachments.map((attachment) => attachment.name))
+const desiredAttachments = new Map(attachments.map((attachment) => [attachment.name, attachment]))
+const reusableAttachments = new Set()
 for (const existingAttachment of await listAttachments(id)) {
   if (!existingAttachment || typeof existingAttachment !== 'object') continue
   const existingName = typeof existingAttachment.name === 'string' ? existingAttachment.name : ''
   const existingID = Number(existingAttachment.id)
-  if (!attachmentNames.has(existingName)) continue
+  const desiredAttachment = desiredAttachments.get(existingName)
+  if (!desiredAttachment) continue
   if (!Number.isSafeInteger(existingID) || existingID <= 0) {
     throw new Error(`Gitee attachment ${existingName} is missing a valid id`)
   }
+  if (!reusableAttachments.has(existingName) && Number(existingAttachment.size) === desiredAttachment.size) {
+    reusableAttachments.add(existingName)
+    console.log(`Keeping existing Gitee release attachment ${existingName}.`)
+    continue
+  }
   await deleteAttachment(id, existingID, existingName)
 }
-for (const attachment of attachments) await uploadAttachment(id, attachment)
+for (const attachment of attachments) {
+  if (!reusableAttachments.has(attachment.name)) await uploadAttachment(id, attachment)
+}
 
 console.log(`Published ${attachments.length} attachments to Gitee release ${tag}.`)
