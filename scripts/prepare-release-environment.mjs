@@ -1,7 +1,5 @@
 import { writeFile } from 'node:fs/promises'
 
-import { resolveCOSReleaseConfig } from './cos-release-config.mjs'
-
 const databaseURL = process.env.DATABASE_URL?.trim() ?? ''
 if (!databaseURL) throw new Error('DATABASE_URL is required')
 if (databaseURL.length > 8192) throw new Error('DATABASE_URL cannot exceed 8192 characters')
@@ -17,11 +15,7 @@ if (
   throw new Error('DATABASE_URL cannot contain control characters')
 }
 
-const { updateBaseURL } = resolveCOSReleaseConfig(
-  process.env.APP_UPDATE_BASE_URL,
-  process.env.TENCENT_COS_PREFIX || 'dn-wails',
-)
-await writeFile('.env.local', `DATABASE_URL=${databaseURL}\nAPP_UPDATE_BASE_URL=${updateBaseURL}\n`, {
+await writeFile('.env.local', `DATABASE_URL=${databaseURL}\n`, {
   encoding: 'utf8',
   mode: 0o600,
 })

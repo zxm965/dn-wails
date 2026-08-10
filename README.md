@@ -1,6 +1,6 @@
 # dn-wails
 
-基于 Wails v3、React 和 TypeScript 的桌面应用。当前锁定 `github.com/wailsapp/wails/v3 v3.0.0-beta.4`，前端使用 npm 最新发布的 `@wailsio/runtime v3.0.0-beta.1`，以 v3 Service、typed events、Taskfile 构建系统和原生系统托盘为基础，不保留 Wails v2 兼容层。
+基于 Wails v3、React 和 TypeScript 的桌面应用。当前锁定 `github.com/wailsapp/wails/v3 v3.0.0-beta.6`，前端使用 `@wailsio/runtime v3.0.0-beta.5`，以 v3 Service、typed events、Taskfile 构建系统和原生系统托盘为基础，不保留 Wails v2 兼容层。
 
 界面采用顶部自定义标题栏、左侧分组菜单和右侧视图区域。关闭行为设为隐藏时，主窗口会保留在后台，并可通过系统托盘的“显示主窗口”恢复；托盘菜单也提供“退出”。
 
@@ -70,7 +70,7 @@ wails3 task dev
 
 ## 发布与更新
 
-推送 `vMAJOR.MINOR.PATCH` 标签后，GitHub Actions 使用 Wails v3 Taskfile 构建 macOS universal 兼容更新 ZIP、DMG 和 Windows amd64 用户级 NSIS 安装器，并同时发布 GitHub Release 与腾讯云 COS。GitHub Release 保留平台自动生成的 Source code 下载；COS 仅上传应用 ZIP、DMG、EXE、`SHA256SUMS.txt`，并在发布前缀一级目录保存 `latest.json`：
+推送 `vMAJOR.MINOR.PATCH` 标签后，GitHub Actions 使用 Wails v3 Taskfile 构建 macOS universal 兼容更新 ZIP、DMG 和 Windows amd64 用户级 NSIS 安装器，并发布包含 `latest.json` 与 `SHA256SUMS.txt` 的 GitHub Release。当前客户端在 macOS 上使用 DMG 自动更新，ZIP 继续用于兼容旧客户端：
 
 ```bash
 git tag v1.0.0

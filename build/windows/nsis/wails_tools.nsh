@@ -1,4 +1,4 @@
-# Wails v3 NSIS helper macros used by `wails3 task windows:package`.
+# DO NOT EDIT - Generated automatically by `wails build`
 
 !include "x64.nsh"
 !include "WinVer.nsh"
@@ -14,7 +14,7 @@
     !define INFO_PRODUCTNAME "Cull Pear"
 !endif
 !ifndef INFO_PRODUCTVERSION
-    !define INFO_PRODUCTVERSION "0.0.6"
+    !define INFO_PRODUCTVERSION "0.0.9"
 !endif
 !ifndef INFO_COPYRIGHT
     !define INFO_COPYRIGHT "© 2026, 10958"

@@ -13,10 +13,10 @@
 #   docker run --rm -v $(pwd):/app wails-cross windows amd64
 #   docker run --rm -v $(pwd):/app wails-cross windows arm64
 
-FROM golang:1.26-bookworm
+FROM golang:1.26.5-bookworm
 
 ARG TARGETARCH
-ARG GARBLE_VERSION=v0.16.0
+ARG GARBLE_VERSION=v0.17.0
 
 # Install base tools, GCC, and GTK/WebKit dev packages
 RUN apt-get update && apt-get install -y --no-install-recommends \
@@ -30,9 +30,9 @@ RUN go install mvdan.cc/garble@${GARBLE_VERSION}
 # Install Zig - automatically selects correct binary for host architecture.
 # The SHA-256 is fetched from Zig's official download manifest and verified
 # before extraction to protect against MITM or corrupted downloads.
-ARG ZIG_VERSION=0.14.0
+ARG ZIG_VERSION=0.16.0
 RUN ZIG_ARCH=$(case "${TARGETARCH}" in arm64) echo "aarch64" ;; *) echo "x86_64" ;; esac) && \
-    ZIG_FILE="zig-linux-${ZIG_ARCH}-${ZIG_VERSION}.tar.xz" && \
+    ZIG_FILE="zig-${ZIG_ARCH}-linux-${ZIG_VERSION}.tar.xz" && \
     curl -fSL "https://ziglang.org/download/${ZIG_VERSION}/${ZIG_FILE}" -o "/tmp/${ZIG_FILE}" && \
     EXPECTED=$(curl -fsSL "https://ziglang.org/download/index.json" | \
         python3 -c "import json,sys; d=json.load(sys.stdin); print(d[sys.argv[1]][sys.argv[2]+'-linux']['shasum'])" \
@@ -40,10 +40,10 @@ RUN ZIG_ARCH=$(case "${TARGETARCH}" in arm64) echo "aarch64" ;; *) echo "x86_64"
     echo "${EXPECTED}  /tmp/${ZIG_FILE}" | sha256sum -c - && \
     tar -xJ -f "/tmp/${ZIG_FILE}" -C /opt && \
     rm "/tmp/${ZIG_FILE}" && \
-    ln -s /opt/zig-linux-${ZIG_ARCH}-${ZIG_VERSION}/zig /usr/local/bin/zig
+    ln -s /opt/zig-${ZIG_ARCH}-linux-${ZIG_VERSION}/zig /usr/local/bin/zig
 
 # Download macOS SDK (required for darwin targets)
-ARG MACOS_SDK_VERSION=14.5
+ARG MACOS_SDK_VERSION=26.1
 RUN curl -L "https://github.com/joseluisq/macosx-sdks/releases/download/${MACOS_SDK_VERSION}/MacOSX${MACOS_SDK_VERSION}.sdk.tar.xz" \
     | tar -xJ -C /opt \
     && mv /opt/MacOSX${MACOS_SDK_VERSION}.sdk /opt/macos-sdk

@@ -88,27 +88,14 @@ func main() {
 	notificationService := notification.NewService(notificationPlatform)
 	lifecycleService := lifecycle.NewService()
 	singleInstanceService := singleinstance.NewService()
-	updateBaseURL, updateConfigErr := appupdate.ResolveUpdateBaseURL(runtimeConfigData)
-	var applicationUpdateSource appupdate.ReleaseSource
-	if updateConfigErr != nil {
-		log.Printf("Application update service is unavailable: %v", updateConfigErr)
-	} else {
-		applicationUpdateSource, err = platformappupdate.NewStaticSource(
-			&http.Client{Timeout: 30 * time.Second},
-			updateBaseURL,
-			buildinfo.Repository,
-		)
-		if err != nil {
-			log.Printf("Application update service is unavailable: %v", err)
-		}
-	}
+	applicationUpdateSource := platformappupdate.NewGitHubSource(&http.Client{Timeout: 30 * time.Second})
 	applicationUpdateInstaller := platformappupdate.NewInstaller(internalApplicationName)
 	applicationUpdateService := appupdate.NewService(appupdate.Config{
-		AppName:       internalApplicationName,
-		Version:       buildinfo.Version,
-		UpdateBaseURL: updateBaseURL,
-		Platform:      runtime.GOOS,
-		Arch:          runtime.GOARCH,
+		AppName:    internalApplicationName,
+		Version:    buildinfo.Version,
+		Repository: buildinfo.Repository,
+		Platform:   runtime.GOOS,
+		Arch:       runtime.GOARCH,
 	}, applicationUpdateSource, applicationUpdateInstaller)
 
 	var facade *appservice.App

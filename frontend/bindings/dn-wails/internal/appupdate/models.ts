@@ -7,7 +7,7 @@ import { Create as $Create } from "@wailsio/runtime";
 
 export class Info {
     "currentVersion": string;
-    "updateBaseUrl": string;
+    "repository": string;
     "platform": string;
     "arch": string;
     "configured": boolean;
@@ -18,8 +18,8 @@ export class Info {
         if (!("currentVersion" in $$source)) {
             this["currentVersion"] = "";
         }
-        if (!("updateBaseUrl" in $$source)) {
-            this["updateBaseUrl"] = "";
+        if (!("repository" in $$source)) {
+            this["repository"] = "";
         }
         if (!("platform" in $$source)) {
             this["platform"] = "";

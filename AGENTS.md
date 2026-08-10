@@ -11,7 +11,7 @@
 
 ## 当前技术栈
 
-- 桌面框架：Wails v3（当前锁定 `v3.0.0-beta.4`）。
+- 桌面框架：Wails v3（当前锁定 `v3.0.0-beta.6`）。
 - 后端：Go。
 - 前端：React、TypeScript、Vite、vanilla-extract。
 - 包管理器：pnpm。

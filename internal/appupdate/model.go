@@ -19,7 +19,7 @@ var (
 
 type Info struct {
 	CurrentVersion string `json:"currentVersion"`
-	UpdateBaseURL  string `json:"updateBaseUrl"`
+	Repository     string `json:"repository"`
 	Platform       string `json:"platform"`
 	Arch           string `json:"arch"`
 	Configured     bool   `json:"configured"`
@@ -53,7 +53,7 @@ type Release struct {
 }
 
 type ReleaseSource interface {
-	Latest(ctx context.Context) (Release, error)
+	Latest(ctx context.Context, repository string) (Release, error)
 	Download(ctx context.Context, asset Asset, destination string) error
 }
 
