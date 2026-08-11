@@ -7,12 +7,14 @@ import (
 	"sync"
 	"time"
 
+	"dn-wails/internal/account"
 	"dn-wails/internal/appupdate"
 	"dn-wails/internal/diagnostics"
 	"dn-wails/internal/dn"
 	"dn-wails/internal/lifecycle"
 	"dn-wails/internal/nativekit"
 	"dn-wails/internal/notification"
+	"dn-wails/internal/quicknotes"
 	"dn-wails/internal/settings"
 	"dn-wails/internal/singleinstance"
 	"dn-wails/internal/windowmanager"
@@ -100,17 +102,24 @@ type ApplicationUpdateService interface {
 	Install(ctx context.Context, expectedVersion string) error
 }
 
+type AccountService interface {
+	Initialize() error
+	Close() error
+	CurrentUserID() (int, error)
+	CurrentAdminUserID() (int, error)
+	AuthState() (account.AuthState, error)
+	Register(input account.RegistrationInput) (account.Profile, error)
+	Login(input account.LoginInput) (account.Profile, error)
+	Logout() error
+	Profile() (account.Profile, error)
+	UpdateProfile(input account.ProfileInput) (account.Profile, error)
+	ChangePassword(input account.PasswordInput) error
+	ImportAvatar(path string) (string, error)
+}
+
 type DnService interface {
 	Initialize() error
 	Close() error
-	AuthState() (dn.AuthState, error)
-	Register(input dn.RegistrationInput) (dn.Profile, error)
-	Login(input dn.LoginInput) (dn.Profile, error)
-	Logout() error
-	Profile() (dn.Profile, error)
-	UpdateProfile(input dn.ProfileInput) (dn.Profile, error)
-	ChangePassword(input dn.PasswordInput) error
-	ImportAvatar(path string) (string, error)
 	ListRoles(query dn.RoleProfessionQuery) (dn.RoleProfessionList, error)
 	RoleOptions() ([]dn.RoleProfession, error)
 	SaveRole(input dn.RoleProfessionInput) (dn.RoleProfession, error)
@@ -130,6 +139,14 @@ type DnService interface {
 	SyncOfficialMessages() (dn.OfficialMessageSyncResult, error)
 }
 
+type QuickNotesService interface {
+	Initialize() error
+	Close() error
+	List() ([]quicknotes.Note, error)
+	Save(input quicknotes.NoteInput) (quicknotes.Note, error)
+	Delete(id int64) error
+}
+
 type Dependencies struct {
 	Runtime            *wailsapplication.App
 	SystemNotification SystemNotificationService
@@ -140,7 +157,9 @@ type Dependencies struct {
 	Native             NativeService
 	Diagnostics        DiagnosticsService
 	ApplicationUpdate  ApplicationUpdateService
+	Account            AccountService
 	Dn                 DnService
+	QuickNotes         QuickNotesService
 }
 
 // App is the Wails v3 service exposed to the frontend.
@@ -154,7 +173,9 @@ type App struct {
 	nativeService             NativeService
 	diagnosticsService        DiagnosticsService
 	applicationUpdateService  ApplicationUpdateService
+	accountService            AccountService
 	dnService                 DnService
+	quickNotesService         QuickNotesService
 
 	mu                    sync.RWMutex
 	ctx                   context.Context
@@ -174,7 +195,9 @@ func New(dependencies Dependencies) *App {
 		nativeService:             dependencies.Native,
 		diagnosticsService:        dependencies.Diagnostics,
 		applicationUpdateService:  dependencies.ApplicationUpdate,
+		accountService:            dependencies.Account,
 		dnService:                 dependencies.Dn,
+		quickNotesService:         dependencies.QuickNotes,
 	}
 }
 
@@ -189,8 +212,14 @@ func (a *App) ServiceStartup(ctx context.Context, _ wailsapplication.ServiceOpti
 	if err := a.settingsService.Initialize(); err != nil {
 		log.Printf("initialize settings with defaults: %v", err)
 	}
+	if err := a.accountService.Initialize(); err != nil {
+		log.Printf("initialize account service: %v", err)
+	}
 	if err := a.dnService.Initialize(); err != nil {
 		log.Printf("initialize dn system data: %v", err)
+	}
+	if err := a.quickNotesService.Initialize(); err != nil {
+		log.Printf("initialize quick notes: %v", err)
 	}
 	a.lifecycleService.Start(time.Now())
 	return nil
@@ -282,8 +311,14 @@ func (a *App) QuitApplication() error {
 
 func (a *App) ServiceShutdown() error {
 	a.lifecycleService.Stop()
+	if err := a.quickNotesService.Close(); err != nil {
+		log.Printf("close quick notes database: %v", err)
+	}
 	if err := a.dnService.Close(); err != nil {
 		log.Printf("close dn database: %v", err)
+	}
+	if err := a.accountService.Close(); err != nil {
+		log.Printf("close account database: %v", err)
 	}
 	if err := a.diagnosticsService.Close(); err != nil {
 		log.Printf("close diagnostics: %v", err)

@@ -11,9 +11,9 @@
 - `internal/application/notification.go`：Wails 绑定门面和设置策略映射。
 - `frontend/src/features/system-notification/api/`：前端 API 适配。
 - `frontend/src/features/system-notification/hooks/`：权限状态、发送和点击事件订阅。
-- `frontend/src/features/system-notification/components/`：可嵌入测试工具页的通知测试与预览界面。
+- `frontend/src/features/system-notification/components/`：可嵌入 DevTools 页的通知测试与预览界面。
 - `frontend/src/shared/components/ui/`：通知预览使用的 Card、Badge、Input、Textarea 和 Label。
-- `frontend/src/features/test-tools/`：在“桌面能力”分类中提供系统通知测试入口。
+- `frontend/src/features/devtools/`：在“桌面能力”分类中提供系统通知测试入口。
 
 ## 总体链路
 

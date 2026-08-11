@@ -13,6 +13,10 @@ func NewUnavailableService() *UnavailableService {
 func (*UnavailableService) Initialize() error { return nil }
 func (*UnavailableService) Close() error      { return nil }
 
+func (*UnavailableService) CurrentUserID() (int, error) {
+	return 0, ErrUnavailable
+}
+
 func (*UnavailableService) AuthState() (AuthState, error) {
 	return AuthState{}, ErrUnavailable
 }

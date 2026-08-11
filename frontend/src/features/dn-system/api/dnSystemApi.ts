@@ -1,29 +1,21 @@
 import {
-  ChangeDnPassword,
   ClaimDnMessageNotifications,
   DeleteDnRole,
   DeleteDnWeeklyPlan,
-  GetDnAuthState,
   GetDnMessageInbox,
-  GetDnProfile,
-  ImportDnAvatar,
   InitializeDnWeeklyPlans,
   ListAllDnWeeklyPlans,
   ListDnMessages,
   ListDnRoleOptions,
   ListDnRoles,
   ListDnWeeklyPlans,
-  LoginDnUser,
-  LogoutDnUser,
   MarkAllDnMessagesRead,
   MarkDnMessageRead,
   PublishDnMessage,
-  RegisterDnUser,
   SaveDnRole,
   SaveDnWeeklyPlan,
   SyncDnOfficialMessages,
   SyncDnWeeklyPlans,
-  UpdateDnProfile,
 } from '@bindings/dn-wails/internal/application/app'
 import * as WailsDn from '@bindings/dn-wails/internal/dn/models'
 
@@ -32,45 +24,6 @@ export interface ListMeta {
   totalPages: number
   page: number
   pageSize: number
-}
-
-export interface Profile {
-  id: number
-  account: string
-  name: string
-  email: string
-  role: number
-  status: number
-  avatar: string
-  createdAt: string
-}
-
-export interface ProfileInput {
-  name: string
-  email: string
-  avatar: string
-}
-
-export interface AuthState {
-  authenticated: boolean
-  user: Profile | null
-  expiresAt: string
-}
-
-export interface RegistrationInput {
-  account: string
-  email: string
-  password: string
-}
-
-export interface LoginInput {
-  login: string
-  password: string
-}
-
-export interface PasswordInput {
-  currentPassword: string
-  newPassword: string
 }
 
 export interface RoleProfession {
@@ -245,39 +198,6 @@ export interface WeeklyPlanSyncResult {
 
 export function getErrorMessage(error: unknown, fallback: string): string {
   return error instanceof Error && error.message ? error.message : fallback
-}
-
-export async function getAuthState(): Promise<AuthState> {
-  const state = await GetDnAuthState()
-  return { authenticated: state.authenticated, user: state.user ?? null, expiresAt: state.expiresAt }
-}
-
-export function registerUser(input: RegistrationInput): Promise<Profile> {
-  return RegisterDnUser(WailsDn.RegistrationInput.createFrom(input))
-}
-
-export function loginUser(input: LoginInput): Promise<Profile> {
-  return LoginDnUser(WailsDn.LoginInput.createFrom(input))
-}
-
-export function logoutUser(): Promise<void> {
-  return LogoutDnUser()
-}
-
-export async function getProfile(): Promise<Profile> {
-  return GetDnProfile()
-}
-
-export async function updateProfile(input: ProfileInput): Promise<Profile> {
-  return UpdateDnProfile(WailsDn.ProfileInput.createFrom(input))
-}
-
-export function changePassword(input: PasswordInput): Promise<void> {
-  return ChangeDnPassword(WailsDn.PasswordInput.createFrom(input))
-}
-
-export function importAvatar(path: string): Promise<string> {
-  return ImportDnAvatar(path)
 }
 
 export async function listRoles(query: RoleProfessionQuery): Promise<ListData<RoleProfession>> {

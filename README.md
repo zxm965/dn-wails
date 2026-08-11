@@ -17,13 +17,15 @@
 ├── main.go                        # 组合根：App、Window、Service 与 SystemTray
 ├── internal/
 │   ├── application/               # 暴露给前端的 Wails v3 Service 门面
+│   ├── account/                   # 全局账号、持久会话与 PostgreSQL 身份服务
 │   ├── appupdate/                 # Gitee Release 更新规则与版本比较
 │   ├── buildinfo/                 # 构建期版本和发布元数据
 │   ├── diagnostics/               # 日志与运行诊断
-│   ├── dn/                        # DN 认证、角色、周计划与消息
+│   ├── dn/                        # DN 角色、周计划、消息与官网同步
 │   ├── lifecycle/                 # 应用生命周期状态
 │   ├── nativekit/                 # 原生能力规则与类型
 │   ├── notification/              # 系统通知规则与类型
+│   ├── quicknotes/                # 云端快速笔记规则与 PostgreSQL 持久化
 │   ├── settings/                  # 类型化应用设置
 │   ├── singleinstance/            # 单实例启动数据处理
 │   ├── storage/                   # 用户配置文件存储
@@ -70,13 +72,13 @@ wails3 task dev
 
 ## 发布与更新
 
-GitHub Actions 会将 GitHub 分支和标签同步到 `zxm965/dn-wails` 的 Gitee 镜像。推送 `vMAJOR.MINOR.PATCH` 标签后，工作流使用 Wails v3 Taskfile 构建 macOS universal 兼容更新 ZIP、DMG 和 Windows amd64 用户级 NSIS 安装器，并同时发布 GitHub、Gitee Release。GitHub Release 保留兼容清单供旧客户端升级到迁移版本，包含本次改动的新客户端后续统一从 Gitee 检查和下载更新。当前客户端在 macOS 上使用 DMG 自动更新，ZIP 继续用于兼容旧客户端：
+项目 Git 仓库以 `https://gitee.com/zxm965/dn-wails.git` 为准。推送 `vMAJOR.MINOR.PATCH` 标签后，现有 GitHub Actions 工作流使用 Wails v3 Taskfile 构建 macOS universal 兼容更新 ZIP、DMG 和 Windows amd64 用户级 NSIS 安装器，并同时发布 GitHub、Gitee Release。GitHub Release 保留兼容清单供旧客户端升级到迁移版本，包含本次改动的新客户端后续统一从 Gitee 检查和下载更新。当前客户端在 macOS 上使用 DMG 自动更新，ZIP 继续用于兼容旧客户端：
 
 ```bash
 git tag v1.0.0
 git push origin v1.0.0
 ```
 
-GitHub 仓库需要配置具有 Gitee 仓库写权限的 `GITEE_TOKEN` Actions Secret，Gitee 仓库需要允许未登录用户读取 Release。Gitee 普通项目单个 Release 附件上限为 100 MB，构建产物超过限制时发布工作流会失败并给出明确错误。
+GitHub 仓库需要配置具有 Gitee Release 写权限的 `GITEE_TOKEN` Actions Secret，Gitee 仓库需要允许未登录用户读取 Release。Gitee 普通项目单个 Release 附件上限为 100 MB，构建产物超过限制时发布工作流会失败并给出明确错误。
 
 当前 Wails v3 仍是 beta，桌面原生行为和平台打包需要在目标系统上充分验证。默认发布尚未配置正式 Apple/Windows 代码签名。

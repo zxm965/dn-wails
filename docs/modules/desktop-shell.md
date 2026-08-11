@@ -11,43 +11,55 @@
 - `frontend/src/app/App.css.ts`：主工作区和右侧视图背景的局部 vanilla-extract 样式。
 - `frontend/src/shared/components/titlebar/`：Wails 自定义标题栏和窗口控制。
 - `frontend/src/shared/components/app-sidebar/`：左侧产品信息、分组菜单和运行状态。
-- `frontend/src/features/test-tools/`：测试工具及其嵌入式应用概览。
+- `frontend/src/shared/navigation/menuConfig.ts`：菜单唯一 key、分组、页面、图标和默认显隐配置。
+- `frontend/src/shared/navigation/routeConfig.ts`：页面标题、是否需要登录和是否出现在侧栏。
+- `frontend/src/features/account/`：全局登录入口、个人信息页和标题栏头像按钮。
+- `frontend/src/features/devtools/`：DevTools 及其嵌入式应用概览。
 
 ## 页面结构
 
 ```text
 App
 ├── TitleBar
+│   ├── 账号入口（未登录为小人占位，登录后为头像）
+│   └── 登录后：DN 消息中心
 └── Workspace
     ├── AppSidebar
     │   ├── 产品信息
-    │   ├── 业务系统
-    │   │   └── DN 周常管理
+    │   ├── 常用工具
+    │   │   └── 快速笔记
+    │   ├── 业务系统（按偏好显隐）
+    │   │   └── DN 周常管理（默认隐藏）
     │   │       ├── 仪表盘
     │   │       ├── 周计划
     │   │       ├── 角色
-    │   │       ├── 站内消息
-    │   │       └── 个人中心
+    │   │       └── 站内消息
     │   ├── 系统设置
     │       ├── 偏好设置
-    │       └── 测试工具
+    │       └── DevTools（默认隐藏）
     │           └── 应用概览 / 桌面能力（交互窗口、原生集成、系统通知）/ 文本工具
     │   └── 作者状态区
     └── View
-        ├── DnDashboard / DnWeeklyPlans / DnRoles / DnMessages / DnAccount
+        ├── QuickNotesPanel
+        ├── DnDashboard / DnWeeklyPlans / DnRoles / DnMessages
+        ├── AccountPanel（标题栏头像进入，不显示在侧栏）
         ├── SettingsPanel
-        └── TestToolsPanel
+        └── DevToolsPanel
 ```
 
 ## 导航约定
 
-- 应用启动默认进入 DN 仪表盘；未登录时显示 DN 登录入口。
+- 应用启动读取菜单显隐设置并进入第一个可见入口；默认配置显示快速笔记和偏好设置。需要登录的入口未认证时统一显示全局登录/注册页。
 - 设置、诊断和开发能力放在“系统设置”分组中。
-- 应用概览作为测试工具的只读分类展示，不再占用独立侧栏入口。
+- 应用概览作为 DevTools 的只读分类展示，不再占用独立侧栏入口。
 - 测试操作不得出现在正式业务页面。
-- 当前导航状态使用 `AppView` 联合类型约束，新增视图时同步更新标题映射和侧边栏配置。
+- 菜单渲染、默认入口、偏好开关和显隐判断共同读取 `menuConfig.ts`；页面标题、导航类型和认证要求读取 `routeConfig.ts`。所有菜单和子页面使用全局唯一 key 建立对应关系。
+- 当前导航状态的 `AppView` 联合类型从菜单配置推导。隐藏当前功能入口时，应用自动回退到第一个可见页面；偏好设置始终可见，避免失去配置入口。
+- `App.tsx` 在渲染页面前读取 `requiresAuth`：账号状态恢复期间显示加载态，未登录时显示 `AccountLogin`，业务页面不重复实现登录判断。
+- `account` 是 standalone 页面，不出现在侧栏。标题栏账号入口始终可见：未登录时显示小人占位和悬浮登录提示，点击进入登录页；登录后显示个人头像，点击进入个人信息管理。退出后若仍停留在受保护页面，则立即回到全局登录入口。
 - DN 周常管理使用可展开子菜单；侧栏展开时点击父入口控制折叠，侧栏收起时悬浮或聚焦父入口会在右侧显示可点击的浮层子菜单，点击父入口仍直接打开仪表盘。
 - 标题栏覆盖整个应用宽度，侧边栏只存在于标题栏下方的工作区。
+- macOS 使用原生左侧红绿灯时，应用标题保持窗口几何居中，账号与消息操作贴近最右侧并保留 8px 安全边距；Windows/Linux 的账号与消息操作位于最小化、最大化、关闭按钮左侧，并通过轻分隔线区分应用操作和系统窗口操作。
 - 应用主名称统一读取根目录 `.env` 的 `APP_DISPLAY_NAME`，不得在组件内硬编码。
 - 侧栏左下角作者名称统一读取根目录 `.env` 的 `APP_AUTHOR_NAME`，展开时显示完整文字，折叠时保留状态点和悬停标题。
 - 标题栏与侧边栏的完整 DOM 子树禁止文字选择和图片拖拽，避免窗口拖动或侧栏缩放时出现网页选区与拖影。
@@ -85,4 +97,4 @@ pnpm lint
 pnpm build
 ```
 
-侧边栏、滚动和窗口控制需要人工桌面验证。
+侧边栏、登录守卫、标题栏头像、滚动和窗口控制需要人工桌面验证。

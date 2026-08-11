@@ -2,7 +2,7 @@
 
 ## 模块目标
 
-以 Gitee Releases 作为客户端正式版本源，为 macOS 与 Windows 提供版本展示、启动自动检查、手动检查、确认更新、下载校验和更新后重启能力。GitHub Actions 继续负责跨平台构建，并将源码、标签和发布产物同步到 Gitee。
+以 Gitee Releases 作为客户端正式版本源，为 macOS 与 Windows 提供版本展示、启动自动检查、手动检查、确认更新、下载校验和更新后重启能力。Git 仓库以 Gitee 为准，GitHub Actions 继续负责跨平台构建，并向 GitHub、Gitee 发布产物。
 
 ## 目录与职责
 
@@ -14,8 +14,7 @@
 - `internal/platform/appupdate/installer_windows.go`：退出当前进程后静默运行用户级 NSIS 安装器并重新打开应用。
 - `internal/application/update.go`：向前端暴露版本信息、检查和安装三个 Wails 用例。
 - `frontend/src/features/app-update/`：根级更新状态、启动自动检查、确认弹窗和错误反馈。
-- `frontend/src/features/test-tools/components/DesktopOverview.tsx`：展示当前版本、更新状态和手动检查按钮，不展示更新源地址等发布配置。
-- `.github/workflows/sync-gitee.yml`：GitHub push 触发的分支、标签源码同步。
+- `frontend/src/features/devtools/components/DesktopOverview.tsx`：展示当前版本、更新状态和手动检查按钮，不展示更新源地址等发布配置。
 - `.github/workflows/release.yml`：标签触发的双平台质量检查、构建以及 GitHub、Gitee Release 发布。
 - `.github/workflows/republish-gitee-release.yml`：从已有 GitHub Release 下载安装包并补发指定标签的 Gitee Release，不重建桌面应用或移动标签。
 - `Taskfile.yml` 与 `build/*/Taskfile.yml`：Wails v3 前端、bindings、平台构建和打包任务。
@@ -27,13 +26,13 @@
 ## 依赖关系
 
 ```text
-Git tag vX.Y.Z
-  → GitLab 镜像同步标签到 GitHub
+Gitee repository tag vX.Y.Z
+  → 现有镜像同步标签到 GitHub
   → GitHub Actions
       ├── macOS universal .zip / .dmg
       ├── Windows amd64 NSIS installer
       ├── GitHub Release + latest.json + SHA256SUMS.txt
-      └── Gitee 源码镜像 + Gitee Release + 同名发布资源
+      └── Gitee Release + 同名发布资源
 
 React AppUpdateProvider
   → application.App
@@ -46,7 +45,7 @@ React AppUpdateProvider
 
 ### 发布
 
-1. 推送 `v1.2.3` 形式的标签。
+1. 向 Gitee 仓库推送 `v1.2.3` 形式的标签。
 2. 工作流校验标签、执行 Go 测试和前端格式、lint、build。
 3. 双端 build job 从 GitHub Environment `RELEASE` 读取 `secrets.DATABASE_URL`，生成不进入 Git 记录的临时 `.env.local`。
 4. 工作流用 `wails3 task common:update:build-assets` 同步平台元数据，并通过 linker flags 注入运行时版本和仓库。
@@ -54,9 +53,8 @@ React AppUpdateProvider
 6. Windows runner 安装 NSIS 后使用 `wails3 task windows:package ARCH=amd64 INSTALL_SCOPE=user` 构建用户级安装器。
 7. 两端资源成功后为 ZIP、DMG 和 EXE 计算大小与 SHA-256，先生成指向 GitHub Release 的 `latest.json` 和对应 `SHA256SUMS.txt`。
 8. 创建或更新 GitHub Release，并上传应用安装资源、GitHub 更新清单和校验文件；这组资源继续供尚未切换更新源的旧客户端迁移，GitHub 自动生成的 Source code 归档也继续保留。
-9. 将发布标签推送到 Gitee，覆盖生成指向 Gitee Release 的 `latest.json` 和对应 `SHA256SUMS.txt`，再通过 Gitee OpenAPI 创建或更新同标签 Release，删除同名旧附件后上传当前 ZIP、DMG、EXE、清单和校验文件；`latest.json` 最后上传，避免新 Release 在安装包未完整上传时被客户端消费。
-10. 普通 GitHub push 由独立同步工作流将全部 GitHub 分支和标签强制同步到 Gitee；Gitee 作为只读镜像使用，不回写 GitHub。
-11. Gitee 发布中断时可手动运行 `Republish Gitee release`，输入稳定标签后从对应 GitHub Release 恢复安装包，并只补齐缺失或大小不一致的 Gitee 附件。
+9. 覆盖生成指向 Gitee Release 的 `latest.json` 和对应 `SHA256SUMS.txt`，再通过 Gitee OpenAPI 创建或更新同标签 Release，删除同名旧附件后上传当前 ZIP、DMG、EXE、清单和校验文件；`latest.json` 最后上传，避免新 Release 在安装包未完整上传时被客户端消费。
+10. Gitee 发布中断时可手动运行 `Republish Gitee release`，输入稳定标签后从对应 GitHub Release 恢复安装包，并只补齐缺失或大小不一致的 Gitee 附件。
 
 ### 检查与安装
 
@@ -134,21 +132,21 @@ interface ApplicationUpdateManifest {
 - macOS 应用包所在目录必须允许当前用户写入；Windows 发布统一使用 Taskfile 的 `INSTALL_SCOPE=user`，避免自动更新请求管理员权限。
 - 同一进程只允许一个安装操作；安装前再次检查版本，避免确认期间 Release 发生变化。
 - Build 与 Release job 均关联 GitHub Environment `RELEASE`；`DATABASE_URL` 缺失、超过 8192 字符或包含控制字符时，build job 立即失败。
-- GitHub Actions 使用仓库 Secret `GITEE_TOKEN` 同步 Git refs 和调用 Gitee OpenAPI；令牌只存在于工作流，不进入发布清单或桌面二进制。
+- GitHub Actions 使用仓库 Secret `GITEE_TOKEN` 调用 Gitee OpenAPI；令牌只存在于工作流，不进入发布清单或桌面二进制。
 - 临时 `.env.local` 使用受限权限创建并由 Go embed 写入二进制，只保存数据库地址，不进入 Git 记录，也不会主动输出到工作流日志。
 - GitHub Secret 只能保护构建前和构建过程中的值；发布后的桌面二进制可被分析，因此数据库账号必须最小权限、限制来源并支持轮换。
 - 当前工作流只做 macOS ad-hoc 签名，Windows 也未配置 Authenticode。正式外部分发前需要配置 Apple Developer ID/公证和 Windows 代码签名，否则系统可能显示来源或信誉警告。
 
 ## 接入与发布
 
-Gitee 更新源固定为 `zxm965/dn-wails`。项目继续以 GitLab 为主仓库时，上游镜像规则必须先把分支和稳定 Git 标签同步到 GitHub；GitHub 仓库需要启用 Actions，并授予 Release 工作流 `contents: write` 权限。GitHub Actions 仓库 Secret `GITEE_TOKEN` 必须具有目标 Gitee 仓库的代码和 Release 写权限，Gitee 仓库则必须公开 Release 读取能力。Build 与 Release job 使用 GitHub Environment `RELEASE`，其中 build job 还需要 `DATABASE_URL` Secret。构建使用锁定的 Wails v3 CLI，并重新生成 bindings。
+Git 仓库和 Gitee 更新源固定为 `https://gitee.com/zxm965/dn-wails.git`。如继续使用现有 GitHub Actions，上游镜像规则需要把稳定 Git 标签同步到 GitHub；GitHub 仓库需要启用 Actions，并授予 Release 工作流 `contents: write` 权限。GitHub Actions 仓库 Secret `GITEE_TOKEN` 必须具有目标 Gitee 仓库的 Release 写权限，Gitee 仓库则必须公开 Release 读取能力。Build 与 Release job 使用 GitHub Environment `RELEASE`，其中 build job 还需要 `DATABASE_URL` Secret。构建使用锁定的 Wails v3 CLI，并重新生成 bindings。
 
 ```bash
 git tag v1.0.0
 git push origin v1.0.0
 ```
 
-普通分支提交只同步源码，不发布客户端更新；只有同步到 GitHub 的稳定版本标签会触发 Release 工作流。重新运行同一标签时，工作流会覆盖 GitHub 和 Gitee Release 中的同名文件。
+普通分支提交不发布客户端更新；只有从 Gitee 镜像到 GitHub 的稳定版本标签会触发 Release 工作流。重新运行同一标签时，工作流会覆盖 GitHub 和 Gitee Release 中的同名文件。
 
 切换前已经发布且只识别 GitHub 的旧客户端会从新版本的 GitHub Release 下载升级包；安装包含本次改动的新版本后，后续更新统一走 Gitee。GitHub Release 中的兼容清单和安装包、macOS 兼容 ZIP 都必须至少保留到不再支持旧客户端直接升级为止。
 

@@ -1,5 +1,6 @@
 import { createContext, type ReactNode, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react'
 
+import { useAccount } from '@/features/account'
 import { useFeedback } from '@/shared/feedback'
 import { openExternalURL } from '@/shared/native-kit'
 
@@ -12,7 +13,6 @@ import {
   type SiteMessage,
 } from '../api/dnSystemApi'
 import type { DnInternalTarget } from '../components/DnMessages'
-import { useDnAuth } from './DnAuthProvider'
 
 interface DnMessageContextValue {
   inboxItems: SiteMessage[]
@@ -50,7 +50,7 @@ export function DnMessageProvider({
   onNavigate: (target: DnInternalTarget) => void
 }) {
   const { notify } = useFeedback()
-  const { user } = useDnAuth()
+  const { user } = useAccount()
   const [inboxItems, setInboxItems] = useState<SiteMessage[]>([])
   const [unreadCount, setUnreadCount] = useState(0)
   const [loading, setLoading] = useState(false)

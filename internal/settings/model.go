@@ -1,6 +1,6 @@
 package settings
 
-const CurrentVersion = 5
+const CurrentVersion = 6
 
 const (
 	ThemeSystem = "system"
@@ -37,6 +37,10 @@ type Notifications struct {
 	DoNotDisturb bool `json:"doNotDisturb"`
 }
 
+type Navigation struct {
+	MenuVisibility map[string]bool `json:"menuVisibility"`
+}
+
 type WindowBounds struct {
 	X         int  `json:"x"`
 	Y         int  `json:"y"`
@@ -56,6 +60,7 @@ type AppSettings struct {
 	Version       int           `json:"version"`
 	Appearance    Appearance    `json:"appearance"`
 	Notifications Notifications `json:"notifications"`
+	Navigation    Navigation    `json:"navigation"`
 	Window        Window        `json:"window"`
 }
 
@@ -73,6 +78,9 @@ func Default() AppSettings {
 			Enabled:      true,
 			ShowPreview:  true,
 			DoNotDisturb: false,
+		},
+		Navigation: Navigation{
+			MenuVisibility: make(map[string]bool),
 		},
 		Window: Window{
 			CloseBehavior:  CloseBehaviorQuit,

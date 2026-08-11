@@ -3,8 +3,8 @@ import { createRoot } from 'react-dom/client'
 import '@wailsio/runtime'
 
 import App from '@/app/App'
+import { AccountProvider } from '@/features/account'
 import { AppUpdateProvider } from '@/features/app-update'
-import { DnAuthProvider } from '@/features/dn-system'
 import { SettingsProvider } from '@/features/settings'
 import { FeedbackProvider } from '@/shared/feedback'
 import { OverlayProvider } from '@/shared/overlay'
@@ -23,9 +23,9 @@ root.render(
         <OverlayProvider>
           <FeedbackProvider>
             <AppUpdateProvider>
-              <DnAuthProvider>
+              <AccountProvider>
                 <App />
-              </DnAuthProvider>
+              </AccountProvider>
             </AppUpdateProvider>
           </FeedbackProvider>
         </OverlayProvider>

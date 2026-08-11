@@ -1,4 +1,4 @@
-# 测试工具模块
+# DevTools 模块
 
 ## 模块目标
 
@@ -6,14 +6,15 @@
 
 ## 目录与职责
 
-- `frontend/src/features/test-tools/components/TestToolsPanel.tsx`：测试分类、操作执行和结果展示。
-- `frontend/src/features/test-tools/components/TestToolsPanel.css.ts`：分类菜单、操作网格和拖放区域的局部样式。
-- `frontend/src/features/test-tools/components/DesktopOverview.tsx`、`DesktopOverview.css.ts`：嵌入式应用概览、版本更新、平台与设置摘要。
-- `frontend/src/features/test-tools/components/DeveloperTextToolbox.tsx`、`DeveloperTextToolbox.css.ts`：左侧工具菜单与右侧本地文本处理工作区。
-- `frontend/src/features/test-tools/lib/textTools.ts`：JSON、Base64、URL、MD5 与 SHA 的纯前端转换逻辑。
+- `frontend/src/features/devtools/components/DevToolsPanel.tsx`：测试分类、操作执行和结果展示。
+- `frontend/src/features/devtools/components/DevToolsPanel.css.ts`：分类菜单、操作网格和拖放区域的局部样式。
+- `frontend/src/features/devtools/components/DesktopOverview.tsx`、`DesktopOverview.css.ts`：嵌入式应用概览、版本更新、平台与设置摘要。
+- `frontend/src/features/devtools/components/DeveloperTextToolbox.tsx`、`DeveloperTextToolbox.css.ts`：左侧工具菜单与右侧本地文本处理工作区。
+- `frontend/src/features/devtools/lib/textTools.ts`：JSON、Base64、URL、MD5 与 SHA 的纯前端转换逻辑。
 - `frontend/src/features/app-update/`：为应用概览提供正式版本、自动检查和手动检查能力。
 - `frontend/src/features/system-notification/components/SystemNotificationPanel.tsx`：以 embedded 模式嵌入通知测试。
-- `frontend/src/app/App.tsx`：将测试工具放入“系统设置”分组。
+- `frontend/src/shared/navigation/menuConfig.ts`：将 DevTools 配置为“系统设置”分组下默认隐藏、可由偏好设置开启的入口。
+- `frontend/src/app/App.tsx`：按共享菜单配置装配 DevTools 视图。
 
 ## 测试分类
 
@@ -64,13 +65,14 @@
 
 ## 行为约定
 
-- 测试操作的结果统一显示在测试工具页，不影响正式业务状态。
-- 打开测试工具时默认展示应用概览；除正式的“检查最新版”外，概览不提供测试操作入口。
+- 测试操作的结果统一显示在 DevTools 页，不影响正式业务状态。
+- DevTools 侧栏入口默认关闭；用户在“偏好设置 → 左侧菜单”开启后才显示，显隐设置使用唯一 key `devtools` 持久化。
+- 打开 DevTools 时默认展示应用概览；除正式的“检查最新版”外，概览不提供测试操作入口。
 - 需要用户主动触发的系统操作不得在页面加载时自动执行。
 - 文件、剪贴板、窗口和通知等真实原生能力需要在 Wails 桌面运行环境中验证。
 - 交互窗口、原生集成和系统通知统一放入“桌面能力”分类，不单独占用多个顶部分类入口。
 - 新增通用模块的人工验证入口时，优先放入本模块现有分类；确有必要时再增加分类。
-- 测试工具不是生产业务 API，业务组件仍应直接使用对应模块的正式封装。
+- DevTools 不是生产业务 API，业务组件仍应直接使用对应模块的正式封装。
 - MD5 与 SHA-1 只作为兼容性校验工具，不用于密码存储或安全签名。
 
 ## 响应式处理
@@ -82,7 +84,7 @@
 - 分类按钮固定使用 `md`，测试动作跟随用户配置的默认按钮尺寸；布局变化不会自行覆盖按钮高度。
 - 结果文本、文件路径和原生能力输出允许换行或在局部区域滚动，不产生整页横向滚动。
 - embedded 通知面板按自身内容宽度切换为单列，不依赖整个窗口宽度。
-- embedded 应用概览移除页面级外边距和内边距，在测试工具内容区内继续使用自身 Container Query。
+- embedded 应用概览移除页面级外边距和内边距，在 DevTools 内容区内继续使用自身 Container Query。
 - 文本工具统一使用顶部工具栏，并在页面滚动后吸附在分类导航下方；窄宽度下工具入口允许横向滚动，输入与结果改为单列。
 
 ## 验证

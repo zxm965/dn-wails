@@ -16,33 +16,21 @@ import (
 const (
 	passwordHashPrefix = "scrypt"
 	passwordKeyLength  = 64
-	sessionDuration    = 24 * time.Hour
-	sessionRefreshAge  = 5 * time.Minute
 )
 
 func (s *Service) AuthState() (AuthState, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
-	now := time.Now().UTC()
-	current, err := s.authenticatedUserLocked(now)
+	current, err := s.authenticatedUserLocked(time.Now())
 	if err == nil {
 		profile := profileFromUser(*current)
-		lastUsedAt, _ := time.Parse(time.RFC3339Nano, s.state.Session.LastUsedAt)
-		if lastUsedAt.IsZero() || now.Sub(lastUsedAt) >= sessionRefreshAge {
-			next := cloneState(s.state)
-			next.Session.LastUsedAt = now.Format(time.RFC3339Nano)
-			next.Session.ExpiresAt = now.Add(sessionDuration).Format(time.RFC3339Nano)
-			if commitErr := s.commit(next); commitErr != nil {
-				return AuthState{}, commitErr
-			}
-		}
-		return AuthState{Authenticated: true, User: &profile, ExpiresAt: s.state.Session.ExpiresAt}, nil
+		return AuthState{Authenticated: true, User: &profile}, nil
 	}
 	if !errors.Is(err, ErrUnauthenticated) {
 		return AuthState{}, err
 	}
-	if s.state.Session.UserID != 0 || s.state.Session.ExpiresAt != "" {
+	if s.state.Session.UserID != 0 {
 		next := cloneState(s.state)
 		next.Session = session{}
 		if commitErr := s.commit(next); commitErr != nil {
@@ -109,9 +97,7 @@ func (s *Service) Register(input RegistrationInput) (Profile, error) {
 		claimLegacyData(&next, created.ID)
 	}
 	next.Session = session{
-		UserID:     created.ID,
-		ExpiresAt:  now.Add(sessionDuration).Format(time.RFC3339Nano),
-		LastUsedAt: now.Format(time.RFC3339Nano),
+		UserID: created.ID,
 	}
 	if err := s.commit(next); err != nil {
 		return Profile{}, err
@@ -145,11 +131,8 @@ func (s *Service) Login(input LoginInput) (Profile, error) {
 		return Profile{}, fmt.Errorf("%w: 当前账号已被禁用", ErrForbidden)
 	}
 
-	now := time.Now().UTC()
 	next.Session = session{
-		UserID:     next.Users[userIndex].ID,
-		ExpiresAt:  now.Add(sessionDuration).Format(time.RFC3339Nano),
-		LastUsedAt: now.Format(time.RFC3339Nano),
+		UserID: next.Users[userIndex].ID,
 	}
 	if err := s.commit(next); err != nil {
 		return Profile{}, err
@@ -160,7 +143,7 @@ func (s *Service) Login(input LoginInput) (Profile, error) {
 func (s *Service) Logout() error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	if s.state.Session.UserID == 0 && s.state.Session.ExpiresAt == "" {
+	if s.state.Session.UserID == 0 {
 		return nil
 	}
 	next := cloneState(s.state)
@@ -255,12 +238,8 @@ func (s *Service) ChangePassword(input PasswordInput) error {
 	return s.commit(next)
 }
 
-func (s *Service) authenticatedUserLocked(now time.Time) (*user, error) {
-	if s.state.Session.UserID <= 0 || s.state.Session.ExpiresAt == "" {
-		return nil, ErrUnauthenticated
-	}
-	expiresAt, err := time.Parse(time.RFC3339Nano, s.state.Session.ExpiresAt)
-	if err != nil || !expiresAt.After(now) {
+func (s *Service) authenticatedUserLocked(_ time.Time) (*user, error) {
+	if s.state.Session.UserID <= 0 {
 		return nil, ErrUnauthenticated
 	}
 	index := findUserIndex(s.state.Users, s.state.Session.UserID)

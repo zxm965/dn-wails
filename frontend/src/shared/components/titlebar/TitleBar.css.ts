@@ -5,7 +5,8 @@ const disableImageDrag = { WebkitUserDrag: 'none' } as const
 const disableWindowDrag = { WebkitAppRegion: 'no-drag' } as const
 
 const titlebarMacos = style({
-  paddingRight: '82px',
+  position: 'relative',
+  paddingRight: '8px',
   paddingLeft: '82px',
 })
 
@@ -43,8 +44,12 @@ const titlebarBrand = style({
   gap: '9px',
   selectors: {
     [`${titlebarMacos} &`]: {
-      flex: '1',
+      position: 'absolute',
+      top: '50%',
+      left: '50%',
+      width: 'min(60%, 620px)',
       justifyContent: 'center',
+      transform: 'translate(-50%, -50%)',
     },
   },
 })
@@ -58,6 +63,13 @@ const titlebarActions = style({
   vars: {
     '--wails-draggable': 'no-drag',
   },
+})
+
+const titlebarActionsWindowControls = style({
+  height: '28px',
+  marginRight: '5px',
+  paddingRight: '9px',
+  borderRight: '1px solid var(--border-subtle)',
 })
 
 const titlebarLogo = style([
@@ -145,6 +157,7 @@ export const styles = {
   titlebar: titlebar,
   'titlebar-brand': titlebarBrand,
   'titlebar-actions': titlebarActions,
+  'titlebar-actions-window-controls': titlebarActionsWindowControls,
   'titlebar-macos': titlebarMacos,
   'titlebar-logo': titlebarLogo,
   'titlebar-title': titlebarTitle,

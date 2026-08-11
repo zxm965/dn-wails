@@ -13,46 +13,6 @@ const dnPage = style({
   containerType: 'inline-size',
 })
 
-const dnAuthPage = style({
-  minHeight: '100%',
-  display: 'grid',
-  placeItems: 'center',
-  padding: 'clamp(20px, 5vw, 48px)',
-})
-
-const dnAuthCard = style({
-  width: 'min(100%, 440px)',
-})
-
-const dnAuthMark = style({
-  width: '48px',
-  height: '48px',
-  display: 'grid',
-  placeItems: 'center',
-  marginBottom: '12px',
-  color: 'var(--accent)',
-  background: 'var(--accent-muted)',
-  borderRadius: '14px',
-})
-
-const dnAuthTabs = style({
-  width: '100%',
-  gridTemplateColumns: 'repeat(2, minmax(0, 1fr))',
-})
-
-const dnAuthForm = style({
-  display: 'grid',
-  gap: '16px',
-  marginTop: '18px',
-})
-
-const dnAuthRegisterNote = style({
-  margin: '5px 0 0',
-  color: 'var(--text-tertiary)',
-  fontSize: '10px',
-  lineHeight: '1.5',
-})
-
 const dnDashboardOverview = style([
   {
     display: 'grid',
@@ -835,75 +795,8 @@ const dnMessagePopupContent = style({
   whiteSpace: 'pre-wrap',
 })
 
-const dnAccountForm = style([
-  {
-    display: 'grid',
-    gridTemplateColumns: '150px minmax(0, 1fr)',
-    gap: '24px',
-  },
-  {
-    '@container': {
-      'dn-page (max-width: 620px)': {
-        gridTemplateColumns: '1fr',
-      },
-    },
-  },
-])
-
-const dnAvatarPanel = style({
-  display: 'grid',
-  alignContent: 'start',
-  justifyItems: 'center',
-  gap: '10px',
-})
-
-const dnAccountFooter = style({
-  justifyContent: 'flex-end',
-})
-
-const dnSecurityForm = style([
-  {
-    display: 'grid',
-    gridTemplateColumns: 'auto minmax(0, 1fr)',
-    alignItems: 'start',
-    gap: '18px',
-  },
-  {
-    '@container': {
-      'dn-page (max-width: 620px)': {
-        gridTemplateColumns: '1fr',
-      },
-    },
-  },
-])
-
-const dnFieldFull = style({
-  gridColumn: '1 / -1',
-})
-
-const dnStorageInfo = style([
-  {
-    display: 'grid',
-    gridTemplateColumns: 'auto minmax(0, 1fr)',
-    gap: '18px',
-  },
-  {
-    '@container': {
-      'dn-page (max-width: 620px)': {
-        gridTemplateColumns: '1fr',
-      },
-    },
-  },
-])
-
 export const styles = {
   'dn-page': dnPage,
-  'dn-auth-page': dnAuthPage,
-  'dn-auth-card': dnAuthCard,
-  'dn-auth-mark': dnAuthMark,
-  'dn-auth-tabs': dnAuthTabs,
-  'dn-auth-form': dnAuthForm,
-  'dn-auth-register-note': dnAuthRegisterNote,
   'dn-dashboard-overview': dnDashboardOverview,
   'dn-dashboard-grid': dnDashboardGrid,
   'dn-progress-card': dnProgressCard,
@@ -977,31 +870,10 @@ export const styles = {
   'dn-message-center-item': dnMessageCenterItem,
   'dn-message-center-footer': dnMessageCenterFooter,
   'dn-message-popup-content': dnMessagePopupContent,
-  'dn-account-form': dnAccountForm,
-  'dn-avatar-panel': dnAvatarPanel,
-  'dn-account-footer': dnAccountFooter,
-  'dn-security-form': dnSecurityForm,
-  'dn-field-full': dnFieldFull,
-  'dn-storage-info': dnStorageInfo,
 } as const
 
 globalStyle(`${dnPage} p`, {
   overflowWrap: 'anywhere',
-})
-
-globalStyle(`${dnAuthCard} ${cardStyles['ui-card-header']}`, {
-  display: 'grid',
-  justifyItems: 'center',
-  textAlign: 'center',
-})
-
-globalStyle(`${dnAuthMark} svg`, {
-  width: '24px',
-  height: '24px',
-})
-
-globalStyle(`${dnAuthForm} > ${buttonStyles.root}`, {
-  width: '100%',
 })
 
 globalStyle(
@@ -1375,49 +1247,10 @@ globalStyle(`${dnSwitchRow} small`, {
   color: 'var(--text-tertiary)',
 })
 
-globalStyle(`${dnSecurityForm} > svg`, {
-  width: '38px',
-  height: '38px',
-  color: 'var(--accent)',
-})
-
-globalStyle(`${dnStorageInfo} > svg`, {
-  width: '38px',
-  height: '38px',
-  color: 'var(--accent)',
-})
-
-globalStyle(
-  `${dnStorageInfo} h2,
-${dnStorageInfo} p`,
-  {
-    margin: '0',
-  },
-)
-
-globalStyle(`${dnStorageInfo} h2`, {
-  fontSize: '17px',
-})
-
-globalStyle(`${dnStorageInfo} p`, {
-  marginTop: '9px',
-  color: 'var(--text-secondary)',
-  fontSize: '12px',
-  lineHeight: '1.65',
-})
-
 globalStyle(`${dnPriorityCard} ${cardStyles['ui-card-content']}`, {
   '@container': {
     'dn-page (max-width: 880px)': {
       minHeight: '250px',
-    },
-  },
-})
-
-globalStyle(`${dnSecurityForm} > svg`, {
-  '@container': {
-    'dn-page (max-width: 620px)': {
-      display: 'none',
     },
   },
 })

@@ -1,15 +1,6 @@
+import { ChevronDown, type LucideIcon } from 'lucide-react'
 import {
-  CalendarCheck,
-  ChevronDown,
-  CircleUserRound,
-  Gauge,
-  Mails,
-  Settings,
-  Sparkles,
-  UsersRound,
-  Wrench,
-} from 'lucide-react'
-import {
+  Fragment,
   type CSSProperties,
   type KeyboardEvent as ReactKeyboardEvent,
   type PointerEvent as ReactPointerEvent,
@@ -22,60 +13,26 @@ import { appConfig } from '@/app/appConfig'
 import appIcon from '@/assets/images/app-icon.png'
 import { Button } from '@/shared/components/ui'
 import { createScopedClassNames } from '@/shared/lib/classNames'
+import {
+  MENU_GROUPS,
+  isMenuEntryVisible,
+  type AppView,
+  type MenuEntry,
+  type MenuKey,
+  type MenuVisibility,
+} from '@/shared/navigation'
 
 import { styles } from './AppSidebar.css'
 
 const cx = createScopedClassNames(styles)
 
-export type AppView =
-  | 'dn-dashboard'
-  | 'dn-weekly'
-  | 'dn-roles'
-  | 'dn-messages'
-  | 'dn-account'
-  | 'settings'
-  | 'test-tools'
-
-interface NavigationItem {
-  id: AppView
-  label: string
-  icon: 'dashboard' | 'weekly' | 'roles' | 'messages' | 'account' | 'settings' | 'tools'
-}
-
-interface NavigationGroup {
-  label: string
-  parent?: { id: string; label: string }
-  items: NavigationItem[]
-}
+type ParentMenuEntry = Extract<MenuEntry, { children: readonly unknown[] }>
 
 interface SidebarFlyout {
-  groupLabel: string
+  entryKey: MenuKey
   top: number
   left: number
 }
-
-const DN_VIEWS: AppView[] = ['dn-dashboard', 'dn-weekly', 'dn-roles', 'dn-messages', 'dn-account']
-
-const NAVIGATION_GROUPS: NavigationGroup[] = [
-  {
-    label: '业务系统',
-    parent: { id: 'dn-navigation', label: 'DN 周常管理' },
-    items: [
-      { id: 'dn-dashboard', label: '仪表盘', icon: 'dashboard' },
-      { id: 'dn-weekly', label: '周计划', icon: 'weekly' },
-      { id: 'dn-roles', label: '角色', icon: 'roles' },
-      { id: 'dn-messages', label: '站内消息', icon: 'messages' },
-      { id: 'dn-account', label: '个人中心', icon: 'account' },
-    ],
-  },
-  {
-    label: '系统设置',
-    items: [
-      { id: 'settings', label: '偏好设置', icon: 'settings' },
-      { id: 'test-tools', label: '测试工具', icon: 'tools' },
-    ],
-  },
-]
 
 const SIDEBAR_MIN_WIDTH = 64
 const SIDEBAR_MAX_WIDTH = 220
@@ -97,16 +54,36 @@ function initialCompactViewport(): boolean {
   return window.matchMedia(COMPACT_VIEWPORT_QUERY).matches
 }
 
+function isEntryActive(entry: MenuEntry, activeView: AppView): boolean {
+  return 'children' in entry ? entry.children.some((item) => item.view === activeView) : entry.view === activeView
+}
+
+function activeParentKey(activeView: AppView): MenuKey | undefined {
+  for (const group of MENU_GROUPS) {
+    for (const entry of group.entries) {
+      if ('children' in entry && entry.children.some((item) => item.view === activeView)) {
+        return entry.key
+      }
+    }
+  }
+
+  return undefined
+}
+
 interface AppSidebarProps {
   activeView: AppView
+  menuVisibility: MenuVisibility
   onNavigate: (view: AppView) => void
 }
 
-export function AppSidebar({ activeView, onNavigate }: AppSidebarProps) {
+export function AppSidebar({ activeView, menuVisibility, onNavigate }: AppSidebarProps) {
   const [sidebarWidth, setSidebarWidth] = useState(initialSidebarWidth)
   const [isCompactViewport, setIsCompactViewport] = useState(initialCompactViewport)
   const [isResizing, setIsResizing] = useState(false)
-  const [dnExpanded, setDnExpanded] = useState(() => DN_VIEWS.includes(activeView))
+  const [expandedEntries, setExpandedEntries] = useState<Record<string, boolean>>(() => {
+    const key = activeParentKey(activeView)
+    return key ? { [key]: true } : {}
+  })
   const [flyout, setFlyout] = useState<SidebarFlyout | null>(null)
   const resizeStart = useRef({ pointerX: 0, width: SIDEBAR_DEFAULT_WIDTH })
   const flyoutCloseTimer = useRef<number | undefined>(undefined)
@@ -138,8 +115,9 @@ export function AppSidebar({ activeView, onNavigate }: AppSidebarProps) {
   }, [])
 
   useEffect(() => {
-    if (DN_VIEWS.includes(activeView)) {
-      setDnExpanded(true)
+    const key = activeParentKey(activeView)
+    if (key) {
+      setExpandedEntries((current) => ({ ...current, [key]: true }))
     }
   }, [activeView])
 
@@ -164,14 +142,14 @@ export function AppSidebar({ activeView, onNavigate }: AppSidebarProps) {
     flyoutCloseTimer.current = undefined
   }
 
-  function openFlyout(group: NavigationGroup, trigger: HTMLElement) {
-    if (!isCollapsed || !group.parent) return
+  function openFlyout(entry: ParentMenuEntry, trigger: HTMLElement) {
+    if (!isCollapsed) return
 
     cancelFlyoutClose()
     const bounds = trigger.getBoundingClientRect()
-    const estimatedFlyoutHeight = group.items.length * 38 + 50
+    const estimatedFlyoutHeight = entry.children.length * 38 + 50
     setFlyout({
-      groupLabel: group.label,
+      entryKey: entry.key,
       top: Math.max(8, Math.min(bounds.top - 8, window.innerHeight - estimatedFlyoutHeight - 8)),
       left: bounds.right + 8,
     })
@@ -247,108 +225,143 @@ export function AppSidebar({ activeView, onNavigate }: AppSidebarProps) {
       </div>
 
       <nav className={cx('app-sidebar-navigation')} aria-label='应用菜单'>
-        {NAVIGATION_GROUPS.map((group) => (
-          <div key={group.label} className={cx('app-sidebar-group')}>
-            <p>{group.label}</p>
-            {group.parent && (
-              <Button
-                className={cx(
-                  `app-sidebar-menu-item app-sidebar-parent${DN_VIEWS.includes(activeView) ? ' is-active' : ''}`,
-                )}
-                size='lg'
-                variant='ghost'
-                type='button'
-                title={group.parent.label}
-                aria-haspopup={isCollapsed ? 'menu' : undefined}
-                aria-controls={isCollapsed ? `${group.parent.id}-flyout` : `${group.parent.id}-submenu`}
-                aria-expanded={isCollapsed ? flyout?.groupLabel === group.label : dnExpanded}
-                onMouseEnter={(event) => openFlyout(group, event.currentTarget)}
-                onMouseLeave={scheduleFlyoutClose}
-                onFocus={(event) => openFlyout(group, event.currentTarget)}
-                onBlur={isCollapsed ? scheduleFlyoutClose : undefined}
-                onClick={() => {
-                  if (isCollapsed) {
-                    navigate(group.items[0].id)
-                  } else {
-                    setDnExpanded((current) => !current)
-                  }
-                }}
-              >
-                <Sparkles aria-hidden='true' />
-                <span className={cx('app-sidebar-label')}>
-                  <strong>{group.parent.label}</strong>
-                </span>
-                <ChevronDown
-                  className={cx(`app-sidebar-chevron${dnExpanded ? ' is-expanded' : ''}`)}
-                  aria-hidden='true'
-                />
-              </Button>
-            )}
-            {group.parent && isCollapsed && flyout?.groupLabel === group.label && (
-              <div
-                id={`${group.parent.id}-flyout`}
-                className={cx('app-sidebar-flyout')}
-                role='menu'
-                aria-label={group.parent.label}
-                style={{ top: flyout.top, left: flyout.left }}
-                onMouseEnter={cancelFlyoutClose}
-                onMouseLeave={scheduleFlyoutClose}
-                onFocus={cancelFlyoutClose}
-                onBlur={(event) => {
-                  if (!event.currentTarget.contains(event.relatedTarget)) {
-                    scheduleFlyoutClose()
-                  }
-                }}
-                onKeyDown={(event) => {
-                  if (event.key === 'Escape') {
-                    setFlyout(null)
-                  }
-                }}
-              >
-                <strong className={cx('app-sidebar-flyout-title')}>{group.parent.label}</strong>
-                <div className={cx('app-sidebar-flyout-items')}>
-                  {group.items.map((item) => (
+        {MENU_GROUPS.map((group) => {
+          const visibleEntries = group.entries.filter((entry) => isMenuEntryVisible(entry, menuVisibility))
+          if (visibleEntries.length === 0) {
+            return null
+          }
+
+          return (
+            <div key={group.key} className={cx('app-sidebar-group')}>
+              <p>{group.label}</p>
+              {visibleEntries.map((entry) => {
+                if (!('children' in entry)) {
+                  return (
                     <Button
-                      key={item.id}
-                      className={cx(`app-sidebar-flyout-item${activeView === item.id ? ' is-flyout-active' : ''}`)}
-                      size='md'
+                      key={entry.key}
+                      className={cx(`app-sidebar-menu-item${activeView === entry.view ? ' is-active' : ''}`)}
+                      size='lg'
                       variant='ghost'
                       type='button'
-                      role='menuitem'
-                      aria-current={activeView === item.id ? 'page' : undefined}
-                      onClick={() => navigate(item.id)}
+                      title={entry.label}
+                      aria-current={activeView === entry.view ? 'page' : undefined}
+                      onClick={() => navigate(entry.view)}
                     >
-                      <NavigationIcon name={item.icon} />
-                      <span className={cx('app-sidebar-flyout-label')}>{item.label}</span>
+                      <NavigationIcon icon={entry.icon} />
+                      <span className={cx('app-sidebar-label')}>
+                        <strong>{entry.label}</strong>
+                      </span>
                     </Button>
-                  ))}
-                </div>
-              </div>
-            )}
-            <div
-              id={group.parent ? `${group.parent.id}-submenu` : undefined}
-              className={cx(group.parent ? `app-sidebar-submenu${dnExpanded ? ' is-expanded' : ''}` : undefined)}
-            >
-              {group.items.map((item) => (
-                <Button
-                  key={item.id}
-                  className={cx(`app-sidebar-menu-item${activeView === item.id ? ' is-active' : ''}`)}
-                  size={group.parent ? 'md' : 'lg'}
-                  variant='ghost'
-                  type='button'
-                  title={item.label}
-                  aria-current={activeView === item.id ? 'page' : undefined}
-                  onClick={() => navigate(item.id)}
-                >
-                  <NavigationIcon name={item.icon} />
-                  <span className={cx('app-sidebar-label')}>
-                    <strong>{item.label}</strong>
-                  </span>
-                </Button>
-              ))}
+                  )
+                }
+
+                const expanded = Boolean(expandedEntries[entry.key])
+                const active = isEntryActive(entry, activeView)
+                return (
+                  <Fragment key={entry.key}>
+                    <Button
+                      className={cx(`app-sidebar-menu-item app-sidebar-parent${active ? ' is-active' : ''}`)}
+                      size='lg'
+                      variant='ghost'
+                      type='button'
+                      title={entry.label}
+                      aria-haspopup={isCollapsed ? 'menu' : undefined}
+                      aria-controls={isCollapsed ? `${entry.key}-flyout` : `${entry.key}-submenu`}
+                      aria-expanded={isCollapsed ? flyout?.entryKey === entry.key : expanded}
+                      onMouseEnter={(event) => openFlyout(entry, event.currentTarget)}
+                      onMouseLeave={scheduleFlyoutClose}
+                      onFocus={(event) => openFlyout(entry, event.currentTarget)}
+                      onBlur={isCollapsed ? scheduleFlyoutClose : undefined}
+                      onClick={() => {
+                        if (isCollapsed) {
+                          navigate(entry.defaultView)
+                        } else {
+                          setExpandedEntries((current) => ({ ...current, [entry.key]: !expanded }))
+                        }
+                      }}
+                    >
+                      <NavigationIcon icon={entry.icon} />
+                      <span className={cx('app-sidebar-label')}>
+                        <strong>{entry.label}</strong>
+                      </span>
+                      <ChevronDown
+                        className={cx(`app-sidebar-chevron${expanded ? ' is-expanded' : ''}`)}
+                        aria-hidden='true'
+                      />
+                    </Button>
+
+                    {isCollapsed && flyout?.entryKey === entry.key && (
+                      <div
+                        id={`${entry.key}-flyout`}
+                        className={cx('app-sidebar-flyout')}
+                        role='menu'
+                        aria-label={entry.label}
+                        style={{ top: flyout.top, left: flyout.left }}
+                        onMouseEnter={cancelFlyoutClose}
+                        onMouseLeave={scheduleFlyoutClose}
+                        onFocus={cancelFlyoutClose}
+                        onBlur={(event) => {
+                          if (!event.currentTarget.contains(event.relatedTarget)) {
+                            scheduleFlyoutClose()
+                          }
+                        }}
+                        onKeyDown={(event) => {
+                          if (event.key === 'Escape') {
+                            setFlyout(null)
+                          }
+                        }}
+                      >
+                        <strong className={cx('app-sidebar-flyout-title')}>{entry.label}</strong>
+                        <div className={cx('app-sidebar-flyout-items')}>
+                          {entry.children.map((item) => (
+                            <Button
+                              key={item.key}
+                              className={cx(
+                                `app-sidebar-flyout-item${activeView === item.view ? ' is-flyout-active' : ''}`,
+                              )}
+                              size='md'
+                              variant='ghost'
+                              type='button'
+                              role='menuitem'
+                              aria-current={activeView === item.view ? 'page' : undefined}
+                              onClick={() => navigate(item.view)}
+                            >
+                              <NavigationIcon icon={item.icon} />
+                              <span className={cx('app-sidebar-flyout-label')}>{item.label}</span>
+                            </Button>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    <div
+                      id={`${entry.key}-submenu`}
+                      className={cx(`app-sidebar-submenu${expanded ? ' is-expanded' : ''}`)}
+                    >
+                      {entry.children.map((item) => (
+                        <Button
+                          key={item.key}
+                          className={cx(`app-sidebar-menu-item${activeView === item.view ? ' is-active' : ''}`)}
+                          size='md'
+                          variant='ghost'
+                          type='button'
+                          title={item.label}
+                          aria-current={activeView === item.view ? 'page' : undefined}
+                          onClick={() => navigate(item.view)}
+                        >
+                          <NavigationIcon icon={item.icon} />
+                          <span className={cx('app-sidebar-label')}>
+                            <strong>{item.label}</strong>
+                          </span>
+                        </Button>
+                      ))}
+                    </div>
+                  </Fragment>
+                )
+              })}
             </div>
-          </div>
-        ))}
+          )
+        })}
       </nav>
 
       <div className={cx('app-sidebar-footer')} title={appConfig.authorName}>
@@ -379,19 +392,6 @@ export function AppSidebar({ activeView, onNavigate }: AppSidebarProps) {
   )
 }
 
-interface NavigationIconProps {
-  name: NavigationItem['icon']
-}
-
-function NavigationIcon({ name }: NavigationIconProps) {
-  const Icon = {
-    dashboard: Gauge,
-    weekly: CalendarCheck,
-    roles: UsersRound,
-    messages: Mails,
-    account: CircleUserRound,
-    settings: Settings,
-    tools: Wrench,
-  }[name]
+function NavigationIcon({ icon: Icon }: { icon: LucideIcon }) {
   return <Icon aria-hidden='true' />
 }

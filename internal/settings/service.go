@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"strings"
 	"sync"
 
 	"dn-wails/internal/storage"
@@ -41,15 +42,8 @@ func (s *Service) Initialize() error {
 	if err := json.Unmarshal(data, &loaded); err != nil {
 		return fmt.Errorf("decode application settings: %w", err)
 	}
-	loaded, migrated, err := migrate(loaded)
-	if err != nil {
-		return err
-	}
 	if err := validate(loaded); err != nil {
 		return err
-	}
-	if migrated {
-		return s.persist(loaded)
 	}
 
 	s.mu.Lock()
@@ -57,28 +51,6 @@ func (s *Service) Initialize() error {
 	s.mu.Unlock()
 
 	return nil
-}
-
-func migrate(value AppSettings) (AppSettings, bool, error) {
-	migrated := false
-	for value.Version < CurrentVersion {
-		switch value.Version {
-		case 1:
-			value.Appearance.ButtonSize = ButtonSizeMD
-			value.Version = 2
-			migrated = true
-		case 2, 3, 4:
-			value.Version++
-			migrated = true
-		default:
-			return AppSettings{}, false, fmt.Errorf("%w: unsupported version %d", ErrInvalidSettings, value.Version)
-		}
-	}
-	if value.Version != CurrentVersion {
-		return AppSettings{}, false, fmt.Errorf("%w: unsupported version %d", ErrInvalidSettings, value.Version)
-	}
-
-	return value, migrated, nil
 }
 
 func (s *Service) Get() AppSettings {
@@ -169,11 +141,16 @@ func validate(value AppSettings) error {
 	if value.Appearance.FontScale < 0.85 || value.Appearance.FontScale > 1.25 {
 		return fmt.Errorf("%w: font scale must be between 0.85 and 1.25", ErrInvalidSettings)
 	}
+	if value.Navigation.MenuVisibility == nil {
+		return fmt.Errorf("%w: menu visibility must be an object", ErrInvalidSettings)
+	}
+	for key := range value.Navigation.MenuVisibility {
+		if strings.TrimSpace(key) != key || key == "" || len(key) > 64 {
+			return fmt.Errorf("%w: invalid menu key %q", ErrInvalidSettings, key)
+		}
+	}
 	if !contains([]string{CloseBehaviorQuit, CloseBehaviorHide}, value.Window.CloseBehavior) {
 		return fmt.Errorf("%w: unsupported close behavior %q", ErrInvalidSettings, value.Window.CloseBehavior)
-	}
-	if value.Window.Bounds != nil && (value.Window.Bounds.Width < 1024 || value.Window.Bounds.Height < 768) {
-		return fmt.Errorf("%w: saved window bounds are below the minimum size", ErrInvalidSettings)
 	}
 
 	return nil
@@ -190,6 +167,10 @@ func contains(values []string, target string) bool {
 
 func clone(value AppSettings) AppSettings {
 	result := value
+	result.Navigation.MenuVisibility = make(map[string]bool, len(value.Navigation.MenuVisibility))
+	for key, visible := range value.Navigation.MenuVisibility {
+		result.Navigation.MenuVisibility[key] = visible
+	}
 	if value.Window.Bounds != nil {
 		bounds := *value.Window.Bounds
 		result.Window.Bounds = &bounds

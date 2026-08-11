@@ -1,13 +1,15 @@
 package dn
 
+import "dn-wails/internal/account"
+
 const CurrentVersion = 2
 
 const (
-	UserRoleMember = 0
-	UserRoleAdmin  = 1
+	UserRoleMember = account.UserRoleMember
+	UserRoleAdmin  = account.UserRoleAdmin
 
-	UserStatusDisabled = 0
-	UserStatusEnabled  = 1
+	UserStatusDisabled = account.UserStatusDisabled
+	UserStatusEnabled  = account.UserStatusEnabled
 
 	MessageLevelInfo    = "info"
 	MessageLevelSuccess = "success"
@@ -18,44 +20,12 @@ const (
 	MessageTargetBlank = "_blank"
 )
 
-type Profile struct {
-	ID        int    `json:"id"`
-	Account   string `json:"account"`
-	Name      string `json:"name"`
-	Email     string `json:"email"`
-	Role      int    `json:"role"`
-	Status    int    `json:"status"`
-	Avatar    string `json:"avatar"`
-	CreatedAt string `json:"createdAt"`
-}
-
-type AuthState struct {
-	Authenticated bool     `json:"authenticated"`
-	User          *Profile `json:"user"`
-	ExpiresAt     string   `json:"expiresAt"`
-}
-
-type RegistrationInput struct {
-	Account  string `json:"account"`
-	Email    string `json:"email"`
-	Password string `json:"password"`
-}
-
-type LoginInput struct {
-	Login    string `json:"login"`
-	Password string `json:"password"`
-}
-
-type PasswordInput struct {
-	CurrentPassword string `json:"currentPassword"`
-	NewPassword     string `json:"newPassword"`
-}
-
-type ProfileInput struct {
-	Name   string `json:"name"`
-	Email  string `json:"email"`
-	Avatar string `json:"avatar"`
-}
+type Profile = account.Profile
+type AuthState = account.AuthState
+type RegistrationInput = account.RegistrationInput
+type LoginInput = account.LoginInput
+type PasswordInput = account.PasswordInput
+type ProfileInput = account.ProfileInput
 
 type RoleProfession struct {
 	ID              int    `json:"id"`

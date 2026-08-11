@@ -21,6 +21,10 @@ export interface NotificationSettings {
   doNotDisturb: boolean
 }
 
+export interface NavigationSettings {
+  menuVisibility: Record<string, boolean>
+}
+
 export interface WindowBounds {
   x: number
   y: number
@@ -40,11 +44,12 @@ export interface AppSettings {
   version: number
   appearance: AppearanceSettings
   notifications: NotificationSettings
+  navigation: NavigationSettings
   window: WindowSettings
 }
 
 export const DEFAULT_SETTINGS: AppSettings = {
-  version: 5,
+  version: 6,
   appearance: {
     themeMode: 'system',
     accent: 'green',
@@ -57,11 +62,20 @@ export const DEFAULT_SETTINGS: AppSettings = {
     showPreview: true,
     doNotDisturb: false,
   },
+  navigation: {
+    menuVisibility: {},
+  },
   window: {
     closeBehavior: 'quit',
     alwaysOnTop: false,
     rememberBounds: true,
   },
+}
+
+function normalizeMenuVisibility(value: Record<string, boolean | undefined>): Record<string, boolean> {
+  return Object.fromEntries(
+    Object.entries(value).filter((entry): entry is [string, boolean] => typeof entry[1] === 'boolean'),
+  )
 }
 
 function normalizeSettings(value: WailsAppSettings): AppSettings {
@@ -78,6 +92,9 @@ function normalizeSettings(value: WailsAppSettings): AppSettings {
       enabled: value.notifications.enabled,
       showPreview: value.notifications.showPreview,
       doNotDisturb: value.notifications.doNotDisturb,
+    },
+    navigation: {
+      menuVisibility: normalizeMenuVisibility(value.navigation.menuVisibility),
     },
     window: {
       closeBehavior: value.window.closeBehavior as CloseBehavior,

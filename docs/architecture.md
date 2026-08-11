@@ -15,14 +15,18 @@ main
 ├── application（Wails 绑定门面）
 │   ├── SystemNotificationService 接口
 │   ├── ApplicationUpdateService 接口
-│   └── DnService 接口
+│   ├── AccountService 接口
+│   ├── DnService 接口
+│   └── QuickNotesService 接口
+├── account（全局账号、持久会话与 PostgreSQL 身份服务）
 ├── appupdate（版本比较、更新检查与安装用例）
 ├── buildinfo（构建期版本与发布元数据）
 ├── appconfig（应用全局配置）
-├── dn（角色、周计划、消息与本地资料）
+├── dn（DN 角色、周计划、站内消息与官网同步）
 ├── lifecycle（应用生命周期状态）
 ├── nativekit（原生能力规则）
 ├── notification（消息通知规则）
+├── quicknotes（云端快速笔记规则与 PostgreSQL 持久化）
 ├── settings（应用设置）
 ├── singleinstance（第二实例数据规则）
 ├── storage（本地存储）
@@ -52,6 +56,10 @@ app
 │   ├── app-update
 │   │   ├── api
 │   │   └── context
+│   ├── account
+│   │   ├── api
+│   │   ├── components
+│   │   └── context
 │   ├── dn-system
 │   │   ├── api
 │   │   ├── components
@@ -61,11 +69,14 @@ app
 │   │   ├── api
 │   │   ├── components
 │   │   └── context
+│   ├── quick-notes
+│   │   ├── api
+│   │   └── components
 │   ├── system-notification
 │   │   ├── api
 │   │   ├── components
 │   │   └── hooks
-│   └── test-tools
+│   └── devtools
 │       └── components（含嵌入式应用概览）
 └── shared
     ├── app-lifecycle
@@ -77,6 +88,7 @@ app
     ├── feedback
     ├── lib
     ├── native-kit
+    ├── navigation（菜单配置、路由元数据与认证要求）
     ├── overlay
     ├── theme
     └── window
@@ -89,8 +101,10 @@ app
 - 全局字体、重置和主题令牌集中在 `app/styles/*.css.ts`；组件和页面使用就近共置的同名 `.css.ts`。
 - 组件局部规则优先使用 `style`，仅全局根节点、第三方状态和必要的复杂关系使用 `globalStyle`；共享 UI 不使用集中式 `ui.css.ts`。
 - 桌面应用壳采用“顶部标题栏 + 左侧分组菜单 + 右侧视图区域”的固定布局。
+- 左侧菜单由 `shared/navigation/menuConfig.ts` 统一维护唯一 key、分组、页面、图标和默认显隐；`routeConfig.ts` 统一维护页面标题、导航类型和 `requiresAuth`。侧栏渲染、偏好设置、启动页选择和应用壳路由守卫共同读取共享导航配置。快速笔记默认显示，DN 周常管理与 DevTools 默认隐藏，偏好设置始终可见。
+- `AccountProvider` 在应用根部恢复本地会话；需要登录的页面由 `App.tsx` 根据路由元数据统一保护，业务功能不自行实现登录状态管理。
 - 主要视图统一使用共享 `PageHeader`，保持紧凑渐变页头、标题基线、说明文字和操作区响应式行为一致。
-- 应用概览、运行诊断和所有人工验证入口统一放在“系统设置 → 测试工具”；概览中的版本与检查更新属于正式应用能力，其余测试操作不进入业务页面。
+- 应用概览、运行诊断和所有人工验证入口统一放在“系统设置 → DevTools”；概览中的版本与检查更新属于正式应用能力，其余测试操作不进入业务页面。
 - 所有页面必须支持响应式布局；页面优先基于右侧内容区域使用 Container Queries，避免侧边栏宽度导致视口媒体查询失真。
 - 页面主体统一使用 `--page-content-max-width` 控制最大宽度，并复用全局间距变量，确保菜单切换时左右基线稳定；同时至少覆盖常规桌面宽度、`1024 × 768` 最小窗口和极窄内容宽度。
 - 应用内按钮统一使用 `Button`，尺寸限定为 `sm=28px`、`md=32px`、`lg=36px`；普通操作跟随偏好设置中的默认尺寸（默认 `md`），结构性或固定语义按钮显式指定尺寸，业务模块不得自行定义其他按钮高度。
@@ -116,6 +130,8 @@ app
 - [按钮尺寸系统](modules/button-system.md)
 - [通用 UI 组件](modules/ui-components.md)
 - [桌面应用壳](modules/desktop-shell.md)
+- [全局账号](modules/account.md)
+- [云端快速笔记](modules/quick-notes.md)
 - [DN 周常管理](modules/dn-system.md)
 - [应用生命周期](modules/app-lifecycle.md)
 - [应用更新与发布](modules/app-update.md)
@@ -130,4 +146,4 @@ app
 - [Native Kit](modules/native-kit.md)
 - [日志与诊断](modules/diagnostics.md)
 - [主题与外观](modules/theme-appearance.md)
-- [测试工具](modules/test-tools.md)
+- [DevTools](modules/devtools.md)

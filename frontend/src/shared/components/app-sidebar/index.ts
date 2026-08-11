@@ -1,2 +1,2 @@
 export { AppSidebar } from './AppSidebar'
-export type { AppView } from './AppSidebar'
+export type { AppView } from '@/shared/navigation'

@@ -16,7 +16,7 @@
 ```text
 App ServiceStartup
   → 保存 Service context
-  → 初始化诊断、设置与 DN 服务
+  → 初始化诊断、设置、全局账号、DN 与云端快速笔记服务
   → lifecycle.Start
 
 WindowRuntimeReady
@@ -27,7 +27,7 @@ WindowRuntimeReady
 
 App ServiceShutdown
   → lifecycle.Stop
-  → 关闭 DN 与诊断资源
+  → 依次关闭云端快速笔记、DN、全局账号与诊断资源
 
 application.Options.OnShutdown
   → 销毁 SystemTray
@@ -50,6 +50,7 @@ interface LifecycleStatus {
 - 依赖 WebView 的窗口恢复和前端事件只在 `WindowRuntimeReady` 后执行。
 - runtime 就绪前收到的第二实例数据会暂存并在就绪后按顺序发送。
 - 生命周期先标记为就绪，再注册可选通知响应；通知能力失败不得阻断窗口可用状态。
+- 全局账号先于 DN 和快速笔记初始化，确保依赖账号身份的业务服务可读取已持久化的会话；关闭时按相反顺序释放连接池。
 - 并发状态使用互斥锁保护。
 
 ## 接入与验证

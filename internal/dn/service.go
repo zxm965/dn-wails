@@ -56,6 +56,16 @@ func (s *Service) Close() error {
 	return nil
 }
 
+func (s *Service) CurrentUserID() (int, error) {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+	current, err := s.authenticatedUserLocked(time.Now())
+	if err != nil {
+		return 0, err
+	}
+	return current.ID, nil
+}
+
 func (s *Service) Initialize() error {
 	s.mu.Lock()
 	defer s.mu.Unlock()

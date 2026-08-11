@@ -29,7 +29,10 @@ export function TitleBar({ title, actions }: TitleBarProps) {
       </div>
 
       {actions && (
-        <div className={cx('titlebar-actions')} onDoubleClick={(event) => event.stopPropagation()}>
+        <div
+          className={cx(`titlebar-actions${usesNativeWindowControls ? '' : ' titlebar-actions-window-controls'}`)}
+          onDoubleClick={(event) => event.stopPropagation()}
+        >
           {actions}
         </div>
       )}

@@ -289,7 +289,7 @@ func TestPasswordHashIsCompatibleWithNodeScrypt(t *testing.T) {
 	}
 }
 
-func TestServiceExpiresSessionAndRestrictsAdminOperations(t *testing.T) {
+func TestServiceKeepsLegacySessionAndRestrictsAdminOperations(t *testing.T) {
 	t.Parallel()
 	service, _, _ := newAuthenticatedService(t)
 	if err := service.Logout(); err != nil {
@@ -310,12 +310,12 @@ func TestServiceExpiresSessionAndRestrictsAdminOperations(t *testing.T) {
 	next.Session.ExpiresAt = time.Now().UTC().Add(-time.Minute).Format(time.RFC3339Nano)
 	if err := service.commit(next); err != nil {
 		service.mu.Unlock()
-		t.Fatalf("expire session: %v", err)
+		t.Fatalf("persist legacy expiry: %v", err)
 	}
 	service.mu.Unlock()
 	auth, err := service.AuthState()
-	if err != nil || auth.Authenticated || auth.User != nil {
-		t.Fatalf("expired session should be cleared: %+v err=%v", auth, err)
+	if err != nil || !auth.Authenticated || auth.User == nil {
+		t.Fatalf("legacy session expiry should not force re-login: %+v err=%v", auth, err)
 	}
 }
 

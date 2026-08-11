@@ -24,7 +24,7 @@ import { windowManager } from '@/shared/window'
 import { DesktopOverview } from './DesktopOverview'
 import { DeveloperTextToolbox } from './DeveloperTextToolbox'
 
-import { styles } from './TestToolsPanel.css'
+import { styles } from './DevToolsPanel.css'
 
 const cx = createScopedClassNames(styles)
 
@@ -36,7 +36,7 @@ const TOOL_CATEGORIES: Array<{ id: ToolCategory; label: string; description: str
   { id: 'text', label: '文本工具', description: 'JSON、编码与哈希' },
 ]
 
-export function TestToolsPanel() {
+export function DevToolsPanel() {
   const { notify, confirm } = useFeedback()
   const { openOverlay } = useOverlay()
   const [activeCategory, setActiveCategory] = useState<ToolCategory>('overview')
@@ -84,9 +84,9 @@ export function TestToolsPanel() {
   function openOverlayTest() {
     openOverlay(
       ({ close }) => (
-        <div className={cx('test-tools-overlay-demo')}>
+        <div className={cx('devtools-overlay-demo')}>
           <p>这是应用内 Overlay 子视图。它不会创建新的操作系统窗口。</p>
-          <Button className={cx('test-tools-button is-primary')} type='button' variant='primary' onClick={close}>
+          <Button className={cx('devtools-button is-primary')} type='button' variant='primary' onClick={close}>
             关闭子视图
           </Button>
         </div>
@@ -104,21 +104,21 @@ export function TestToolsPanel() {
   }
 
   return (
-    <section className={cx('test-tools-panel')}>
+    <section className={cx('devtools-panel')}>
       <PageHeader
         eyebrow='Desktop lab'
-        title='测试工具'
+        title='DevTools'
         subtitle='集中验证桌面运行、系统集成与原生交互。'
         actions={
-          <span className={cx('test-tools-badge')}>
+          <span className={cx('devtools-badge')}>
             <span aria-hidden='true' />
             Developer mode
           </span>
         }
       />
 
-      <div className={cx('test-tools-layout')}>
-        <nav className={cx('test-tools-categories')} aria-label='测试工具分类'>
+      <div className={cx('devtools-layout')}>
+        <nav className={cx('devtools-categories')} aria-label='DevTools 分类'>
           {TOOL_CATEGORIES.map((category, index) => (
             <Button
               key={category.id}
@@ -129,8 +129,8 @@ export function TestToolsPanel() {
               aria-pressed={activeCategory === category.id}
               onClick={() => setActiveCategory(category.id)}
             >
-              <span className={cx('test-tools-category-index')}>{String(index + 1).padStart(2, '0')}</span>
-              <span className={cx('test-tools-category-copy')}>
+              <span className={cx('devtools-category-index')}>{String(index + 1).padStart(2, '0')}</span>
+              <span className={cx('devtools-category-copy')}>
                 <strong>{category.label}</strong>
                 <small>{category.description}</small>
               </span>
@@ -138,9 +138,9 @@ export function TestToolsPanel() {
           ))}
         </nav>
 
-        <div className={cx('test-tools-view')}>
+        <div className={cx('devtools-view')}>
           {activeCategory === 'desktop' && (
-            <article className={cx('test-tools-result')}>
+            <article className={cx('devtools-result')}>
               <span>最近一次结果</span>
               <p>{result}</p>
             </article>
@@ -149,14 +149,14 @@ export function TestToolsPanel() {
           {activeCategory === 'overview' && <DesktopOverview embedded />}
 
           {activeCategory === 'desktop' && (
-            <div className={cx('test-tools-capability-content')}>
-              <div className={cx('test-tools-capability-grid')}>
+            <div className={cx('devtools-capability-content')}>
+              <div className={cx('devtools-capability-grid')}>
                 <ToolSection
                   eyebrow='Interaction / 01'
                   title='交互窗口'
                   description='验证应用内反馈、子视图和主窗口控制。'
                 >
-                  <div className={cx('test-tools-actions')}>
+                  <div className={cx('devtools-actions')}>
                     <Button
                       type='button'
                       variant='secondary'
@@ -194,7 +194,7 @@ export function TestToolsPanel() {
                     </Button>
                   </div>
 
-                  <div className={cx('test-tools-note')}>
+                  <div className={cx('devtools-note')}>
                     单实例测试：再次启动当前应用，已有窗口应恢复并显示，结果会记录在本页。
                   </div>
                 </ToolSection>
@@ -204,7 +204,7 @@ export function TestToolsPanel() {
                   title='原生能力'
                   description='验证文件、剪贴板、屏幕、对话框和系统集成。'
                 >
-                  <div className={cx('test-tools-actions')}>
+                  <div className={cx('devtools-actions')}>
                     <Button
                       type='button'
                       variant='secondary'
@@ -323,7 +323,7 @@ export function TestToolsPanel() {
                     </Button>
                   </div>
 
-                  <div className={cx('test-tools-dropzone')}>
+                  <div className={cx('devtools-dropzone')}>
                     <strong>文件拖放区域</strong>
                     <span>将文件拖到这里验证 Wails Drag &amp; Drop</span>
                     {droppedFiles.length > 0 && (
@@ -357,7 +357,7 @@ interface ToolSectionProps {
 
 function ToolSection({ eyebrow, title, description, children }: ToolSectionProps) {
   return (
-    <section className={cx('test-tools-section')}>
+    <section className={cx('devtools-section')}>
       <header>
         <span>{eyebrow}</span>
         <h2>{title}</h2>

@@ -2,38 +2,6 @@ package application
 
 import "dn-wails/internal/dn"
 
-func (a *App) GetDnAuthState() (dn.AuthState, error) {
-	return a.dnService.AuthState()
-}
-
-func (a *App) RegisterDnUser(input dn.RegistrationInput) (dn.Profile, error) {
-	return a.dnService.Register(input)
-}
-
-func (a *App) LoginDnUser(input dn.LoginInput) (dn.Profile, error) {
-	return a.dnService.Login(input)
-}
-
-func (a *App) LogoutDnUser() error {
-	return a.dnService.Logout()
-}
-
-func (a *App) GetDnProfile() (dn.Profile, error) {
-	return a.dnService.Profile()
-}
-
-func (a *App) UpdateDnProfile(input dn.ProfileInput) (dn.Profile, error) {
-	return a.dnService.UpdateProfile(input)
-}
-
-func (a *App) ChangeDnPassword(input dn.PasswordInput) error {
-	return a.dnService.ChangePassword(input)
-}
-
-func (a *App) ImportDnAvatar(path string) (string, error) {
-	return a.dnService.ImportAvatar(path)
-}
-
 func (a *App) ListDnRoles(query dn.RoleProfessionQuery) (dn.RoleProfessionList, error) {
 	return a.dnService.ListRoles(query)
 }

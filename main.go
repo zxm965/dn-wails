@@ -9,6 +9,7 @@ import (
 	"runtime"
 	"time"
 
+	"dn-wails/internal/account"
 	"dn-wails/internal/appconfig"
 	appservice "dn-wails/internal/application"
 	"dn-wails/internal/appupdate"
@@ -23,6 +24,7 @@ import (
 	platformnotification "dn-wails/internal/platform/notification"
 	platformsingleinstance "dn-wails/internal/platform/singleinstance"
 	platformwindow "dn-wails/internal/platform/window"
+	"dn-wails/internal/quicknotes"
 	"dn-wails/internal/settings"
 	"dn-wails/internal/singleinstance"
 	"dn-wails/internal/storage"
@@ -64,14 +66,28 @@ func main() {
 		log.Fatal("create settings store: ", err)
 	}
 	settingsService := settings.NewService(settingsStore)
+	accountService := appservice.AccountService(account.NewUnavailableService())
 	dnService := appservice.DnService(dn.NewUnavailableService())
+	quickNotesService := appservice.QuickNotesService(quicknotes.NewUnavailableService())
 	databaseURL, databaseConfigErr := dn.ResolveDatabaseURL(runtimeConfigData)
 	if databaseConfigErr == nil {
-		postgresService, postgresErr := dn.NewPostgresService(databaseURL, settingsStore)
-		if postgresErr != nil {
-			log.Printf("DN database service is unavailable: invalid DATABASE_URL")
+		postgresAccount, accountErr := account.NewPostgresService(databaseURL, settingsStore)
+		if accountErr != nil {
+			log.Printf("account database service is unavailable: invalid DATABASE_URL")
 		} else {
-			dnService = postgresService
+			accountService = postgresAccount
+			postgresDn, dnErr := dn.NewPostgresService(databaseURL, postgresAccount)
+			if dnErr != nil {
+				log.Printf("DN database service is unavailable: invalid DATABASE_URL")
+			} else {
+				dnService = postgresDn
+			}
+			postgresQuickNotes, quickNotesErr := quicknotes.NewPostgresService(databaseURL, postgresAccount)
+			if quickNotesErr != nil {
+				log.Printf("quick notes database service is unavailable: invalid DATABASE_URL")
+			} else {
+				quickNotesService = postgresQuickNotes
+			}
 		}
 	} else {
 		log.Printf("DN database service is unavailable: %v", databaseConfigErr)
@@ -162,7 +178,9 @@ func main() {
 		Native:             nativeService,
 		Diagnostics:        diagnosticsService,
 		ApplicationUpdate:  applicationUpdateService,
+		Account:            accountService,
 		Dn:                 dnService,
+		QuickNotes:         quickNotesService,
 	})
 	wailsApp.RegisterService(application.NewService(facade))
 

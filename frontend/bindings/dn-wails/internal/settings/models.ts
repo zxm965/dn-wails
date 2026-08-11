@@ -9,6 +9,7 @@ export class AppSettings {
     "version": number;
     "appearance": Appearance;
     "notifications": Notifications;
+    "navigation": Navigation;
     "window": Window;
 
     /** Creates a new AppSettings instance. */
@@ -21,6 +22,9 @@ export class AppSettings {
         }
         if (!("notifications" in $$source)) {
             this["notifications"] = (new Notifications());
+        }
+        if (!("navigation" in $$source)) {
+            this["navigation"] = (new Navigation());
         }
         if (!("window" in $$source)) {
             this["window"] = (new Window());
@@ -36,6 +40,7 @@ export class AppSettings {
         const $$createField1_0 = $$createType0;
         const $$createField2_0 = $$createType1;
         const $$createField3_0 = $$createType2;
+        const $$createField4_0 = $$createType3;
         let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
         if ("appearance" in $$parsedSource) {
             $$parsedSource["appearance"] = $$createField1_0($$parsedSource["appearance"]);
@@ -43,8 +48,11 @@ export class AppSettings {
         if ("notifications" in $$parsedSource) {
             $$parsedSource["notifications"] = $$createField2_0($$parsedSource["notifications"]);
         }
+        if ("navigation" in $$parsedSource) {
+            $$parsedSource["navigation"] = $$createField3_0($$parsedSource["navigation"]);
+        }
         if ("window" in $$parsedSource) {
-            $$parsedSource["window"] = $$createField3_0($$parsedSource["window"]);
+            $$parsedSource["window"] = $$createField4_0($$parsedSource["window"]);
         }
         return new AppSettings($$parsedSource as Partial<AppSettings>);
     }
@@ -84,6 +92,31 @@ export class Appearance {
     static createFrom($$source: any = {}): Appearance {
         let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
         return new Appearance($$parsedSource as Partial<Appearance>);
+    }
+}
+
+export class Navigation {
+    "menuVisibility": { [_ in string]?: boolean };
+
+    /** Creates a new Navigation instance. */
+    constructor($$source: Partial<Navigation> = {}) {
+        if (!("menuVisibility" in $$source)) {
+            this["menuVisibility"] = {};
+        }
+
+        Object.assign(this, $$source);
+    }
+
+    /**
+     * Creates a new Navigation instance from a string or object.
+     */
+    static createFrom($$source: any = {}): Navigation {
+        const $$createField0_0 = $$createType4;
+        let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
+        if ("menuVisibility" in $$parsedSource) {
+            $$parsedSource["menuVisibility"] = $$createField0_0($$parsedSource["menuVisibility"]);
+        }
+        return new Navigation($$parsedSource as Partial<Navigation>);
     }
 }
 
@@ -141,7 +174,7 @@ export class Window {
      * Creates a new Window instance from a string or object.
      */
     static createFrom($$source: any = {}): Window {
-        const $$createField3_0 = $$createType4;
+        const $$createField3_0 = $$createType6;
         let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
         if ("bounds" in $$parsedSource) {
             $$parsedSource["bounds"] = $$createField3_0($$parsedSource["bounds"]);
@@ -190,6 +223,8 @@ export class WindowBounds {
 // Private type creation functions
 const $$createType0 = Appearance.createFrom;
 const $$createType1 = Notifications.createFrom;
-const $$createType2 = Window.createFrom;
-const $$createType3 = WindowBounds.createFrom;
-const $$createType4 = $Create.Nullable($$createType3);
+const $$createType2 = Navigation.createFrom;
+const $$createType3 = Window.createFrom;
+const $$createType4 = $Create.Map($Create.Any, $Create.Any);
+const $$createType5 = WindowBounds.createFrom;
+const $$createType6 = $Create.Nullable($$createType5);

@@ -1,6 +1,7 @@
 import { Button, PageHeader, RadioGroup, Select, Slider, Switch } from '@/shared/components/ui'
 import { useFeedback } from '@/shared/feedback'
 import { createScopedClassNames } from '@/shared/lib/classNames'
+import { CONFIGURABLE_MENU_ENTRIES, resolveMenuVisibility, type MenuKey } from '@/shared/navigation'
 
 import { type AccentColor, type AppSettings, type ButtonSize, type ThemeMode } from '../api/settingsApi'
 import { useSettings } from '../context/SettingsProvider'
@@ -59,10 +60,20 @@ export function SettingsPanel() {
     })).catch(() => undefined)
   }
 
+  function updateMenuVisibility(key: MenuKey, visible: boolean) {
+    void updateSettings((current) => ({
+      ...current,
+      navigation: {
+        ...current.navigation,
+        menuVisibility: { ...current.navigation.menuVisibility, [key]: visible },
+      },
+    })).catch(() => undefined)
+  }
+
   async function handleReset() {
     const accepted = await confirm({
       title: '恢复默认设置',
-      message: '主题、通知和窗口设置都会恢复默认值，是否继续？',
+      message: '主题、菜单、通知和窗口设置都会恢复默认值，是否继续？',
       confirmLabel: '恢复默认',
       tone: 'danger',
     })
@@ -111,6 +122,24 @@ export function SettingsPanel() {
           {error}
         </p>
       )}
+
+      <section className={cx('settings-section')}>
+        <div className={cx('settings-section-title')}>
+          <h2>左侧菜单</h2>
+          <p>按需显示功能入口；关闭后仅隐藏菜单，不影响已有数据，偏好设置始终保留。</p>
+        </div>
+        <div className={cx('settings-toggles')}>
+          {CONFIGURABLE_MENU_ENTRIES.map((entry) => (
+            <ToggleRow
+              key={entry.key}
+              title={entry.label}
+              description={entry.description}
+              checked={resolveMenuVisibility(entry.key, entry.defaultVisible, settings.navigation.menuVisibility)}
+              onChange={(checked) => updateMenuVisibility(entry.key, checked)}
+            />
+          ))}
+        </div>
+      </section>
 
       <section className={cx('settings-section')}>
         <div className={cx('settings-section-title')}>

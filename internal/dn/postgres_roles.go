@@ -13,7 +13,7 @@ import (
 func (s *PostgresService) ListRoles(query RoleProfessionQuery) (RoleProfessionList, error) {
 	ctx, cancel := databaseContext()
 	defer cancel()
-	current, _, err := s.currentUser(ctx, false)
+	ownerID, err := databaseUserID(ctx, s)
 	if err != nil {
 		return RoleProfessionList{}, err
 	}
@@ -28,7 +28,7 @@ func (s *PostgresService) ListRoles(query RoleProfessionQuery) (RoleProfessionLi
 		  and ($2 = '' or role_name ilike '%' || $2 || '%')
 		  and ($3 = '' or profession ilike '%' || $3 || '%')
 		  and ($4 < 0 or priority = $4)
-	`, current.ID, roleName, profession, query.Priority).Scan(&total); err != nil {
+		`, ownerID, roleName, profession, query.Priority).Scan(&total); err != nil {
 		return RoleProfessionList{}, fmt.Errorf("count DN roles: %w", err)
 	}
 	rows, err := s.pool.Query(ctx, `
@@ -44,7 +44,7 @@ func (s *PostgresService) ListRoles(query RoleProfessionQuery) (RoleProfessionLi
 		group by r.id
 		order by r.sort_order asc, r.id asc
 		limit $5 offset $6
-	`, current.ID, roleName, profession, query.Priority, pageSize, (page-1)*pageSize)
+		`, ownerID, roleName, profession, query.Priority, pageSize, (page-1)*pageSize)
 	if err != nil {
 		return RoleProfessionList{}, fmt.Errorf("list DN roles: %w", err)
 	}
@@ -66,7 +66,7 @@ func (s *PostgresService) ListRoles(query RoleProfessionQuery) (RoleProfessionLi
 func (s *PostgresService) RoleOptions() ([]RoleProfession, error) {
 	ctx, cancel := databaseContext()
 	defer cancel()
-	current, _, err := s.currentUser(ctx, false)
+	ownerID, err := databaseUserID(ctx, s)
 	if err != nil {
 		return nil, err
 	}
@@ -79,7 +79,7 @@ func (s *PostgresService) RoleOptions() ([]RoleProfession, error) {
 		where r.owner_id = $1 and r.deleted_at is null
 		group by r.id
 		order by r.sort_order asc, r.id asc
-	`, current.ID)
+		`, ownerID)
 	if err != nil {
 		return nil, fmt.Errorf("list DN role options: %w", err)
 	}
@@ -110,7 +110,7 @@ func (s *PostgresService) SaveRole(input RoleProfessionInput) (RoleProfession, e
 	}
 	ctx, cancel := databaseContext()
 	defer cancel()
-	current, _, err := s.currentUser(ctx, false)
+	ownerID, err := databaseUserID(ctx, s)
 	if err != nil {
 		return RoleProfession{}, err
 	}
@@ -127,7 +127,7 @@ func (s *PostgresService) SaveRole(input RoleProfessionInput) (RoleProfession, e
 			values ($1, $2, $3, nullif($4, ''), $5, $6, now(), now())
 			returning id, coalesce(owner_id, 0), role_name, profession, priority,
 			          coalesce(remark, ''), sort_order, created_at, updated_at, deleted_at
-		`, input.RoleName, input.Profession, input.Priority, input.Remark, input.SortOrder, current.ID), false)
+			`, input.RoleName, input.Profession, input.Priority, input.Remark, input.SortOrder, ownerID), false)
 		if createErr != nil {
 			return RoleProfession{}, mapDatabaseError("create DN role", createErr)
 		}
@@ -143,7 +143,7 @@ func (s *PostgresService) SaveRole(input RoleProfessionInput) (RoleProfession, e
 		where id = $6 and owner_id = $7 and deleted_at is null
 		returning id, coalesce(owner_id, 0), role_name, profession, priority,
 		          coalesce(remark, ''), sort_order, created_at, updated_at, deleted_at
-	`, input.RoleName, input.Profession, input.Priority, input.Remark, input.SortOrder, input.ID, current.ID), false)
+	`, input.RoleName, input.Profession, input.Priority, input.Remark, input.SortOrder, input.ID, ownerID), false)
 	if errors.Is(err, pgx.ErrNoRows) {
 		return RoleProfession{}, fmt.Errorf("%w: role %d", ErrNotFound, input.ID)
 	}
@@ -154,10 +154,10 @@ func (s *PostgresService) SaveRole(input RoleProfessionInput) (RoleProfession, e
 		update dn_weekly_plan
 		set role_name = $1, profession = $2, priority = $3, updated_at = now()
 		where role_profession_id = $4 and owner_id = $5
-	`, item.RoleName, item.Profession, item.Priority, item.ID, current.ID); err != nil {
+	`, item.RoleName, item.Profession, item.Priority, item.ID, ownerID); err != nil {
 		return RoleProfession{}, fmt.Errorf("cascade DN role update: %w", err)
 	}
-	if err := tx.QueryRow(ctx, `select count(*)::int from dn_weekly_plan where role_profession_id = $1 and owner_id = $2`, item.ID, current.ID).Scan(&item.WeeklyPlanCount); err != nil {
+	if err := tx.QueryRow(ctx, `select count(*)::int from dn_weekly_plan where role_profession_id = $1 and owner_id = $2`, item.ID, ownerID).Scan(&item.WeeklyPlanCount); err != nil {
 		return RoleProfession{}, fmt.Errorf("count DN role plans: %w", err)
 	}
 	if err := tx.Commit(ctx); err != nil {
@@ -172,7 +172,7 @@ func (s *PostgresService) DeleteRole(id int) (RoleProfession, error) {
 	}
 	ctx, cancel := databaseContext()
 	defer cancel()
-	current, _, err := s.currentUser(ctx, false)
+	ownerID, err := databaseUserID(ctx, s)
 	if err != nil {
 		return RoleProfession{}, err
 	}
@@ -181,7 +181,7 @@ func (s *PostgresService) DeleteRole(id int) (RoleProfession, error) {
 		return RoleProfession{}, fmt.Errorf("begin DN role deletion: %w", err)
 	}
 	defer tx.Rollback(ctx)
-	tag, err := tx.Exec(ctx, `delete from dn_weekly_plan where role_profession_id = $1 and owner_id = $2`, id, current.ID)
+	tag, err := tx.Exec(ctx, `delete from dn_weekly_plan where role_profession_id = $1 and owner_id = $2`, id, ownerID)
 	if err != nil {
 		return RoleProfession{}, fmt.Errorf("delete DN role plans: %w", err)
 	}
@@ -191,7 +191,7 @@ func (s *PostgresService) DeleteRole(id int) (RoleProfession, error) {
 		where id = $1 and owner_id = $2 and deleted_at is null
 		returning id, coalesce(owner_id, 0), role_name, profession, priority,
 		          coalesce(remark, ''), sort_order, created_at, updated_at, deleted_at
-	`, id, current.ID), false)
+	`, id, ownerID), false)
 	if errors.Is(err, pgx.ErrNoRows) {
 		return RoleProfession{}, fmt.Errorf("%w: role %d", ErrNotFound, id)
 	}
@@ -266,6 +266,6 @@ func formatDatabaseTime(value time.Time) string {
 }
 
 func databaseUserID(ctx context.Context, service *PostgresService) (int, error) {
-	current, _, err := service.currentUser(ctx, false)
-	return current.ID, err
+	_ = ctx
+	return service.identity.CurrentUserID()
 }

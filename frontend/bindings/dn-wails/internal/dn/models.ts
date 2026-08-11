@@ -5,39 +5,6 @@
 // @ts-ignore: Unused imports
 import { Create as $Create } from "@wailsio/runtime";
 
-export class AuthState {
-    "authenticated": boolean;
-    "user": Profile | null;
-    "expiresAt": string;
-
-    /** Creates a new AuthState instance. */
-    constructor($$source: Partial<AuthState> = {}) {
-        if (!("authenticated" in $$source)) {
-            this["authenticated"] = false;
-        }
-        if (!("user" in $$source)) {
-            this["user"] = null;
-        }
-        if (!("expiresAt" in $$source)) {
-            this["expiresAt"] = "";
-        }
-
-        Object.assign(this, $$source);
-    }
-
-    /**
-     * Creates a new AuthState instance from a string or object.
-     */
-    static createFrom($$source: any = {}): AuthState {
-        const $$createField1_0 = $$createType1;
-        let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
-        if ("user" in $$parsedSource) {
-            $$parsedSource["user"] = $$createField1_0($$parsedSource["user"]);
-        }
-        return new AuthState($$parsedSource as Partial<AuthState>);
-    }
-}
-
 export class ListMeta {
     "total": number;
     "totalPages": number;
@@ -71,31 +38,6 @@ export class ListMeta {
     }
 }
 
-export class LoginInput {
-    "login": string;
-    "password": string;
-
-    /** Creates a new LoginInput instance. */
-    constructor($$source: Partial<LoginInput> = {}) {
-        if (!("login" in $$source)) {
-            this["login"] = "";
-        }
-        if (!("password" in $$source)) {
-            this["password"] = "";
-        }
-
-        Object.assign(this, $$source);
-    }
-
-    /**
-     * Creates a new LoginInput instance from a string or object.
-     */
-    static createFrom($$source: any = {}): LoginInput {
-        let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
-        return new LoginInput($$parsedSource as Partial<LoginInput>);
-    }
-}
-
 export class OfficialMessageSyncResult {
     "skipped": boolean;
     "fetched": number;
@@ -126,138 +68,6 @@ export class OfficialMessageSyncResult {
     static createFrom($$source: any = {}): OfficialMessageSyncResult {
         let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
         return new OfficialMessageSyncResult($$parsedSource as Partial<OfficialMessageSyncResult>);
-    }
-}
-
-export class PasswordInput {
-    "currentPassword": string;
-    "newPassword": string;
-
-    /** Creates a new PasswordInput instance. */
-    constructor($$source: Partial<PasswordInput> = {}) {
-        if (!("currentPassword" in $$source)) {
-            this["currentPassword"] = "";
-        }
-        if (!("newPassword" in $$source)) {
-            this["newPassword"] = "";
-        }
-
-        Object.assign(this, $$source);
-    }
-
-    /**
-     * Creates a new PasswordInput instance from a string or object.
-     */
-    static createFrom($$source: any = {}): PasswordInput {
-        let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
-        return new PasswordInput($$parsedSource as Partial<PasswordInput>);
-    }
-}
-
-export class Profile {
-    "id": number;
-    "account": string;
-    "name": string;
-    "email": string;
-    "role": number;
-    "status": number;
-    "avatar": string;
-    "createdAt": string;
-
-    /** Creates a new Profile instance. */
-    constructor($$source: Partial<Profile> = {}) {
-        if (!("id" in $$source)) {
-            this["id"] = 0;
-        }
-        if (!("account" in $$source)) {
-            this["account"] = "";
-        }
-        if (!("name" in $$source)) {
-            this["name"] = "";
-        }
-        if (!("email" in $$source)) {
-            this["email"] = "";
-        }
-        if (!("role" in $$source)) {
-            this["role"] = 0;
-        }
-        if (!("status" in $$source)) {
-            this["status"] = 0;
-        }
-        if (!("avatar" in $$source)) {
-            this["avatar"] = "";
-        }
-        if (!("createdAt" in $$source)) {
-            this["createdAt"] = "";
-        }
-
-        Object.assign(this, $$source);
-    }
-
-    /**
-     * Creates a new Profile instance from a string or object.
-     */
-    static createFrom($$source: any = {}): Profile {
-        let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
-        return new Profile($$parsedSource as Partial<Profile>);
-    }
-}
-
-export class ProfileInput {
-    "name": string;
-    "email": string;
-    "avatar": string;
-
-    /** Creates a new ProfileInput instance. */
-    constructor($$source: Partial<ProfileInput> = {}) {
-        if (!("name" in $$source)) {
-            this["name"] = "";
-        }
-        if (!("email" in $$source)) {
-            this["email"] = "";
-        }
-        if (!("avatar" in $$source)) {
-            this["avatar"] = "";
-        }
-
-        Object.assign(this, $$source);
-    }
-
-    /**
-     * Creates a new ProfileInput instance from a string or object.
-     */
-    static createFrom($$source: any = {}): ProfileInput {
-        let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
-        return new ProfileInput($$parsedSource as Partial<ProfileInput>);
-    }
-}
-
-export class RegistrationInput {
-    "account": string;
-    "email": string;
-    "password": string;
-
-    /** Creates a new RegistrationInput instance. */
-    constructor($$source: Partial<RegistrationInput> = {}) {
-        if (!("account" in $$source)) {
-            this["account"] = "";
-        }
-        if (!("email" in $$source)) {
-            this["email"] = "";
-        }
-        if (!("password" in $$source)) {
-            this["password"] = "";
-        }
-
-        Object.assign(this, $$source);
-    }
-
-    /**
-     * Creates a new RegistrationInput instance from a string or object.
-     */
-    static createFrom($$source: any = {}): RegistrationInput {
-        let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
-        return new RegistrationInput($$parsedSource as Partial<RegistrationInput>);
     }
 }
 
@@ -383,8 +193,8 @@ export class RoleProfessionList {
      * Creates a new RoleProfessionList instance from a string or object.
      */
     static createFrom($$source: any = {}): RoleProfessionList {
-        const $$createField0_0 = $$createType3;
-        const $$createField1_0 = $$createType4;
+        const $$createField0_0 = $$createType1;
+        const $$createField1_0 = $$createType2;
         let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
         if ("items" in $$parsedSource) {
             $$parsedSource["items"] = $$createField0_0($$parsedSource["items"]);
@@ -504,7 +314,7 @@ export class SiteMessage {
      * Creates a new SiteMessage instance from a string or object.
      */
     static createFrom($$source: any = {}): SiteMessage {
-        const $$createField14_0 = $$createType6;
+        const $$createField14_0 = $$createType4;
         let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
         if ("metadata" in $$parsedSource) {
             $$parsedSource["metadata"] = $$createField14_0($$parsedSource["metadata"]);
@@ -529,7 +339,7 @@ export class SiteMessageClaim {
      * Creates a new SiteMessageClaim instance from a string or object.
      */
     static createFrom($$source: any = {}): SiteMessageClaim {
-        const $$createField0_0 = $$createType8;
+        const $$createField0_0 = $$createType6;
         let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
         if ("items" in $$parsedSource) {
             $$parsedSource["items"] = $$createField0_0($$parsedSource["items"]);
@@ -566,7 +376,7 @@ export class SiteMessageInbox {
      * Creates a new SiteMessageInbox instance from a string or object.
      */
     static createFrom($$source: any = {}): SiteMessageInbox {
-        const $$createField0_0 = $$createType8;
+        const $$createField0_0 = $$createType6;
         let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
         if ("items" in $$parsedSource) {
             $$parsedSource["items"] = $$createField0_0($$parsedSource["items"]);
@@ -660,8 +470,8 @@ export class SiteMessageList {
      * Creates a new SiteMessageList instance from a string or object.
      */
     static createFrom($$source: any = {}): SiteMessageList {
-        const $$createField0_0 = $$createType8;
-        const $$createField1_0 = $$createType4;
+        const $$createField0_0 = $$createType6;
+        const $$createField1_0 = $$createType2;
         let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
         if ("items" in $$parsedSource) {
             $$parsedSource["items"] = $$createField0_0($$parsedSource["items"]);
@@ -815,8 +625,8 @@ export class WeeklyPlan {
      * Creates a new WeeklyPlan instance from a string or object.
      */
     static createFrom($$source: any = {}): WeeklyPlan {
-        const $$createField5_0 = $$createType10;
-        const $$createField6_0 = $$createType12;
+        const $$createField5_0 = $$createType8;
+        const $$createField6_0 = $$createType10;
         let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
         if ("nestCommissions" in $$parsedSource) {
             $$parsedSource["nestCommissions"] = $$createField5_0($$parsedSource["nestCommissions"]);
@@ -934,8 +744,8 @@ export class WeeklyPlanInput {
      * Creates a new WeeklyPlanInput instance from a string or object.
      */
     static createFrom($$source: any = {}): WeeklyPlanInput {
-        const $$createField2_0 = $$createType10;
-        const $$createField3_0 = $$createType12;
+        const $$createField2_0 = $$createType8;
+        const $$createField3_0 = $$createType10;
         let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
         if ("nestCommissions" in $$parsedSource) {
             $$parsedSource["nestCommissions"] = $$createField2_0($$parsedSource["nestCommissions"]);
@@ -967,8 +777,8 @@ export class WeeklyPlanList {
      * Creates a new WeeklyPlanList instance from a string or object.
      */
     static createFrom($$source: any = {}): WeeklyPlanList {
-        const $$createField0_0 = $$createType14;
-        const $$createField1_0 = $$createType4;
+        const $$createField0_0 = $$createType12;
+        const $$createField1_0 = $$createType2;
         let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
         if ("items" in $$parsedSource) {
             $$parsedSource["items"] = $$createField0_0($$parsedSource["items"]);
@@ -1076,18 +886,16 @@ export class WeeklyPlanTicket {
 }
 
 // Private type creation functions
-const $$createType0 = Profile.createFrom;
-const $$createType1 = $Create.Nullable($$createType0);
-const $$createType2 = RoleProfession.createFrom;
-const $$createType3 = $Create.Array($$createType2);
-const $$createType4 = ListMeta.createFrom;
-const $$createType5 = SiteMessageMetadata.createFrom;
-const $$createType6 = $Create.Nullable($$createType5);
-const $$createType7 = SiteMessage.createFrom;
+const $$createType0 = RoleProfession.createFrom;
+const $$createType1 = $Create.Array($$createType0);
+const $$createType2 = ListMeta.createFrom;
+const $$createType3 = SiteMessageMetadata.createFrom;
+const $$createType4 = $Create.Nullable($$createType3);
+const $$createType5 = SiteMessage.createFrom;
+const $$createType6 = $Create.Array($$createType5);
+const $$createType7 = WeeklyPlanCommission.createFrom;
 const $$createType8 = $Create.Array($$createType7);
-const $$createType9 = WeeklyPlanCommission.createFrom;
+const $$createType9 = WeeklyPlanTicket.createFrom;
 const $$createType10 = $Create.Array($$createType9);
-const $$createType11 = WeeklyPlanTicket.createFrom;
+const $$createType11 = WeeklyPlan.createFrom;
 const $$createType12 = $Create.Array($$createType11);
-const $$createType13 = WeeklyPlan.createFrom;
-const $$createType14 = $Create.Array($$createType13);

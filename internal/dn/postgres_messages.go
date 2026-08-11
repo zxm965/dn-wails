@@ -259,13 +259,13 @@ func (s *PostgresService) PublishMessage(input SiteMessageInput) (SiteMessage, e
 	}
 	ctx, cancel := databaseContext()
 	defer cancel()
-	current, _, err := s.currentUser(ctx, true)
+	currentID, err := s.identity.CurrentAdminUserID()
 	if err != nil {
 		return SiteMessage{}, err
 	}
 	item, err := scanDatabaseMessage(s.pool.QueryRow(ctx, messageInsertReturning,
 		"desktop", nil, input.Level, input.Title, nullableString(input.Content), nullableString(input.ActionLabel),
-		nullableString(input.ActionURL), input.ActionTarget, input.Popup, publishedAt, expiresAt, current.ID, nil,
+		nullableString(input.ActionURL), input.ActionTarget, input.Popup, publishedAt, expiresAt, currentID, nil,
 	))
 	if err != nil {
 		return SiteMessage{}, mapDatabaseError("publish DN message", err)
@@ -278,18 +278,18 @@ func (s *PostgresService) SyncOfficialMessages() (OfficialMessageSyncResult, err
 }
 
 func (s *PostgresService) syncPostgresOfficialMessages(force bool) (OfficialMessageSyncResult, error) {
-	ctx, cancel := databaseContext()
+	var authErr error
 	if force {
-		_, _, _ = s.currentUser(ctx, true)
+		_, authErr = s.identity.CurrentAdminUserID()
+	} else {
+		_, authErr = s.identity.CurrentUserID()
 	}
-	_, _, authErr := s.currentUser(ctx, force)
-	cancel()
 	if authErr != nil {
 		return OfficialMessageSyncResult{}, authErr
 	}
 	s.syncMu.Lock()
 	defer s.syncMu.Unlock()
-	ctx, cancel = databaseContext()
+	ctx, cancel := databaseContext()
 	defer cancel()
 	var data []byte
 	var lastSyncedAt time.Time

@@ -31,6 +31,10 @@ function cloneSettings(settings: AppSettings): AppSettings {
     ...settings,
     appearance: { ...settings.appearance },
     notifications: { ...settings.notifications },
+    navigation: {
+      ...settings.navigation,
+      menuVisibility: { ...settings.navigation.menuVisibility },
+    },
     window: {
       ...settings.window,
       bounds: settings.window.bounds ? { ...settings.window.bounds } : undefined,

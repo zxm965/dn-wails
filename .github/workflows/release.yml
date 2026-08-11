@@ -214,15 +214,6 @@ jobs:
             gh release create "$GITHUB_REF_NAME" release/* --verify-tag --generate-notes --title "$GITHUB_REF_NAME"
           fi
 
-      - name: Sync release tag to Gitee
-        shell: bash
-        env:
-          GITEE_TOKEN: ${{ secrets.GITEE_TOKEN }}
-        run: |
-          test -n "$GITEE_TOKEN"
-          git remote add gitee "https://oauth2:${GITEE_TOKEN}@gitee.com/${GITEE_REPOSITORY}.git"
-          git push gitee --force "refs/tags/${GITHUB_REF_NAME}:refs/tags/${GITHUB_REF_NAME}"
-
       - name: Generate Gitee update manifest
         run: |
           node scripts/generate-update-manifest.mjs \

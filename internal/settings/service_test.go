@@ -1,8 +1,6 @@
 package settings
 
 import (
-	"bytes"
-	"encoding/json"
 	"errors"
 	"testing"
 
@@ -55,15 +53,26 @@ func TestServiceInitializesDefaultsAndPersistsUpdates(t *testing.T) {
 	if current.Appearance.ButtonSize != ButtonSizeMD {
 		t.Fatalf("expected default button size %q, got %q", ButtonSizeMD, current.Appearance.ButtonSize)
 	}
+	if current.Navigation.MenuVisibility == nil || len(current.Navigation.MenuVisibility) != 0 {
+		t.Fatalf("expected empty default menu visibility overrides, got %+v", current.Navigation.MenuVisibility)
+	}
 
 	current.Appearance.ThemeMode = ThemeDark
 	current.Appearance.Accent = AccentPurple
+	current.Navigation.MenuVisibility["dn-system"] = true
 	updated, err := service.Update(current)
 	if err != nil {
 		t.Fatalf("update settings: %v", err)
 	}
 	if updated.Appearance.ThemeMode != ThemeDark || updated.Appearance.Accent != AccentPurple {
 		t.Fatalf("settings were not updated: %+v", updated.Appearance)
+	}
+	if !updated.Navigation.MenuVisibility["dn-system"] {
+		t.Fatalf("menu visibility was not updated: %+v", updated.Navigation.MenuVisibility)
+	}
+	updated.Navigation.MenuVisibility["dn-system"] = false
+	if !service.Get().Navigation.MenuVisibility["dn-system"] {
+		t.Fatal("returned menu visibility must not mutate stored settings")
 	}
 
 	reloaded := NewService(store)
@@ -72,6 +81,9 @@ func TestServiceInitializesDefaultsAndPersistsUpdates(t *testing.T) {
 	}
 	if reloaded.Get().Appearance.ThemeMode != ThemeDark {
 		t.Fatalf("expected persisted dark theme")
+	}
+	if !reloaded.Get().Navigation.MenuVisibility["dn-system"] {
+		t.Fatal("expected persisted menu visibility")
 	}
 }
 
@@ -96,174 +108,50 @@ func TestServiceRejectsInvalidSettings(t *testing.T) {
 	}
 
 	value.Appearance.ButtonSize = ButtonSizeMD
-	value.Window.Bounds = &WindowBounds{Width: 1023, Height: 768}
+	value.Navigation.MenuVisibility[" invalid-key"] = true
 	if _, err := service.Update(value); !errors.Is(err, ErrInvalidSettings) {
-		t.Fatalf("expected invalid window bounds error, got %v", err)
+		t.Fatalf("expected invalid menu key error, got %v", err)
+	}
+
+	value.Navigation.MenuVisibility = nil
+	if _, err := service.Update(value); !errors.Is(err, ErrInvalidSettings) {
+		t.Fatalf("expected nil menu visibility error, got %v", err)
 	}
 }
 
-func TestServiceMigratesVersionOneButtonSize(t *testing.T) {
+func TestServiceAllowsPreferenceUpdatesWithSmallStoredWindowBounds(t *testing.T) {
 	t.Parallel()
 
-	store := newMemoryStore()
-	store.data[storageKey] = []byte(`{
-  "version": 1,
-  "appearance": {
-    "themeMode": "dark",
-    "accent": "blue",
-    "density": "compact",
-    "fontScale": 1
-  },
-  "notifications": {
-    "enabled": true,
-    "showPreview": true,
-    "doNotDisturb": false
-  },
-  "window": {
-    "closeBehavior": "quit",
-    "alwaysOnTop": false,
-    "rememberBounds": true
-  }
-}`)
-
-	service := NewService(store)
+	service := NewService(newMemoryStore())
 	if err := service.Initialize(); err != nil {
-		t.Fatalf("initialize migrated settings: %v", err)
+		t.Fatalf("initialize settings: %v", err)
+	}
+	if err := service.UpdateWindowBounds(WindowBounds{X: 20, Y: 30, Width: 900, Height: 700}); err != nil {
+		t.Fatalf("persist window bounds: %v", err)
 	}
 
-	current := service.Get()
-	if current.Version != CurrentVersion {
-		t.Fatalf("expected version %d, got %d", CurrentVersion, current.Version)
+	value := service.Get()
+	value.Navigation.MenuVisibility["devtools"] = true
+	updated, err := service.Update(value)
+	if err != nil {
+		t.Fatalf("update preferences with small stored window bounds: %v", err)
 	}
-	if current.Appearance.ButtonSize != ButtonSizeMD {
-		t.Fatalf("expected migrated button size %q, got %q", ButtonSizeMD, current.Appearance.ButtonSize)
+	if !updated.Navigation.MenuVisibility["devtools"] {
+		t.Fatal("expected menu preference to be updated")
 	}
-
-	var persisted AppSettings
-	if err := json.Unmarshal(store.data[storageKey], &persisted); err != nil {
-		t.Fatalf("decode persisted migrated settings: %v", err)
-	}
-	if persisted.Version != CurrentVersion || persisted.Appearance.ButtonSize != ButtonSizeMD {
-		t.Fatalf("migrated settings were not persisted: %+v", persisted.Appearance)
+	if updated.Window.Bounds == nil || updated.Window.Bounds.Width != 900 || updated.Window.Bounds.Height != 700 {
+		t.Fatalf("expected stored window bounds to be preserved: %+v", updated.Window.Bounds)
 	}
 }
 
-func TestServiceMigratesVersionTwoSettings(t *testing.T) {
+func TestServiceRejectsOutdatedSettingsVersion(t *testing.T) {
 	t.Parallel()
 
 	store := newMemoryStore()
-	store.data[storageKey] = []byte(`{
-  "version": 2,
-  "appearance": {
-    "themeMode": "system",
-    "accent": "green",
-    "density": "comfortable",
-    "buttonSize": "md",
-    "fontScale": 1
-  },
-  "notifications": {
-    "enabled": true,
-    "showPreview": true,
-    "doNotDisturb": false
-  },
-  "window": {
-    "closeBehavior": "quit",
-    "alwaysOnTop": false,
-    "rememberBounds": true
-  }
-}`)
+	store.data[storageKey] = []byte(`{"version":5}`)
 
 	service := NewService(store)
-	if err := service.Initialize(); err != nil {
-		t.Fatalf("initialize migrated settings: %v", err)
-	}
-
-	current := service.Get()
-	if current.Version != CurrentVersion {
-		t.Fatalf("expected version %d, got %d", CurrentVersion, current.Version)
-	}
-}
-
-func TestServiceMigratesVersionThreeLegacySettings(t *testing.T) {
-	t.Parallel()
-
-	store := newMemoryStore()
-	store.data[storageKey] = []byte(`{
-  "version": 3,
-  "appearance": {
-    "themeMode": "system",
-    "accent": "green",
-    "density": "comfortable",
-    "buttonSize": "md",
-    "fontScale": 1
-  },
-  "notifications": {
-    "enabled": true,
-    "showPreview": true,
-    "doNotDisturb": false
-  },
-  "window": {
-    "closeBehavior": "quit",
-    "alwaysOnTop": false,
-    "rememberBounds": true
-  },
-  "floatingClock": {
-    "enabled": true
-  }
-}`)
-
-	service := NewService(store)
-	if err := service.Initialize(); err != nil {
-		t.Fatalf("initialize migrated settings: %v", err)
-	}
-
-	current := service.Get()
-	if current.Version != CurrentVersion {
-		t.Fatalf("expected version %d, got %d", CurrentVersion, current.Version)
-	}
-	if bytes.Contains(store.data[storageKey], []byte(`"floatingClock"`)) {
-		t.Fatal("expected legacy floating clock settings to be removed")
-	}
-}
-
-func TestServiceMigratesVersionFourLegacySettings(t *testing.T) {
-	t.Parallel()
-
-	store := newMemoryStore()
-	store.data[storageKey] = []byte(`{
-  "version": 4,
-  "appearance": {
-    "themeMode": "system",
-    "accent": "green",
-    "density": "comfortable",
-    "buttonSize": "md",
-    "fontScale": 1
-  },
-  "notifications": {
-    "enabled": true,
-    "showPreview": true,
-    "doNotDisturb": false
-  },
-  "window": {
-    "closeBehavior": "quit",
-    "alwaysOnTop": false,
-    "rememberBounds": true
-  },
-  "floatingClock": {
-    "enabled": true,
-    "backgroundOpacity": 0.45
-  }
-}`)
-
-	service := NewService(store)
-	if err := service.Initialize(); err != nil {
-		t.Fatalf("initialize migrated settings: %v", err)
-	}
-
-	if current := service.Get(); current.Version != CurrentVersion {
-		t.Fatalf("expected version %d, got %d", CurrentVersion, current.Version)
-	}
-	if bytes.Contains(store.data[storageKey], []byte(`"floatingClock"`)) {
-		t.Fatal("expected legacy floating clock settings to be removed")
+	if err := service.Initialize(); !errors.Is(err, ErrInvalidSettings) {
+		t.Fatalf("expected outdated settings to be rejected, got %v", err)
 	}
 }

@@ -4,6 +4,7 @@
 export {
     AppSettings,
     Appearance,
+    Navigation,
     Notifications,
     Window,
     WindowBounds

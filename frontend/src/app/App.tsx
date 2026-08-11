@@ -1,23 +1,23 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 
+import { AccountLogin, AccountPanel, AccountTitleBarButton, useAccount } from '@/features/account'
+import { DevToolsPanel } from '@/features/devtools'
 import {
-  DnAccount,
   DnDashboard,
-  DnLogin,
   DnMessageCenter,
   DnMessageProvider,
   DnMessages,
   DnRoles,
   DnWeeklyPlans,
-  useDnAuth,
   type DnInternalTarget,
 } from '@/features/dn-system'
-import { SettingsPanel } from '@/features/settings'
-import { TestToolsPanel } from '@/features/test-tools'
+import { QuickNotesPanel } from '@/features/quick-notes'
+import { DEFAULT_SETTINGS, SettingsPanel, useSettings } from '@/features/settings'
 import { AppSidebar, type AppView } from '@/shared/components/app-sidebar'
 import { TitleBar } from '@/shared/components/titlebar'
 import { ListState } from '@/shared/components/ui'
 import { createScopedClassNames } from '@/shared/lib/classNames'
+import { appViewRequiresAuth, getAppViewTitle, getFirstVisibleView, isAppViewVisible } from '@/shared/navigation'
 import { windowManager } from '@/shared/window'
 
 import { appConfig } from './appConfig'
@@ -27,19 +27,14 @@ import { styles } from './App.css'
 const cx = createScopedClassNames(styles)
 
 export default function App() {
-  const [activeView, setActiveView] = useState<AppView>('dn-dashboard')
-  const auth = useDnAuth()
+  const { settings, isLoading: isSettingsLoading } = useSettings()
+  const [activeView, setActiveView] = useState<AppView>(() =>
+    getFirstVisibleView(DEFAULT_SETTINGS.navigation.menuVisibility),
+  )
+  const navigationInitialized = useRef(false)
+  const account = useAccount()
   const isDnView = activeView.startsWith('dn-')
-
-  const viewTitle = {
-    'dn-dashboard': 'DN · 仪表盘',
-    'dn-weekly': 'DN · 周计划',
-    'dn-roles': 'DN · 角色',
-    'dn-messages': 'DN · 站内消息',
-    'dn-account': 'DN · 个人中心',
-    settings: '偏好设置',
-    'test-tools': '测试工具',
-  }[activeView]
+  const viewTitle = getAppViewTitle(activeView)
   const windowTitle = `${appConfig.displayName} · ${viewTitle}`
 
   function navigateDn(target: DnInternalTarget) {
@@ -49,21 +44,36 @@ export default function App() {
         weekly: 'dn-weekly',
         roles: 'dn-roles',
         messages: 'dn-messages',
-        account: 'dn-account',
+        account: 'account',
       }[target] as AppView,
     )
   }
 
   function renderDnView() {
-    if (auth.loading) return <ListState loading emptyText='登录状态加载失败' loadingText='正在恢复 DN 登录状态…' />
-    if (!auth.user) return <DnLogin onAuthenticated={() => setActiveView('dn-dashboard')} />
     if (activeView === 'dn-dashboard') {
       return <DnDashboard onNavigateWeekly={() => setActiveView('dn-weekly')} />
     }
     if (activeView === 'dn-weekly') return <DnWeeklyPlans onNavigateRoles={() => setActiveView('dn-roles')} />
     if (activeView === 'dn-roles') return <DnRoles />
     if (activeView === 'dn-messages') return <DnMessages onNavigate={navigateDn} />
-    if (activeView === 'dn-account') return <DnAccount />
+    return null
+  }
+
+  function renderActiveView() {
+    if (appViewRequiresAuth(activeView)) {
+      if (account.loading) {
+        return <ListState loading emptyText='登录状态加载失败' loadingText='正在恢复登录状态…' />
+      }
+      if (!account.user) {
+        return <AccountLogin />
+      }
+    }
+
+    if (isDnView) return renderDnView()
+    if (activeView === 'quick-notes') return <QuickNotesPanel />
+    if (activeView === 'account') return <AccountPanel />
+    if (activeView === 'settings') return <SettingsPanel />
+    if (activeView === 'devtools') return <DevToolsPanel />
     return null
   }
 
@@ -72,17 +82,41 @@ export default function App() {
     windowManager.setTitle(windowTitle)
   }, [windowTitle])
 
+  useEffect(() => {
+    if (isSettingsLoading) {
+      return
+    }
+
+    if (!navigationInitialized.current) {
+      navigationInitialized.current = true
+      setActiveView(getFirstVisibleView(settings.navigation.menuVisibility))
+      return
+    }
+
+    if (!isAppViewVisible(activeView, settings.navigation.menuVisibility)) {
+      setActiveView(getFirstVisibleView(settings.navigation.menuVisibility))
+    }
+  }, [activeView, isSettingsLoading, settings.navigation.menuVisibility])
+
   return (
     <DnMessageProvider onNavigate={navigateDn}>
       <div className={cx('app-shell')}>
-        <TitleBar title={windowTitle} actions={auth.user ? <DnMessageCenter /> : undefined} />
+        <TitleBar
+          title={windowTitle}
+          actions={
+            <>
+              {account.user && <DnMessageCenter />}
+              <AccountTitleBarButton user={account.user} onClick={() => setActiveView('account')} />
+            </>
+          }
+        />
         <div className={cx('app-workspace')}>
-          <AppSidebar activeView={activeView} onNavigate={setActiveView} />
-          <main className={cx('app-content')}>
-            {isDnView && renderDnView()}
-            {activeView === 'settings' && <SettingsPanel />}
-            {activeView === 'test-tools' && <TestToolsPanel />}
-          </main>
+          <AppSidebar
+            activeView={activeView}
+            menuVisibility={settings.navigation.menuVisibility}
+            onNavigate={setActiveView}
+          />
+          <main className={cx('app-content')}>{renderActiveView()}</main>
         </div>
       </div>
     </DnMessageProvider>

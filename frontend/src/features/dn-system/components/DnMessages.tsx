@@ -1,6 +1,7 @@
 import { CheckCheck, ExternalLink, Globe2, Info, MailCheck, Plus, Search, TriangleAlert } from 'lucide-react'
 import { type FormEvent, useCallback, useEffect, useState } from 'react'
 
+import { useAccount } from '@/features/account'
 import {
   Badge,
   Button,
@@ -41,7 +42,6 @@ import {
   type SiteMessageInput,
   type SiteMessageLevel,
 } from '../api/dnSystemApi'
-import { useDnAuth } from '../context/DnAuthProvider'
 import { useDnMessages } from '../context/DnMessageProvider'
 
 import { styles } from './DnSystem.css'
@@ -65,7 +65,7 @@ export type DnInternalTarget = 'dashboard' | 'weekly' | 'roles' | 'messages' | '
 
 export function DnMessages({ onNavigate }: { onNavigate: (target: DnInternalTarget) => void }) {
   const { notify } = useFeedback()
-  const { user } = useDnAuth()
+  const { user } = useAccount()
   const messageCenter = useDnMessages()
   const [items, setItems] = useState<SiteMessage[]>([])
   const [meta, setMeta] = useState<ListMeta>(emptyMeta)
