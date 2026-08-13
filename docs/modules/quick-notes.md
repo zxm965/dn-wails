@@ -6,7 +6,6 @@
 
 ## 目录与职责
 
-- `database/migrations/20260811_create_app_quick_note.sql`：创建云端笔记表、用户外键和活动笔记排序索引。
 - `internal/quicknotes/model.go`：笔记 DTO、输入校验、自动标题和可比较错误。
 - `internal/quicknotes/postgres_service.go`：PostgreSQL 查询、保存、软删除和表结构检查。
 - `internal/quicknotes/unavailable_service.go`：数据库未配置时的明确降级实现。
@@ -104,13 +103,7 @@ Wails 门面提供：
 
 ## 接入方式
 
-部署前由数据库管理员执行：
-
-```bash
-psql "$DATABASE_URL" -f database/migrations/20260811_create_app_quick_note.sql
-```
-
-迁移账号可以拥有 DDL 权限；桌面应用运行账号只需要 `app_quick_note` 的查询、新增和更新权限，以及现有会话查询权限。迁移完成后重新启动应用即可使用。
+部署前由数据库管理员按当前版本所需结构准备 `app_quick_note` 表、用户外键和活动笔记排序索引。桌面应用运行账号只需要 `app_quick_note` 的查询、新增和更新权限，以及现有会话查询权限。数据库结构准备完成后重新启动应用即可使用。
 
 ## 响应式处理
 
@@ -132,4 +125,4 @@ pnpm lint
 pnpm build
 ```
 
-自动保存、真实数据库迁移、跨设备同步和登录后的数据隔离仍需在已配置 PostgreSQL 的桌面环境中人工验证。
+自动保存、真实数据库结构、跨设备同步和登录后的数据隔离仍需在已配置 PostgreSQL 的桌面环境中人工验证。

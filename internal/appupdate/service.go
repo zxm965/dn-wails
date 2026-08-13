@@ -10,11 +10,12 @@ import (
 )
 
 type Config struct {
-	AppName    string
-	Version    string
-	Repository string
-	Platform   string
-	Arch       string
+	AppName        string
+	Version        string
+	Repository     string
+	UpdateEndpoint string
+	Platform       string
+	Arch           string
 }
 
 type Service struct {
@@ -31,6 +32,7 @@ func NewService(config Config, source ReleaseSource, installer Installer) *Servi
 	config.AppName = strings.TrimSpace(config.AppName)
 	config.Version = normalizeVersion(config.Version)
 	config.Repository = strings.TrimSpace(config.Repository)
+	config.UpdateEndpoint = strings.TrimSpace(config.UpdateEndpoint)
 	return &Service{
 		config:    config,
 		assetName: releaseAssetName(config.AppName, config.Platform, config.Arch),
@@ -41,7 +43,7 @@ func NewService(config Config, source ReleaseSource, installer Installer) *Servi
 
 func (s *Service) Info() Info {
 	_, versionErr := parseVersion(s.config.Version)
-	configured := s.config.Repository != "" && versionErr == nil && s.source != nil
+	configured := s.config.Repository != "" && s.config.UpdateEndpoint != "" && versionErr == nil && s.source != nil
 	canInstall := configured && s.assetName != "" && s.installer != nil && s.installer.Supported()
 	return Info{
 		CurrentVersion: s.config.Version,
@@ -59,7 +61,7 @@ func (s *Service) Check(ctx context.Context) (Status, error) {
 		return Status{}, ErrNotConfigured
 	}
 
-	release, err := s.source.Latest(ctx, s.config.Repository)
+	release, err := s.source.Latest(ctx, s.config.UpdateEndpoint, s.config.Repository)
 	if err != nil {
 		return Status{}, err
 	}
@@ -105,7 +107,7 @@ func (s *Service) Install(ctx context.Context, expectedVersion string) error {
 		return ErrAssetUnavailable
 	}
 
-	release, err := s.source.Latest(ctx, s.config.Repository)
+	release, err := s.source.Latest(ctx, s.config.UpdateEndpoint, s.config.Repository)
 	if err != nil {
 		return err
 	}

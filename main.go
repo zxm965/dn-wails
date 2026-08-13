@@ -104,14 +104,32 @@ func main() {
 	notificationService := notification.NewService(notificationPlatform)
 	lifecycleService := lifecycle.NewService()
 	singleInstanceService := singleinstance.NewService()
-	applicationUpdateSource := platformappupdate.NewGiteeSource(&http.Client{Timeout: 30 * time.Second})
+	updateSourceConfig := appupdate.SourceConfig{
+		UpdateEndpoint: buildinfo.UpdateEndpoint,
+		Repository:     buildinfo.Repository,
+	}
+	if databaseConfigErr == nil {
+		configuredSource, sourceErr := platformappupdate.LoadSourceConfig(databaseURL, platformappupdate.SourceSelector{
+			AppCode:  internalApplicationName,
+			Channel:  "stable",
+			Platform: runtime.GOOS,
+			Arch:     runtime.GOARCH,
+		})
+		if sourceErr != nil {
+			log.Printf("application update source database config is unavailable, using embedded default: %v", sourceErr)
+		} else {
+			updateSourceConfig = configuredSource
+		}
+	}
+	applicationUpdateSource := platformappupdate.NewEndpointSource(&http.Client{Timeout: 30 * time.Second})
 	applicationUpdateInstaller := platformappupdate.NewInstaller(internalApplicationName)
 	applicationUpdateService := appupdate.NewService(appupdate.Config{
-		AppName:    internalApplicationName,
-		Version:    buildinfo.Version,
-		Repository: buildinfo.Repository,
-		Platform:   runtime.GOOS,
-		Arch:       runtime.GOARCH,
+		AppName:        internalApplicationName,
+		Version:        buildinfo.Version,
+		Repository:     updateSourceConfig.Repository,
+		UpdateEndpoint: updateSourceConfig.UpdateEndpoint,
+		Platform:       runtime.GOOS,
+		Arch:           runtime.GOARCH,
 	}, applicationUpdateSource, applicationUpdateInstaller)
 
 	var facade *appservice.App

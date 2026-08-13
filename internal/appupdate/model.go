@@ -26,6 +26,11 @@ type Info struct {
 	CanInstall     bool   `json:"canInstall"`
 }
 
+type SourceConfig struct {
+	UpdateEndpoint string `json:"updateEndpoint"`
+	Repository     string `json:"repository"`
+}
+
 type Status struct {
 	CurrentVersion  string `json:"currentVersion"`
 	LatestVersion   string `json:"latestVersion"`
@@ -53,7 +58,7 @@ type Release struct {
 }
 
 type ReleaseSource interface {
-	Latest(ctx context.Context, repository string) (Release, error)
+	Latest(ctx context.Context, updateEndpoint string, repository string) (Release, error)
 	Download(ctx context.Context, asset Asset, destination string) error
 }
 

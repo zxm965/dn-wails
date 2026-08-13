@@ -34,7 +34,7 @@ main
 └── platform
     ├── nativekit（Wails 原生能力适配）
     ├── notification（Wails 原生通知适配）
-    ├── appupdate（Gitee Release 与平台更新安装器）
+    ├── appupdate（数据库更新源、Release 元数据校验与平台安装器）
     ├── singleinstance（单实例配置）
     └── window（平台窗口配置）
 ```

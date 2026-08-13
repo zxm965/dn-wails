@@ -18,7 +18,7 @@
 ├── internal/
 │   ├── application/               # 暴露给前端的 Wails v3 Service 门面
 │   ├── account/                   # 全局账号、持久会话与 PostgreSQL 身份服务
-│   ├── appupdate/                 # Gitee Release 更新规则与版本比较
+│   ├── appupdate/                 # Release 元数据、版本比较与安装规则
 │   ├── buildinfo/                 # 构建期版本和发布元数据
 │   ├── diagnostics/               # 日志与运行诊断
 │   ├── dn/                        # DN 角色、周计划、消息与官网同步
@@ -72,7 +72,7 @@ wails3 task dev
 
 ## 发布与更新
 
-项目 Git 仓库以 `https://gitee.com/zxm965/dn-wails.git` 为准。推送 `vMAJOR.MINOR.PATCH` 标签后，现有 GitHub Actions 工作流使用 Wails v3 Taskfile 构建 macOS universal 兼容更新 ZIP、DMG 和 Windows amd64 用户级 NSIS 安装器，并同时发布 GitHub、Gitee Release。GitHub Release 保留兼容清单供旧客户端升级到迁移版本，包含本次改动的新客户端后续统一从 Gitee 检查和下载更新。当前客户端在 macOS 上使用 DMG 自动更新，ZIP 继续用于兼容旧客户端：
+项目 Git 仓库以 `https://gitee.com/zxm965/dn-wails.git` 为准。推送 `vMAJOR.MINOR.PATCH` 标签后，现有 GitHub Actions 工作流使用 Wails v3 Taskfile 构建 macOS universal ZIP、DMG 和 Windows amd64 用户级 NSIS 安装器，并同时发布 GitHub、Gitee Release。客户端通过数据库配置的 `update_endpoint` 请求转发后的 GitHub Release 元数据，下载时把 GitHub 资产地址域名改写为 `gitee.com`，当前 macOS 自动更新使用 DMG：
 
 ```bash
 git tag v1.0.0

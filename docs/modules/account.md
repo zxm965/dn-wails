@@ -6,7 +6,6 @@
 
 ## 目录与职责
 
-- `database/migrations/20260811_make_desktop_sessions_persistent.sql`：把现有未撤销的桌面会话调整为长期有效。
 - `internal/account/model.go`：稳定的账号 DTO、角色和状态常量。
 - `internal/account/auth.go`：邮箱、密码、头像地址校验，以及与现有账号兼容的 scrypt 密码哈希。
 - `internal/account/postgres_service.go`：账号查询、资料维护、头像导入、数据库会话和本地令牌持久化。
@@ -81,8 +80,7 @@ Wails 门面提供：
 - 新会话的 `expires_at` 写为 PostgreSQL 可表示的远期时间 `9999-12-31 23:59:59+00`，用于兼容现有非空字段约束。
 - 认证查询不再根据 `expires_at` 或使用间隔自动失效，也不再执行定时续期。
 - 登录状态会跨应用重启保留，直到用户主动退出、数据库会话被撤销、账号被禁用或本地令牌损坏。
-- `20260811_make_desktop_sessions_persistent.sql` 只迁移 `user_agent = 'dn-wails'` 且未撤销的既有会话，不影响其他客户端会话。
-- 桌面应用不会自动执行数据库迁移；部署前应由数据库管理员执行迁移。
+- 桌面应用不会自动执行 DDL；部署前应由数据库管理员按当前版本所需结构准备账号与会话表。
 
 ## 路由保护与标题栏
 
@@ -103,12 +101,6 @@ Wails 门面提供：
 
 新增需要登录的页面时，在 `frontend/src/shared/navigation/routeConfig.ts` 注册路由并设置 `requiresAuth: true`。后端业务服务需要账号归属时，只依赖 `CurrentUserID`；管理员用例另依赖 `CurrentAdminUserID`。
 
-部署既有桌面会话迁移：
-
-```bash
-psql "$DATABASE_URL" -f database/migrations/20260811_make_desktop_sessions_persistent.sql
-```
-
 Go 方法或 DTO 变化后重新生成绑定：
 
 ```bash
@@ -126,4 +118,4 @@ pnpm lint
 pnpm build
 ```
 
-会话跨重启恢复、真实数据库迁移、标题栏头像点击、头像文件选择和账号禁用后的退出仍需在已配置 PostgreSQL 的桌面环境中人工验证。
+会话跨重启恢复、真实数据库结构、标题栏头像点击、头像文件选择和账号禁用后的退出仍需在已配置 PostgreSQL 的桌面环境中人工验证。
