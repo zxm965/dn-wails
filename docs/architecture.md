@@ -64,8 +64,11 @@ app
 │   ├── dn-system
 │   │   ├── api
 │   │   ├── components
-│   │   ├── context
 │   │   └── model
+│   ├── site-messages
+│   │   ├── api
+│   │   ├── components
+│   │   └── context
 │   ├── settings
 │   │   ├── api
 │   │   ├── components
@@ -101,11 +104,11 @@ app
 - Vite 通过 `@vanilla-extract/vite-plugin` 在构建期提取静态 CSS；源码不保留普通 `.css` 文件。
 - 全局字体、重置和主题令牌集中在 `app/styles/*.css.ts`；组件和页面使用就近共置的同名 `.css.ts`。
 - 组件局部规则优先使用 `style`，仅全局根节点、第三方状态和必要的复杂关系使用 `globalStyle`；共享 UI 不使用集中式 `ui.css.ts`。
-- 桌面应用壳采用“顶部标题栏 + 左侧分组菜单 + 右侧视图区域”的固定布局。
-- 左侧菜单由 `shared/navigation/menuConfig.ts` 统一维护唯一 key、分组、页面、图标和默认显隐；`routeConfig.ts` 统一维护页面标题、导航类型和 `requiresAuth`。侧栏渲染、偏好设置、启动页选择和应用壳路由守卫共同读取共享导航配置。快速笔记默认显示，DN 周常管理与 DevTools 默认隐藏，偏好设置始终可见。
+- 桌面应用壳采用“顶部标题栏 + 左侧菜单 + 右侧视图区域”的固定布局，只有系统设置入口显示分组标题。
+- 左侧菜单由 `shared/navigation/menuConfig.ts` 统一维护唯一 key、可选分组、页面、图标和默认显隐；`routeConfig.ts` 统一维护页面标题、导航类型和 `requiresAuth`。侧栏渲染、偏好设置、启动页选择和应用壳路由守卫共同读取共享导航配置。快速笔记和站内消息默认显示，DN 周常管理与 DevTools 默认隐藏，偏好设置始终可见。
 - `AccountProvider` 在应用根部恢复本地会话；需要登录的页面由 `App.tsx` 根据路由元数据统一保护，业务功能不自行实现登录状态管理。
 - 主要视图统一使用共享 `PageHeader`，保持紧凑渐变页头、标题基线、说明文字和操作区响应式行为一致。
-- 应用概览、运行诊断和所有人工验证入口统一放在“系统设置 → DevTools”；概览中的版本与检查更新属于正式应用能力，其余测试操作不进入业务页面。
+- 应用概览、运行诊断和所有人工验证入口统一放在“系统设置 → DevTools”；应用概览只展示版本，手动检查更新位于偏好设置最底部，其余测试操作不进入业务页面。
 - 所有页面必须支持响应式布局；页面优先基于右侧内容区域使用 Container Queries，避免侧边栏宽度导致视口媒体查询失真。
 - 页面主体统一使用 `--page-content-max-width` 控制最大宽度，并复用全局间距变量，确保菜单切换时左右基线稳定；同时至少覆盖常规桌面宽度、`1024 × 768` 最小窗口和极窄内容宽度。
 - 应用内按钮统一使用 `Button`，尺寸限定为 `sm=28px`、`md=32px`、`lg=36px`；普通操作跟随偏好设置中的默认尺寸（默认 `md`），结构性或固定语义按钮显式指定尺寸，业务模块不得自行定义其他按钮高度。
@@ -134,6 +137,7 @@ app
 - [全局账号](modules/account.md)
 - [云端快速笔记](modules/quick-notes.md)
 - [DN 周常管理](modules/dn-system.md)
+- [站内消息](modules/site-messages.md)
 - [应用生命周期](modules/app-lifecycle.md)
 - [安装身份](modules/installation-identity.md)
 - [应用更新与发布](modules/app-update.md)

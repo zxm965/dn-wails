@@ -16,16 +16,16 @@ import {
 import { useFeedback } from '@/shared/feedback'
 import { createScopedClassNames } from '@/shared/lib/classNames'
 
-import { getErrorMessage, type SiteMessage } from '../api/dnSystemApi'
-import { useDnMessages } from '../context/DnMessageProvider'
+import { getErrorMessage, type SiteMessage } from '../api/siteMessagesApi'
+import { useSiteMessages } from '../context/SiteMessageProvider'
 
-import { styles } from './DnSystem.css'
+import { styles } from '../../dn-system/components/DnSystem.css'
 
 const cx = createScopedClassNames(styles)
 
-export function DnMessageCenter() {
+export function SiteMessageCenter() {
   const { notify } = useFeedback()
-  const messages = useDnMessages()
+  const messages = useSiteMessages()
   const [markingAll, setMarkingAll] = useState(false)
 
   async function markAll() {
@@ -43,7 +43,7 @@ export function DnMessageCenter() {
   return (
     <>
       <Button
-        className={cx('dn-message-center-trigger')}
+        className={cx('site-message-center-trigger')}
         size='sm'
         variant='ghost'
         type='button'
@@ -52,12 +52,12 @@ export function DnMessageCenter() {
         onClick={() => messages.setCenterOpen(true)}
       >
         <Bell aria-hidden='true' />
-        {messages.unreadCount > 0 && <span className={cx('dn-message-center-indicator')} aria-hidden='true' />}
+        {messages.unreadCount > 0 && <span className={cx('site-message-center-indicator')} aria-hidden='true' />}
       </Button>
 
       <Dialog open={messages.centerOpen} onOpenChange={messages.setCenterOpen}>
         <DialogContent size='sm'>
-          <DialogHeader className={cx('dn-message-center-header')}>
+          <DialogHeader className={cx('site-message-center-header')}>
             <div>
               <DialogTitle>消息盒子</DialogTitle>
               <DialogDescription>
@@ -71,13 +71,13 @@ export function DnMessageCenter() {
               </Button>
             )}
           </DialogHeader>
-          <DialogBody className={cx('dn-message-center-body')}>
+          <DialogBody className={cx('site-message-center-body')}>
             {messages.inboxItems.length ? (
-              <div className={cx('dn-message-center-list')}>
+              <div className={cx('site-message-center-list')}>
                 {messages.inboxItems.map((message) => (
                   <Button
                     key={message.id}
-                    className={cx('dn-message-center-item')}
+                    className={cx('site-message-center-item')}
                     size='lg'
                     variant='ghost'
                     title={message.content || message.title}
@@ -100,7 +100,7 @@ export function DnMessageCenter() {
               />
             )}
           </DialogBody>
-          <DialogFooter className={cx('dn-message-center-footer')}>
+          <DialogFooter className={cx('site-message-center-footer')}>
             <span>
               {messages.lastSyncedAt
                 ? `官网消息同步于 ${formatMessageDate(messages.lastSyncedAt)}`
@@ -127,7 +127,7 @@ export function DnMessageCenter() {
             </DialogDescription>
           </DialogHeader>
           <DialogBody>
-            <p className={cx('dn-message-popup-content')}>
+            <p className={cx('site-message-popup-content')}>
               {messages.activeMessage?.content || '你收到了一条新的站内消息。'}
             </p>
           </DialogBody>

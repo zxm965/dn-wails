@@ -1,7 +1,3 @@
 export { DnDashboard } from './components/DnDashboard'
-export { DnMessageCenter } from './components/DnMessageCenter'
-export { DnMessages } from './components/DnMessages'
-export type { DnInternalTarget } from './components/DnMessages'
 export { DnRoles } from './components/DnRoles'
 export { DnWeeklyPlans } from './components/DnWeeklyPlans'
-export { DnMessageProvider, useDnMessages } from './context/DnMessageProvider'

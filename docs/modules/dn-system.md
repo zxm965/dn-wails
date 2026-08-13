@@ -17,16 +17,16 @@ Go 服务通过 `pgxpool` 直连 PostgreSQL；本地构建从 `.env.local` 读�
 - `internal/dn/unavailable_service.go`：未配置安全连接时维持应用生命周期，并让 DN 用例返回明确的不可用错误。
 - `internal/dn/service.go`、`internal/dn/auth.go`：保留用于历史本地数据迁移和规则测试的兼容实现，不注册为生产 Wails 账号服务。
 - `internal/application/dn.go`：只暴露 DN 角色、周计划和消息 Wails 门面方法。
-- `frontend/src/features/dn-system/api/`：生成绑定适配和前端业务类型。
-- `frontend/src/features/dn-system/context/DnMessageProvider.tsx`：登录后的全局消息中心状态。
+- `frontend/src/features/dn-system/api/`：生成绑定适配和 DN 角色/周计划业务类型。
 - `frontend/src/features/dn-system/model/`：职业/巢穴常量、优先级、日期和仪表盘纯计算。
-- `frontend/src/features/dn-system/components/`：四个 DN 业务页面、全局消息盒子和响应式样式。
-- `frontend/src/shared/navigation/menuConfig.ts`：DN 父入口、四个子菜单及默认隐藏的显隐偏好配置。
+- `frontend/src/features/dn-system/components/`：DN 仪表盘、周计划和角色三个业务页面及响应式样式。
+- `frontend/src/features/site-messages/`：独立站内消息页面、消息盒子、Provider 和 API 适配，详见[站内消息模块](site-messages.md)。
+- `frontend/src/shared/navigation/menuConfig.ts`：DN 父入口、三个子菜单和独立站内消息菜单的显隐偏好配置。
 
 ## 依赖关系
 
 ```text
-React DN page / DnMessageProvider
+React DN page / SiteMessageProvider
   → dn-system/api
   → frontend/bindings
   → application.App
@@ -64,7 +64,7 @@ React DN page / DnMessageProvider
 
 ### 登录保护
 
-DN 的四个路由在 `routeConfig.ts` 中统一声明 `requiresAuth: true`。`App.tsx` 先通过全局 `AccountProvider` 判断登录状态，认证成功后才渲染 DN 页面。DN 页面和 `DnMessageProvider` 不提供登录、注册或个人资料界面。
+DN 的三个业务路由在 `routeConfig.ts` 中统一声明 `requiresAuth: true`。`App.tsx` 先通过全局 `AccountProvider` 判断登录状态，认证成功后才渲染 DN 页面。DN 页面不提供登录、注册或个人资料界面；独立站内消息页面由 `SiteMessageProvider` 负责全局消息状态。
 
 ### 角色与周计划
 
@@ -89,7 +89,7 @@ DN 的四个路由在 `routeConfig.ts` 中统一声明 `requiresAuth: true`。`A
 ### 消息与官网同步
 
 - 登录用户可分页、筛选、查看、单条已读和全部已读；已读与弹窗回执按用户隔离。
-- 全局消息盒子登录后立即刷新，此后每 5 分钟刷新，并领取未显示过的弹窗消息。此轮询只刷新 DN 消息，不刷新或续期登录会话。
+- 全局站内消息盒子登录后立即刷新，此后每 5 分钟刷新，并领取未显示过的弹窗消息。此轮询只刷新站内消息，不刷新或续期登录会话。
 - 标题栏消息盒子有未读消息时仅显示圆点提醒，具体未读数量在消息盒子内展示。
 - 弹窗、消息详情、确认和通知均使用共享 Base UI Dialog、Alert Dialog、Sonner 和 `Button`。
 - 只有管理员可以本地发布消息或强制同步官网；管理员身份由 Account 模块确认。
@@ -116,14 +116,14 @@ Go 返回当前用户的完整周计划 DTO；前端纯函数计算总完成度�
 
 ## 主题与响应式
 
-- 四个业务页、消息盒子和弹窗全部使用共享 UI 与应用语义主题令牌，跟随主题、强调色、密度、按钮尺寸和字体缩放即时变化。
+- 三个 DN 业务页、独立消息页面、消息盒子和弹窗全部使用共享 UI 与应用语义主题令牌，跟随主题、强调色、密度、按钮尺寸和字体缩放即时变化。
 - 四个业务页统一使用共享 `PageHeader`，保持页头高度、渐变背景、标题基线和操作区布局一致。
 - 页面基于 `dn-page` Container Query 适配常规桌面、`1024 × 768` 最小窗口和极窄内容宽度。
 - 表格只在卡片内部横向滚动，不造成整页横向滚动；卡片、过滤器、消息行和弹窗逐级降为单列。
 
 ## 接入方式
 
-`main.tsx` 装配全局 `AccountProvider`，`App.tsx` 根据路由元数据执行认证保护，并在应用壳内装配 `DnMessageProvider`。DN 侧栏入口默认隐藏，用户在“偏好设置 → 左侧菜单”开启唯一 key `dn-system` 后，“业务系统 → DN 周常管理”提供父入口和四个子页面；登录后标题栏显示全局消息盒子和个人头像。
+`main.tsx` 装配全局 `AccountProvider`，`App.tsx` 根据路由元数据执行认证保护，并在应用壳内装配 `SiteMessageProvider`。DN 周常管理侧栏入口默认隐藏，用户在“偏好设置 → 左侧菜单”开启唯一 key `dn-system` 后，侧栏显示 DN 周常管理父入口和三个子页面；站内消息使用不带分组标题、独立且默认显示的唯一 key `site-messages`，也可在同一处单独隐藏。登录后标题栏显示全局消息盒子和个人头像，消息盒子的“查看全部消息”跳转到独立站内消息页面。
 
 本地配置：
 

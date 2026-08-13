@@ -58,6 +58,29 @@ const settingsButtonSecondary = style({
   borderColor: 'var(--border-strong)',
 })
 
+const settingsUpdateContent = style([
+  {
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: '20px',
+  },
+  {
+    '@container': {
+      'settings-panel (max-width: 520px)': {
+        alignItems: 'stretch',
+        flexDirection: 'column',
+      },
+    },
+  },
+])
+
+const settingsUpdateError = style({
+  margin: '12px 0 0',
+  color: 'var(--danger-text)',
+  fontSize: '11px',
+})
+
 const settingsError = style({
   padding: '12px 14px',
   color: 'var(--danger-text)',
@@ -171,6 +194,8 @@ export const styles = {
   'settings-button': settingsButton,
   'settings-button-primary': settingsButtonPrimary,
   'settings-button-secondary': settingsButtonSecondary,
+  'settings-update-content': settingsUpdateContent,
+  'settings-update-error': settingsUpdateError,
   'settings-error': settingsError,
   'settings-section': settingsSection,
   'settings-section-title': settingsSectionTitle,
@@ -197,6 +222,32 @@ globalStyle(`${settingsSectionTitle} p`, {
   color: 'var(--text-secondary)',
   fontSize: '13px',
   lineHeight: '1.55',
+})
+
+globalStyle(`${settingsUpdateContent} > div`, {
+  minWidth: '0',
+})
+
+globalStyle(`${settingsUpdateContent} strong`, {
+  display: 'block',
+  fontSize: '14px',
+})
+
+globalStyle(`${settingsUpdateContent} small`, {
+  display: 'block',
+  marginTop: '7px',
+  color: 'var(--text-tertiary)',
+  fontSize: '10px',
+  overflowWrap: 'anywhere',
+})
+
+globalStyle(`${settingsUpdateContent} button`, {
+  flex: '0 0 auto',
+  '@container': {
+    'settings-panel (max-width: 520px)': {
+      width: '100%',
+    },
+  },
 })
 
 globalStyle(

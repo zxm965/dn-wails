@@ -4,7 +4,6 @@ import { appConfig } from '@/app/appConfig'
 import { useAppUpdate } from '@/features/app-update'
 import { useSettings } from '@/features/settings'
 import { useAppLifecycle } from '@/shared/app-lifecycle'
-import { Button } from '@/shared/components/ui'
 import { getDiagnosticsInfo, type DiagnosticsInfo } from '@/shared/diagnostics'
 import { createScopedClassNames } from '@/shared/lib/classNames'
 
@@ -20,15 +19,7 @@ const THEME_LABELS = {
 
 export function DesktopOverview({ embedded = false }: { embedded?: boolean }) {
   const { settings } = useSettings()
-  const {
-    info: updateInfo,
-    status: updateStatus,
-    error: updateError,
-    isLoading: isUpdateLoading,
-    isChecking,
-    isInstalling,
-    checkForUpdates,
-  } = useAppUpdate()
+  const { info: updateInfo } = useAppUpdate()
   const { status: lifecycleStatus, error: lifecycleError } = useAppLifecycle()
   const [diagnostics, setDiagnostics] = useState<DiagnosticsInfo | null>(null)
   const lifecycleReady = lifecycleStatus?.ready === true
@@ -40,16 +31,6 @@ export function DesktopOverview({ embedded = false }: { embedded?: boolean }) {
         ? '应用正在初始化'
         : '正在读取状态'
   const currentVersion = updateInfo?.currentVersion ?? diagnostics?.appVersion ?? '—'
-  const updateSummary = isUpdateLoading
-    ? '正在读取版本信息'
-    : updateStatus?.updateAvailable
-      ? `发现新版本 ${updateStatus.latestVersion}`
-      : updateStatus
-        ? `当前已是最新版 ${updateStatus.currentVersion}`
-        : updateInfo?.configured
-          ? '启动时自动检查更新'
-          : '开发构建未启用更新'
-
   useEffect(() => {
     void getDiagnosticsInfo()
       .then(setDiagnostics)
@@ -88,32 +69,6 @@ export function DesktopOverview({ embedded = false }: { embedded?: boolean }) {
           hint={settings.notifications.showPreview ? '显示消息预览' : '隐藏消息预览'}
         />
       </div>
-
-      <section className={cx('desktop-overview-section')}>
-        <div className={cx('desktop-overview-section-heading')}>
-          <div>
-            <h2>版本与更新</h2>
-            <p>正式版本启动后会自动检查 GitHub Releases，也可以在这里主动检查。</p>
-          </div>
-          <span>{updateStatus?.latestVersion ? `latest ${updateStatus.latestVersion}` : 'GitHub Releases'}</span>
-        </div>
-        <div className={cx('desktop-overview-update-content')}>
-          <div>
-            <strong>{updateSummary}</strong>
-            {updateError && <p className={cx('desktop-overview-error')}>{updateError}</p>}
-          </div>
-          <Button
-            type='button'
-            variant={updateStatus?.updateAvailable ? 'primary' : 'outline'}
-            disabled={
-              isUpdateLoading || isChecking || isInstalling || !updateInfo?.configured || !updateInfo.canInstall
-            }
-            onClick={() => void checkForUpdates(true)}
-          >
-            {isInstalling ? '正在安装…' : isChecking ? '正在检查…' : '检查最新版'}
-          </Button>
-        </div>
-      </section>
     </section>
   )
 }

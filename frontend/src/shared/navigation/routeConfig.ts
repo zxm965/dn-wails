@@ -10,7 +10,7 @@ export const APP_ROUTES = {
   'dn-dashboard': { title: 'DN · 仪表盘', requiresAuth: true, navigation: 'menu' },
   'dn-weekly': { title: 'DN · 周计划', requiresAuth: true, navigation: 'menu' },
   'dn-roles': { title: 'DN · 角色', requiresAuth: true, navigation: 'menu' },
-  'dn-messages': { title: 'DN · 站内消息', requiresAuth: true, navigation: 'menu' },
+  'site-messages': { title: '站内消息', requiresAuth: true, navigation: 'menu' },
   settings: { title: '偏好设置', requiresAuth: false, navigation: 'menu' },
   devtools: { title: 'DevTools', requiresAuth: false, navigation: 'menu' },
 } as const satisfies Record<string, AppRouteDefinition>

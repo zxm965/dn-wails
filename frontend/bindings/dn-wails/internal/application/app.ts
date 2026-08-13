@@ -43,8 +43,8 @@ export function CheckForApplicationUpdate(): $CancellablePromise<appupdate$0.Sta
     });
 }
 
-export function ClaimDnMessageNotifications(limit: number): $CancellablePromise<dn$0.SiteMessageClaim> {
-    return $Call.ByID(195920865, limit).then(($result: any) => {
+export function ClaimSiteMessageNotifications(limit: number): $CancellablePromise<dn$0.SiteMessageClaim> {
+    return $Call.ByID(1096658320, limit).then(($result: any) => {
         return $$createType1($result);
     });
 }
@@ -83,32 +83,32 @@ export function GetDiagnosticsInfo(): $CancellablePromise<$models.DiagnosticsInf
     });
 }
 
-export function GetDnMessageInbox(limit: number): $CancellablePromise<dn$0.SiteMessageInbox> {
-    return $Call.ByID(4028375573, limit).then(($result: any) => {
-        return $$createType7($result);
-    });
-}
-
 export function GetLifecycleStatus(): $CancellablePromise<$models.LifecycleStatus> {
     return $Call.ByID(1861841676).then(($result: any) => {
-        return $$createType8($result);
+        return $$createType7($result);
     });
 }
 
 export function GetProfile(): $CancellablePromise<account$0.Profile> {
     return $Call.ByID(654125731).then(($result: any) => {
-        return $$createType9($result);
+        return $$createType8($result);
     });
 }
 
 export function GetScreens(): $CancellablePromise<nativekit$0.Screen[]> {
     return $Call.ByID(3024922067).then(($result: any) => {
-        return $$createType11($result);
+        return $$createType10($result);
     });
 }
 
 export function GetSettings(): $CancellablePromise<settings$0.AppSettings> {
     return $Call.ByID(3829730219).then(($result: any) => {
+        return $$createType11($result);
+    });
+}
+
+export function GetSiteMessageInbox(limit: number): $CancellablePromise<dn$0.SiteMessageInbox> {
+    return $Call.ByID(506498420, limit).then(($result: any) => {
         return $$createType12($result);
     });
 }
@@ -139,39 +139,39 @@ export function ListAllDnWeeklyPlans(): $CancellablePromise<dn$0.WeeklyPlan[]> {
     });
 }
 
-export function ListDnMessages(query: dn$0.SiteMessageQuery): $CancellablePromise<dn$0.SiteMessageList> {
-    return $Call.ByID(1725866908, query).then(($result: any) => {
-        return $$createType16($result);
-    });
-}
-
 export function ListDnRoleOptions(): $CancellablePromise<dn$0.RoleProfession[]> {
     return $Call.ByID(928626878).then(($result: any) => {
-        return $$createType17($result);
+        return $$createType16($result);
     });
 }
 
 export function ListDnRoles(query: dn$0.RoleProfessionQuery): $CancellablePromise<dn$0.RoleProfessionList> {
     return $Call.ByID(2142270857, query).then(($result: any) => {
-        return $$createType18($result);
+        return $$createType17($result);
     });
 }
 
 export function ListDnWeeklyPlans(query: dn$0.WeeklyPlanQuery): $CancellablePromise<dn$0.WeeklyPlanList> {
     return $Call.ByID(1740303989, query).then(($result: any) => {
-        return $$createType19($result);
+        return $$createType18($result);
     });
 }
 
 export function ListQuickNotes(): $CancellablePromise<quicknotes$0.Note[]> {
     return $Call.ByID(2791806942).then(($result: any) => {
+        return $$createType20($result);
+    });
+}
+
+export function ListSiteMessages(query: dn$0.SiteMessageQuery): $CancellablePromise<dn$0.SiteMessageList> {
+    return $Call.ByID(2848040173, query).then(($result: any) => {
         return $$createType21($result);
     });
 }
 
 export function LoginUser(input: account$0.LoginInput): $CancellablePromise<account$0.Profile> {
     return $Call.ByID(2401834084, input).then(($result: any) => {
-        return $$createType9($result);
+        return $$createType8($result);
     });
 }
 
@@ -179,12 +179,12 @@ export function LogoutUser(): $CancellablePromise<void> {
     return $Call.ByID(1530377055);
 }
 
-export function MarkAllDnMessagesRead(): $CancellablePromise<number> {
-    return $Call.ByID(4002262832);
+export function MarkAllSiteMessagesRead(): $CancellablePromise<number> {
+    return $Call.ByID(3835895149);
 }
 
-export function MarkDnMessageRead(id: number): $CancellablePromise<dn$0.SiteMessage> {
-    return $Call.ByID(3176458516, id).then(($result: any) => {
+export function MarkSiteMessageRead(id: number): $CancellablePromise<dn$0.SiteMessage> {
+    return $Call.ByID(697252987, id).then(($result: any) => {
         return $$createType22($result);
     });
 }
@@ -207,8 +207,8 @@ export function OpenFiles(options: nativekit$0.OpenFilesOptions): $CancellablePr
     });
 }
 
-export function PublishDnMessage(input: dn$0.SiteMessageInput): $CancellablePromise<dn$0.SiteMessage> {
-    return $Call.ByID(2508688802, input).then(($result: any) => {
+export function PublishSiteMessage(input: dn$0.SiteMessageInput): $CancellablePromise<dn$0.SiteMessage> {
+    return $Call.ByID(1975899065, input).then(($result: any) => {
         return $$createType22($result);
     });
 }
@@ -223,7 +223,7 @@ export function ReadClipboard(): $CancellablePromise<string> {
 
 export function RegisterUser(input: account$0.RegistrationInput): $CancellablePromise<account$0.Profile> {
     return $Call.ByID(689288168, input).then(($result: any) => {
-        return $$createType9($result);
+        return $$createType8($result);
     });
 }
 
@@ -237,7 +237,7 @@ export function RequestWindowClose(): $CancellablePromise<void> {
 
 export function ResetSettings(): $CancellablePromise<settings$0.AppSettings> {
     return $Call.ByID(1218965032).then(($result: any) => {
-        return $$createType12($result);
+        return $$createType11($result);
     });
 }
 
@@ -259,7 +259,7 @@ export function SaveFile(options: nativekit$0.SaveFileOptions): $CancellableProm
 
 export function SaveQuickNote(input: quicknotes$0.NoteInput): $CancellablePromise<quicknotes$0.Note> {
     return $Call.ByID(3181127182, input).then(($result: any) => {
-        return $$createType20($result);
+        return $$createType19($result);
     });
 }
 
@@ -271,27 +271,27 @@ export function ShowMessageDialog(options: nativekit$0.MessageDialogOptions): $C
     return $Call.ByID(1704531206, options);
 }
 
-export function SyncDnOfficialMessages(): $CancellablePromise<dn$0.OfficialMessageSyncResult> {
-    return $Call.ByID(3719791858).then(($result: any) => {
+export function SyncDnWeeklyPlans(): $CancellablePromise<dn$0.WeeklyPlanSyncResult> {
+    return $Call.ByID(2474701820).then(($result: any) => {
         return $$createType24($result);
     });
 }
 
-export function SyncDnWeeklyPlans(): $CancellablePromise<dn$0.WeeklyPlanSyncResult> {
-    return $Call.ByID(2474701820).then(($result: any) => {
+export function SyncOfficialSiteMessages(): $CancellablePromise<dn$0.OfficialMessageSyncResult> {
+    return $Call.ByID(3517101591).then(($result: any) => {
         return $$createType25($result);
     });
 }
 
 export function UpdateProfile(input: account$0.ProfileInput): $CancellablePromise<account$0.Profile> {
     return $Call.ByID(2301376340, input).then(($result: any) => {
-        return $$createType9($result);
+        return $$createType8($result);
     });
 }
 
 export function UpdateSettings(next: settings$0.AppSettings): $CancellablePromise<settings$0.AppSettings> {
     return $Call.ByID(1566537110, next).then(($result: any) => {
-        return $$createType12($result);
+        return $$createType11($result);
     });
 }
 
@@ -307,22 +307,22 @@ const $$createType3 = dn$0.WeeklyPlan.createFrom;
 const $$createType4 = appupdate$0.Info.createFrom;
 const $$createType5 = account$0.AuthState.createFrom;
 const $$createType6 = $models.DiagnosticsInfo.createFrom;
-const $$createType7 = dn$0.SiteMessageInbox.createFrom;
-const $$createType8 = $models.LifecycleStatus.createFrom;
-const $$createType9 = account$0.Profile.createFrom;
-const $$createType10 = nativekit$0.Screen.createFrom;
-const $$createType11 = $Create.Array($$createType10);
-const $$createType12 = settings$0.AppSettings.createFrom;
+const $$createType7 = $models.LifecycleStatus.createFrom;
+const $$createType8 = account$0.Profile.createFrom;
+const $$createType9 = nativekit$0.Screen.createFrom;
+const $$createType10 = $Create.Array($$createType9);
+const $$createType11 = settings$0.AppSettings.createFrom;
+const $$createType12 = dn$0.SiteMessageInbox.createFrom;
 const $$createType13 = $models.SystemNotificationStatus.createFrom;
 const $$createType14 = dn$0.WeeklyPlanInitializationResult.createFrom;
 const $$createType15 = $Create.Array($$createType3);
-const $$createType16 = dn$0.SiteMessageList.createFrom;
-const $$createType17 = $Create.Array($$createType2);
-const $$createType18 = dn$0.RoleProfessionList.createFrom;
-const $$createType19 = dn$0.WeeklyPlanList.createFrom;
-const $$createType20 = quicknotes$0.Note.createFrom;
-const $$createType21 = $Create.Array($$createType20);
+const $$createType16 = $Create.Array($$createType2);
+const $$createType17 = dn$0.RoleProfessionList.createFrom;
+const $$createType18 = dn$0.WeeklyPlanList.createFrom;
+const $$createType19 = quicknotes$0.Note.createFrom;
+const $$createType20 = $Create.Array($$createType19);
+const $$createType21 = dn$0.SiteMessageList.createFrom;
 const $$createType22 = dn$0.SiteMessage.createFrom;
 const $$createType23 = $Create.Array($Create.Any);
-const $$createType24 = dn$0.OfficialMessageSyncResult.createFrom;
-const $$createType25 = dn$0.WeeklyPlanSyncResult.createFrom;
+const $$createType24 = dn$0.WeeklyPlanSyncResult.createFrom;
+const $$createType25 = dn$0.OfficialMessageSyncResult.createFrom;

@@ -249,7 +249,7 @@ const dnWeeklyFilterGrid = style([
   },
 ])
 
-const dnMessageFilters = style([
+const siteMessageFilters = style([
   {
     display: 'grid',
     gridTemplateColumns: 'minmax(0, 1fr) 180px auto',
@@ -629,12 +629,12 @@ const dnEmptyAction = style({
   paddingBottom: '20px',
 })
 
-const dnMessageList = style({
+const siteMessageList = style({
   display: 'grid',
   gap: '8px',
 })
 
-const dnMessageItem = style([
+const siteMessageItem = style([
   {
     minWidth: '0',
     display: 'grid',
@@ -657,14 +657,14 @@ const dnMessageItem = style([
 
 const isUnread = style({
   selectors: {
-    [`${dnMessageItem}&`]: {
+    [`${siteMessageItem}&`]: {
       background: 'var(--accent-muted)',
       borderColor: 'color-mix(in srgb, var(--accent) 35%, transparent)',
     },
   },
 })
 
-const dnMessageIcon = style({
+const siteMessageIcon = style({
   width: '38px',
   height: '38px',
   display: 'grid',
@@ -674,7 +674,7 @@ const dnMessageIcon = style({
 
 const isInfo = style({
   selectors: {
-    [`${dnMessageIcon}&`]: {
+    [`${siteMessageIcon}&`]: {
       color: '#57beff',
       background: 'rgba(87, 190, 255, 0.12)',
     },
@@ -683,7 +683,7 @@ const isInfo = style({
 
 const isSuccess = style({
   selectors: {
-    [`${dnMessageIcon}&`]: {
+    [`${siteMessageIcon}&`]: {
       color: '#26c876',
       background: 'rgba(24, 183, 104, 0.12)',
     },
@@ -692,7 +692,7 @@ const isSuccess = style({
 
 const isWarning = style({
   selectors: {
-    [`${dnMessageIcon}&`]: {
+    [`${siteMessageIcon}&`]: {
       color: '#e7a72f',
       background: 'rgba(231, 167, 47, 0.12)',
     },
@@ -701,14 +701,14 @@ const isWarning = style({
 
 const isError = style({
   selectors: {
-    [`${dnMessageIcon}&`]: {
+    [`${siteMessageIcon}&`]: {
       color: 'var(--danger-text)',
       background: 'var(--danger-background)',
     },
   },
 })
 
-const dnMessageTitle = style({
+const siteMessageTitle = style({
   display: 'flex',
   flexWrap: 'wrap',
   alignItems: 'center',
@@ -717,7 +717,7 @@ const dnMessageTitle = style({
   fontWeight: '800',
 })
 
-const dnMessageContent = style({
+const siteMessageContent = style({
   display: 'block',
   overflow: 'hidden',
   marginTop: '5px',
@@ -728,20 +728,20 @@ const dnMessageContent = style({
   WebkitLineClamp: '2',
 })
 
-const dnMessageDialogCopy = style({
+const siteMessageDialogCopy = style({
   margin: '0',
   color: 'var(--text-secondary)',
   lineHeight: '1.75',
   whiteSpace: 'pre-wrap',
 })
 
-const dnMessageCenterTrigger = style({
+const siteMessageCenterTrigger = style({
   position: 'relative',
   minWidth: '30px',
   padding: '0',
 })
 
-const dnMessageCenterIndicator = style({
+const siteMessageCenterIndicator = style({
   position: 'absolute',
   top: '5px',
   right: '5px',
@@ -752,7 +752,7 @@ const dnMessageCenterIndicator = style({
   boxShadow: '0 0 0 1.5px var(--titlebar-background)',
 })
 
-const dnMessageCenterHeader = style({
+const siteMessageCenterHeader = style({
   display: 'flex',
   alignItems: 'flex-start',
   justifyContent: 'space-between',
@@ -760,11 +760,11 @@ const dnMessageCenterHeader = style({
   paddingRight: '34px',
 })
 
-const dnMessageCenterBody = style({
+const siteMessageCenterBody = style({
   padding: '0',
 })
 
-const dnMessageCenterList = style({
+const siteMessageCenterList = style({
   maxHeight: 'min(52vh, 430px)',
   display: 'grid',
   gap: '3px',
@@ -772,7 +772,7 @@ const dnMessageCenterList = style({
   padding: '8px',
 })
 
-const dnMessageCenterItem = style({
+const siteMessageCenterItem = style({
   width: '100%',
   display: 'grid',
   gridTemplateColumns: 'auto minmax(0, 1fr) auto',
@@ -782,13 +782,13 @@ const dnMessageCenterItem = style({
   textAlign: 'left',
 })
 
-const dnMessageCenterFooter = style({
+const siteMessageCenterFooter = style({
   justifyContent: 'space-between',
   color: 'var(--text-tertiary)',
   fontSize: '10px',
 })
 
-const dnMessagePopupContent = style({
+const siteMessagePopupContent = style({
   margin: '0',
   color: 'var(--text-secondary)',
   lineHeight: '1.75',
@@ -817,7 +817,7 @@ export const styles = {
   'dn-filter-grid': dnFilterGrid,
   'dn-role-filter-grid': dnRoleFilterGrid,
   'dn-weekly-filter-grid': dnWeeklyFilterGrid,
-  'dn-message-filters': dnMessageFilters,
+  'site-message-filters': siteMessageFilters,
   'dn-field': dnField,
   'dn-filter-actions': dnFilterActions,
   'dn-view-switch': dnViewSwitch,
@@ -851,25 +851,25 @@ export const styles = {
   'dn-nest-picker': dnNestPicker,
   'dn-ticket-editor': dnTicketEditor,
   'dn-empty-action': dnEmptyAction,
-  'dn-message-list': dnMessageList,
-  'dn-message-item': dnMessageItem,
+  'site-message-list': siteMessageList,
+  'site-message-item': siteMessageItem,
   'is-unread': isUnread,
-  'dn-message-icon': dnMessageIcon,
+  'site-message-icon': siteMessageIcon,
   'is-info': isInfo,
   'is-success': isSuccess,
   'is-warning': isWarning,
   'is-error': isError,
-  'dn-message-title': dnMessageTitle,
-  'dn-message-content': dnMessageContent,
-  'dn-message-dialog-copy': dnMessageDialogCopy,
-  'dn-message-center-trigger': dnMessageCenterTrigger,
-  'dn-message-center-indicator': dnMessageCenterIndicator,
-  'dn-message-center-header': dnMessageCenterHeader,
-  'dn-message-center-body': dnMessageCenterBody,
-  'dn-message-center-list': dnMessageCenterList,
-  'dn-message-center-item': dnMessageCenterItem,
-  'dn-message-center-footer': dnMessageCenterFooter,
-  'dn-message-popup-content': dnMessagePopupContent,
+  'site-message-title': siteMessageTitle,
+  'site-message-content': siteMessageContent,
+  'site-message-dialog-copy': siteMessageDialogCopy,
+  'site-message-center-trigger': siteMessageCenterTrigger,
+  'site-message-center-indicator': siteMessageCenterIndicator,
+  'site-message-center-header': siteMessageCenterHeader,
+  'site-message-center-body': siteMessageCenterBody,
+  'site-message-center-list': siteMessageCenterList,
+  'site-message-center-item': siteMessageCenterItem,
+  'site-message-center-footer': siteMessageCenterFooter,
+  'site-message-popup-content': siteMessagePopupContent,
 } as const
 
 globalStyle(`${dnPage} p`, {
@@ -1165,36 +1165,36 @@ globalStyle(`${dnTicketEditor} > div`, {
   borderRadius: '10px',
 })
 
-globalStyle(`${dnMessageItem} > span:nth-child(2)`, {
+globalStyle(`${siteMessageItem} > span:nth-child(2)`, {
   minWidth: '0',
 })
 
-globalStyle(`${dnMessageIcon} svg`, {
+globalStyle(`${siteMessageIcon} svg`, {
   width: '18px',
   height: '18px',
 })
 
-globalStyle(`${dnMessageItem} small`, {
+globalStyle(`${siteMessageItem} small`, {
   display: 'block',
   color: 'var(--text-secondary)',
   fontSize: '11px',
 })
 
-globalStyle(`${dnMessageItem} small`, {
+globalStyle(`${siteMessageItem} small`, {
   marginTop: '7px',
   color: 'var(--text-tertiary)',
 })
 
-globalStyle(`${dnMessageItem} > ${buttonStyles.root}`, {
+globalStyle(`${siteMessageItem} > ${buttonStyles.root}`, {
   maxWidth: '160px',
 })
 
-globalStyle(`${dnMessageCenterTrigger} > svg`, {
+globalStyle(`${siteMessageCenterTrigger} > svg`, {
   width: '16px',
   height: '16px',
 })
 
-globalStyle(`${dnMessageCenterItem} > span:nth-child(2)`, {
+globalStyle(`${siteMessageCenterItem} > span:nth-child(2)`, {
   minWidth: '0',
   display: 'flex',
   alignItems: 'center',
@@ -1202,29 +1202,29 @@ globalStyle(`${dnMessageCenterItem} > span:nth-child(2)`, {
 })
 
 globalStyle(
-  `${dnMessageCenterItem} strong,
-${dnMessageCenterItem} time`,
+  `${siteMessageCenterItem} strong,
+${siteMessageCenterItem} time`,
   {
     overflow: 'hidden',
     textOverflow: 'ellipsis',
   },
 )
 
-globalStyle(`${dnMessageCenterItem} strong`, {
+globalStyle(`${siteMessageCenterItem} strong`, {
   minWidth: '0',
   flex: '1',
   fontSize: '12px',
   whiteSpace: 'nowrap',
 })
 
-globalStyle(`${dnMessageCenterItem} time`, {
+globalStyle(`${siteMessageCenterItem} time`, {
   flex: '0 0 auto',
   color: 'var(--text-tertiary)',
   fontSize: '9px',
   whiteSpace: 'nowrap',
 })
 
-globalStyle(`${dnMessageCenterItem} > svg`, {
+globalStyle(`${siteMessageCenterItem} > svg`, {
   width: '14px',
   height: '14px',
   color: 'var(--text-tertiary)',
@@ -1263,7 +1263,7 @@ globalStyle(`${dnFilterActions} ${buttonStyles.root}`, {
   },
 })
 
-globalStyle(`${dnMessageItem} > ${buttonStyles.root}`, {
+globalStyle(`${siteMessageItem} > ${buttonStyles.root}`, {
   '@container': {
     'dn-page (max-width: 620px)': {
       maxWidth: 'none',

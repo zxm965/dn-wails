@@ -41,10 +41,10 @@ import {
   type SiteMessage,
   type SiteMessageInput,
   type SiteMessageLevel,
-} from '../api/dnSystemApi'
-import { useDnMessages } from '../context/DnMessageProvider'
+} from '../api/siteMessagesApi'
+import { useSiteMessages } from '../context/SiteMessageProvider'
 
-import { styles } from './DnSystem.css'
+import { styles } from '../../dn-system/components/DnSystem.css'
 
 const cx = createScopedClassNames(styles)
 
@@ -61,12 +61,12 @@ const emptyForm: SiteMessageInput = {
   expiresAt: '',
 }
 
-export type DnInternalTarget = 'dashboard' | 'weekly' | 'roles' | 'messages' | 'account'
+export type SiteMessageNavigationTarget = 'dashboard' | 'weekly' | 'roles' | 'messages' | 'account'
 
-export function DnMessages({ onNavigate }: { onNavigate: (target: DnInternalTarget) => void }) {
+export function SiteMessages({ onNavigate }: { onNavigate: (target: SiteMessageNavigationTarget) => void }) {
   const { notify } = useFeedback()
   const { user } = useAccount()
-  const messageCenter = useDnMessages()
+  const messageCenter = useSiteMessages()
   const [items, setItems] = useState<SiteMessage[]>([])
   const [meta, setMeta] = useState<ListMeta>(emptyMeta)
   const [unreadCount, setUnreadCount] = useState(0)
@@ -135,7 +135,7 @@ export function DnMessages({ onNavigate }: { onNavigate: (target: DnInternalTarg
   }
 
   async function followAction(message: SiteMessage) {
-    const internalTargets: Record<string, DnInternalTarget> = {
+    const internalTargets: Record<string, SiteMessageNavigationTarget> = {
       '/dashboard': 'dashboard',
       '/weekly-plans': 'weekly',
       '/roles': 'roles',
@@ -232,7 +232,7 @@ export function DnMessages({ onNavigate }: { onNavigate: (target: DnInternalTarg
 
       <Card>
         <CardHeader>
-          <div className={cx('dn-message-filters')}>
+          <div className={cx('site-message-filters')}>
             <label className={cx('dn-field')}>
               <Label>关键词</Label>
               <Input
@@ -274,15 +274,15 @@ export function DnMessages({ onNavigate }: { onNavigate: (target: DnInternalTarg
         </CardHeader>
         <CardContent>
           {items.length ? (
-            <div className={cx('dn-message-list')}>
+            <div className={cx('site-message-list')}>
               {items.map((message) => (
                 <article
                   key={message.id}
-                  className={cx(message.isRead ? 'dn-message-item' : 'dn-message-item is-unread')}
+                  className={cx(message.isRead ? 'site-message-item' : 'site-message-item is-unread')}
                 >
                   <MessageIcon level={message.level} />
                   <span>
-                    <span className={cx('dn-message-title')}>
+                    <span className={cx('site-message-title')}>
                       {message.title}
                       {!message.isRead && <Badge tone='accent'>未读</Badge>}
                       <Badge tone='outline'>
@@ -293,7 +293,7 @@ export function DnMessages({ onNavigate }: { onNavigate: (target: DnInternalTarg
                             : message.source}
                       </Badge>
                     </span>
-                    {message.content && <span className={cx('dn-message-content')}>{message.content}</span>}
+                    {message.content && <span className={cx('site-message-content')}>{message.content}</span>}
                     <small>{formatDate(message.publishedAt)}</small>
                   </span>
                   <Button variant='ghost' onClick={() => void openMessage(message)}>
@@ -319,7 +319,7 @@ export function DnMessages({ onNavigate }: { onNavigate: (target: DnInternalTarg
             <DialogDescription>{activeMessage ? formatDate(activeMessage.publishedAt) : ''}</DialogDescription>
           </DialogHeader>
           <DialogBody>
-            <p className={cx('dn-message-dialog-copy')}>{activeMessage?.content || '你收到了一条新的站内消息。'}</p>
+            <p className={cx('site-message-dialog-copy')}>{activeMessage?.content || '你收到了一条新的站内消息。'}</p>
           </DialogBody>
           <DialogFooter>
             <Button variant='outline' onClick={() => setActiveMessage(null)}>
@@ -441,18 +441,18 @@ export function DnMessages({ onNavigate }: { onNavigate: (target: DnInternalTarg
 function MessageIcon({ level }: { level: SiteMessageLevel }) {
   if (level === 'warning' || level === 'error')
     return (
-      <span className={cx(`dn-message-icon is-${level}`)}>
+      <span className={cx(`site-message-icon is-${level}`)}>
         <TriangleAlert aria-hidden='true' />
       </span>
     )
   if (level === 'success')
     return (
-      <span className={cx('dn-message-icon is-success')}>
+      <span className={cx('site-message-icon is-success')}>
         <MailCheck aria-hidden='true' />
       </span>
     )
   return (
-    <span className={cx('dn-message-icon is-info')}>
+    <span className={cx('site-message-icon is-info')}>
       <Info aria-hidden='true' />
     </span>
   )

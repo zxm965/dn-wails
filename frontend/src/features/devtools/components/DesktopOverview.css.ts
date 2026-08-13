@@ -33,23 +33,6 @@ const desktopOverviewHeading = style([
   },
 ])
 
-const desktopOverviewSectionHeading = style([
-  {
-    display: 'flex',
-    alignItems: 'flex-start',
-    justifyContent: 'space-between',
-    gap: '18px',
-    marginBottom: '20px',
-  },
-  {
-    '@container': {
-      'desktop-overview (max-width: 520px)': {
-        flexDirection: 'column',
-      },
-    },
-  },
-])
-
 const desktopOverviewReady = style({
   display: 'flex',
   alignItems: 'center',
@@ -108,74 +91,19 @@ const desktopOverviewSummary = style([
   },
 ])
 
-const desktopOverviewSection = style({
-  position: 'relative',
-  overflow: 'hidden',
-  marginTop: '18px',
-  padding: 'var(--panel-padding)',
-  background:
-    'linear-gradient(135deg, color-mix(in srgb, var(--surface-elevated) 95%, var(--accent) 5%), var(--surface-elevated))',
-  border: '1px solid var(--border-subtle)',
-  borderRadius: 'var(--panel-radius)',
-  boxShadow: 'var(--surface-shadow)',
-  selectors: {
-    '&::after': {
-      position: 'absolute',
-      top: '0',
-      right: '0',
-      width: '90px',
-      height: '1px',
-      content: '""',
-      background: 'linear-gradient(90deg, transparent, var(--accent))',
-      pointerEvents: 'none',
-    },
-  },
-})
-
-const desktopOverviewUpdateContent = style([
-  {
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    gap: '20px',
-  },
-  {
-    '@container': {
-      'desktop-overview (max-width: 520px)': {
-        alignItems: 'stretch',
-        flexDirection: 'column',
-      },
-    },
-  },
-])
-
-const desktopOverviewError = style({
-  margin: '14px 0 0',
-  color: 'var(--danger-text)',
-  fontSize: '11px',
-})
-
 export const styles = {
   'desktop-overview': desktopOverview,
   'is-embedded': isEmbedded,
   'desktop-overview-heading': desktopOverviewHeading,
-  'desktop-overview-section-heading': desktopOverviewSectionHeading,
   'desktop-overview-ready': desktopOverviewReady,
   'is-ready': isReady,
   'is-error': isError,
   'desktop-overview-summary': desktopOverviewSummary,
-  'desktop-overview-section': desktopOverviewSection,
-  'desktop-overview-update-content': desktopOverviewUpdateContent,
-  'desktop-overview-error': desktopOverviewError,
 } as const
 
-globalStyle(
-  `${desktopOverviewHeading} > div:first-child,
-${desktopOverviewSectionHeading} > div:first-child`,
-  {
-    minWidth: '0',
-  },
-)
+globalStyle(`${desktopOverviewHeading} > div:first-child`, {
+  minWidth: '0',
+})
 
 globalStyle(`${desktopOverviewHeading} p`, {
   margin: '0 0 8px',
@@ -261,69 +189,6 @@ globalStyle(`${desktopOverviewSummary} small`, {
   marginTop: '6px',
   color: 'var(--text-secondary)',
   fontSize: '10px',
-})
-
-globalStyle(`${desktopOverviewSectionHeading} h2`, {
-  margin: '0',
-  fontSize: '16px',
-})
-
-globalStyle(`${desktopOverviewSectionHeading} p`, {
-  margin: '6px 0 0',
-  color: 'var(--text-secondary)',
-  fontSize: '11px',
-  lineHeight: '1.55',
-})
-
-globalStyle(`${desktopOverviewSectionHeading} > span`, {
-  color: 'var(--text-tertiary)',
-  fontSize: '10px',
-  fontWeight: '800',
-  letterSpacing: '0.08em',
-  textTransform: 'uppercase',
-})
-
-globalStyle(`${desktopOverviewUpdateContent} > div`, {
-  minWidth: '0',
-})
-
-globalStyle(
-  `${desktopOverviewUpdateContent} strong,
-${desktopOverviewUpdateContent} small`,
-  {
-    display: 'block',
-  },
-)
-
-globalStyle(`${desktopOverviewUpdateContent} strong`, {
-  fontSize: '14px',
-})
-
-globalStyle(`${desktopOverviewUpdateContent} small`, {
-  marginTop: '7px',
-  color: 'var(--text-tertiary)',
-  fontSize: '10px',
-  overflowWrap: 'anywhere',
-})
-
-globalStyle(`${desktopOverviewUpdateContent} button`, {
-  flex: '0 0 auto',
-})
-
-globalStyle(`${desktopOverviewUpdateContent} button`, {
-  '@container': {
-    'desktop-overview (max-width: 520px)': {
-      width: '100%',
-    },
-  },
-})
-
-globalStyle(`${desktopOverviewSectionHeading} > span`, {
-  '@container': {
-    'desktop-overview (max-width: 520px)': {
-      alignSelf: 'flex-start',
-    },
-  },
 })
 
 globalStyle(`${desktopOverviewHeading} h1`, {

@@ -1,3 +1,4 @@
+import { useAppUpdate } from '@/features/app-update'
 import { Button, PageHeader, RadioGroup, Select, Slider, Switch } from '@/shared/components/ui'
 import { useFeedback } from '@/shared/feedback'
 import { createScopedClassNames } from '@/shared/lib/classNames'
@@ -30,8 +31,27 @@ const BUTTON_SIZE_OPTIONS: Array<{ value: ButtonSize; label: string }> = [
 ]
 
 export function SettingsPanel() {
-  const { settings, isLoading, isSaving, error, updateSettings, resetSettings } = useSettings()
+  const { settings, isLoading, isSaving, error: settingsError, updateSettings, resetSettings } = useSettings()
+  const {
+    info: updateInfo,
+    status: updateStatus,
+    error: updateError,
+    isLoading: isUpdateLoading,
+    isChecking,
+    isInstalling,
+    checkForUpdates,
+  } = useAppUpdate()
   const { notify, confirm } = useFeedback()
+
+  const updateSummary = isUpdateLoading
+    ? '正在读取版本信息'
+    : updateStatus?.updateAvailable
+      ? `发现新版本 ${updateStatus.latestVersion}`
+      : updateStatus
+        ? `当前已是最新版 ${updateStatus.currentVersion}`
+        : updateInfo?.configured
+          ? '启动时自动检查更新'
+          : '开发构建未启用更新'
 
   function updateAppearance<Key extends keyof AppSettings['appearance']>(
     key: Key,
@@ -117,9 +137,9 @@ export function SettingsPanel() {
         }
       />
 
-      {error && (
+      {settingsError && (
         <p className={cx('settings-error')} role='alert'>
-          {error}
+          {settingsError}
         </p>
       )}
 
@@ -274,6 +294,34 @@ export function SettingsPanel() {
             checked={settings.window.rememberBounds}
             onChange={(checked) => updateWindow('rememberBounds', checked)}
           />
+        </div>
+      </section>
+
+      <section className={cx('settings-section')}>
+        <div className={cx('settings-section-title')}>
+          <h2>应用更新</h2>
+          <p>启动时会自动检查正式版本，也可以在这里手动检查最新版本。</p>
+        </div>
+        <div className={cx('settings-update-content')}>
+          <div>
+            <strong>{updateSummary}</strong>
+            <small>{updateInfo?.currentVersion ? `当前版本 ${updateInfo.currentVersion}` : '正在读取当前版本'}</small>
+            {updateError && (
+              <p className={cx('settings-update-error')} role='alert'>
+                {updateError}
+              </p>
+            )}
+          </div>
+          <Button
+            type='button'
+            variant={updateStatus?.updateAvailable ? 'primary' : 'outline'}
+            disabled={
+              isUpdateLoading || isChecking || isInstalling || !updateInfo?.configured || !updateInfo.canInstall
+            }
+            onClick={() => void checkForUpdates(true)}
+          >
+            {isInstalling ? '正在安装…' : isChecking ? '正在检查…' : '检查最新版'}
+          </Button>
         </div>
       </section>
     </div>

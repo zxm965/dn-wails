@@ -233,7 +233,7 @@ export function AppSidebar({ activeView, menuVisibility, onNavigate }: AppSideba
 
           return (
             <div key={group.key} className={cx('app-sidebar-group')}>
-              <p>{group.label}</p>
+              {'label' in group && group.label && <p>{group.label}</p>}
               {visibleEntries.map((entry) => {
                 if (!('children' in entry)) {
                   return (

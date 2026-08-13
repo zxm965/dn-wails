@@ -12,7 +12,7 @@
 - `internal/application/quicknotes.go`：提供给前端的 Wails 门面方法。
 - `frontend/src/features/quick-notes/api/`：生成绑定适配和前端类型。
 - `frontend/src/features/quick-notes/components/`：笔记列表、搜索、编辑器和自动保存状态。
-- `frontend/src/shared/navigation/menuConfig.ts`：注册“常用工具 → 快速笔记”入口。
+- `frontend/src/shared/navigation/menuConfig.ts`：注册不带分组标题的“快速笔记”入口。
 
 ## 依赖关系
 

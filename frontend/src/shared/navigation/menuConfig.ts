@@ -46,7 +46,7 @@ type MenuEntryDefinition = DirectMenuEntryDefinition | ParentMenuEntryDefinition
 
 interface MenuGroupDefinition {
   key: string
-  label: string
+  label?: string
   entries: readonly MenuEntryDefinition[]
 }
 
@@ -81,8 +81,7 @@ function defineMenuGroups<const Groups extends readonly MenuGroupDefinition[]>(g
 
 export const MENU_GROUPS = defineMenuGroups([
   {
-    key: 'common-tools',
-    label: '常用工具',
+    key: 'main-navigation',
     entries: [
       {
         key: 'quick-notes',
@@ -94,12 +93,16 @@ export const MENU_GROUPS = defineMenuGroups([
           description: '显示云端快速笔记、搜索、置顶和自动保存入口。',
         },
       },
-    ],
-  },
-  {
-    key: 'business-systems',
-    label: '业务系统',
-    entries: [
+      {
+        key: 'site-messages',
+        view: 'site-messages',
+        label: '站内消息',
+        icon: Mails,
+        defaultVisible: true,
+        preference: {
+          description: '显示独立的站内消息收件箱，可从右上角消息盒子跳转查看。',
+        },
+      },
       {
         key: 'dn-system',
         label: 'DN 周常管理',
@@ -107,13 +110,12 @@ export const MENU_GROUPS = defineMenuGroups([
         defaultVisible: false,
         defaultView: 'dn-dashboard',
         preference: {
-          description: '显示 DN 仪表盘、周计划、角色和站内消息入口。',
+          description: '显示 DN 仪表盘、周计划和角色管理入口。',
         },
         children: [
           { key: 'dn-dashboard', view: 'dn-dashboard', label: '仪表盘', icon: Gauge },
           { key: 'dn-weekly', view: 'dn-weekly', label: '周计划', icon: CalendarCheck },
           { key: 'dn-roles', view: 'dn-roles', label: '角色', icon: UsersRound },
-          { key: 'dn-messages', view: 'dn-messages', label: '站内消息', icon: Mails },
         ],
       },
     ],

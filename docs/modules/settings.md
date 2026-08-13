@@ -12,7 +12,7 @@
 - `frontend/src/features/settings/api/`：生成类型转换和 API 封装。
 - `frontend/src/features/settings/context/`：全局设置状态。
 - `frontend/src/features/settings/components/SettingsPanel.tsx`：设置界面。
-- `frontend/src/shared/navigation/menuConfig.ts`：菜单唯一 key、结构、标题、图标、默认显隐和偏好说明的单一配置源。
+- `frontend/src/shared/navigation/menuConfig.ts`：菜单唯一 key、结构、标题、图标、默认显隐和偏好说明的单一配置源；站内消息在这里作为独立菜单项配置。
 - `frontend/src/shared/components/app-sidebar/`：通过“系统设置 → 偏好设置”进入设置页。
 
 ## 数据结构
@@ -69,7 +69,9 @@ React SettingsProvider → GetSettings
 
 React 组件通过 `useSettings` 读取和更新设置。所有配置项取消独立保存按钮，菜单、主题、强调色、密度、按钮尺寸、文字缩放、通知和窗口行为在控件变化时立即更新并自动持久化。主题、强调色和按钮尺寸使用共享 `RadioGroup`，文字缩放使用共享 `Slider`，布尔设置使用共享 `Switch`，下拉选项使用共享 `Select`；设置页不直接渲染原生交互控件。Go 模块通过 `SettingsService` 获取当前快照，不直接读写 JSON 文件。
 
-左侧菜单使用 `menuConfig.ts` 作为渲染、偏好选项和显隐读取的共同配置。`menuVisibility` 只保存用户按唯一 key 做出的覆盖值；未保存的 key 使用配置中的 `defaultVisible`。当前 `dn-system` 和 `devtools` 默认隐藏，`settings` 始终显示且不提供关闭开关。新增可配置菜单时补充同一配置项即可自动进入侧栏过滤和偏好设置列表。
+左侧菜单使用 `menuConfig.ts` 作为渲染、偏好选项和显隐读取的共同配置。`menuVisibility` 只保存用户按唯一 key 做出的覆盖值；未保存的 key 使用配置中的 `defaultVisible`。当前 `dn-system` 和 `devtools` 默认隐藏，独立的 `site-messages` 默认显示，`settings` 始终显示且不提供关闭开关。新增可配置菜单时补充同一配置项即可自动进入侧栏过滤和偏好设置列表。
+
+应用更新检查位于设置页最底部的“应用更新”区块；DevTools 的应用概览只展示当前版本，不再提供手动更新入口。
 
 ## 响应式处理
 

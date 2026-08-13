@@ -42,30 +42,30 @@ func (a *App) SyncDnWeeklyPlans() (dn.WeeklyPlanSyncResult, error) {
 	return a.dnService.SyncWeeklyPlans()
 }
 
-func (a *App) ListDnMessages(query dn.SiteMessageQuery) (dn.SiteMessageList, error) {
+func (a *App) ListSiteMessages(query dn.SiteMessageQuery) (dn.SiteMessageList, error) {
 	return a.dnService.ListMessages(query)
 }
 
-func (a *App) GetDnMessageInbox(limit int) (dn.SiteMessageInbox, error) {
+func (a *App) GetSiteMessageInbox(limit int) (dn.SiteMessageInbox, error) {
 	return a.dnService.MessageInbox(limit)
 }
 
-func (a *App) ClaimDnMessageNotifications(limit int) (dn.SiteMessageClaim, error) {
+func (a *App) ClaimSiteMessageNotifications(limit int) (dn.SiteMessageClaim, error) {
 	return a.dnService.ClaimMessageNotifications(limit)
 }
 
-func (a *App) MarkDnMessageRead(id int) (dn.SiteMessage, error) {
+func (a *App) MarkSiteMessageRead(id int) (dn.SiteMessage, error) {
 	return a.dnService.MarkMessageRead(id)
 }
 
-func (a *App) MarkAllDnMessagesRead() (int, error) {
+func (a *App) MarkAllSiteMessagesRead() (int, error) {
 	return a.dnService.MarkAllMessagesRead()
 }
 
-func (a *App) PublishDnMessage(input dn.SiteMessageInput) (dn.SiteMessage, error) {
+func (a *App) PublishSiteMessage(input dn.SiteMessageInput) (dn.SiteMessage, error) {
 	return a.dnService.PublishMessage(input)
 }
 
-func (a *App) SyncDnOfficialMessages() (dn.OfficialMessageSyncResult, error) {
+func (a *App) SyncOfficialSiteMessages() (dn.OfficialMessageSyncResult, error) {
 	return a.dnService.SyncOfficialMessages()
 }

@@ -11,10 +11,10 @@ import {
   markAllMessagesRead,
   markMessageRead,
   type SiteMessage,
-} from '../api/dnSystemApi'
-import type { DnInternalTarget } from '../components/DnMessages'
+} from '../api/siteMessagesApi'
+import type { SiteMessageNavigationTarget } from '../components/SiteMessages'
 
-interface DnMessageContextValue {
+interface SiteMessageContextValue {
   inboxItems: SiteMessage[]
   unreadCount: number
   loading: boolean
@@ -32,9 +32,9 @@ interface DnMessageContextValue {
   followActiveMessage: () => Promise<void>
 }
 
-const DnMessageContext = createContext<DnMessageContextValue | null>(null)
+const SiteMessageContext = createContext<SiteMessageContextValue | null>(null)
 
-const internalTargets: Record<string, DnInternalTarget> = {
+const internalTargets: Record<string, SiteMessageNavigationTarget> = {
   '/dashboard': 'dashboard',
   '/weekly-plans': 'weekly',
   '/roles': 'roles',
@@ -42,12 +42,12 @@ const internalTargets: Record<string, DnInternalTarget> = {
   '/account': 'account',
 }
 
-export function DnMessageProvider({
+export function SiteMessageProvider({
   children,
   onNavigate,
 }: {
   children: ReactNode
-  onNavigate: (target: DnInternalTarget) => void
+  onNavigate: (target: SiteMessageNavigationTarget) => void
 }) {
   const { notify } = useFeedback()
   const { user } = useAccount()
@@ -198,7 +198,7 @@ export function DnMessageProvider({
     }
   }, [activeMessage, dismissPopup, followMessage, notify])
 
-  const value = useMemo<DnMessageContextValue>(
+  const value = useMemo<SiteMessageContextValue>(
     () => ({
       inboxItems,
       unreadCount,
@@ -234,11 +234,11 @@ export function DnMessageProvider({
     ],
   )
 
-  return <DnMessageContext.Provider value={value}>{children}</DnMessageContext.Provider>
+  return <SiteMessageContext.Provider value={value}>{children}</SiteMessageContext.Provider>
 }
 
-export function useDnMessages(): DnMessageContextValue {
-  const value = useContext(DnMessageContext)
-  if (!value) throw new Error('useDnMessages must be used inside DnMessageProvider.')
+export function useSiteMessages(): SiteMessageContextValue {
+  const value = useContext(SiteMessageContext)
+  if (!value) throw new Error('useSiteMessages must be used inside SiteMessageProvider.')
   return value
 }
