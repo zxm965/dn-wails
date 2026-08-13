@@ -2,14 +2,14 @@
 
 ## 模块目标
 
-以数据库中的更新源配置为入口，为 macOS 与 Windows 提供版本展示、启动自动检查、手动检查、确认更新、下载校验和更新后重启能力。默认配置指向 `https://nexus.i96.me/github/releases/latest` 转发接口，客户端通过该接口读取 GitHub Release 元数据，下载时将 GitHub 资产地址改写到 Gitee 同路径资源，兼顾清单可达性和大陆下载稳定性。
+以数据库中的更新源配置为入口，为 macOS 与 Windows 提供版本展示、启动自动检查、手动检查、确认更新、下载校验和更新后重启能力。默认配置指向 `https://nexus.i96.me/github/releases` 转发接口，客户端分别访问 `/latest` 获取 GitHub Release 元数据、访问 `/download?version=...&filename=...` 下载资源。
 
 ## 目录与职责
 
 - `internal/buildinfo/`：保存无构建元数据时的兜底开发版本和发布仓库标识。
 - `scripts/resolve-development-version.mjs`：开发构建读取最近的稳定 Git 标签并追加 `-dev`，无标签时回退到 `build/config.yml`。
 - `internal/appupdate/`：版本比较、发布资源选择、更新状态和安装用例，不依赖 Wails 或具体操作系统。
-- `internal/platform/appupdate/endpoint.go`：按配置的 `update_endpoint` 读取 GitHub Release JSON，校验 Release 与资源元数据，并把 GitHub 资源下载地址改写到 Gitee 后下载、校验。
+- `internal/platform/appupdate/endpoint.go`：按配置的 `update_endpoint` 访问 `/latest` 读取 GitHub Release JSON，并按版本与文件名拼接 `/download` 地址后下载、校验资源。
 - `internal/platform/appupdate/config.go`：从 PostgreSQL 读取当前应用、渠道、平台和架构对应的更新源配置。
 - `internal/platform/appupdate/installer_darwin.go`：挂载新版 DMG，退出当前进程后替换应用包、卸载镜像并重新打开。
 - `internal/platform/appupdate/installer_windows.go`：退出当前进程后静默运行用户级 NSIS 安装器并重新打开应用。
@@ -39,7 +39,7 @@ React AppUpdateProvider
   → application.App
   → appupdate.Service
   → update_endpoint / platform Installer
-  → 转发 Release 元数据 / Gitee 下载资源 / operating system
+  → 转发 Release 元数据 / Release 下载资源 / operating system
 ```
 
 ## 核心链路
@@ -54,15 +54,15 @@ React AppUpdateProvider
 6. Windows runner 安装 NSIS 后使用 `wails3 task windows:package ARCH=amd64 INSTALL_SCOPE=user` 构建用户级安装器。
 7. 两端资源成功后为 ZIP、DMG 和 EXE 计算大小与 SHA-256，并生成 GitHub Release 对应的附加元数据和 `SHA256SUMS.txt`。
 8. 创建或更新 GitHub Release，并上传应用安装资源和校验文件；客户端通过转发接口读取 GitHub Release JSON。
-9. 通过 Gitee OpenAPI 创建或更新同标签 Release，删除同名旧附件后上传当前 ZIP、DMG、EXE、附件元数据和校验文件；Gitee Release 必须保持与 GitHub Release 同路径同文件名，供客户端把 `browser_download_url` 的域名从 `github.com` 改写为 `gitee.com` 后直接下载。
+9. 通过 Gitee OpenAPI 创建或更新同标签 Release，删除同名旧附件后上传当前 ZIP、DMG、EXE、附件元数据和校验文件；客户端下载统一通过 Nexus Proxy 的 GitHub Release Download 接口完成，不再依赖 Gitee 同路径附件或 `browser_download_url` 域名改写。
 10. Gitee 发布中断时可手动运行 `Republish Gitee release`，输入稳定标签后从对应 GitHub Release 恢复安装包，并只补齐缺失或大小不一致的 Gitee 附件。
 
 ### 检查与安装
 
 1. 前端根 Provider 读取当前构建信息；服务端先按应用、渠道、平台和架构从 `sys_app_update_source` 读取更新源配置。
 2. 若数据库未配置或表未迁移，服务端回退到 `buildinfo.UpdateEndpoint` 与 `buildinfo.Repository`。
-3. HTTP 客户端请求配置的 `update_endpoint`，读取 GitHub Release JSON。
-4. 更新源校验仓库标识、版本号、Release URL、资源 URL、大小和 SHA-256；GitHub Release JSON 的 `browser_download_url` 必须指向配置仓库，随后将域名改写为 `gitee.com`，路径保持不变。
+3. HTTP 客户端将配置的 `update_endpoint` 规范化为 `/latest`，读取 GitHub Release JSON。
+4. 更新源校验仓库标识、版本号、Release URL、资源名称、大小和 SHA-256；客户端忽略 `browser_download_url`，按 Release 标签和资源名称将下载地址拼接为 `update_endpoint` 对应的 `/download?version=...&filename=...`。
 5. 业务服务比较 `MAJOR.MINOR.PATCH`，只在远端版本更高时返回可更新状态。
 6. 自动检查和手动检查发现新版后都通过统一确认窗口询问用户，不静默安装。
 7. 用户确认后重新读取 Release 元数据，确保确认期间版本未发生变化。
@@ -105,7 +105,6 @@ interface GitHubReleaseEndpoint {
   published_at: string
   assets: Array<{
     name: string
-    browser_download_url: string
     digest: `sha256:${string}`
     size: number
   }>
@@ -117,18 +116,20 @@ interface GitHubReleaseEndpoint {
 - macOS 发布压缩包：`dn-wails-darwin-universal.zip`
 - macOS 当前客户端自动更新与手动安装：`dn-wails-darwin-universal.dmg`
 - Windows 自动更新与手动安装：`dn-wails-windows-amd64-installer.exe`
-- 自动更新发现与资源元数据：`update_endpoint` 转发接口返回的 GitHub Release JSON
+- 自动更新发现与资源元数据：`update_endpoint` 对应的 `/latest` 转发接口返回的 GitHub Release JSON
+- 自动更新下载：`update_endpoint` 对应的 `/download?version=...&filename=...` 转发接口
 - 人工校验：`SHA256SUMS.txt`
 
-这些文件均上传到对应标签的 GitHub 和 Gitee Release。两端安装包相同，客户端请求 `update_endpoint` 获取 GitHub Release 元数据，再将 GitHub 资源下载地址的域名改写为 `gitee.com` 下载同路径资源。资源名和 Release 路径是客户端与发布流水线的数据契约，修改时必须同步更新两端和本模块文档。
+这些文件均上传到对应标签的 GitHub 和 Gitee Release。客户端请求 `update_endpoint` 对应的 `/latest` 获取 GitHub Release 元数据，再请求对应的 `/download` 接口并传入 Release 标签和资源文件名下载。资源名、Release 标签以及 `latest`/`download` 路径是客户端与代理服务的数据契约，修改时必须同步更新两端和本模块文档。
 
 ## 错误与边界
 
 - 开发版本为“当前稳定 Git 标签版本 + `-dev`”，例如标签 `v1.2.3` 对应 `1.2.3-dev`；开发版本只展示，不发起自动更新请求。
-- 客户端只请求配置的公开 `update_endpoint` 和公开附件地址，不注入 `GITEE_TOKEN`；更新元数据端点与 Gitee 下载资源必须可匿名访问，否则自动检查或下载不可用。
+- 客户端只请求配置的公开 `update_endpoint` 对应的 `latest` 与 `download` 接口，不注入任何 Release 访问令牌；代理接口必须允许匿名访问，否则自动检查或下载不可用。
 - 版本必须是三段无前导零的稳定语义化版本；预发布标签不会进入发布流水线。
-- `update_endpoint` 必须返回 GitHub Release JSON；GitHub Release 的 `draft`、`prerelease` 会被视为无可用更新。
-- GitHub Release 的 `html_url` 和 `browser_download_url` 必须属于配置的 `expected_repository`。资源名不得包含路径或控制字符，且不得重复。
+- `update_endpoint` 必须配置为 Releases 基础地址，例如 `https://nexus.i96.me/github/releases`；客户端分别访问其 `/latest` 和 `/download` 子路径，不能把具体路由地址作为配置值。
+- `/latest` 必须返回 GitHub Release JSON；GitHub Release 的 `draft`、`prerelease` 会被视为无可用更新。Release 的 `html_url` 必须属于配置的 `expected_repository`。
+- 资源名不得包含路径或控制字符，且不得重复；`browser_download_url` 不作为客户端下载地址来源。
 - 下载只接受 HTTPS、声明大小不超过 1 GiB 且带 SHA-256 digest 的资源；大小或摘要不一致时删除临时文件并拒绝安装。
 - Gitee 普通项目单个 Release 附件不能超过 100 MB，仓库附件总量不能超过 1 GB；发布脚本会在上传前拒绝超过单附件限制的构建产物。
 - macOS 应用包所在目录必须允许当前用户写入；Windows 发布统一使用 Taskfile 的 `INSTALL_SCOPE=user`，避免自动更新请求管理员权限。
@@ -141,7 +142,8 @@ interface GitHubReleaseEndpoint {
 
 ## 接入与发布
 
-默认更新源为数据库表 `sys_app_update_source.update_endpoint = https://nexus.i96.me/github/releases/latest`，`expected_repository = zxm965/dn-wails`；数据库不可用时使用 `internal/buildinfo` 中的同值兜底。GitHub 仓库需要启用 Actions，并授予 Release 工作流 `contents: write` 权限。GitHub Actions 仓库 Secret `GITEE_TOKEN` 必须具有目标 Gitee 仓库的 Release 写权限，Gitee 仓库则必须公开 Release 读取能力。Build 与 Release job 使用 GitHub Environment `RELEASE`，其中 build job 还需要 `DATABASE_URL` Secret。构建使用锁定的 Wails v3 CLI，并重新生成 bindings。
+默认更新源为数据库表 `sys_app_update_source.update_endpoint = https://nexus.i96.me/github/releases`，`expected_repository = zxm965/dn-wails`；数据库不可用时使用 `internal/buildinfo` 中的同值兜底。GitHub 仓库需要启用 Actions，并授予 Release 工作流 `contents: write` 权限。GitHub Actions 仓库 Secret `GITEE_TOKEN` 必须具有目标 Gitee 仓库的 Release 写权限，Gitee 仓库则必须公开 Release 读取能力。Build 与 Release job 使用 GitHub Environment `RELEASE`，其中 build job 还需要 `DATABASE_URL` Secret。构建使用锁定的 Wails v3 CLI，并重新生成 bindings。
+
 
 ```bash
 git tag v1.0.0
@@ -150,7 +152,7 @@ git push origin v1.0.0
 
 普通分支提交不发布客户端更新；只有从 Gitee 镜像到 GitHub 的稳定版本标签会触发 Release 工作流。重新运行同一标签时，工作流会覆盖 GitHub 和 Gitee Release 中的同名文件。
 
-客户端检查统一走转发接口，下载统一走 Gitee 同路径资源。Release 中的资源文件名和路径必须与 GitHub Release JSON 中的 `browser_download_url` 保持一致，避免域名改写后无法命中 Gitee 资源。
+客户端检查和下载统一走 Nexus Proxy；Release 中的资源文件名必须与 GitHub Release JSON 的 `assets[].name` 保持一致，代理下载请求使用对应 Release 标签作为 `version` 参数。
 
 ## 验证
 

@@ -35,7 +35,6 @@ func TestEndpointSourceLoadsGitHubReleaseEndpoint(t *testing.T) {
   "published_at": "2026-08-11T07:57:28Z",
   "assets": [{
     "name": "dn-wails-windows-amd64-installer.exe",
-    "browser_download_url": "https://github.com/zxm965/dn-wails/releases/download/v1.4.0/dn-wails-windows-amd64-installer.exe",
     "digest": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
     "size": 200
   }]
@@ -43,19 +42,19 @@ func TestEndpointSourceLoadsGitHubReleaseEndpoint(t *testing.T) {
 	}))
 	defer server.Close()
 
-	release, err := NewEndpointSource(server.Client()).Latest(context.Background(), server.URL+"/github/releases/latest", "zxm965/dn-wails")
+	release, err := NewEndpointSource(server.Client()).Latest(context.Background(), server.URL+"/github/releases", "zxm965/dn-wails")
 	if err != nil {
 		t.Fatalf("load GitHub release: %v", err)
 	}
 	if release.Version != "1.4.0" || release.Name != "v1.4.0" || release.Notes != "Release notes" {
 		t.Fatalf("unexpected release metadata: %+v", release)
 	}
-	if len(release.Assets) != 1 || release.Assets[0].DownloadURL != "https://gitee.com/zxm965/dn-wails/releases/download/v1.4.0/dn-wails-windows-amd64-installer.exe" {
+	if len(release.Assets) != 1 || release.Assets[0].DownloadURL != server.URL+"/github/releases/download?filename=dn-wails-windows-amd64-installer.exe&version=v1.4.0" {
 		t.Fatalf("unexpected release assets: %+v", release.Assets)
 	}
 }
 
-func TestEndpointSourceRejectsMismatchedGitHubReleaseAsset(t *testing.T) {
+func TestEndpointSourceDoesNotUseGitHubReleaseAssetDownloadURL(t *testing.T) {
 	t.Parallel()
 
 	data := []byte(`{
@@ -65,14 +64,17 @@ func TestEndpointSourceRejectsMismatchedGitHubReleaseAsset(t *testing.T) {
   "prerelease": false,
   "assets": [{
     "name": "dn-wails-windows-amd64-installer.exe",
-    "browser_download_url": "https://github.com/other/repository/releases/download/v1.4.0/dn-wails-windows-amd64-installer.exe",
+	"browser_download_url": "https://download.example.com/attacker.exe",
     "digest": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
     "size": 200
   }]
 }`)
-	_, err := NewEndpointSource(nil).releaseFromMetadata("zxm965/dn-wails", data)
-	if err == nil || !strings.Contains(err.Error(), "repository mismatch") {
-		t.Fatalf("expected GitHub asset repository mismatch, got %v", err)
+	release, err := NewEndpointSource(nil).releaseFromMetadata("https://nexus.example.com/github/releases", "zxm965/dn-wails", data)
+	if err != nil {
+		t.Fatalf("load release metadata: %v", err)
+	}
+	if got := release.Assets[0].DownloadURL; got != "https://nexus.example.com/github/releases/download?filename=dn-wails-windows-amd64-installer.exe&version=v1.4.0" {
+		t.Fatalf("unexpected generated download URL: %s", got)
 	}
 }
 
@@ -88,7 +90,6 @@ func TestEndpointSourceRejectsMismatchedGitHubRelease(t *testing.T) {
   "prerelease": false,
   "assets": [{
     "name": "dn-wails-windows-amd64-installer.exe",
-    "browser_download_url": "https://github.com/other/repository/releases/download/v1.4.0/dn-wails-windows-amd64-installer.exe",
     "digest": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
     "size": 100
   }]
@@ -96,7 +97,7 @@ func TestEndpointSourceRejectsMismatchedGitHubRelease(t *testing.T) {
 	}))
 	defer server.Close()
 
-	_, err := NewEndpointSource(server.Client()).Latest(context.Background(), server.URL+"/github/releases/latest", "zxm965/dn-wails")
+	_, err := NewEndpointSource(server.Client()).Latest(context.Background(), server.URL+"/github/releases", "zxm965/dn-wails")
 	if err == nil || !strings.Contains(err.Error(), "repository mismatch") {
 		t.Fatalf("expected release repository mismatch, got %v", err)
 	}
@@ -107,7 +108,7 @@ func TestEndpointSourceRejectsMissingMetadata(t *testing.T) {
 
 	server := httptest.NewTLSServer(http.NotFoundHandler())
 	defer server.Close()
-	_, err := NewEndpointSource(server.Client()).Latest(context.Background(), server.URL+"/github/releases/latest", "zxm965/dn-wails")
+	_, err := NewEndpointSource(server.Client()).Latest(context.Background(), server.URL+"/github/releases", "zxm965/dn-wails")
 	if !errors.Is(err, coreupdate.ErrNoRelease) {
 		t.Fatalf("expected no release error, got %v", err)
 	}
@@ -117,10 +118,9 @@ func TestEndpointSourceRejectsUnsafeGitHubReleaseAssets(t *testing.T) {
 	t.Parallel()
 
 	baseAsset := githubReleaseAsset{
-		Name:               "dn-wails-windows-amd64-installer.exe",
-		BrowserDownloadURL: "https://github.com/zxm965/dn-wails/releases/download/v1.4.0/dn-wails-windows-amd64-installer.exe",
-		Digest:             "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
-		Size:               100,
+		Name:   "dn-wails-windows-amd64-installer.exe",
+		Digest: "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+		Size:   100,
 	}
 	baseRelease := githubRelease{
 		TagName: "v1.4.0",
@@ -135,12 +135,7 @@ func TestEndpointSourceRejectsUnsafeGitHubReleaseAssets(t *testing.T) {
 		"duplicate asset": func(release *githubRelease) {
 			release.Assets = append(release.Assets, release.Assets[0])
 		},
-		"external non HTTPS URL": func(release *githubRelease) {
-			release.Assets[0].BrowserDownloadURL = "http://github.com/zxm965/dn-wails/releases/download/v1.4.0/update.exe"
-		},
-		"unsupported host": func(release *githubRelease) {
-			release.Assets[0].BrowserDownloadURL = "https://download.example.com/update.exe"
-		},
+		"invalid download endpoint": func(release *githubRelease) {},
 		"missing digest": func(release *githubRelease) {
 			release.Assets[0].Digest = ""
 		},
@@ -155,8 +150,30 @@ func TestEndpointSourceRejectsUnsafeGitHubReleaseAssets(t *testing.T) {
 			release := baseRelease
 			release.Assets = append([]githubReleaseAsset(nil), baseRelease.Assets...)
 			mutate(&release)
-			if _, err := releaseFromGitHubRelease("zxm965/dn-wails", release); err == nil {
+			endpoint := "https://nexus.example.com/github/releases"
+			if name == "invalid download endpoint" {
+				endpoint = "http://nexus.example.com/github/releases"
+			}
+			if _, err := releaseFromGitHubRelease(endpoint, "zxm965/dn-wails", release); err == nil {
 				t.Fatal("expected unsafe release to be rejected")
+			}
+		})
+	}
+}
+
+func TestEndpointSourceRejectsRouteSpecificUpdateEndpoint(t *testing.T) {
+	t.Parallel()
+
+	for _, endpoint := range []string{
+		"https://nexus.example.com/github/releases/latest",
+		"https://nexus.example.com/github/releases/download",
+	} {
+		endpoint := endpoint
+		t.Run(endpoint, func(t *testing.T) {
+			t.Parallel()
+			_, err := NewEndpointSource(nil).Latest(context.Background(), endpoint, "zxm965/dn-wails")
+			if err == nil || !strings.Contains(err.Error(), "releases base URL") {
+				t.Fatalf("expected route-specific endpoint to be rejected, got %v", err)
 			}
 		})
 	}

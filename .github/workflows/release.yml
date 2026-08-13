@@ -117,7 +117,19 @@ jobs:
         shell: pwsh
         run: |
           choco install nsis --yes --no-progress
-          "C:\Program Files (x86)\NSIS" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
+          $nsisCandidates = @(
+            "${env:ProgramFiles(x86)}\NSIS\Bin",
+            "$env:ProgramFiles\NSIS\Bin"
+          )
+          $nsisBin = $nsisCandidates | Where-Object {
+            Test-Path (Join-Path $_ 'makensis.exe')
+          } | Select-Object -First 1
+          if (-not $nsisBin) {
+            throw 'NSIS was installed, but makensis.exe could not be found.'
+          }
+          $nsisBin | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
+          $env:PATH = "$nsisBin;$env:PATH"
+          Get-Command makensis -ErrorAction Stop | Select-Object -ExpandProperty Source
 
       - name: Configure release version
         shell: bash

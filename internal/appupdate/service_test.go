@@ -66,7 +66,7 @@ func TestServiceChecksLatestRelease(t *testing.T) {
 		AppName:        "dn-wails",
 		Version:        "1.2.3",
 		Repository:     "zxm965/dn-wails",
-		UpdateEndpoint: "https://updates.example.com/github/releases/latest",
+		UpdateEndpoint: "https://updates.example.com/github/releases",
 		Platform:       "windows",
 		Arch:           "amd64",
 	}, source, &installerStub{supported: true})
@@ -96,7 +96,7 @@ func TestServiceTreatsSameOrOlderReleaseAsCurrent(t *testing.T) {
 				AppName:        "dn-wails",
 				Version:        "1.2.3",
 				Repository:     "zxm965/dn-wails",
-				UpdateEndpoint: "https://updates.example.com/github/releases/latest",
+				UpdateEndpoint: "https://updates.example.com/github/releases",
 				Platform:       "darwin",
 				Arch:           "arm64",
 			}, &sourceStub{release: Release{Version: latest}}, &installerStub{supported: true})
@@ -132,7 +132,7 @@ func TestServiceDownloadsMatchingAssetBeforeInstallation(t *testing.T) {
 		AppName:        "dn-wails",
 		Version:        "1.3.0",
 		Repository:     "zxm965/dn-wails",
-		UpdateEndpoint: "https://updates.example.com/github/releases/latest",
+		UpdateEndpoint: "https://updates.example.com/github/releases",
 		Platform:       "windows",
 		Arch:           "amd64",
 	}, source, installer)
@@ -156,7 +156,7 @@ func TestServiceRejectsChangedVersionAndMissingDigest(t *testing.T) {
 		AppName:        "dn-wails",
 		Version:        "1.3.0",
 		Repository:     "zxm965/dn-wails",
-		UpdateEndpoint: "https://updates.example.com/github/releases/latest",
+		UpdateEndpoint: "https://updates.example.com/github/releases",
 		Platform:       "darwin",
 		Arch:           "arm64",
 	}, source, &installerStub{supported: true})
@@ -179,7 +179,7 @@ func TestServiceDisablesDevelopmentAndUnsupportedBuilds(t *testing.T) {
 		AppName:        "dn-wails",
 		Version:        "1.2.3-dev",
 		Repository:     "zxm965/dn-wails",
-		UpdateEndpoint: "https://updates.example.com/github/releases/latest",
+		UpdateEndpoint: "https://updates.example.com/github/releases",
 		Platform:       "darwin",
 		Arch:           "arm64",
 	}, &sourceStub{}, &installerStub{supported: true})
@@ -191,7 +191,7 @@ func TestServiceDisablesDevelopmentAndUnsupportedBuilds(t *testing.T) {
 		AppName:        "dn-wails",
 		Version:        "1.0.0",
 		Repository:     "zxm965/dn-wails",
-		UpdateEndpoint: "https://updates.example.com/github/releases/latest",
+		UpdateEndpoint: "https://updates.example.com/github/releases",
 		Platform:       "linux",
 		Arch:           "amd64",
 	}, &sourceStub{}, &installerStub{supported: false})

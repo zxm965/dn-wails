@@ -23,7 +23,8 @@ const (
 	maxReleaseAssets  = 16
 	maxAssetSize      = int64(1024 * 1024 * 1024)
 	githubReleaseHost = "github.com"
-	giteeReleaseHost  = "gitee.com"
+	latestRoute       = "latest"
+	downloadRoute     = "download"
 )
 
 var (
@@ -32,10 +33,12 @@ var (
 	assetNamePattern      = regexp.MustCompile(`^[A-Za-z0-9._-]+$`)
 )
 
-// EndpointSource loads GitHub Release metadata from a configured HTTPS endpoint.
-// Download URLs from github.com are rewritten to gitee.com with the path kept
-// unchanged so metadata can be fetched through a proxy while assets download
-// from the mainland-friendly mirror.
+// EndpointSource loads GitHub Release metadata from a configured HTTPS endpoint
+// and downloads assets through the corresponding proxy download route.
+//
+// The configured endpoint is the common releases base URL (for example,
+// https://nexus.i96.me/github/releases). The latest and download routes are
+// appended by the client according to their distinct responsibilities.
 type EndpointSource struct {
 	client *http.Client
 }
@@ -52,10 +55,9 @@ type githubRelease struct {
 }
 
 type githubReleaseAsset struct {
-	Name               string `json:"name"`
-	BrowserDownloadURL string `json:"browser_download_url"`
-	Digest             string `json:"digest"`
-	Size               int64  `json:"size"`
+	Name   string `json:"name"`
+	Digest string `json:"digest"`
+	Size   int64  `json:"size"`
 }
 
 func NewEndpointSource(client *http.Client) *EndpointSource {
@@ -70,11 +72,11 @@ func (s *EndpointSource) Latest(ctx context.Context, updateEndpoint string, repo
 	if err != nil {
 		return coreupdate.Release{}, err
 	}
-	return s.releaseFromMetadata(repository, data)
+	return s.releaseFromMetadata(updateEndpoint, repository, data)
 }
 
 func (s *EndpointSource) loadMetadata(ctx context.Context, rawURL string) ([]byte, error) {
-	updateEndpoint, err := parseHTTPSURL(rawURL, "update endpoint")
+	updateEndpoint, err := buildReleaseEndpoint(rawURL, latestRoute)
 	if err != nil {
 		return nil, err
 	}
@@ -112,15 +114,15 @@ func (s *EndpointSource) loadMetadata(ctx context.Context, rawURL string) ([]byt
 	return data, nil
 }
 
-func (s *EndpointSource) releaseFromMetadata(repository string, data []byte) (coreupdate.Release, error) {
+func (s *EndpointSource) releaseFromMetadata(updateEndpoint string, repository string, data []byte) (coreupdate.Release, error) {
 	var release githubRelease
 	if err := json.Unmarshal(data, &release); err != nil {
 		return coreupdate.Release{}, fmt.Errorf("decode application update metadata: %w", err)
 	}
-	return releaseFromGitHubRelease(repository, release)
+	return releaseFromGitHubRelease(updateEndpoint, repository, release)
 }
 
-func releaseFromGitHubRelease(repository string, release githubRelease) (coreupdate.Release, error) {
+func releaseFromGitHubRelease(updateEndpoint string, repository string, release githubRelease) (coreupdate.Release, error) {
 	expectedRepository, err := normalizeRepository(repository)
 	if err != nil {
 		return coreupdate.Release{}, err
@@ -138,6 +140,10 @@ func releaseFromGitHubRelease(repository string, release githubRelease) (coreupd
 	}
 	if !matchesGitHubRepository(releaseURL, expectedRepository) {
 		return coreupdate.Release{}, fmt.Errorf("validate application update release: repository mismatch")
+	}
+	downloadEndpoint, err := buildReleaseEndpoint(updateEndpoint, downloadRoute)
+	if err != nil {
+		return coreupdate.Release{}, fmt.Errorf("validate application update release: %w", err)
 	}
 	if len(release.Assets) == 0 || len(release.Assets) > maxReleaseAssets {
 		return coreupdate.Release{}, fmt.Errorf("validate application update release: invalid asset count %d", len(release.Assets))
@@ -168,7 +174,7 @@ func releaseFromGitHubRelease(repository string, release githubRelease) (coreupd
 		if _, err := parseSHA256Digest(asset.Digest); err != nil {
 			return coreupdate.Release{}, fmt.Errorf("validate application update release: asset %q: %w", assetName, err)
 		}
-		assetURL, err := rewriteGitHubDownloadURL(asset.BrowserDownloadURL, expectedRepository)
+		assetURL, err := buildAssetDownloadURL(downloadEndpoint, release.TagName, assetName)
 		if err != nil {
 			return coreupdate.Release{}, fmt.Errorf("validate application update release: asset %q: %w", assetName, err)
 		}
@@ -274,6 +280,41 @@ func parseHTTPSURL(rawURL string, label string) (*url.URL, error) {
 	return parsed, nil
 }
 
+func buildReleaseEndpoint(rawURL string, route string) (*url.URL, error) {
+	endpoint, err := parseHTTPSURL(rawURL, "update endpoint")
+	if err != nil {
+		return nil, err
+	}
+
+	pathValue := strings.TrimRight(endpoint.Path, "/")
+	if strings.HasSuffix(pathValue, "/"+latestRoute) || strings.HasSuffix(pathValue, "/"+downloadRoute) {
+		return nil, fmt.Errorf("invalid update endpoint: expected a releases base URL")
+	}
+	endpoint.Path = strings.TrimRight(pathValue, "/") + "/" + route
+	endpoint.RawPath = ""
+	endpoint.RawQuery = ""
+	endpoint.Fragment = ""
+	return endpoint, nil
+}
+
+func buildAssetDownloadURL(downloadEndpoint *url.URL, version string, filename string) (*url.URL, error) {
+	if downloadEndpoint == nil {
+		return nil, errors.New("invalid download endpoint")
+	}
+	version = strings.TrimSpace(version)
+	filename = strings.TrimSpace(filename)
+	if version == "" || filename == "" {
+		return nil, errors.New("version and filename are required")
+	}
+
+	assetURL := *downloadEndpoint
+	query := assetURL.Query()
+	query.Set("filename", filename)
+	query.Set("version", version)
+	assetURL.RawQuery = query.Encode()
+	return &assetURL, nil
+}
+
 func matchesGitHubRepository(value *url.URL, repository string) bool {
 	return matchesRepositoryHost(value, githubReleaseHost, repository)
 }
@@ -287,28 +328,6 @@ func matchesRepositoryHost(value *url.URL, host string, repository string) bool 
 		return false
 	}
 	return strings.EqualFold(parts[0]+"/"+parts[1], repository)
-}
-
-func rewriteGitHubDownloadURL(rawURL string, repository string) (*url.URL, error) {
-	assetURL, err := parseHTTPSURL(rawURL, "asset")
-	if err != nil {
-		return nil, err
-	}
-	if strings.EqualFold(assetURL.Host, githubReleaseHost) {
-		if !matchesRepositoryHost(assetURL, githubReleaseHost, repository) {
-			return nil, fmt.Errorf("repository mismatch")
-		}
-		rewritten := *assetURL
-		rewritten.Host = giteeReleaseHost
-		return &rewritten, nil
-	}
-	if strings.EqualFold(assetURL.Host, giteeReleaseHost) {
-		if !matchesRepositoryHost(assetURL, giteeReleaseHost, repository) {
-			return nil, fmt.Errorf("repository mismatch")
-		}
-		return assetURL, nil
-	}
-	return nil, fmt.Errorf("asset host must be %s or %s", githubReleaseHost, giteeReleaseHost)
 }
 
 func normalizeRepository(repository string) (string, error) {
