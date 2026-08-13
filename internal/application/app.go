@@ -96,6 +96,10 @@ type DiagnosticsService interface {
 	Close() error
 }
 
+type InstallationService interface {
+	Initialize() error
+}
+
 type ApplicationUpdateService interface {
 	Info() appupdate.Info
 	Check(ctx context.Context) (appupdate.Status, error)
@@ -156,6 +160,7 @@ type Dependencies struct {
 	Window             WindowService
 	Native             NativeService
 	Diagnostics        DiagnosticsService
+	Installation       InstallationService
 	ApplicationUpdate  ApplicationUpdateService
 	Account            AccountService
 	Dn                 DnService
@@ -172,6 +177,7 @@ type App struct {
 	windowService             WindowService
 	nativeService             NativeService
 	diagnosticsService        DiagnosticsService
+	installationService       InstallationService
 	applicationUpdateService  ApplicationUpdateService
 	accountService            AccountService
 	dnService                 DnService
@@ -194,6 +200,7 @@ func New(dependencies Dependencies) *App {
 		windowService:             dependencies.Window,
 		nativeService:             dependencies.Native,
 		diagnosticsService:        dependencies.Diagnostics,
+		installationService:       dependencies.Installation,
 		applicationUpdateService:  dependencies.ApplicationUpdate,
 		accountService:            dependencies.Account,
 		dnService:                 dependencies.Dn,
@@ -208,6 +215,9 @@ func (a *App) ServiceStartup(ctx context.Context, _ wailsapplication.ServiceOpti
 
 	if err := a.diagnosticsService.Initialize(); err != nil {
 		log.Printf("initialize diagnostics: %v", err)
+	}
+	if err := a.installationService.Initialize(); err != nil {
+		log.Printf("initialize installation identity: %v", err)
 	}
 	if err := a.settingsService.Initialize(); err != nil {
 		log.Printf("initialize settings with defaults: %v", err)

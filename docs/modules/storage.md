@@ -32,6 +32,8 @@ type Store interface {
 - 保存时先写入临时文件并同步到磁盘，再替换正式文件。
 - 不存在的 key 返回 `storage.ErrNotFound`。
 
+当前业务 key 包括设置使用的 `settings.json` 和安装身份使用的 `installation.json`。安装身份与用户偏好独立保存，清理其中一个不会隐式重置另一个。
+
 ## 接入方式
 
 新业务模块通过构造函数接收 `storage.Store`，使用独立 key，禁止直接拼接存储目录。

@@ -16,6 +16,7 @@ import (
 	"dn-wails/internal/buildinfo"
 	"dn-wails/internal/diagnostics"
 	"dn-wails/internal/dn"
+	"dn-wails/internal/installation"
 	"dn-wails/internal/lifecycle"
 	"dn-wails/internal/nativekit"
 	"dn-wails/internal/notification"
@@ -66,6 +67,7 @@ func main() {
 		log.Fatal("create settings store: ", err)
 	}
 	settingsService := settings.NewService(settingsStore)
+	installationService := installation.NewService(settingsStore, buildinfo.Version)
 	accountService := appservice.AccountService(account.NewUnavailableService())
 	dnService := appservice.DnService(dn.NewUnavailableService())
 	quickNotesService := appservice.QuickNotesService(quicknotes.NewUnavailableService())
@@ -121,7 +123,10 @@ func main() {
 			updateSourceConfig = configuredSource
 		}
 	}
-	applicationUpdateSource := platformappupdate.NewEndpointSource(&http.Client{Timeout: 30 * time.Second})
+	applicationUpdateSource := platformappupdate.NewEndpointSource(
+		&http.Client{Timeout: 30 * time.Second},
+		installationService,
+	)
 	applicationUpdateInstaller := platformappupdate.NewInstaller(internalApplicationName)
 	applicationUpdateService := appupdate.NewService(appupdate.Config{
 		AppName:        internalApplicationName,
@@ -195,6 +200,7 @@ func main() {
 		Window:             windowService,
 		Native:             nativeService,
 		Diagnostics:        diagnosticsService,
+		Installation:       installationService,
 		ApplicationUpdate:  applicationUpdateService,
 		Account:            accountService,
 		Dn:                 dnService,

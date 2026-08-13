@@ -70,6 +70,8 @@ wails3 task dev
 
 应用展示名称和作者来自根目录 `.env`。本地数据库连接写入被 Git 忽略的 `.env.local`；正式发布从 GitHub Environment `RELEASE` 的 `secrets.DATABASE_URL` 生成临时 `.env.local` 并嵌入二进制。嵌入值可以被最终用户提取，因此只能使用最小权限且可轮换的专用账号。
 
+首次成功启动会在用户配置目录生成独立的 `installation.json`，保存随机 UUID v4 安装 ID、首次安装版本和最近运行版本。应用升级保留该 ID；更新资源下载由 Go HTTP 客户端携带安装身份请求头，不依赖浏览器 CORS。
+
 ## 发布与更新
 
 项目 Git 仓库以 `https://gitee.com/zxm965/dn-wails.git` 为准。推送 `vMAJOR.MINOR.PATCH` 标签后，现有 GitHub Actions 工作流使用 Wails v3 Taskfile 构建 macOS universal ZIP、DMG 和 Windows amd64 用户级 NSIS 安装器，并同时发布 GitHub、Gitee Release。客户端通过数据库配置的 `update_endpoint` 基础地址分别请求 `/latest` 获取 GitHub Release 元数据、请求 `/download?version=...&filename=...` 下载资源，当前 macOS 自动更新使用 DMG：

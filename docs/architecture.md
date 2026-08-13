@@ -24,6 +24,7 @@ main
 ├── appconfig（应用全局配置）
 ├── dn（DN 角色、周计划、站内消息与官网同步）
 ├── lifecycle（应用生命周期状态）
+├── installation（持久安装身份与版本记录）
 ├── nativekit（原生能力规则）
 ├── notification（消息通知规则）
 ├── quicknotes（云端快速笔记规则与 PostgreSQL 持久化）
@@ -134,6 +135,7 @@ app
 - [云端快速笔记](modules/quick-notes.md)
 - [DN 周常管理](modules/dn-system.md)
 - [应用生命周期](modules/app-lifecycle.md)
+- [安装身份](modules/installation-identity.md)
 - [应用更新与发布](modules/app-update.md)
 - [单实例](modules/single-instance.md)
 - [窗口管理](modules/window-manager.md)

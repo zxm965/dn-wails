@@ -12,6 +12,7 @@ import (
 	"net/url"
 	"os"
 	"regexp"
+	"runtime"
 	"strings"
 	"time"
 
@@ -29,6 +30,7 @@ const (
 
 var (
 	releaseVersionPattern = regexp.MustCompile(`^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)$`)
+	installationIDPattern = regexp.MustCompile(`^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$`)
 	repositoryPartPattern = regexp.MustCompile(`^[A-Za-z0-9_.-]+$`)
 	assetNamePattern      = regexp.MustCompile(`^[A-Za-z0-9._-]+$`)
 )
@@ -40,7 +42,13 @@ var (
 // https://nexus.i96.me/github/releases). The latest and download routes are
 // appended by the client according to their distinct responsibilities.
 type EndpointSource struct {
-	client *http.Client
+	client   *http.Client
+	identity ClientIdentity
+}
+
+type ClientIdentity interface {
+	InstallationID() (string, error)
+	CurrentVersion() string
 }
 
 type githubRelease struct {
@@ -60,11 +68,11 @@ type githubReleaseAsset struct {
 	Size   int64  `json:"size"`
 }
 
-func NewEndpointSource(client *http.Client) *EndpointSource {
+func NewEndpointSource(client *http.Client, identity ClientIdentity) *EndpointSource {
 	if client == nil {
 		client = &http.Client{Timeout: 30 * time.Second}
 	}
-	return &EndpointSource{client: client}
+	return &EndpointSource{client: client, identity: identity}
 }
 
 func (s *EndpointSource) Latest(ctx context.Context, updateEndpoint string, repository string) (coreupdate.Release, error) {
@@ -130,8 +138,12 @@ func releaseFromGitHubRelease(updateEndpoint string, repository string, release 
 	if release.Draft || release.Prerelease {
 		return coreupdate.Release{}, coreupdate.ErrNoRelease
 	}
-	version := strings.TrimSpace(strings.TrimPrefix(release.TagName, "v"))
-	if !releaseVersionPattern.MatchString(version) {
+	releaseTag := strings.TrimSpace(release.TagName)
+	if !strings.HasPrefix(releaseTag, "v") {
+		return coreupdate.Release{}, fmt.Errorf("validate application update release: %w", coreupdate.ErrInvalidVersion)
+	}
+	version := strings.TrimPrefix(releaseTag, "v")
+	if len(version) > 64 || !releaseVersionPattern.MatchString(version) {
 		return coreupdate.Release{}, fmt.Errorf("validate application update release: %w", coreupdate.ErrInvalidVersion)
 	}
 	releaseURL, err := parseHTTPSURL(release.HTMLURL, "release")
@@ -174,7 +186,7 @@ func releaseFromGitHubRelease(updateEndpoint string, repository string, release 
 		if _, err := parseSHA256Digest(asset.Digest); err != nil {
 			return coreupdate.Release{}, fmt.Errorf("validate application update release: asset %q: %w", assetName, err)
 		}
-		assetURL, err := buildAssetDownloadURL(downloadEndpoint, release.TagName, assetName)
+		assetURL, err := buildAssetDownloadURL(downloadEndpoint, releaseTag, assetName)
 		if err != nil {
 			return coreupdate.Release{}, fmt.Errorf("validate application update release: asset %q: %w", assetName, err)
 		}
@@ -214,6 +226,9 @@ func (s *EndpointSource) Download(ctx context.Context, asset coreupdate.Asset, d
 		return fmt.Errorf("create update download request: %w", err)
 	}
 	setUpdateHeaders(request, "application/octet-stream")
+	if err := setDownloadIdentityHeaders(request, s.identity); err != nil {
+		return fmt.Errorf("prepare update download request identity: %w", err)
+	}
 
 	response, err := s.client.Do(request)
 	if err != nil {
@@ -270,6 +285,34 @@ func (s *EndpointSource) Download(ctx context.Context, asset coreupdate.Asset, d
 func setUpdateHeaders(request *http.Request, accept string) {
 	request.Header.Set("Accept", accept)
 	request.Header.Set("User-Agent", "dn-wails-updater")
+}
+
+func setDownloadIdentityHeaders(request *http.Request, identity ClientIdentity) error {
+	if identity == nil {
+		return errors.New("installation identity is unavailable")
+	}
+
+	installationID, err := identity.InstallationID()
+	if err != nil {
+		return err
+	}
+	installationID = strings.TrimSpace(installationID)
+	if !installationIDPattern.MatchString(installationID) {
+		return errors.New("installation identity is invalid")
+	}
+
+	appVersion := strings.TrimSpace(identity.CurrentVersion())
+	if len(appVersion) > 64 || !releaseVersionPattern.MatchString(appVersion) {
+		return errors.New("current application version is invalid")
+	}
+
+	request.Header.Set("X-Install-ID", installationID)
+	request.Header.Set("X-App-Version", appVersion)
+	request.Header.Set(
+		"User-Agent",
+		fmt.Sprintf("dn-wails-updater/%s (%s; %s)", appVersion, runtime.GOOS, runtime.GOARCH),
+	)
+	return nil
 }
 
 func parseHTTPSURL(rawURL string, label string) (*url.URL, error) {

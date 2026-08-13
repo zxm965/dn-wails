@@ -106,6 +106,8 @@ Section "uninstall"
     !insertmacro wails.setShellContext
 
     RMDir /r "$AppData\${PRODUCT_EXECUTABLE}" # Remove the WebView2 DataPath
+    Delete "$AppData\dn-wails\installation.json"
+    RMDir "$AppData\dn-wails"
 
     RMDir /r $INSTDIR
 
