@@ -43,7 +43,7 @@ func readDatabaseURL(data []byte) (string, error) {
 			continue
 		}
 		if foundDatabaseURL {
-			return "", fmt.Errorf("parse dn-wails/.env.local line %d: duplicate %s", lineNumber, databaseURLKey)
+			return "", fmt.Errorf("parse cull-pear/.env.local line %d: duplicate %s", lineNumber, databaseURLKey)
 		}
 		foundDatabaseURL = true
 		value := strings.TrimSpace(rawValue)
@@ -53,7 +53,7 @@ func readDatabaseURL(data []byte) (string, error) {
 		databaseURL = strings.TrimSpace(value)
 	}
 	if err := scanner.Err(); err != nil {
-		return "", fmt.Errorf("read dn-wails database configuration: %w", err)
+		return "", fmt.Errorf("read cull-pear database configuration: %w", err)
 	}
 	return databaseURL, nil
 }

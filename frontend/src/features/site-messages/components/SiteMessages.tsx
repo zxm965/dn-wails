@@ -61,7 +61,7 @@ const emptyForm: SiteMessageInput = {
   expiresAt: '',
 }
 
-export type SiteMessageNavigationTarget = 'dashboard' | 'weekly' | 'roles' | 'messages' | 'account'
+export type SiteMessageNavigationTarget = 'weekly' | 'roles' | 'messages' | 'account'
 
 export function SiteMessages({ onNavigate }: { onNavigate: (target: SiteMessageNavigationTarget) => void }) {
   const { notify } = useFeedback()
@@ -136,7 +136,6 @@ export function SiteMessages({ onNavigate }: { onNavigate: (target: SiteMessageN
 
   async function followAction(message: SiteMessage) {
     const internalTargets: Record<string, SiteMessageNavigationTarget> = {
-      '/dashboard': 'dashboard',
       '/weekly-plans': 'weekly',
       '/roles': 'roles',
       '/messages': 'messages',
@@ -148,13 +147,17 @@ export function SiteMessages({ onNavigate }: { onNavigate: (target: SiteMessageN
       onNavigate(target)
       return
     }
-    if (message.actionUrl) {
+    if (/^https?:\/\//i.test(message.actionUrl)) {
       try {
         await openExternalURL(message.actionUrl)
         setActiveMessage(null)
       } catch (error) {
         notify({ title: '打开链接失败', message: getErrorMessage(error, '链接不可用。'), tone: 'error' })
       }
+      return
+    }
+    if (message.actionUrl.startsWith('/')) {
+      notify({ title: '页面已不可用', message: '该消息指向的应用内页面已被移除。', tone: 'warning' })
     }
   }
 

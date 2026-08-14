@@ -8,8 +8,8 @@
 
 - `internal/account/model.go`：稳定的账号 DTO、角色和状态常量。
 - `internal/account/auth.go`：邮箱、密码、头像地址校验，以及与现有账号兼容的 scrypt 密码哈希。
-- `internal/account/postgres_service.go`：账号查询、资料维护、头像导入、数据库会话和本地令牌持久化。
-- `internal/account/unavailable_service.go`：数据库未配置时的明确降级实现。
+- `internal/account/postgres_service.go`：账号查询、资料维护、头像导入、数据库会话、本地令牌持久化和只读健康检查。
+- `internal/account/unavailable_service.go`：数据库未配置时的明确降级实现，并向运行状态报告不可用。
 - `internal/application/account.go`：暴露给前端的全局账号 Wails 门面。
 - `frontend/src/features/account/api/`：生成绑定适配和前端账号类型。
 - `frontend/src/features/account/context/AccountProvider.tsx`：应用启动时恢复登录状态，并向所有功能提供当前用户和登录操作。

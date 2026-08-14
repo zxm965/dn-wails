@@ -9,7 +9,7 @@ import (
 	"testing"
 	"time"
 
-	"dn-wails/internal/storage"
+	"cull-pear/internal/storage"
 )
 
 type memoryStore struct {

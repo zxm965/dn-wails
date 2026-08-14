@@ -1,6 +1,6 @@
 package application
 
-import "dn-wails/internal/notification"
+import "cull-pear/internal/notification"
 
 type SystemNotificationStatus struct {
 	Available  bool `json:"available"`

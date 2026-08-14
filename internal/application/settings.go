@@ -1,6 +1,6 @@
 package application
 
-import "dn-wails/internal/settings"
+import "cull-pear/internal/settings"
 
 func (a *App) GetSettings() settings.AppSettings {
 	return a.settingsService.Get()

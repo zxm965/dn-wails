@@ -57,6 +57,20 @@ func (s *PostgresService) Close() error {
 	return nil
 }
 
+func (s *PostgresService) Health() error {
+	ctx, cancel := databaseContext()
+	defer cancel()
+
+	var schemaReady bool
+	if err := s.pool.QueryRow(ctx, `select to_regclass('public.app_quick_note') is not null`).Scan(&schemaReady); err != nil {
+		return fmt.Errorf("check quick notes database health: %w", err)
+	}
+	if !schemaReady {
+		return fmt.Errorf("%w: quick notes database schema is incomplete", ErrUnavailable)
+	}
+	return nil
+}
+
 func (s *PostgresService) List() ([]Note, error) {
 	ownerID, err := s.identity.CurrentUserID()
 	if err != nil {

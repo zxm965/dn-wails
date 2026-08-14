@@ -1,4 +1,4 @@
-module dn-wails
+module cull-pear
 
 go 1.26.0
 

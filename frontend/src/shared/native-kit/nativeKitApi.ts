@@ -7,10 +7,10 @@ import {
   SaveFile,
   ShowMessageDialog,
   WriteClipboard,
-} from '@bindings/dn-wails/internal/application/app'
-import { OpenFilesOptions as WailsOpenFilesOptions } from '@bindings/dn-wails/internal/nativekit/models'
-import { SaveFileOptions as WailsSaveFileOptions } from '@bindings/dn-wails/internal/nativekit/models'
-import { MessageDialogOptions as WailsMessageDialogOptions } from '@bindings/dn-wails/internal/nativekit/models'
+} from '@bindings/cull-pear/internal/application/app'
+import { OpenFilesOptions as WailsOpenFilesOptions } from '@bindings/cull-pear/internal/nativekit/models'
+import { SaveFileOptions as WailsSaveFileOptions } from '@bindings/cull-pear/internal/nativekit/models'
+import { MessageDialogOptions as WailsMessageDialogOptions } from '@bindings/cull-pear/internal/nativekit/models'
 import { Events } from '@wailsio/runtime'
 
 const FILE_DROP_EVENT = 'native-kit:file-drop'

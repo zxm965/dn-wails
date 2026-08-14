@@ -15,7 +15,7 @@ import (
 	"sync"
 	"time"
 
-	"dn-wails/internal/storage"
+	"cull-pear/internal/storage"
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgconn"
@@ -111,6 +111,23 @@ func (s *PostgresService) Initialize() error {
 
 func (s *PostgresService) Close() error {
 	s.pool.Close()
+	return nil
+}
+
+func (s *PostgresService) Health() error {
+	ctx, cancel := databaseContext()
+	defer cancel()
+
+	var schemaReady bool
+	if err := s.pool.QueryRow(ctx, `
+		select to_regclass('public.sys_user') is not null
+			and to_regclass('public.sys_session') is not null
+	`).Scan(&schemaReady); err != nil {
+		return fmt.Errorf("check account database health: %w", err)
+	}
+	if !schemaReady {
+		return fmt.Errorf("%w: account database schema is incomplete", ErrUnavailable)
+	}
 	return nil
 }
 
@@ -369,7 +386,7 @@ func (s *PostgresService) createSession(ctx context.Context, userID int) error {
 	now := time.Now().UTC()
 	if _, err := s.pool.Exec(ctx, `
 		insert into sys_session (id, token_hash, user_id, expires_at, last_used_at, user_agent, created_at, updated_at)
-		values ($1, $2, $3, '9999-12-31 23:59:59+00'::timestamptz, $4, 'dn-wails', $4, $4)
+		values ($1, $2, $3, '9999-12-31 23:59:59+00'::timestamptz, $4, 'cull-pear', $4, $4)
 	`, sessionID, hashSessionToken(token), userID, now); err != nil {
 		return fmt.Errorf("create account session: %w", err)
 	}

@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 
 import { AccountLogin, AccountPanel, AccountTitleBarButton, useAccount } from '@/features/account'
 import { DevToolsPanel } from '@/features/devtools'
-import { DnDashboard, DnRoles, DnWeeklyPlans } from '@/features/dn-system'
+import { DnRoles, DnWeeklyPlans } from '@/features/dn-system'
 import { QuickNotesPanel } from '@/features/quick-notes'
 import { DEFAULT_SETTINGS, SettingsPanel, useSettings } from '@/features/settings'
 import {
@@ -15,7 +15,14 @@ import { AppSidebar, type AppView } from '@/shared/components/app-sidebar'
 import { TitleBar } from '@/shared/components/titlebar'
 import { ListState } from '@/shared/components/ui'
 import { createScopedClassNames } from '@/shared/lib/classNames'
-import { appViewRequiresAuth, getAppViewTitle, getFirstVisibleView, isAppViewVisible } from '@/shared/navigation'
+import {
+  DEVTOOLS_DESKTOP_LAB_PREFERENCE,
+  appViewRequiresAuth,
+  getAppViewTitle,
+  getFirstVisibleView,
+  isAppViewVisible,
+  resolveMenuVisibility,
+} from '@/shared/navigation'
 import { windowManager } from '@/shared/window'
 
 import { appConfig } from './appConfig'
@@ -34,11 +41,17 @@ export default function App() {
   const isDnView = activeView.startsWith('dn-') || activeView === 'site-messages'
   const viewTitle = getAppViewTitle(activeView)
   const windowTitle = `${appConfig.displayName} · ${viewTitle}`
+  const showDevToolsDesktopLab =
+    isAppViewVisible('devtools', settings.navigation.menuVisibility) &&
+    resolveMenuVisibility(
+      DEVTOOLS_DESKTOP_LAB_PREFERENCE.key,
+      DEVTOOLS_DESKTOP_LAB_PREFERENCE.defaultVisible,
+      settings.navigation.menuVisibility,
+    )
 
   function navigateDn(target: SiteMessageNavigationTarget) {
     setActiveView(
       {
-        dashboard: 'dn-dashboard',
         weekly: 'dn-weekly',
         roles: 'dn-roles',
         messages: 'site-messages',
@@ -48,9 +61,6 @@ export default function App() {
   }
 
   function renderDnView() {
-    if (activeView === 'dn-dashboard') {
-      return <DnDashboard onNavigateWeekly={() => setActiveView('dn-weekly')} />
-    }
     if (activeView === 'dn-weekly') return <DnWeeklyPlans onNavigateRoles={() => setActiveView('dn-roles')} />
     if (activeView === 'dn-roles') return <DnRoles />
     if (activeView === 'site-messages') return <SiteMessages onNavigate={navigateDn} />
@@ -71,7 +81,7 @@ export default function App() {
     if (activeView === 'quick-notes') return <QuickNotesPanel />
     if (activeView === 'account') return <AccountPanel />
     if (activeView === 'settings') return <SettingsPanel />
-    if (activeView === 'devtools') return <DevToolsPanel />
+    if (activeView === 'devtools') return <DevToolsPanel showDesktopLab={showDevToolsDesktopLab} />
     return null
   }
 

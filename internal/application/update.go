@@ -3,7 +3,7 @@ package application
 import (
 	"time"
 
-	"dn-wails/internal/appupdate"
+	"cull-pear/internal/appupdate"
 )
 
 func (a *App) GetApplicationUpdateInfo() appupdate.Info {

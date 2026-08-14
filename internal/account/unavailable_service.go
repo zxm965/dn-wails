@@ -6,6 +6,7 @@ func NewUnavailableService() *UnavailableService { return &UnavailableService{} 
 
 func (*UnavailableService) Initialize() error                { return nil }
 func (*UnavailableService) Close() error                     { return nil }
+func (*UnavailableService) Health() error                    { return ErrUnavailable }
 func (*UnavailableService) CurrentUserID() (int, error)      { return 0, ErrUnavailable }
 func (*UnavailableService) CurrentAdminUserID() (int, error) { return 0, ErrUnavailable }
 func (*UnavailableService) AuthState() (AuthState, error)    { return AuthState{}, ErrUnavailable }

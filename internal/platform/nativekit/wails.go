@@ -3,7 +3,7 @@ package nativekit
 import (
 	"errors"
 
-	"dn-wails/internal/nativekit"
+	"cull-pear/internal/nativekit"
 
 	"github.com/wailsapp/wails/v3/pkg/application"
 )

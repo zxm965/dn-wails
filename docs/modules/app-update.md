@@ -52,7 +52,7 @@ React AppUpdateProvider
 2. 工作流校验标签、执行 Go 测试和前端格式、lint、build。
 3. 双端 build job 从 GitHub Environment `RELEASE` 读取 `secrets.DATABASE_URL`，生成不进入 Git 记录的临时 `.env.local`。
 4. 工作流用 `wails3 task common:update:build-assets` 同步平台元数据，并通过 linker flags 注入运行时版本和仓库。
-5. macOS 使用 `wails3 task darwin:package:universal` 构建 universal `.app`，再生成发布 ZIP 和供当前客户端自动更新、手动安装的 DMG。
+5. macOS 使用 `wails3 task darwin:package:universal` 构建名为 `Cull Pear.app` 的 universal 应用包，再生成 `cull-pear-*` 发布 ZIP 和供当前客户端自动更新、手动安装的 DMG。
 6. Windows runner 安装 NSIS 后使用 `wails3 task windows:package ARCH=amd64 INSTALL_SCOPE=user` 构建用户级安装器。
 7. 两端资源成功后为 ZIP、DMG 和 EXE 计算大小与 SHA-256，并生成 GitHub Release 对应的附加元数据和 `SHA256SUMS.txt`。
 8. 创建或更新 GitHub Release，并上传应用安装资源和校验文件；客户端通过转发接口读取 GitHub Release JSON。
@@ -115,14 +115,14 @@ interface GitHubReleaseEndpoint {
 
 ## 发布资源约定
 
-- macOS 发布压缩包：`dn-wails-darwin-universal.zip`
-- macOS 当前客户端自动更新与手动安装：`dn-wails-darwin-universal.dmg`
-- Windows 自动更新与手动安装：`dn-wails-windows-amd64-installer.exe`
+- macOS 发布压缩包：`cull-pear-darwin-universal.zip`，内部应用包为 `Cull Pear.app`
+- macOS 当前客户端自动更新与手动安装：`cull-pear-darwin-universal.dmg`，DMG 卷与应用展示名为 `Cull Pear`
+- Windows 自动更新与手动安装：`cull-pear-windows-amd64-installer.exe`
 - 自动更新发现与资源元数据：`update_endpoint` 对应的 `/latest` 转发接口返回的 GitHub Release JSON
 - 自动更新下载：`update_endpoint` 对应的 `/download?version=...&filename=...` 转发接口
 - 人工校验：`SHA256SUMS.txt`
 
-这些文件均上传到对应标签的 GitHub 和 Gitee Release。客户端请求 `update_endpoint` 对应的 `/latest` 获取 GitHub Release 元数据，再请求对应的 `/download` 接口并传入 Release 标签和资源文件名下载。下载请求还必须携带 `X-Install-ID`、`X-App-Version` 和版本一致的 `dn-wails-updater/<version> (<platform>; <arch>)` User-Agent。资源名、Release 标签、请求头以及 `latest`/`download` 路径是客户端与代理服务的数据契约，修改时必须同步更新两端和本模块文档。
+这些文件均上传到对应标签的 GitHub 和 Gitee Release。客户端请求 `update_endpoint` 对应的 `/latest` 获取 GitHub Release 元数据，再请求对应的 `/download` 接口并传入 Release 标签和资源文件名下载。下载请求还必须携带 `X-Install-ID`、`X-App-Version` 和版本一致的 `cull-pear-updater/<version> (<platform>; <arch>)` User-Agent。资源名、Release 标签、请求头以及 `latest`/`download` 路径是客户端与代理服务的数据契约，修改时必须同步更新两端和本模块文档。
 
 ## 错误与边界
 
@@ -149,7 +149,7 @@ interface GitHubReleaseEndpoint {
 
 ## 接入与发布
 
-默认更新源为数据库表 `sys_app_update_source.update_endpoint = https://nexus.i96.me/github/releases`，`expected_repository = zxm965/dn-wails`；数据库不可用时使用 `internal/buildinfo` 中的同值兜底。GitHub 仓库需要启用 Actions，并授予 Release 工作流 `contents: write` 权限。GitHub Actions 仓库 Secret `GITEE_TOKEN` 必须具有目标 Gitee 仓库的 Release 写权限，Gitee 仓库则必须公开 Release 读取能力。Build 与 Release job 使用 GitHub Environment `RELEASE`，其中 build job 还需要 `DATABASE_URL` Secret。构建使用锁定的 Wails v3 CLI，并重新生成 bindings。
+默认更新源使用数据库记录 `app_code = cull-pear`、`update_endpoint = https://nexus.i96.me/github/releases`、`expected_repository = zxm965/dn-wails`；数据库不可用时使用 `internal/buildinfo` 中的仓库与端点兜底。GitHub 仓库需要启用 Actions，并授予 Release 工作流 `contents: write` 权限。GitHub Actions 仓库 Secret `GITEE_TOKEN` 必须具有目标 Gitee 仓库的 Release 写权限，Gitee 仓库则必须公开 Release 读取能力。Build 与 Release job 使用 GitHub Environment `RELEASE`，其中 build job 还需要 `DATABASE_URL` Secret。构建使用锁定的 Wails v3 CLI，并重新生成 bindings。
 
 
 ```bash

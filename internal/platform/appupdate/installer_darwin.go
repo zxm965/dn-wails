@@ -14,9 +14,10 @@ import (
 const darwinUpdateScript = `#!/bin/sh
 pid="$1"
 source_app="$2"
-target_app="$3"
-mount_dir="$4"
-work_dir="$5"
+current_app="$3"
+target_app="$4"
+mount_dir="$5"
+work_dir="$6"
 backup_app="${target_app}.previous"
 staged_app="${target_app}.update"
 
@@ -34,12 +35,19 @@ if ! /usr/bin/ditto "$source_app" "$staged_app"; then
   /bin/rm -rf "$work_dir"
   exit 1
 fi
-if ! /bin/mv "$target_app" "$backup_app"; then
-  detach_image
-  /bin/rm -rf "$staged_app" "$work_dir"
-  exit 1
+target_backed_up=0
+if [ -e "$target_app" ]; then
+  if ! /bin/mv "$target_app" "$backup_app"; then
+    detach_image
+    /bin/rm -rf "$staged_app" "$work_dir"
+    exit 1
+  fi
+  target_backed_up=1
 fi
 if /bin/mv "$staged_app" "$target_app"; then
+  if [ "$current_app" != "$target_app" ]; then
+    /bin/rm -rf "$current_app"
+  fi
   /bin/rm -rf "$backup_app"
   detach_image
   /usr/bin/open "$target_app"
@@ -47,15 +55,17 @@ if /bin/mv "$staged_app" "$target_app"; then
   exit 0
 fi
 
-/bin/mv "$backup_app" "$target_app"
+if [ "$target_backed_up" -eq 1 ]; then
+  /bin/mv "$backup_app" "$target_app"
+fi
 detach_image
-/usr/bin/open "$target_app"
+/usr/bin/open "$current_app"
 /bin/rm -rf "$work_dir"
 exit 1
 `
 
 func (i *Installer) Supported() bool {
-	return i.appName != ""
+	return i.appName != "" && i.bundleName != ""
 }
 
 func (i *Installer) Install(ctx context.Context, imagePath string) error {
@@ -69,7 +79,9 @@ func (i *Installer) Install(ctx context.Context, imagePath string) error {
 	}
 
 	parentDirectory := filepath.Dir(targetApp)
-	probe, err := os.CreateTemp(parentDirectory, ".dn-wails-update-probe-*")
+	currentApp := targetApp
+	targetApp = filepath.Join(parentDirectory, i.bundleName+".app")
+	probe, err := os.CreateTemp(parentDirectory, ".cull-pear-update-probe-*")
 	if err != nil {
 		return fmt.Errorf("application directory is not writable: %w", err)
 	}
@@ -105,9 +117,9 @@ func (i *Installer) Install(ctx context.Context, imagePath string) error {
 		return fmt.Errorf("mount update disk image: %w: %s", err, output)
 	}
 
-	sourceApp := filepath.Join(mountDirectory, i.appName+".app")
+	sourceApp := filepath.Join(mountDirectory, i.bundleName+".app")
 	if info, err := os.Stat(sourceApp); err != nil || !info.IsDir() {
-		return fmt.Errorf("update disk image does not contain %s.app", i.appName)
+		return fmt.Errorf("update disk image does not contain %s.app", i.bundleName)
 	}
 
 	scriptPath := filepath.Join(workDirectory, "install-update.sh")
@@ -115,7 +127,15 @@ func (i *Installer) Install(ctx context.Context, imagePath string) error {
 		return fmt.Errorf("write update helper: %w", err)
 	}
 
-	command := exec.Command(scriptPath, fmt.Sprintf("%d", os.Getpid()), sourceApp, targetApp, mountDirectory, workDirectory)
+	command := exec.Command(
+		scriptPath,
+		fmt.Sprintf("%d", os.Getpid()),
+		sourceApp,
+		currentApp,
+		targetApp,
+		mountDirectory,
+		workDirectory,
+	)
 	command.SysProcAttr = &syscall.SysProcAttr{Setsid: true}
 	if err := command.Start(); err != nil {
 		return fmt.Errorf("start update helper: %w", err)

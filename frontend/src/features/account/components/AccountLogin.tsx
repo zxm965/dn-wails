@@ -25,7 +25,7 @@ import { styles } from './AccountLogin.css'
 
 const cx = createScopedClassNames(styles)
 
-const authTabStorageKey = 'dn-wails:account-auth-tab'
+const authTabStorageKey = 'cull-pear:account-auth-tab'
 
 function initialTab(): 'login' | 'register' {
   const value = window.localStorage.getItem(authTabStorageKey)

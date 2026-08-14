@@ -7,8 +7,8 @@
 ## 目录与职责
 
 - `internal/quicknotes/model.go`：笔记 DTO、输入校验、自动标题和可比较错误。
-- `internal/quicknotes/postgres_service.go`：PostgreSQL 查询、保存、软删除和表结构检查。
-- `internal/quicknotes/unavailable_service.go`：数据库未配置时的明确降级实现。
+- `internal/quicknotes/postgres_service.go`：PostgreSQL 查询、保存、软删除、表结构检查和只读健康检查。
+- `internal/quicknotes/unavailable_service.go`：数据库未配置时的明确降级实现，并向运行状态报告不可用。
 - `internal/application/quicknotes.go`：提供给前端的 Wails 门面方法。
 - `frontend/src/features/quick-notes/api/`：生成绑定适配和前端类型。
 - `frontend/src/features/quick-notes/components/`：笔记列表、搜索、编辑器和自动保存状态。

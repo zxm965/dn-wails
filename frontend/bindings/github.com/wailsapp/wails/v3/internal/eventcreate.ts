@@ -8,13 +8,13 @@ import { Create as $Create } from "@wailsio/runtime";
 
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore: Unused imports
-import * as application$0 from "../../../../../dn-wails/internal/application/models.js";
+import * as application$0 from "../../../../../cull-pear/internal/application/models.js";
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore: Unused imports
-import * as notification$0 from "../../../../../dn-wails/internal/notification/models.js";
+import * as notification$0 from "../../../../../cull-pear/internal/notification/models.js";
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore: Unused imports
-import * as singleinstance$0 from "../../../../../dn-wails/internal/singleinstance/models.js";
+import * as singleinstance$0 from "../../../../../cull-pear/internal/singleinstance/models.js";
 
 function configure() {
     Object.freeze(Object.assign($Create.Events, {

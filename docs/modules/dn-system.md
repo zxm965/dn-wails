@@ -1,15 +1,15 @@
-# DN 周常管理模块
+# DN 周常模块
 
 ## 模块目标
 
-将 `dn-next` 的角色职业、周计划、仪表盘和站内消息迁移到 Wails 桌面应用。DN 模块只处理 DN 业务数据，不再负责登录、注册、会话、个人资料、头像或密码管理；这些能力统一由[全局账号模块](account.md)提供。
+将 `dn-next` 的角色职业、周计划和站内消息迁移到 Wails 桌面应用。DN 模块只处理 DN 业务数据，不再负责登录、注册、会话、个人资料、头像或密码管理；这些能力统一由[全局账号模块](account.md)提供。
 
 Go 服务通过 `pgxpool` 直连 PostgreSQL；本地构建从 `.env.local` 读取连接串，正式构建从 GitHub Environment Secret 生成并嵌入相同配置。
 
 ## 目录与职责
 
 - `internal/dn/database_config.go`：按“进程环境优先、嵌入 `.env.local` 兜底”解析 PostgreSQL 连接配置。
-- `internal/dn/postgres_service.go`：DN 独立数据库连接池，并通过窄接口依赖全局账号身份。
+- `internal/dn/postgres_service.go`：DN 独立数据库连接池、必要表健康检查，并通过窄接口依赖全局账号身份。
 - `internal/dn/postgres_roles.go`：`dn_role_profession` 角色职业查询和维护。
 - `internal/dn/postgres_weekly.go`：`dn_weekly_plan` 周计划查询、维护、同步和重置。
 - `internal/dn/postgres_messages.go`：`sys_site_message`、回执、官网消息同步和集成状态。
@@ -18,10 +18,10 @@ Go 服务通过 `pgxpool` 直连 PostgreSQL；本地构建从 `.env.local` 读�
 - `internal/dn/service.go`、`internal/dn/auth.go`：保留用于历史本地数据迁移和规则测试的兼容实现，不注册为生产 Wails 账号服务。
 - `internal/application/dn.go`：只暴露 DN 角色、周计划和消息 Wails 门面方法。
 - `frontend/src/features/dn-system/api/`：生成绑定适配和 DN 角色/周计划业务类型。
-- `frontend/src/features/dn-system/model/`：职业/巢穴常量、优先级、日期和仪表盘纯计算。
-- `frontend/src/features/dn-system/components/`：DN 仪表盘、周计划和角色三个业务页面及响应式样式。
+- `frontend/src/features/dn-system/model/`：职业/巢穴常量、优先级和日期校验。
+- `frontend/src/features/dn-system/components/`：DN 周计划和角色两个业务页面及响应式样式。
 - `frontend/src/features/site-messages/`：独立站内消息页面、消息盒子、Provider 和 API 适配，详见[站内消息模块](site-messages.md)。
-- `frontend/src/shared/navigation/menuConfig.ts`：DN 父入口、三个子菜单和独立站内消息菜单的显隐偏好配置。
+- `frontend/src/shared/navigation/menuConfig.ts`：DN 父入口、两个子菜单和独立站内消息菜单的显隐偏好配置。
 
 ## 依赖关系
 
@@ -64,7 +64,7 @@ React DN page / SiteMessageProvider
 
 ### 登录保护
 
-DN 的三个业务路由在 `routeConfig.ts` 中统一声明 `requiresAuth: true`。`App.tsx` 先通过全局 `AccountProvider` 判断登录状态，认证成功后才渲染 DN 页面。DN 页面不提供登录、注册或个人资料界面；独立站内消息页面由 `SiteMessageProvider` 负责全局消息状态。
+DN 的两个业务路由在 `routeConfig.ts` 中统一声明 `requiresAuth: true`。`App.tsx` 先通过全局 `AccountProvider` 判断登录状态，认证成功后才渲染 DN 页面。DN 页面不提供登录、注册或个人资料界面；独立站内消息页面由 `SiteMessageProvider` 负责全局消息状态。
 
 ### 角色与周计划
 
@@ -98,10 +98,6 @@ DN 的三个业务路由在 `routeConfig.ts` 中统一声明 `requiresAuth: true
 - 官网分类为 `102,103,104,8021,8022,8023,122,7364,8167`，来源地址为龙之谷官网 `GetNewsList.ashx`。
 - 站内路径动作由 React 切换 DN 子页面；兼容的 `/account` 动作进入全局个人信息页；HTTP(S) 地址通过 Native Kit 在系统浏览器打开。
 
-### 仪表盘
-
-Go 返回当前用户的完整周计划 DTO；前端纯函数计算总完成度、待办角色和三天内到期票券，不产生额外持久化副作用。
-
 ## 错误与边界
 
 - 缺少或无法解析 `DATABASE_URL` 时应用仍可启动；进入 DN 页面后显示服务不可用，设置、诊断和更新等公共功能不受影响。
@@ -116,14 +112,14 @@ Go 返回当前用户的完整周计划 DTO；前端纯函数计算总完成度�
 
 ## 主题与响应式
 
-- 三个 DN 业务页、独立消息页面、消息盒子和弹窗全部使用共享 UI 与应用语义主题令牌，跟随主题、强调色、密度、按钮尺寸和字体缩放即时变化。
-- 四个业务页统一使用共享 `PageHeader`，保持页头高度、渐变背景、标题基线和操作区布局一致。
+- 两个 DN 业务页、独立消息页面、消息盒子和弹窗全部使用共享 UI 与应用语义主题令牌，跟随主题、强调色、密度、按钮尺寸和字体缩放即时变化。
+- 三个业务页统一使用共享 `PageHeader`，保持页头高度、渐变背景、标题基线和操作区布局一致。
 - 页面基于 `dn-page` Container Query 适配常规桌面、`1024 × 768` 最小窗口和极窄内容宽度。
 - 表格只在卡片内部横向滚动，不造成整页横向滚动；卡片、过滤器、消息行和弹窗逐级降为单列。
 
 ## 接入方式
 
-`main.tsx` 装配全局 `AccountProvider`，`App.tsx` 根据路由元数据执行认证保护，并在应用壳内装配 `SiteMessageProvider`。DN 周常管理侧栏入口默认隐藏，用户在“偏好设置 → 左侧菜单”开启唯一 key `dn-system` 后，侧栏显示 DN 周常管理父入口和三个子页面；站内消息使用不带分组标题、独立且默认显示的唯一 key `site-messages`，也可在同一处单独隐藏。登录后标题栏显示全局消息盒子和个人头像，消息盒子的“查看全部消息”跳转到独立站内消息页面。
+`main.tsx` 装配全局 `AccountProvider`，`App.tsx` 根据路由元数据执行认证保护，并在应用壳内装配 `SiteMessageProvider`。DN 周常侧栏入口默认隐藏，用户在“偏好设置 → 左侧菜单”开启唯一 key `dn-system` 后，侧栏显示 DN 周常父入口和两个子页面；站内消息使用不带分组标题、独立且默认显示的唯一 key `site-messages`，也可在同一处单独隐藏。登录后标题栏显示全局消息盒子和个人头像，消息盒子的“查看全部消息”跳转到独立站内消息页面。
 
 本地配置：
 

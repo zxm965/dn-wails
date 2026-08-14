@@ -38,7 +38,7 @@ const SIDEBAR_MIN_WIDTH = 64
 const SIDEBAR_MAX_WIDTH = 220
 const SIDEBAR_DEFAULT_WIDTH = 180
 const SIDEBAR_COLLAPSED_THRESHOLD = 104
-const SIDEBAR_STORAGE_KEY = 'dn-wails:sidebar-width'
+const SIDEBAR_STORAGE_KEY = 'cull-pear:sidebar-width'
 const COMPACT_VIEWPORT_QUERY = '(max-width: 820px)'
 
 function clampSidebarWidth(width: number): number {

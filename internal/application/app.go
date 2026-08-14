@@ -7,17 +7,17 @@ import (
 	"sync"
 	"time"
 
-	"dn-wails/internal/account"
-	"dn-wails/internal/appupdate"
-	"dn-wails/internal/diagnostics"
-	"dn-wails/internal/dn"
-	"dn-wails/internal/lifecycle"
-	"dn-wails/internal/nativekit"
-	"dn-wails/internal/notification"
-	"dn-wails/internal/quicknotes"
-	"dn-wails/internal/settings"
-	"dn-wails/internal/singleinstance"
-	"dn-wails/internal/windowmanager"
+	"cull-pear/internal/account"
+	"cull-pear/internal/appupdate"
+	"cull-pear/internal/diagnostics"
+	"cull-pear/internal/dn"
+	"cull-pear/internal/lifecycle"
+	"cull-pear/internal/nativekit"
+	"cull-pear/internal/notification"
+	"cull-pear/internal/quicknotes"
+	"cull-pear/internal/settings"
+	"cull-pear/internal/singleinstance"
+	"cull-pear/internal/windowmanager"
 
 	wailsapplication "github.com/wailsapp/wails/v3/pkg/application"
 )
@@ -109,6 +109,7 @@ type ApplicationUpdateService interface {
 type AccountService interface {
 	Initialize() error
 	Close() error
+	Health() error
 	CurrentUserID() (int, error)
 	CurrentAdminUserID() (int, error)
 	AuthState() (account.AuthState, error)
@@ -124,6 +125,7 @@ type AccountService interface {
 type DnService interface {
 	Initialize() error
 	Close() error
+	Health() error
 	ListRoles(query dn.RoleProfessionQuery) (dn.RoleProfessionList, error)
 	RoleOptions() ([]dn.RoleProfession, error)
 	SaveRole(input dn.RoleProfessionInput) (dn.RoleProfession, error)
@@ -146,6 +148,7 @@ type DnService interface {
 type QuickNotesService interface {
 	Initialize() error
 	Close() error
+	Health() error
 	List() ([]quicknotes.Note, error)
 	Save(input quicknotes.NoteInput) (quicknotes.Note, error)
 	Delete(id int64) error

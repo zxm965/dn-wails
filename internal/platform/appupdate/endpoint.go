@@ -16,7 +16,7 @@ import (
 	"strings"
 	"time"
 
-	coreupdate "dn-wails/internal/appupdate"
+	coreupdate "cull-pear/internal/appupdate"
 )
 
 const (
@@ -284,7 +284,7 @@ func (s *EndpointSource) Download(ctx context.Context, asset coreupdate.Asset, d
 
 func setUpdateHeaders(request *http.Request, accept string) {
 	request.Header.Set("Accept", accept)
-	request.Header.Set("User-Agent", "dn-wails-updater")
+	request.Header.Set("User-Agent", "cull-pear-updater")
 }
 
 func setDownloadIdentityHeaders(request *http.Request, identity ClientIdentity) error {
@@ -310,7 +310,7 @@ func setDownloadIdentityHeaders(request *http.Request, identity ClientIdentity) 
 	request.Header.Set("X-App-Version", appVersion)
 	request.Header.Set(
 		"User-Agent",
-		fmt.Sprintf("dn-wails-updater/%s (%s; %s)", appVersion, runtime.GOOS, runtime.GOARCH),
+		fmt.Sprintf("cull-pear-updater/%s (%s; %s)", appVersion, runtime.GOOS, runtime.GOARCH),
 	)
 	return nil
 }

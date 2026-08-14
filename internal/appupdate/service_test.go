@@ -63,7 +63,7 @@ func TestServiceChecksLatestRelease(t *testing.T) {
 		PublishedAt: publishedAt,
 	}}
 	service := NewService(Config{
-		AppName:        "dn-wails",
+		AppName:        "cull-pear",
 		Version:        "1.2.3",
 		Repository:     "zxm965/dn-wails",
 		UpdateEndpoint: "https://updates.example.com/github/releases",
@@ -93,7 +93,7 @@ func TestServiceTreatsSameOrOlderReleaseAsCurrent(t *testing.T) {
 		t.Run(latest, func(t *testing.T) {
 			t.Parallel()
 			service := NewService(Config{
-				AppName:        "dn-wails",
+				AppName:        "cull-pear",
 				Version:        "1.2.3",
 				Repository:     "zxm965/dn-wails",
 				UpdateEndpoint: "https://updates.example.com/github/releases",
@@ -119,7 +119,7 @@ func TestServiceDownloadsMatchingAssetBeforeInstallation(t *testing.T) {
 		release: Release{
 			Version: "1.4.0",
 			Assets: []Asset{{
-				Name:        "dn-wails-windows-amd64-installer.exe",
+				Name:        "cull-pear-windows-amd64-installer.exe",
 				DownloadURL: "https://example.com/update.exe",
 				Digest:      testDigest,
 				Size:        7,
@@ -129,7 +129,7 @@ func TestServiceDownloadsMatchingAssetBeforeInstallation(t *testing.T) {
 	}
 	installer := &installerStub{supported: true}
 	service := NewService(Config{
-		AppName:        "dn-wails",
+		AppName:        "cull-pear",
 		Version:        "1.3.0",
 		Repository:     "zxm965/dn-wails",
 		UpdateEndpoint: "https://updates.example.com/github/releases",
@@ -150,10 +150,10 @@ func TestServiceRejectsChangedVersionAndMissingDigest(t *testing.T) {
 
 	source := &sourceStub{release: Release{
 		Version: "1.4.0",
-		Assets:  []Asset{{Name: "dn-wails-darwin-universal.dmg"}},
+		Assets:  []Asset{{Name: "cull-pear-darwin-universal.dmg"}},
 	}}
 	service := NewService(Config{
-		AppName:        "dn-wails",
+		AppName:        "cull-pear",
 		Version:        "1.3.0",
 		Repository:     "zxm965/dn-wails",
 		UpdateEndpoint: "https://updates.example.com/github/releases",
@@ -176,7 +176,7 @@ func TestServiceDisablesDevelopmentAndUnsupportedBuilds(t *testing.T) {
 	t.Parallel()
 
 	development := NewService(Config{
-		AppName:        "dn-wails",
+		AppName:        "cull-pear",
 		Version:        "1.2.3-dev",
 		Repository:     "zxm965/dn-wails",
 		UpdateEndpoint: "https://updates.example.com/github/releases",
@@ -188,7 +188,7 @@ func TestServiceDisablesDevelopmentAndUnsupportedBuilds(t *testing.T) {
 	}
 
 	unsupported := NewService(Config{
-		AppName:        "dn-wails",
+		AppName:        "cull-pear",
 		Version:        "1.0.0",
 		Repository:     "zxm965/dn-wails",
 		UpdateEndpoint: "https://updates.example.com/github/releases",

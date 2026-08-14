@@ -1,5 +1,5 @@
-import { DeleteQuickNote, ListQuickNotes, SaveQuickNote } from '@bindings/dn-wails/internal/application/app'
-import * as WailsQuickNotes from '@bindings/dn-wails/internal/quicknotes/models'
+import { DeleteQuickNote, ListQuickNotes, SaveQuickNote } from '@bindings/cull-pear/internal/application/app'
+import * as WailsQuickNotes from '@bindings/cull-pear/internal/quicknotes/models'
 
 export interface QuickNote {
   id: number

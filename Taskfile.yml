@@ -1,7 +1,9 @@
 version: '3'
 
 vars:
-  APP_NAME: 'dn-wails'
+  APP_NAME: 'cull-pear'
+  APP_BUNDLE_NAME:
+    sh: node scripts/app-display-name.mjs
   BIN_DIR: 'bin'
   PACKAGE_MANAGER: 'pnpm'
   VITE_PORT: '{{.WAILS_VITE_PORT | default 9245}}'

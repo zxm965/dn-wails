@@ -6,8 +6,8 @@ import {
   MarkSiteMessageRead,
   PublishSiteMessage,
   SyncOfficialSiteMessages,
-} from '@bindings/dn-wails/internal/application/app'
-import * as WailsDn from '@bindings/dn-wails/internal/dn/models'
+} from '@bindings/cull-pear/internal/application/app'
+import * as WailsDn from '@bindings/cull-pear/internal/dn/models'
 
 export interface ListMeta {
   total: number

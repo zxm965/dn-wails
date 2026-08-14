@@ -1,5 +1,5 @@
-import { GetSettings, ResetSettings, UpdateSettings } from '@bindings/dn-wails/internal/application/app'
-import { AppSettings as WailsAppSettings } from '@bindings/dn-wails/internal/settings/models'
+import { GetSettings, ResetSettings, UpdateSettings } from '@bindings/cull-pear/internal/application/app'
+import { AppSettings as WailsAppSettings } from '@bindings/cull-pear/internal/settings/models'
 
 export type ThemeMode = 'system' | 'light' | 'dark'
 export type AccentColor = 'green' | 'blue' | 'purple' | 'orange'

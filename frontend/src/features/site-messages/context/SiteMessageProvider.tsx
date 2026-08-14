@@ -35,7 +35,6 @@ interface SiteMessageContextValue {
 const SiteMessageContext = createContext<SiteMessageContextValue | null>(null)
 
 const internalTargets: Record<string, SiteMessageNavigationTarget> = {
-  '/dashboard': 'dashboard',
   '/weekly-plans': 'weekly',
   '/roles': 'roles',
   '/messages': 'messages',

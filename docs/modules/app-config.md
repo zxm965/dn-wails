@@ -9,7 +9,7 @@
 项目根目录的 `.env` 是公开配置源：
 
 ```dotenv
-APP_DISPLAY_NAME=dn-wails
+APP_DISPLAY_NAME="Cull Pear"
 APP_AUTHOR_NAME=Your Name
 ```
 
@@ -69,17 +69,19 @@ DATABASE_URL='postgres://username:password@localhost:5432/database'
 
 ## 内部标识边界
 
-- `APP_DISPLAY_NAME` 只影响用户可见名称。
+- `APP_DISPLAY_NAME` 统一控制窗口、前端和 macOS `.app` 包的用户可见名称。
 - `APP_AUTHOR_NAME` 只影响侧栏左下角展示名称。
-- Go module、存储目录、日志目录、本地存储 key 和单实例 UUID 不随展示名称变化。
-- 内部稳定名称仍为 `dn-wails`，避免改名后丢失已有设置或产生第二套数据目录。
+- 统一内部标识为 `cull-pear`，用于 Go module、二进制名、存储目录、日志目录、本地存储 key、更新资源名和协议标识。
+- 公司与发布账号统一为 `zxm965`，Apple 平台 Bundle Identifier 使用 `com.zxm965.cullpear`。
+- GitHub 与 Gitee 仓库地址按当前发布约束继续使用 `zxm965/dn-wails`；该值只表示外部仓库位置，不作为应用内部标识。
+- 当前版本不读取、不迁移任何旧名称下的本地配置或安装身份。
 
 ## 接入方式
 
-- React 新增应用名称展示时统一读取 `appConfig.displayName`，禁止再次硬编码 `dn-wails`。
+- React 新增应用名称展示时统一读取 `appConfig.displayName`，禁止再次硬编码 `cull-pear`。
 - React 展示作者名称时统一读取 `appConfig.authorName`，禁止在组件中硬编码。
 - Go 启动窗口名称读取 `appconfig.Config.DisplayName`。
-- 安装包元数据由 `build/config.yml` 管理；发布脚本写入 `info.version` 后执行 `wails3 task common:update:build-assets` 同步各平台文件。
+- 安装包元数据由 `build/config.yml` 管理；`common:update:build-assets` 会先把 `.env` 的 `APP_DISPLAY_NAME` 同步到产品名称，再生成平台文件并补充 macOS `CFBundleDisplayName`。
 - 新增公开全局字段时，变量名必须使用 `APP_` 前缀，并同步更新 Go 类型与校验、前端环境类型、只读配置和本文档。
 - 环境相关但不敏感的构建值优先使用 GitHub Variables；密钥使用 GitHub Secrets，禁止通过 `APP_*` 暴露给前端。
 - `DATABASE_URL` 只允许出现在本地忽略文件、进程环境或 GitHub Environment Secret 中。Release 工作流仅在构建阶段生成临时 `.env.local`，不得输出完整值。

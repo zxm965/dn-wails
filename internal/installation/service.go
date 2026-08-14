@@ -11,7 +11,7 @@ import (
 	"sync"
 	"time"
 
-	"dn-wails/internal/storage"
+	"cull-pear/internal/storage"
 )
 
 const storageKey = "installation"

@@ -1,6 +1,6 @@
 package application
 
-import "dn-wails/internal/quicknotes"
+import "cull-pear/internal/quicknotes"
 
 func (a *App) ListQuickNotes() ([]quicknotes.Note, error) {
 	return a.quickNotesService.List()

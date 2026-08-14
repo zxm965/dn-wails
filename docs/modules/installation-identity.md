@@ -53,7 +53,7 @@ appupdate.EndpointSource.Download
 ```http
 X-Install-ID: <canonical UUID v4>
 X-App-Version: <MAJOR.MINOR.PATCH>
-User-Agent: dn-wails-updater/<version> (<goos>; <goarch>)
+User-Agent: cull-pear-updater/<version> (<goos>; <goarch>)
 ```
 
 `X-App-Version` 表示当前运行版本；下载查询参数 `version` 继续表示目标 Release 标签，两者语义不得混用。

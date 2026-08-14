@@ -1,6 +1,6 @@
 package application
 
-import "dn-wails/internal/nativekit"
+import "cull-pear/internal/nativekit"
 
 func (a *App) OpenExternalURL(rawURL string) error {
 	return a.nativeService.OpenExternalURL(rawURL)

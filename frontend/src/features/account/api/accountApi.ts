@@ -1,4 +1,4 @@
-import * as WailsAccount from '@bindings/dn-wails/internal/account/models'
+import * as WailsAccount from '@bindings/cull-pear/internal/account/models'
 import {
   ChangePassword,
   GetAuthState,
@@ -8,7 +8,7 @@ import {
   LogoutUser,
   RegisterUser,
   UpdateProfile,
-} from '@bindings/dn-wails/internal/application/app'
+} from '@bindings/cull-pear/internal/application/app'
 
 export interface Profile {
   id: number

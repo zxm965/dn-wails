@@ -12,8 +12,8 @@
 - `frontend/src/features/system-notification/api/`：前端 API 适配。
 - `frontend/src/features/system-notification/hooks/`：权限状态、发送和点击事件订阅。
 - `frontend/src/features/system-notification/components/`：可嵌入 DevTools 页的通知测试与预览界面。
-- `frontend/src/shared/components/ui/`：通知预览使用的 Card、Badge、Input、Textarea 和 Label。
-- `frontend/src/features/devtools/`：在“桌面能力”分类中提供系统通知测试入口。
+- `frontend/src/shared/components/ui/`：通知状态、短表单和发送操作使用的 Badge、Button、Input、Textarea 和 Label。
+- `frontend/src/features/devtools/`：在默认关闭的“桌面实验室”分类中提供系统通知测试入口；运行状态页只读取通知能力与授权状态。
 
 ## 总体链路
 
@@ -110,10 +110,10 @@ interface NotificationActivation {
 ## 响应式处理
 
 - 通知面板使用 Container Queries，根据自身实际内容宽度调整布局。
-- 宽度不足时，消息预览与发送表单从双列变为单列，状态标签移动到标题下方。
-- 极窄宽度下头像、消息间距和页头字号同步缩小，发送操作改为全宽纵向按钮。
+- 面板使用紧凑实时预览条和消息编辑器结构：发送者位于顶部横向工具栏，消息正文独占下方整行；极窄宽度时发送者工具栏改为纵向排列。
+- 极窄宽度下底部反馈与操作区改为纵向排列，权限和发送按钮变为全宽。
 - 权限与发送操作使用 `Button` 并跟随用户配置的默认按钮尺寸；纵向布局只改变宽度，不额外覆盖高度。
-- 发送者、时间、正文和反馈信息均具备溢出保护，不允许撑开页面。
+- 发送者、正文预览和反馈信息均具备溢出保护，不允许撑开页面。
 
 ## 验证
 

@@ -7,7 +7,7 @@ import (
 	"strings"
 	"time"
 
-	coreupdate "dn-wails/internal/appupdate"
+	coreupdate "cull-pear/internal/appupdate"
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"

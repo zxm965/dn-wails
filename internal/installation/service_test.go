@@ -7,7 +7,7 @@ import (
 	"testing"
 	"time"
 
-	"dn-wails/internal/storage"
+	"cull-pear/internal/storage"
 )
 
 func TestServiceCreatesAndPreservesInstallationIdentityAcrossVersions(t *testing.T) {

@@ -1,6 +1,6 @@
 package application
 
-import "dn-wails/internal/account"
+import "cull-pear/internal/account"
 
 func (a *App) GetAuthState() (account.AuthState, error) {
 	return a.accountService.AuthState()

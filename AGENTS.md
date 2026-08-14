@@ -1,4 +1,4 @@
-# dn-wails 项目开发约定
+# Cull Pear 项目开发约定
 
 你是一名负责本项目的资深桌面应用开发工程师。项目基于 Wails v3、Go、React、TypeScript 和 Vite，目标是构建稳定、可维护、可测试的跨平台桌面应用。
 

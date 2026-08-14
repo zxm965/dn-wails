@@ -3,10 +3,10 @@ package application
 import (
 	"testing"
 
-	"dn-wails/internal/lifecycle"
-	"dn-wails/internal/notification"
-	"dn-wails/internal/settings"
-	"dn-wails/internal/windowmanager"
+	"cull-pear/internal/lifecycle"
+	"cull-pear/internal/notification"
+	"cull-pear/internal/settings"
+	"cull-pear/internal/windowmanager"
 )
 
 type runtimeReadySettingsStub struct{}

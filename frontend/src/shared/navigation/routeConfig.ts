@@ -7,7 +7,6 @@ export interface AppRouteDefinition {
 export const APP_ROUTES = {
   'quick-notes': { title: '快速笔记', requiresAuth: true, navigation: 'menu' },
   account: { title: '个人信息', requiresAuth: true, navigation: 'standalone' },
-  'dn-dashboard': { title: 'DN · 仪表盘', requiresAuth: true, navigation: 'menu' },
   'dn-weekly': { title: 'DN · 周计划', requiresAuth: true, navigation: 'menu' },
   'dn-roles': { title: 'DN · 角色', requiresAuth: true, navigation: 'menu' },
   'site-messages': { title: '站内消息', requiresAuth: true, navigation: 'menu' },

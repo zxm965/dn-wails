@@ -148,20 +148,21 @@ jobs:
         shell: bash
         run: |
           version="${GITHUB_REF_NAME#v}"
-          ldflags="-X dn-wails/internal/buildinfo.Version=$version -X dn-wails/internal/buildinfo.Repository=$GITEE_REPOSITORY"
+          ldflags="-X cull-pear/internal/buildinfo.Version=$version -X cull-pear/internal/buildinfo.Repository=$GITEE_REPOSITORY"
           wails3 task darwin:package:universal LD_FLAGS="$ldflags"
-          ditto -c -k --sequesterRsrc --keepParent bin/dn-wails.app bin/dn-wails-darwin-universal.zip
-          hdiutil create -volname "dn-wails" -srcfolder bin/dn-wails.app -ov -format UDZO bin/dn-wails-darwin-universal.dmg
+          app_bundle="bin/$(node scripts/app-display-name.mjs).app"
+          ditto -c -k --sequesterRsrc --keepParent "$app_bundle" bin/cull-pear-darwin-universal.zip
+          hdiutil create -volname "$(node scripts/app-display-name.mjs)" -srcfolder "$app_bundle" -ov -format UDZO bin/cull-pear-darwin-universal.dmg
 
       - name: Build Windows installer
         if: runner.os == 'Windows'
         shell: pwsh
         run: |
           $version = $env:GITHUB_REF_NAME.TrimStart('v')
-          $ldflags = "-X dn-wails/internal/buildinfo.Version=$version -X dn-wails/internal/buildinfo.Repository=$env:GITEE_REPOSITORY"
+          $ldflags = "-X cull-pear/internal/buildinfo.Version=$version -X cull-pear/internal/buildinfo.Repository=$env:GITEE_REPOSITORY"
           wails3 task windows:package ARCH=amd64 INSTALL_SCOPE=user LD_FLAGS=$ldflags
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-          Move-Item bin/dn-wails-amd64-installer.exe bin/dn-wails-windows-amd64-installer.exe
+          Move-Item bin/cull-pear-amd64-installer.exe bin/cull-pear-windows-amd64-installer.exe
 
       - name: Upload macOS packages
         if: runner.os == 'macOS'
@@ -169,8 +170,8 @@ jobs:
         with:
           name: ${{ matrix.artifact }}
           path: |
-            bin/dn-wails-darwin-universal.zip
-            bin/dn-wails-darwin-universal.dmg
+            bin/cull-pear-darwin-universal.zip
+            bin/cull-pear-darwin-universal.dmg
           if-no-files-found: error
 
       - name: Upload Windows package
@@ -178,7 +179,7 @@ jobs:
         uses: actions/upload-artifact@v7.0.1
         with:
           name: ${{ matrix.artifact }}
-          path: bin/dn-wails-windows-amd64-installer.exe
+          path: bin/cull-pear-windows-amd64-installer.exe
           if-no-files-found: error
 
   release:

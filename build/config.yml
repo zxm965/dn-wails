@@ -1,13 +1,13 @@
 version: '3'
 
 info:
-  companyName: '10958'
+  companyName: 'zxm965'
   productName: 'Cull Pear'
-  productIdentifier: 'com.10958.dnwails'
+  productIdentifier: 'com.zxm965.cullpear'
   description: 'Cull Pear desktop application'
-  copyright: '© 2026, 10958'
+  copyright: '© 2026, zxm965'
   comments: 'Built with Wails v3'
-  version: '0.0.11'
+  version: '0.0.15'
 
 dev_mode:
   root_path: .

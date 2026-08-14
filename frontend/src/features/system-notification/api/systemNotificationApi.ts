@@ -2,7 +2,7 @@ import {
   GetSystemNotificationStatus,
   RequestSystemNotificationPermission,
   SendMessageNotification,
-} from '@bindings/dn-wails/internal/application/app'
+} from '@bindings/cull-pear/internal/application/app'
 
 export interface SystemNotificationStatus {
   available: boolean

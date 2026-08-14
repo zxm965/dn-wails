@@ -11,5 +11,7 @@ export {
     FileDrop,
     LifecycleStatus,
     MessageNotificationRequest,
+    RuntimeServiceStatus,
+    RuntimeStatus,
     SystemNotificationStatus
 } from "./models.js";

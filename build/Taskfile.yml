@@ -233,7 +233,9 @@ tasks:
     summary: Updates the build assets
     dir: build
     cmds:
+      - node ../scripts/app-display-name.mjs --sync-build-metadata
       - wails3 update build-assets -name "{{.APP_NAME}}" -binaryname "{{.APP_NAME}}" -config config.yml -dir .
+      - node ../scripts/app-display-name.mjs --sync-macos-plists
 
   build:server:
     summary: Builds the application in server mode (no GUI, HTTP server only)
@@ -261,7 +263,7 @@ tasks:
     cmds:
       - '{{if eq .OBFUSCATED "true"}}garble {{.GARBLE_ARGS}} build{{else}}go build{{end}} {{.BUILD_FLAGS}} -o "{{.BIN_DIR}}/{{.APP_NAME}}-server{{exeExt}}"'
     vars:
-      BUILD_FLAGS: '-tags server{{if eq .DEV "true"}}{{if eq .OBFUSCATED "true"}},wails_obfuscated{{end}}{{if .EXTRA_TAGS}},{{.EXTRA_TAGS}}{{end}} -buildvcs=false -gcflags=all="-l" -ldflags="-X dn-wails/internal/buildinfo.Version={{.DEV_VERSION}}{{if .LD_FLAGS}} {{.LD_FLAGS}}{{end}}"{{else}},production{{if eq .OBFUSCATED "true"}},wails_obfuscated{{end}}{{if .EXTRA_TAGS}},{{.EXTRA_TAGS}}{{end}} -trimpath -buildvcs=false -ldflags="-w -s{{if .LD_FLAGS}} {{.LD_FLAGS}}{{else}} -X dn-wails/internal/buildinfo.Version={{.APP_VERSION}}{{end}}"{{end}}'
+      BUILD_FLAGS: '-tags server{{if eq .DEV "true"}}{{if eq .OBFUSCATED "true"}},wails_obfuscated{{end}}{{if .EXTRA_TAGS}},{{.EXTRA_TAGS}}{{end}} -buildvcs=false -gcflags=all="-l" -ldflags="-X cull-pear/internal/buildinfo.Version={{.DEV_VERSION}}{{if .LD_FLAGS}} {{.LD_FLAGS}}{{end}}"{{else}},production{{if eq .OBFUSCATED "true"}},wails_obfuscated{{end}}{{if .EXTRA_TAGS}},{{.EXTRA_TAGS}}{{end}} -trimpath -buildvcs=false -ldflags="-w -s{{if .LD_FLAGS}} {{.LD_FLAGS}}{{else}} -X cull-pear/internal/buildinfo.Version={{.APP_VERSION}}{{end}}"{{end}}'
 
   run:server:
     summary: Builds and runs a development server (DEV=true)

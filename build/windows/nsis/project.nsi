@@ -19,11 +19,11 @@ Unicode true
 ####
 ## The following information is taken from the wails_tools.nsh file, but they can be overwritten here.
 ####
-## !define INFO_PROJECTNAME    "my-project" # Default "dn-wails"
-## !define INFO_COMPANYNAME    "My Company" # Default "10958"
+## !define INFO_PROJECTNAME    "my-project" # Default "cull-pear"
+## !define INFO_COMPANYNAME    "My Company" # Default "zxm965"
 ## !define INFO_PRODUCTNAME    "Product Name" # Default "Cull Pear"
 ## !define INFO_PRODUCTVERSION "1.0.0"     # Default "0.0.4"
-## !define INFO_COPYRIGHT      "(c) Now, My Company" # Default "© 2026, 10958"
+## !define INFO_COPYRIGHT      "(c) Now, My Company" # Default "© 2026, zxm965"
 ###
 ## !define PRODUCT_EXECUTABLE  "Application.exe"      # Default "${INFO_PROJECTNAME}.exe"
 ## !define UNINST_KEY_NAME     "UninstKeyInRegistry"  # Default "${INFO_COMPANYNAME}${INFO_PRODUCTNAME}"
@@ -106,8 +106,8 @@ Section "uninstall"
     !insertmacro wails.setShellContext
 
     RMDir /r "$AppData\${PRODUCT_EXECUTABLE}" # Remove the WebView2 DataPath
-    Delete "$AppData\dn-wails\installation.json"
-    RMDir "$AppData\dn-wails"
+    Delete "$AppData\cull-pear\installation.json"
+    RMDir "$AppData\cull-pear"
 
     RMDir /r $INSTDIR
 

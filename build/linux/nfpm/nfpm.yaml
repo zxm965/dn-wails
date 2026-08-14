@@ -3,26 +3,26 @@
 #
 # The lines below are called `modelines`. See `:help modeline`
 
-name: "dn-wails"
+name: "cull-pear"
 arch: ${GOARCH}
 platform: "linux"
-version: "0.0.9"
+version: "0.0.15"
 section: "default"
 priority: "extra"
 maintainer: ${GIT_COMMITTER_NAME} <${GIT_COMMITTER_EMAIL}>
 description: "Cull Pear desktop application"
-vendor: "10958"
+vendor: "zxm965"
 homepage: "https://wails.io"
 license: "MIT"
 release: "1"
 
 contents:
-  - src: "./bin/dn-wails"
-    dst: "/usr/local/bin/dn-wails"
+  - src: "./bin/cull-pear"
+    dst: "/usr/local/bin/cull-pear"
   - src: "./build/appicon.png"
-    dst: "/usr/share/icons/hicolor/128x128/apps/dn-wails.png"
-  - src: "./build/linux/dn-wails.desktop"
-    dst: "/usr/share/applications/dn-wails.desktop"
+    dst: "/usr/share/icons/hicolor/128x128/apps/cull-pear.png"
+  - src: "./build/linux/cull-pear.desktop"
+    dst: "/usr/share/applications/cull-pear.desktop"
 
 # Default dependencies for the GTK4 + WebKitGTK 6.0 stack (Ubuntu 24.04+ / Debian 13+)
 depends:

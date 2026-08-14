@@ -14,7 +14,7 @@ import (
 	"strings"
 	"testing"
 
-	coreupdate "dn-wails/internal/appupdate"
+	coreupdate "cull-pear/internal/appupdate"
 )
 
 type clientIdentityStub struct {
@@ -56,7 +56,7 @@ func TestEndpointSourceLoadsGitHubReleaseEndpoint(t *testing.T) {
   "prerelease": false,
   "published_at": "2026-08-11T07:57:28Z",
   "assets": [{
-    "name": "dn-wails-windows-amd64-installer.exe",
+    "name": "cull-pear-windows-amd64-installer.exe",
     "digest": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
     "size": 200
   }]
@@ -71,7 +71,7 @@ func TestEndpointSourceLoadsGitHubReleaseEndpoint(t *testing.T) {
 	if release.Version != "1.4.0" || release.Name != "v1.4.0" || release.Notes != "Release notes" {
 		t.Fatalf("unexpected release metadata: %+v", release)
 	}
-	if len(release.Assets) != 1 || release.Assets[0].DownloadURL != server.URL+"/github/releases/download?filename=dn-wails-windows-amd64-installer.exe&version=v1.4.0" {
+	if len(release.Assets) != 1 || release.Assets[0].DownloadURL != server.URL+"/github/releases/download?filename=cull-pear-windows-amd64-installer.exe&version=v1.4.0" {
 		t.Fatalf("unexpected release assets: %+v", release.Assets)
 	}
 }
@@ -85,7 +85,7 @@ func TestEndpointSourceDoesNotUseGitHubReleaseAssetDownloadURL(t *testing.T) {
   "draft": false,
   "prerelease": false,
   "assets": [{
-    "name": "dn-wails-windows-amd64-installer.exe",
+    "name": "cull-pear-windows-amd64-installer.exe",
 	"browser_download_url": "https://download.example.com/attacker.exe",
     "digest": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
     "size": 200
@@ -95,7 +95,7 @@ func TestEndpointSourceDoesNotUseGitHubReleaseAssetDownloadURL(t *testing.T) {
 	if err != nil {
 		t.Fatalf("load release metadata: %v", err)
 	}
-	if got := release.Assets[0].DownloadURL; got != "https://nexus.example.com/github/releases/download?filename=dn-wails-windows-amd64-installer.exe&version=v1.4.0" {
+	if got := release.Assets[0].DownloadURL; got != "https://nexus.example.com/github/releases/download?filename=cull-pear-windows-amd64-installer.exe&version=v1.4.0" {
 		t.Fatalf("unexpected generated download URL: %s", got)
 	}
 }
@@ -111,7 +111,7 @@ func TestEndpointSourceRejectsMismatchedGitHubRelease(t *testing.T) {
   "draft": false,
   "prerelease": false,
   "assets": [{
-    "name": "dn-wails-windows-amd64-installer.exe",
+    "name": "cull-pear-windows-amd64-installer.exe",
     "digest": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
     "size": 100
   }]
@@ -132,7 +132,7 @@ func TestEndpointSourceRejectsReleaseTagWithoutVersionPrefix(t *testing.T) {
 		TagName: "1.4.0",
 		HTMLURL: "https://github.com/zxm965/dn-wails/releases/tag/1.4.0",
 		Assets: []githubReleaseAsset{{
-			Name:   "dn-wails-windows-amd64-installer.exe",
+			Name:   "cull-pear-windows-amd64-installer.exe",
 			Digest: "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
 			Size:   100,
 		}},
@@ -158,7 +158,7 @@ func TestEndpointSourceRejectsUnsafeGitHubReleaseAssets(t *testing.T) {
 	t.Parallel()
 
 	baseAsset := githubReleaseAsset{
-		Name:   "dn-wails-windows-amd64-installer.exe",
+		Name:   "cull-pear-windows-amd64-installer.exe",
 		Digest: "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
 		Size:   100,
 	}
@@ -231,7 +231,7 @@ func TestEndpointSourceDownloadsAndVerifiesAsset(t *testing.T) {
 		if request.Header.Get("X-App-Version") != "1.0.0" {
 			t.Fatalf("unexpected application version header %q", request.Header.Get("X-App-Version"))
 		}
-		expectedUserAgent := fmt.Sprintf("dn-wails-updater/1.0.0 (%s; %s)", runtime.GOOS, runtime.GOARCH)
+		expectedUserAgent := fmt.Sprintf("cull-pear-updater/1.0.0 (%s; %s)", runtime.GOOS, runtime.GOARCH)
 		if request.Header.Get("User-Agent") != expectedUserAgent {
 			t.Fatalf("unexpected updater user agent %q", request.Header.Get("User-Agent"))
 		}

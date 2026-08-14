@@ -60,6 +60,24 @@ func (s *PostgresService) Close() error {
 	return nil
 }
 
+func (s *PostgresService) Health() error {
+	ctx, cancel := databaseContext()
+	defer cancel()
+
+	var schemaReady bool
+	if err := s.pool.QueryRow(ctx, `
+		select to_regclass('public.dn_role_profession') is not null
+			and to_regclass('public.dn_weekly_plan') is not null
+			and to_regclass('public.sys_site_message') is not null
+	`).Scan(&schemaReady); err != nil {
+		return fmt.Errorf("check DN database health: %w", err)
+	}
+	if !schemaReady {
+		return fmt.Errorf("%w: DN database schema is incomplete", ErrUnavailable)
+	}
+	return nil
+}
+
 func databaseContext() (context.Context, context.CancelFunc) {
 	return context.WithTimeout(context.Background(), 10*time.Second)
 }

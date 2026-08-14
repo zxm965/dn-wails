@@ -1,4 +1,4 @@
-import { GetLifecycleStatus } from '@bindings/dn-wails/internal/application/app'
+import { GetLifecycleStatus } from '@bindings/cull-pear/internal/application/app'
 import { Events } from '@wailsio/runtime'
 
 const SECOND_INSTANCE_EVENT = 'app:second-instance'

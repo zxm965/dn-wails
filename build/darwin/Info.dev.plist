@@ -2,8 +2,10 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 	<dict>
+		<key>CFBundleDisplayName</key>
+		<string>Cull Pear</string>
 		<key>CFBundleExecutable</key>
-		<string>dn-wails</string>
+		<string>cull-pear</string>
 		<key>CFBundleGetInfoString</key>
 		<string>Built with Wails v3</string>
 		<key>CFBundleIconFile</key>
@@ -11,15 +13,15 @@
 		<key>CFBundleIconName</key>
 		<string>appicon</string>
 		<key>CFBundleIdentifier</key>
-		<string>com.10958.dnwails</string>
+		<string>com.zxm965.cullpear</string>
 		<key>CFBundleName</key>
 		<string>Cull Pear</string>
 		<key>CFBundlePackageType</key>
 		<string>APPL</string>
 		<key>CFBundleShortVersionString</key>
-		<string>0.0.9</string>
+		<string>0.0.15</string>
 		<key>CFBundleVersion</key>
-		<string>0.0.9</string>
+		<string>0.0.15</string>
 		<key>LSMinimumSystemVersion</key>
 		<string>12.0.0</string>
 		<key>NSAppTransportSecurity</key>
@@ -30,6 +32,6 @@
 		<key>NSHighResolutionCapable</key>
 		<string>true</string>
 		<key>NSHumanReadableCopyright</key>
-		<string>© 2026, 10958</string>
+		<string>© 2026, zxm965</string>
 	</dict>
 </plist>

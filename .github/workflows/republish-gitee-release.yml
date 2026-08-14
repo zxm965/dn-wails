@@ -47,7 +47,7 @@ jobs:
           gh release download "$RELEASE_TAG" \
             --repo "$GITHUB_REPOSITORY" \
             --dir release \
-            --pattern 'dn-wails-*'
+            --pattern 'cull-pear-*'
           published_at="$(gh release view "$RELEASE_TAG" --repo "$GITHUB_REPOSITORY" --json publishedAt --jq '.publishedAt')"
           echo "RELEASE_PUBLISHED_AT=$published_at" >> "$GITHUB_ENV"
 

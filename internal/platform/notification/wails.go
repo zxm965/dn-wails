@@ -1,7 +1,7 @@
 package notification
 
 import (
-	systemnotification "dn-wails/internal/notification"
+	systemnotification "cull-pear/internal/notification"
 
 	"github.com/wailsapp/wails/v3/pkg/services/notifications"
 )

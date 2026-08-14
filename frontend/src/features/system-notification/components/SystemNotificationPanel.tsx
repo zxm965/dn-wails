@@ -1,7 +1,8 @@
+import { BellRing, Send, ShieldCheck } from 'lucide-react'
 import { type FormEvent, useCallback, useMemo, useState } from 'react'
 
 import { useSettings } from '@/features/settings'
-import { Badge, Button, Card, Input, Label, Textarea } from '@/shared/components/ui'
+import { Badge, Button, Input, Label, Textarea } from '@/shared/components/ui'
 import { createScopedClassNames } from '@/shared/lib/classNames'
 
 import { type NotificationActivation, useSystemNotification } from '../hooks/useSystemNotification'
@@ -14,14 +15,6 @@ const DEMO_CONVERSATION_ID = 'system-notification-demo'
 const DEFAULT_SENDER = '产品小助手'
 const DEFAULT_CONTENT = '你收到一条新的项目消息，点击系统通知可以返回这个会话。'
 
-function currentTime(): string {
-  return new Intl.DateTimeFormat('zh-CN', {
-    hour: '2-digit',
-    minute: '2-digit',
-    hour12: false,
-  }).format(new Date())
-}
-
 interface SystemNotificationPanelProps {
   embedded?: boolean
 }
@@ -30,9 +23,6 @@ export function SystemNotificationPanel({ embedded = false }: SystemNotification
   const { settings } = useSettings()
   const [sender, setSender] = useState(DEFAULT_SENDER)
   const [content, setContent] = useState(DEFAULT_CONTENT)
-  const [previewSender, setPreviewSender] = useState(DEFAULT_SENDER)
-  const [previewContent, setPreviewContent] = useState(DEFAULT_CONTENT)
-  const [previewTime, setPreviewTime] = useState(currentTime)
   const [feedback, setFeedback] = useState('填写消息内容后，发送一条原生系统通知。')
   const [formError, setFormError] = useState('')
   const [isSending, setIsSending] = useState(false)
@@ -48,7 +38,7 @@ export function SystemNotificationPanel({ embedded = false }: SystemNotification
     onActivated: handleActivated,
   })
 
-  const avatarText = useMemo(() => previewSender.trim().slice(0, 1) || '消', [previewSender])
+  const avatarText = useMemo(() => sender.trim().slice(0, 1) || '消', [sender])
 
   const notificationPolicyReady = settings.notifications.enabled && !settings.notifications.doNotDisturb
 
@@ -112,9 +102,6 @@ export function SystemNotificationPanel({ embedded = false }: SystemNotification
         content: normalizedContent,
         conversationId: DEMO_CONVERSATION_ID,
       })
-      setPreviewSender(normalizedSender)
-      setPreviewContent(normalizedContent)
-      setPreviewTime(currentTime())
       setFeedback('系统通知已发送，点击通知可唤醒应用并返回当前会话。')
     } catch {
       setFeedback('系统通知发送失败。')
@@ -131,14 +118,19 @@ export function SystemNotificationPanel({ embedded = false }: SystemNotification
       aria-labelledby='system-notification-title'
     >
       <div className={cx('system-notification-heading')}>
-        <div>
-          <p className={cx('system-notification-eyebrow')}>System notification</p>
-          {embedded ? (
-            <h2 id='system-notification-title'>系统通知</h2>
-          ) : (
-            <h1 id='system-notification-title'>微信式消息通知</h1>
-          )}
-          <p className={cx('system-notification-description')}>统一处理系统能力检测、权限申请、消息发送和点击唤醒。</p>
+        <div className={cx('system-notification-heading-main')}>
+          <span className={cx('system-notification-heading-icon')} aria-hidden='true'>
+            <BellRing />
+          </span>
+          <div>
+            <p className={cx('system-notification-eyebrow')}>System notification</p>
+            {embedded ? (
+              <h2 id='system-notification-title'>系统通知</h2>
+            ) : (
+              <h1 id='system-notification-title'>微信式消息通知</h1>
+            )}
+            <p className={cx('system-notification-description')}>检测权限、发送通知并验证点击唤醒。</p>
+          </div>
         </div>
         <Badge className={cx(`notification-status ${statusCopy.className}`)}>
           <span className={cx('notification-status-dot')} aria-hidden='true' />
@@ -146,32 +138,20 @@ export function SystemNotificationPanel({ embedded = false }: SystemNotification
         </Badge>
       </div>
 
-      <div className={cx('system-notification-grid')}>
-        <Card className={cx('message-preview-card')} aria-label='消息通知预览'>
-          <div className={cx('message-preview-toolbar')}>
-            <span>消息</span>
-            <span className={cx('message-preview-count')}>1</span>
-          </div>
-          <div className={cx('message-preview-item')}>
-            <div className={cx('message-preview-avatar')} aria-hidden='true'>
-              {avatarText}
-            </div>
-            <div className={cx('message-preview-body')}>
-              <div className={cx('message-preview-meta')}>
-                <strong>{previewSender}</strong>
-                <time>{previewTime}</time>
-              </div>
-              <p>{previewContent}</p>
-            </div>
-            <span className={cx('message-preview-unread')} aria-label='1 条未读消息'>
-              1
-            </span>
-          </div>
-          <p className={cx('message-preview-tip')}>系统通知标题使用发送者名称，正文显示消息摘要。</p>
-        </Card>
+      <div className={cx('notification-preview')} aria-label='系统通知实时预览'>
+        <span className={cx('notification-preview-avatar')} aria-hidden='true'>
+          {avatarText}
+        </span>
+        <div className={cx('notification-preview-copy')}>
+          <span>Live preview</span>
+          <strong>{sender.trim() || '未填写发送者'}</strong>
+          <p>{content.trim() || '输入消息内容后在这里预览。'}</p>
+        </div>
+      </div>
 
-        <form className={cx('notification-form')} onSubmit={handleSubmit}>
-          <div className={cx('notification-field')}>
+      <form className={cx('notification-form')} onSubmit={handleSubmit}>
+        <div className={cx('notification-composer')}>
+          <div className={cx('notification-field notification-sender-row')}>
             <Label htmlFor='notification-sender'>发送者</Label>
             <Input
               id='notification-sender'
@@ -183,18 +163,22 @@ export function SystemNotificationPanel({ embedded = false }: SystemNotification
           </div>
 
           <div className={cx('notification-field')}>
-            <Label htmlFor='notification-content'>消息内容</Label>
+            <div className={cx('notification-field-heading')}>
+              <Label htmlFor='notification-content'>消息内容</Label>
+              <span className={cx('notification-field-counter')}>{content.length}/500</span>
+            </div>
             <Textarea
               id='notification-content'
               value={content}
               onChange={(event) => setContent(event.target.value)}
-              rows={4}
+              rows={2}
               maxLength={500}
               disabled={isSending}
             />
-            <span className={cx('notification-field-counter')}>{content.length}/500</span>
           </div>
+        </div>
 
+        <div className={cx('notification-footer')}>
           <p
             className={cx(`notification-feedback${visibleError ? ' is-error' : ''}`)}
             role={visibleError ? 'alert' : 'status'}
@@ -211,6 +195,7 @@ export function SystemNotificationPanel({ embedded = false }: SystemNotification
                 onClick={handlePermissionRequest}
                 disabled={isRequestingPermission}
               >
+                <ShieldCheck aria-hidden='true' />
                 {isRequestingPermission ? '正在申请…' : '开启系统通知'}
               </Button>
             )}
@@ -220,11 +205,12 @@ export function SystemNotificationPanel({ embedded = false }: SystemNotification
               variant='primary'
               disabled={capability !== 'ready' || !notificationPolicyReady || isSending}
             >
+              <Send aria-hidden='true' />
               {isSending ? '正在发送…' : '发送测试消息'}
             </Button>
           </div>
-        </form>
-      </div>
+        </div>
+      </form>
     </section>
   )
 }

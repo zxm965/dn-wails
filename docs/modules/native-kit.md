@@ -10,7 +10,7 @@
 - `internal/platform/nativekit/wails.go`：Wails v3 App、WebviewWindow、Dialog、Clipboard、Browser 与 Screen API 适配。
 - `internal/application/native.go`：前端绑定门面。
 - `frontend/src/shared/native-kit/`：类型化前端 API 和拖放订阅。
-- `frontend/src/features/devtools/`：集中提供 Native Kit 人工验证入口。
+- `frontend/src/features/devtools/`：在默认关闭的“桌面实验室”页签中提供精简的 Native Kit 人工验证入口。
 
 ## 能力清单
 

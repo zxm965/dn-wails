@@ -94,7 +94,7 @@ async function getReleaseByTag() {
       `/repos/${encodeURIComponent(owner)}/${encodeURIComponent(name)}/releases/tags/${encodeURIComponent(tag)}`,
       true,
     ),
-    { headers: { Accept: 'application/json', 'User-Agent': 'dn-wails-release-publisher' } },
+    { headers: { Accept: 'application/json', 'User-Agent': 'cull-pear-release-publisher' } },
   )
   if (response.status === 404) return null
   return responsePayload(response, 'query Gitee release', [200])
@@ -117,7 +117,7 @@ async function createRelease() {
     apiURL(`/repos/${encodeURIComponent(owner)}/${encodeURIComponent(name)}/releases`),
     {
       method: 'POST',
-      headers: { Accept: 'application/json', 'User-Agent': 'dn-wails-release-publisher' },
+      headers: { Accept: 'application/json', 'User-Agent': 'cull-pear-release-publisher' },
       body: releaseForm(true),
     },
   )
@@ -129,7 +129,7 @@ async function updateRelease(releaseID) {
     apiURL(`/repos/${encodeURIComponent(owner)}/${encodeURIComponent(name)}/releases/${releaseID}`),
     {
       method: 'PATCH',
-      headers: { Accept: 'application/json', 'User-Agent': 'dn-wails-release-publisher' },
+      headers: { Accept: 'application/json', 'User-Agent': 'cull-pear-release-publisher' },
       body: releaseForm(false),
     },
   )
@@ -151,7 +151,7 @@ async function listAttachments(id) {
   endpoint.searchParams.set('page', '1')
   endpoint.searchParams.set('per_page', '100')
   const response = await fetch(endpoint, {
-    headers: { Accept: 'application/json', 'User-Agent': 'dn-wails-release-publisher' },
+    headers: { Accept: 'application/json', 'User-Agent': 'cull-pear-release-publisher' },
   })
   const payload = await responsePayload(response, 'list Gitee release attachments', [200])
   if (!Array.isArray(payload)) throw new Error('Gitee attachment response must be an array')
@@ -166,7 +166,7 @@ async function deleteAttachment(releaseIDValue, attachmentID, attachmentName) {
     ),
     {
       method: 'DELETE',
-      headers: { Accept: 'application/json', 'User-Agent': 'dn-wails-release-publisher' },
+      headers: { Accept: 'application/json', 'User-Agent': 'cull-pear-release-publisher' },
     },
   )
   await responsePayload(response, `delete Gitee release attachment ${attachmentName}`, [200, 204])
@@ -183,7 +183,7 @@ async function uploadAttachment(releaseIDValue, attachment) {
     ),
     {
       method: 'POST',
-      headers: { Accept: 'application/json', 'User-Agent': 'dn-wails-release-publisher' },
+      headers: { Accept: 'application/json', 'User-Agent': 'cull-pear-release-publisher' },
       body: form,
       signal: AbortSignal.timeout(30 * 60 * 1000),
     },

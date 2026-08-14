@@ -154,6 +154,14 @@ const settingsToggles = style({
   flexDirection: 'column',
 })
 
+const settingsToggleGroup = style({
+  selectors: {
+    '& + &': {
+      borderTop: '1px solid var(--border-subtle)',
+    },
+  },
+})
+
 const settingsToggleRow = style([
   {
     position: 'relative',
@@ -187,6 +195,16 @@ const isDisabled = style({
   },
 })
 
+const isNested = style({
+  selectors: {
+    [`${settingsToggleRow}&`]: {
+      marginLeft: '22px',
+      paddingLeft: '14px',
+      borderLeft: '2px solid color-mix(in srgb, var(--accent) 28%, var(--border-subtle))',
+    },
+  },
+})
+
 export const styles = {
   'settings-panel': settingsPanel,
   'settings-state': settingsState,
@@ -208,8 +226,10 @@ export const styles = {
   'is-purple': isPurple,
   'is-orange': isOrange,
   'settings-toggles': settingsToggles,
+  'settings-toggle-group': settingsToggleGroup,
   'settings-toggle-row': settingsToggleRow,
   'is-disabled': isDisabled,
+  'is-nested': isNested,
 } as const
 
 globalStyle(`${settingsSectionTitle} h2`, {

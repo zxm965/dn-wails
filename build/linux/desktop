@@ -3,9 +3,9 @@ Version=1.0
 Name=Cull Pear
 Comment=Cull Pear desktop application
 # The Exec line includes %u to pass the URL to the application
-Exec=/usr/local/bin/dn-wails %u
+Exec=/usr/local/bin/cull-pear %u
 Terminal=false
 Type=Application
-Icon=dn-wails
+Icon=cull-pear
 Categories=Utility;
-StartupWMClass=dn-wails
+StartupWMClass=cull-pear

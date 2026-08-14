@@ -1,7 +1,6 @@
 import { globalStyle, style } from '@vanilla-extract/css'
 
 import { styles as buttonStyles } from '../../../shared/components/ui/Button.css'
-import { styles as cardStyles } from '../../../shared/components/ui/Card.css'
 
 const dnPage = style({
   width: 'min(var(--page-content-max-width), 100%)',
@@ -11,124 +10,6 @@ const dnPage = style({
   padding: 'var(--page-padding-start) var(--page-padding-inline) var(--page-padding-end)',
   containerName: 'dn-page',
   containerType: 'inline-size',
-})
-
-const dnDashboardOverview = style([
-  {
-    display: 'grid',
-    alignItems: 'start',
-    gridTemplateColumns: 'minmax(0, 1.65fr) minmax(280px, 0.75fr)',
-    gap: '16px',
-  },
-  {
-    '@container': {
-      'dn-page (max-width: 880px)': {
-        gridTemplateColumns: '1fr',
-      },
-    },
-  },
-])
-
-const dnDashboardGrid = style([
-  {
-    display: 'grid',
-    alignItems: 'start',
-    gridTemplateColumns: 'minmax(0, 1.65fr) minmax(280px, 0.75fr)',
-    gap: '16px',
-  },
-  {
-    '@container': {
-      'dn-page (max-width: 880px)': {
-        gridTemplateColumns: '1fr',
-      },
-    },
-  },
-])
-
-const dnProgressCard = style({})
-
-const dnPriorityCard = style({
-  background:
-    'linear-gradient(\n    180deg,\n    var(--surface-elevated),\n    color-mix(in srgb, var(--surface-muted) 50%, transparent)\n  )',
-})
-
-const dnProgressSummary = style([
-  {
-    display: 'grid',
-    gridTemplateColumns: 'minmax(0, 1fr) auto',
-    alignItems: 'center',
-    gap: '28px',
-    padding: 'clamp(20px, 3vw, 28px)',
-  },
-  {
-    '@container': {
-      'dn-page (max-width: 620px)': {
-        gridTemplateColumns: '1fr',
-      },
-    },
-  },
-])
-
-const dnKicker = style({
-  display: 'inline-flex',
-  alignItems: 'center',
-  gap: '7px',
-  color: 'var(--text-secondary)',
-  fontSize: '12px',
-  fontWeight: '800',
-})
-
-const dnProgressValue = style({
-  marginTop: '8px',
-  fontSize: 'clamp(46px, 8vw, 66px)',
-  fontWeight: '850',
-  letterSpacing: '-0.04em',
-  lineHeight: '1',
-})
-
-const dnProgressRing = style([
-  {
-    width: '124px',
-    height: '124px',
-    display: 'grid',
-    placeItems: 'center',
-    padding: '9px',
-    background: 'conic-gradient(var(--accent) var(--dn-progress), var(--surface-muted) 0deg)',
-    borderRadius: '50%',
-    vars: {
-      '--dn-progress': '0deg',
-    },
-  },
-  {
-    '@container': {
-      'dn-page (max-width: 620px)': {
-        width: '108px',
-        height: '108px',
-        justifySelf: 'center',
-      },
-    },
-  },
-])
-
-const dnOverviewMetrics = style([
-  {
-    display: 'grid',
-    gridTemplateColumns: 'repeat(3, minmax(0, 1fr))',
-    borderTop: '1px solid var(--border-subtle)',
-  },
-  {
-    '@container': {
-      'dn-page (max-width: 620px)': {
-        gridTemplateColumns: '1fr',
-      },
-    },
-  },
-])
-
-const dnPendingCopy = style({
-  minHeight: '40px',
-  margin: '16px 0 18px !important',
-  lineHeight: '1.55',
 })
 
 const dnCardHeadingRow = style({
@@ -149,58 +30,6 @@ const dnCardHeaderCopy = style({
   margin: '4px 0 0',
   color: 'var(--text-tertiary)',
   fontSize: '11px',
-})
-
-const dnCompleteState = style({
-  minHeight: '240px',
-  display: 'grid',
-  placeContent: 'center',
-  justifyItems: 'center',
-  gap: '8px',
-  textAlign: 'center',
-})
-
-const dnPendingGrid = style([
-  {
-    display: 'grid',
-    gridTemplateColumns: 'repeat(2, minmax(0, 1fr))',
-    gap: '10px',
-  },
-  {
-    '@container': {
-      'dn-page (max-width: 620px)': {
-        gridTemplateColumns: '1fr',
-      },
-    },
-  },
-])
-
-const dnPendingItem = style({
-  minWidth: '0',
-  padding: '13px',
-  background: 'var(--surface-muted)',
-  border: '1px solid var(--border-subtle)',
-  borderRadius: '11px',
-})
-
-const dnInlineProgress = style({
-  display: 'flex',
-  alignItems: 'center',
-  justifyContent: 'space-between',
-  gap: '12px',
-  margin: '22px 0 8px',
-  color: 'var(--text-secondary)',
-  fontSize: '11px',
-  selectors: {
-    [`${dnPendingItem} &`]: {
-      margin: '13px 0 7px',
-    },
-  },
-})
-
-const dnTicketList = style({
-  display: 'grid',
-  gap: '8px',
 })
 
 const dnFilterGrid = style({
@@ -797,23 +626,8 @@ const siteMessagePopupContent = style({
 
 export const styles = {
   'dn-page': dnPage,
-  'dn-dashboard-overview': dnDashboardOverview,
-  'dn-dashboard-grid': dnDashboardGrid,
-  'dn-progress-card': dnProgressCard,
-  'dn-priority-card': dnPriorityCard,
-  'dn-progress-summary': dnProgressSummary,
-  'dn-kicker': dnKicker,
-  'dn-progress-value': dnProgressValue,
-  'dn-progress-ring': dnProgressRing,
-  'dn-overview-metrics': dnOverviewMetrics,
-  'dn-pending-copy': dnPendingCopy,
   'dn-card-heading-row': dnCardHeadingRow,
   'dn-card-header-copy': dnCardHeaderCopy,
-  'dn-inline-progress': dnInlineProgress,
-  'dn-complete-state': dnCompleteState,
-  'dn-pending-grid': dnPendingGrid,
-  'dn-pending-item': dnPendingItem,
-  'dn-ticket-list': dnTicketList,
   'dn-filter-grid': dnFilterGrid,
   'dn-role-filter-grid': dnRoleFilterGrid,
   'dn-weekly-filter-grid': dnWeeklyFilterGrid,
@@ -876,102 +690,6 @@ globalStyle(`${dnPage} p`, {
   overflowWrap: 'anywhere',
 })
 
-globalStyle(
-  `${dnProgressCard} ${cardStyles['ui-card-content']},
-${dnPriorityCard} ${cardStyles['ui-card-content']}`,
-  {
-    padding: '0',
-  },
-)
-
-globalStyle(`${dnKicker} svg`, {
-  width: '16px',
-  height: '16px',
-})
-
-globalStyle(`${dnProgressValue} small`, {
-  marginLeft: '5px',
-  color: 'var(--text-secondary)',
-  fontSize: '20px',
-})
-
-globalStyle(`${dnProgressSummary} p`, {
-  margin: '8px 0 18px',
-  color: 'var(--text-tertiary)',
-  fontSize: '11px',
-})
-
-globalStyle(`${dnProgressRing} > span`, {
-  width: '100%',
-  height: '100%',
-  display: 'grid',
-  placeContent: 'center',
-  textAlign: 'center',
-  background: 'var(--surface-elevated)',
-  borderRadius: '50%',
-})
-
-globalStyle(
-  `${dnProgressRing} strong,
-${dnProgressRing} small,
-${dnOverviewMetrics} strong,
-${dnOverviewMetrics} span`,
-  {
-    display: 'block',
-  },
-)
-
-globalStyle(`${dnProgressRing} strong`, {
-  fontSize: '18px',
-})
-
-globalStyle(`${dnProgressRing} small`, {
-  marginTop: '3px',
-  color: 'var(--text-tertiary)',
-  fontSize: '10px',
-})
-
-globalStyle(`${dnOverviewMetrics} > div`, {
-  padding: '15px 20px',
-})
-
-globalStyle(`${dnOverviewMetrics} > div + div`, {
-  borderLeft: '1px solid var(--border-subtle)',
-})
-
-globalStyle(`${dnOverviewMetrics} strong`, {
-  fontSize: '17px',
-})
-
-globalStyle(`${dnOverviewMetrics} span`, {
-  marginTop: '3px',
-  color: 'var(--text-tertiary)',
-  fontSize: '10px',
-})
-
-globalStyle(`${dnPriorityCard} ${cardStyles['ui-card-content']}`, {
-  minHeight: '286px',
-  display: 'flex',
-  flexDirection: 'column',
-  padding: '22px',
-})
-
-globalStyle(`${dnPriorityCard} h2`, {
-  margin: '24px 0 0',
-  fontSize: '22px',
-})
-
-globalStyle(`${dnPriorityCard} p`, {
-  margin: '5px 0 0',
-  color: 'var(--text-secondary)',
-  fontSize: '12px',
-})
-
-globalStyle(`${dnPriorityCard} ${buttonStyles.root}`, {
-  width: '100%',
-  marginTop: 'auto',
-})
-
 globalStyle(`${dnCardHeadingRow} > div`, {
   minWidth: '0',
 })
@@ -994,64 +712,6 @@ ${dnCardHeadingRow} p`,
     fontSize: '11px',
   },
 )
-
-globalStyle(`${dnInlineProgress} span`, {
-  minWidth: '0',
-  overflow: 'hidden',
-  textOverflow: 'ellipsis',
-  whiteSpace: 'nowrap',
-})
-
-globalStyle(`${dnInlineProgress} strong`, {
-  color: 'var(--text-primary)',
-  fontSize: '12px',
-})
-
-globalStyle(`${dnCompleteState} svg`, {
-  width: '42px',
-  height: '42px',
-  color: 'var(--accent)',
-})
-
-globalStyle(`${dnCompleteState} span`, {
-  color: 'var(--text-secondary)',
-  fontSize: '12px',
-})
-
-globalStyle(`${dnTicketList} article`, {
-  display: 'flex',
-  alignItems: 'center',
-  justifyContent: 'space-between',
-  gap: '12px',
-  padding: '10px 12px',
-  background: 'var(--surface-muted)',
-  borderRadius: '9px',
-})
-
-globalStyle(`${dnTicketList} article div`, {
-  minWidth: '0',
-})
-
-globalStyle(
-  `${dnTicketList} strong,
-${dnTicketList} span`,
-  {
-    display: 'block',
-  },
-)
-
-globalStyle(`${dnTicketList} strong`, {
-  overflow: 'hidden',
-  fontSize: '12px',
-  textOverflow: 'ellipsis',
-  whiteSpace: 'nowrap',
-})
-
-globalStyle(`${dnTicketList} article div span`, {
-  marginTop: '3px',
-  color: 'var(--text-tertiary)',
-  fontSize: '10px',
-})
 
 globalStyle(
   `${dnTable} th,
@@ -1247,14 +907,6 @@ globalStyle(`${dnSwitchRow} small`, {
   color: 'var(--text-tertiary)',
 })
 
-globalStyle(`${dnPriorityCard} ${cardStyles['ui-card-content']}`, {
-  '@container': {
-    'dn-page (max-width: 880px)': {
-      minHeight: '250px',
-    },
-  },
-})
-
 globalStyle(`${dnFilterActions} ${buttonStyles.root}`, {
   '@container': {
     'dn-page (max-width: 620px)': {
@@ -1276,24 +928,6 @@ globalStyle(`${dnTicketEditor} > div`, {
   '@container': {
     'dn-page (max-width: 620px)': {
       gridTemplateColumns: '1fr',
-    },
-  },
-})
-
-globalStyle(`${dnOverviewMetrics} > div + div`, {
-  '@container': {
-    'dn-page (max-width: 620px)': {
-      borderTop: '1px solid var(--border-subtle)',
-      borderLeft: '0',
-    },
-  },
-})
-
-globalStyle(`${dnTicketList} article`, {
-  '@container': {
-    'dn-page (max-width: 410px)': {
-      alignItems: 'stretch',
-      flexDirection: 'column',
     },
   },
 })

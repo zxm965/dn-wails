@@ -9,27 +9,27 @@ import (
 	"runtime"
 	"time"
 
-	"dn-wails/internal/account"
-	"dn-wails/internal/appconfig"
-	appservice "dn-wails/internal/application"
-	"dn-wails/internal/appupdate"
-	"dn-wails/internal/buildinfo"
-	"dn-wails/internal/diagnostics"
-	"dn-wails/internal/dn"
-	"dn-wails/internal/installation"
-	"dn-wails/internal/lifecycle"
-	"dn-wails/internal/nativekit"
-	"dn-wails/internal/notification"
-	platformappupdate "dn-wails/internal/platform/appupdate"
-	platformnativekit "dn-wails/internal/platform/nativekit"
-	platformnotification "dn-wails/internal/platform/notification"
-	platformsingleinstance "dn-wails/internal/platform/singleinstance"
-	platformwindow "dn-wails/internal/platform/window"
-	"dn-wails/internal/quicknotes"
-	"dn-wails/internal/settings"
-	"dn-wails/internal/singleinstance"
-	"dn-wails/internal/storage"
-	"dn-wails/internal/windowmanager"
+	"cull-pear/internal/account"
+	"cull-pear/internal/appconfig"
+	appservice "cull-pear/internal/application"
+	"cull-pear/internal/appupdate"
+	"cull-pear/internal/buildinfo"
+	"cull-pear/internal/diagnostics"
+	"cull-pear/internal/dn"
+	"cull-pear/internal/installation"
+	"cull-pear/internal/lifecycle"
+	"cull-pear/internal/nativekit"
+	"cull-pear/internal/notification"
+	platformappupdate "cull-pear/internal/platform/appupdate"
+	platformnativekit "cull-pear/internal/platform/nativekit"
+	platformnotification "cull-pear/internal/platform/notification"
+	platformsingleinstance "cull-pear/internal/platform/singleinstance"
+	platformwindow "cull-pear/internal/platform/window"
+	"cull-pear/internal/quicknotes"
+	"cull-pear/internal/settings"
+	"cull-pear/internal/singleinstance"
+	"cull-pear/internal/storage"
+	"cull-pear/internal/windowmanager"
 
 	"github.com/wailsapp/wails/v3/pkg/application"
 	"github.com/wailsapp/wails/v3/pkg/events"
@@ -45,7 +45,7 @@ var environmentFiles embed.FS
 //go:embed build/appicon.png
 var trayIcon []byte
 
-const internalApplicationName = "dn-wails"
+const internalApplicationName = "cull-pear"
 
 func main() {
 	startedAt := time.Now()
@@ -127,7 +127,7 @@ func main() {
 		&http.Client{Timeout: 30 * time.Second},
 		installationService,
 	)
-	applicationUpdateInstaller := platformappupdate.NewInstaller(internalApplicationName)
+	applicationUpdateInstaller := platformappupdate.NewInstaller(internalApplicationName, applicationConfig.DisplayName)
 	applicationUpdateService := appupdate.NewService(appupdate.Config{
 		AppName:        internalApplicationName,
 		Version:        buildinfo.Version,

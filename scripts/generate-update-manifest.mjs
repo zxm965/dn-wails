@@ -5,9 +5,9 @@ import { resolve } from 'node:path'
 
 const maximumAssetSize = 1024 * 1024 * 1024
 const assetNames = [
-  'dn-wails-darwin-universal.dmg',
-  'dn-wails-darwin-universal.zip',
-  'dn-wails-windows-amd64-installer.exe',
+  'cull-pear-darwin-universal.dmg',
+  'cull-pear-darwin-universal.zip',
+  'cull-pear-windows-amd64-installer.exe',
 ]
 
 const tag = process.argv[2]?.trim() ?? ''

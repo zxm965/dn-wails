@@ -143,6 +143,112 @@ export class MessageNotificationRequest {
     }
 }
 
+export class RuntimeServiceStatus {
+    "key": string;
+    "label": string;
+    "status": string;
+    "detail": string;
+
+    /** Creates a new RuntimeServiceStatus instance. */
+    constructor($$source: Partial<RuntimeServiceStatus> = {}) {
+        if (!("key" in $$source)) {
+            this["key"] = "";
+        }
+        if (!("label" in $$source)) {
+            this["label"] = "";
+        }
+        if (!("status" in $$source)) {
+            this["status"] = "";
+        }
+        if (!("detail" in $$source)) {
+            this["detail"] = "";
+        }
+
+        Object.assign(this, $$source);
+    }
+
+    /**
+     * Creates a new RuntimeServiceStatus instance from a string or object.
+     */
+    static createFrom($$source: any = {}): RuntimeServiceStatus {
+        let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
+        return new RuntimeServiceStatus($$parsedSource as Partial<RuntimeServiceStatus>);
+    }
+}
+
+export class RuntimeStatus {
+    "overall": string;
+    "checkedAt": string;
+    "startedAt": string;
+    "uptimeSeconds": number;
+    "ready": boolean;
+    "secondInstanceCount": number;
+    "appVersion": string;
+    "goVersion": string;
+    "os": string;
+    "arch": string;
+    "logDirectory": string;
+    "logFile": string;
+    "services": RuntimeServiceStatus[];
+
+    /** Creates a new RuntimeStatus instance. */
+    constructor($$source: Partial<RuntimeStatus> = {}) {
+        if (!("overall" in $$source)) {
+            this["overall"] = "";
+        }
+        if (!("checkedAt" in $$source)) {
+            this["checkedAt"] = "";
+        }
+        if (!("startedAt" in $$source)) {
+            this["startedAt"] = "";
+        }
+        if (!("uptimeSeconds" in $$source)) {
+            this["uptimeSeconds"] = 0;
+        }
+        if (!("ready" in $$source)) {
+            this["ready"] = false;
+        }
+        if (!("secondInstanceCount" in $$source)) {
+            this["secondInstanceCount"] = 0;
+        }
+        if (!("appVersion" in $$source)) {
+            this["appVersion"] = "";
+        }
+        if (!("goVersion" in $$source)) {
+            this["goVersion"] = "";
+        }
+        if (!("os" in $$source)) {
+            this["os"] = "";
+        }
+        if (!("arch" in $$source)) {
+            this["arch"] = "";
+        }
+        if (!("logDirectory" in $$source)) {
+            this["logDirectory"] = "";
+        }
+        if (!("logFile" in $$source)) {
+            this["logFile"] = "";
+        }
+        if (!("services" in $$source)) {
+            this["services"] = [];
+        }
+
+        Object.assign(this, $$source);
+    }
+
+    /**
+     * Creates a new RuntimeStatus instance from a string or object.
+     */
+    static createFrom($$source: any = {}): RuntimeStatus {
+        const $$createField12_0 = $$createType2;
+        let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
+        if ("services" in $$parsedSource) {
+            $$parsedSource["services"] = $$createField12_0($$parsedSource["services"]);
+        }
+        return new RuntimeStatus($$parsedSource as Partial<RuntimeStatus>);
+    }
+}
+
 export class SystemNotificationStatus {
     "available": boolean;
     "authorized": boolean;
@@ -170,3 +276,5 @@ export class SystemNotificationStatus {
 
 // Private type creation functions
 const $$createType0 = $Create.Array($Create.Any);
+const $$createType1 = RuntimeServiceStatus.createFrom;
+const $$createType2 = $Create.Array($$createType1);

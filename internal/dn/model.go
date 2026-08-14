@@ -1,6 +1,6 @@
 package dn
 
-import "dn-wails/internal/account"
+import "cull-pear/internal/account"
 
 const CurrentVersion = 2
 

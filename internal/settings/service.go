@@ -7,7 +7,7 @@ import (
 	"strings"
 	"sync"
 
-	"dn-wails/internal/storage"
+	"cull-pear/internal/storage"
 )
 
 const storageKey = "settings"

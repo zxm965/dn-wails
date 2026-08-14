@@ -1,6 +1,6 @@
 import type { BadgeTone } from '@/shared/components/ui'
 
-import type { WeeklyPlan, WeeklyPlanCommission, WeeklyPlanTicket } from '../api/dnSystemApi'
+import type { WeeklyPlanCommission, WeeklyPlanTicket } from '../api/dnSystemApi'
 
 export const PRIORITY_OPTIONS = [
   { label: '大号', value: 0 },
@@ -109,69 +109,6 @@ export function isValidTicketDate(value: string): boolean {
   const day = Number(match[2])
   const date = new Date(Date.UTC(2024, month - 1, day))
   return month >= 1 && month <= 12 && day >= 1 && date.getUTCMonth() === month - 1 && date.getUTCDate() === day
-}
-
-function taskProgress(plan: WeeklyPlan) {
-  const completedCommissions = plan.nestCommissions.filter((item) => item.completed).length
-  const completedFlags = WEEKLY_FLAGS.filter((flag) => plan[flag.key]).length
-  const total = plan.nestCommissions.length + 1 + WEEKLY_FLAGS.length
-  const completed = completedCommissions + Number(plan.levelCommissionCount > 0) + completedFlags
-  return {
-    completed,
-    total,
-    percent: total ? Math.round((completed / total) * 100) : 0,
-    missing: [
-      plan.nestCommissions.length && completedCommissions < plan.nestCommissions.length
-        ? `巢穴 ${completedCommissions}/${plan.nestCommissions.length}`
-        : '',
-      plan.levelCommissionCount > 0 ? '' : '每日疲劳',
-      ...WEEKLY_FLAGS.map((flag) => (plan[flag.key] ? '' : flag.label)),
-    ].filter(Boolean),
-  }
-}
-
-function ticketDaysLeft(ticket: WeeklyPlanTicket, today: Date): number | null {
-  const match = ticket.expiresAt.match(/^(\d{1,2})-(\d{1,2})$/)
-  if (!match) return null
-  const month = Number(match[1])
-  const day = Number(match[2])
-  const year = today.getFullYear()
-  const expiry = new Date(year, month - 1, day)
-  if (expiry.getMonth() !== month - 1 || expiry.getDate() !== day) return null
-  const start = new Date(year, today.getMonth(), today.getDate()).getTime()
-  return Math.floor((expiry.getTime() - start) / 86_400_000)
-}
-
-export function createDashboardSummary(plans: WeeklyPlan[], today = new Date()) {
-  const progressItems = plans
-    .map((plan) => ({ plan, ...taskProgress(plan) }))
-    .sort((a, b) => priorityMeta(a.plan.priority).rank - priorityMeta(b.plan.priority).rank || a.percent - b.percent)
-  const total = progressItems.reduce((sum, item) => sum + item.total, 0)
-  const completed = progressItems.reduce((sum, item) => sum + item.completed, 0)
-  const pending = progressItems.filter((item) => item.completed < item.total)
-  const tickets = plans
-    .flatMap((plan) =>
-      plan.nestTickets.map((ticket, index) => {
-        const daysLeft = ticketDaysLeft(ticket, today)
-        return {
-          key: `${plan.id}-${ticket.id}-${ticket.expiresAt}-${index}`,
-          roleName: plan.roleName,
-          nestLabel: getNestLabel(ticket.id),
-          expiresAt: ticket.expiresAt,
-          daysLeft,
-        }
-      }),
-    )
-    .filter((ticket) => ticket.daysLeft === null || ticket.daysLeft <= 3)
-    .sort((a, b) => (a.daysLeft ?? -999) - (b.daysLeft ?? -999))
-
-  return {
-    planCount: plans.length,
-    completedPlanCount: progressItems.filter((item) => item.total > 0 && item.completed >= item.total).length,
-    weeklyProgress: { completed, total, percent: total ? Math.round((completed / total) * 100) : 0 },
-    pending,
-    tickets,
-  }
 }
 
 export function cloneCommissions(items: WeeklyPlanCommission[]): WeeklyPlanCommission[] {

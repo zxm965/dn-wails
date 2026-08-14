@@ -1,4 +1,4 @@
-import { RequestWindowClose } from '@bindings/dn-wails/internal/application/app'
+import { RequestWindowClose } from '@bindings/cull-pear/internal/application/app'
 import { Window } from '@wailsio/runtime'
 
 export interface WindowSnapshot {

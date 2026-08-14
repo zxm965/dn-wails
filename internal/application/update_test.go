@@ -6,8 +6,8 @@ import (
 	"testing"
 	"time"
 
-	"dn-wails/internal/appupdate"
-	"dn-wails/internal/windowmanager"
+	"cull-pear/internal/appupdate"
+	"cull-pear/internal/windowmanager"
 )
 
 type applicationUpdateStub struct {

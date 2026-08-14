@@ -1,6 +1,5 @@
 import {
   CalendarCheck,
-  Gauge,
   Mails,
   NotebookPen,
   Settings,
@@ -14,6 +13,16 @@ import { isStandaloneAppView, type AppView } from './routeConfig'
 
 interface MenuPreference {
   description: string
+  children?: readonly MenuChildPreference[]
+}
+
+type MenuChildPreferenceKey = 'devtools-desktop'
+
+interface MenuChildPreference {
+  key: MenuChildPreferenceKey
+  label: string
+  description: string
+  defaultVisible: boolean
 }
 
 interface MenuEntryBase {
@@ -73,11 +82,28 @@ function defineMenuGroups<const Groups extends readonly MenuGroupDefinition[]>(g
           keys.add(child.key)
         }
       }
+
+      if ('preference' in entry && entry.preference) {
+        const preference: MenuPreference = entry.preference
+        for (const child of preference.children ?? []) {
+          if (keys.has(child.key)) {
+            throw new Error(`Duplicate menu key: ${child.key}`)
+          }
+          keys.add(child.key)
+        }
+      }
     }
   }
 
   return groups
 }
+
+export const DEVTOOLS_DESKTOP_LAB_PREFERENCE = {
+  key: 'devtools-desktop',
+  label: '桌面实验室',
+  description: '显示窗口、原生集成和系统通知的人工验证页签。',
+  defaultVisible: false,
+} as const satisfies MenuChildPreference
 
 export const MENU_GROUPS = defineMenuGroups([
   {
@@ -105,15 +131,14 @@ export const MENU_GROUPS = defineMenuGroups([
       },
       {
         key: 'dn-system',
-        label: 'DN 周常管理',
+        label: 'DN 周常',
         icon: Sparkles,
         defaultVisible: false,
-        defaultView: 'dn-dashboard',
+        defaultView: 'dn-weekly',
         preference: {
-          description: '显示 DN 仪表盘、周计划和角色管理入口。',
+          description: '显示 DN 周计划和角色管理入口。',
         },
         children: [
-          { key: 'dn-dashboard', view: 'dn-dashboard', label: '仪表盘', icon: Gauge },
           { key: 'dn-weekly', view: 'dn-weekly', label: '周计划', icon: CalendarCheck },
           { key: 'dn-roles', view: 'dn-roles', label: '角色', icon: UsersRound },
         ],
@@ -138,7 +163,8 @@ export const MENU_GROUPS = defineMenuGroups([
         icon: Wrench,
         defaultVisible: false,
         preference: {
-          description: '显示应用概览、桌面能力验证和文本工具入口。',
+          description: '显示应用概览、运行状态和文本工具入口。',
+          children: [DEVTOOLS_DESKTOP_LAB_PREFERENCE],
         },
       },
     ],
@@ -148,6 +174,7 @@ export const MENU_GROUPS = defineMenuGroups([
 type ConfiguredGroup = (typeof MENU_GROUPS)[number]
 export type MenuEntry = ConfiguredGroup['entries'][number]
 export type MenuKey = MenuEntry['key']
+export type MenuPreferenceKey = MenuKey | MenuChildPreferenceKey
 export type MenuVisibility = Readonly<Partial<Record<string, boolean>>>
 
 export interface ConfigurableMenuEntry {
@@ -155,21 +182,23 @@ export interface ConfigurableMenuEntry {
   label: string
   description: string
   defaultVisible: boolean
+  children: readonly MenuChildPreference[]
 }
 
 export const CONFIGURABLE_MENU_ENTRIES: readonly ConfigurableMenuEntry[] = MENU_GROUPS.flatMap((group) =>
-  group.entries.flatMap((entry) =>
-    'preference' in entry
-      ? [
-          {
-            key: entry.key,
-            label: entry.label,
-            description: entry.preference.description,
-            defaultVisible: entry.defaultVisible,
-          },
-        ]
-      : [],
-  ),
+  group.entries.flatMap((entry) => {
+    if (!('preference' in entry) || !entry.preference) return []
+    const preference: MenuPreference = entry.preference
+    return [
+      {
+        key: entry.key,
+        label: entry.label,
+        description: preference.description,
+        defaultVisible: entry.defaultVisible,
+        children: preference.children ?? [],
+      },
+    ]
+  }),
 )
 
 export function resolveMenuVisibility(key: string, defaultVisible: boolean, visibility: MenuVisibility): boolean {

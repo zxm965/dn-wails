@@ -2,7 +2,7 @@ import { useAppUpdate } from '@/features/app-update'
 import { Button, PageHeader, RadioGroup, Select, Slider, Switch } from '@/shared/components/ui'
 import { useFeedback } from '@/shared/feedback'
 import { createScopedClassNames } from '@/shared/lib/classNames'
-import { CONFIGURABLE_MENU_ENTRIES, resolveMenuVisibility, type MenuKey } from '@/shared/navigation'
+import { CONFIGURABLE_MENU_ENTRIES, resolveMenuVisibility, type MenuPreferenceKey } from '@/shared/navigation'
 
 import { type AccentColor, type AppSettings, type ButtonSize, type ThemeMode } from '../api/settingsApi'
 import { useSettings } from '../context/SettingsProvider'
@@ -80,7 +80,7 @@ export function SettingsPanel() {
     })).catch(() => undefined)
   }
 
-  function updateMenuVisibility(key: MenuKey, visible: boolean) {
+  function updateMenuVisibility(key: MenuPreferenceKey, visible: boolean) {
     void updateSettings((current) => ({
       ...current,
       navigation: {
@@ -149,15 +149,37 @@ export function SettingsPanel() {
           <p>按需显示功能入口；关闭后仅隐藏菜单，不影响已有数据，偏好设置始终保留。</p>
         </div>
         <div className={cx('settings-toggles')}>
-          {CONFIGURABLE_MENU_ENTRIES.map((entry) => (
-            <ToggleRow
-              key={entry.key}
-              title={entry.label}
-              description={entry.description}
-              checked={resolveMenuVisibility(entry.key, entry.defaultVisible, settings.navigation.menuVisibility)}
-              onChange={(checked) => updateMenuVisibility(entry.key, checked)}
-            />
-          ))}
+          {CONFIGURABLE_MENU_ENTRIES.map((entry) => {
+            const parentVisible = resolveMenuVisibility(
+              entry.key,
+              entry.defaultVisible,
+              settings.navigation.menuVisibility,
+            )
+            return (
+              <div key={entry.key} className={cx('settings-toggle-group')}>
+                <ToggleRow
+                  title={entry.label}
+                  description={entry.description}
+                  checked={parentVisible}
+                  onChange={(checked) => updateMenuVisibility(entry.key, checked)}
+                />
+                {entry.children.map((child) => (
+                  <ToggleRow
+                    key={child.key}
+                    title={child.label}
+                    description={child.description}
+                    checked={
+                      parentVisible &&
+                      resolveMenuVisibility(child.key, child.defaultVisible, settings.navigation.menuVisibility)
+                    }
+                    disabled={!parentVisible}
+                    nested
+                    onChange={(checked) => updateMenuVisibility(child.key, checked)}
+                  />
+                ))}
+              </div>
+            )
+          })}
         </div>
       </section>
 
@@ -333,12 +355,13 @@ interface ToggleRowProps {
   description: string
   checked: boolean
   disabled?: boolean
+  nested?: boolean
   onChange: (checked: boolean) => void
 }
 
-function ToggleRow({ title, description, checked, disabled = false, onChange }: ToggleRowProps) {
+function ToggleRow({ title, description, checked, disabled = false, nested = false, onChange }: ToggleRowProps) {
   return (
-    <label className={cx(`settings-toggle-row${disabled ? ' is-disabled' : ''}`)}>
+    <label className={cx(`settings-toggle-row${nested ? ' is-nested' : ''}${disabled ? ' is-disabled' : ''}`)}>
       <span>
         <strong>{title}</strong>
         <small>{description}</small>

@@ -2,7 +2,7 @@ import {
   CheckForApplicationUpdate,
   GetApplicationUpdateInfo,
   InstallApplicationUpdate,
-} from '@bindings/dn-wails/internal/application/app'
+} from '@bindings/cull-pear/internal/application/app'
 
 export interface ApplicationUpdateInfo {
   currentVersion: string

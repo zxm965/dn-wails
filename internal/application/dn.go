@@ -1,6 +1,6 @@
 package application
 
-import "dn-wails/internal/dn"
+import "cull-pear/internal/dn"
 
 func (a *App) ListDnRoles(query dn.RoleProfessionQuery) (dn.RoleProfessionList, error) {
 	return a.dnService.ListRoles(query)
