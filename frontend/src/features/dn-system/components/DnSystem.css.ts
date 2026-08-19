@@ -557,6 +557,23 @@ const siteMessageContent = style({
   WebkitLineClamp: '2',
 })
 
+const siteMessageActions = style([
+  {
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'flex-end',
+    gap: '4px',
+  },
+  {
+    '@container': {
+      'dn-page (max-width: 620px)': {
+        gridColumn: '1 / -1',
+        width: '100%',
+      },
+    },
+  },
+])
+
 const siteMessageDialogCopy = style({
   margin: '0',
   color: 'var(--text-secondary)',
@@ -619,9 +636,51 @@ const siteMessageCenterFooter = style({
 
 const siteMessagePopupContent = style({
   margin: '0',
-  color: 'var(--text-secondary)',
-  lineHeight: '1.75',
+  maxWidth: '760px',
+  color: 'var(--text-primary)',
+  fontSize: 'clamp(18px, 2.4vw, 28px)',
+  lineHeight: '1.8',
+  textAlign: 'center',
   whiteSpace: 'pre-wrap',
+})
+
+const siteMessagePopupHeader = style({
+  padding: 'clamp(24px, 5vh, 56px) clamp(24px, 6vw, 80px) 20px',
+  textAlign: 'center',
+  borderBottom: '0',
+})
+
+const siteMessagePopupTitle = style({
+  fontSize: 'clamp(28px, 4.5vw, 52px)',
+  letterSpacing: '-0.035em',
+})
+
+const siteMessagePopupBody = style({
+  display: 'grid',
+  placeItems: 'center',
+  alignContent: 'center',
+  gap: '28px',
+  padding: 'clamp(24px, 6vw, 88px)',
+  background:
+    'radial-gradient(circle at 50% 40%, color-mix(in srgb, var(--accent-muted) 88%, transparent), transparent 48%)',
+})
+
+const siteMessagePopupLevel = style({
+  display: 'inline-flex',
+  alignItems: 'center',
+  minHeight: '30px',
+  padding: '0 12px',
+  color: 'var(--accent)',
+  fontSize: '11px',
+  fontWeight: '800',
+  letterSpacing: '0.08em',
+  background: 'var(--accent-muted)',
+  borderRadius: '999px',
+})
+
+const siteMessagePopupFooter = style({
+  justifyContent: 'center',
+  padding: '20px clamp(24px, 6vw, 80px) clamp(24px, 5vh, 48px)',
 })
 
 export const styles = {
@@ -675,6 +734,7 @@ export const styles = {
   'is-error': isError,
   'site-message-title': siteMessageTitle,
   'site-message-content': siteMessageContent,
+  'site-message-actions': siteMessageActions,
   'site-message-dialog-copy': siteMessageDialogCopy,
   'site-message-center-trigger': siteMessageCenterTrigger,
   'site-message-center-indicator': siteMessageCenterIndicator,
@@ -684,6 +744,11 @@ export const styles = {
   'site-message-center-item': siteMessageCenterItem,
   'site-message-center-footer': siteMessageCenterFooter,
   'site-message-popup-content': siteMessagePopupContent,
+  'site-message-popup-header': siteMessagePopupHeader,
+  'site-message-popup-title': siteMessagePopupTitle,
+  'site-message-popup-body': siteMessagePopupBody,
+  'site-message-popup-level': siteMessagePopupLevel,
+  'site-message-popup-footer': siteMessagePopupFooter,
 } as const
 
 globalStyle(`${dnPage} p`, {
@@ -845,8 +910,13 @@ globalStyle(`${siteMessageItem} small`, {
   color: 'var(--text-tertiary)',
 })
 
-globalStyle(`${siteMessageItem} > ${buttonStyles.root}`, {
+globalStyle(`${siteMessageActions} ${buttonStyles.root}:first-child`, {
   maxWidth: '160px',
+})
+
+globalStyle(`${siteMessageActions} ${buttonStyles.root}:not(:first-child)`, {
+  width: 'var(--button-height-default)',
+  padding: '0',
 })
 
 globalStyle(`${siteMessageCenterTrigger} > svg`, {
@@ -915,11 +985,11 @@ globalStyle(`${dnFilterActions} ${buttonStyles.root}`, {
   },
 })
 
-globalStyle(`${siteMessageItem} > ${buttonStyles.root}`, {
+globalStyle(`${siteMessageActions} ${buttonStyles.root}:first-child`, {
   '@container': {
     'dn-page (max-width: 620px)': {
       maxWidth: 'none',
-      gridColumn: '1 / -1',
+      flex: '1',
     },
   },
 })

@@ -74,15 +74,15 @@ const titlebarActionsWindowControls = style({
 
 const titlebarLogo = style([
   {
-    width: '22px',
-    height: '22px',
+    width: '15px',
+    height: '15px',
     objectFit: 'contain',
   },
   {
     '@media': {
       '(max-width: 480px)': {
-        width: '20px',
-        height: '20px',
+        width: '14px',
+        height: '14px',
       },
     },
   },

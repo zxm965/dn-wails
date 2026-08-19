@@ -154,6 +154,7 @@ type SiteMessageQuery struct {
 	ReadStatus string `json:"readStatus"`
 	Page       int    `json:"page"`
 	PageSize   int    `json:"pageSize"`
+	Manage     bool   `json:"manage"`
 }
 
 type ListMeta struct {

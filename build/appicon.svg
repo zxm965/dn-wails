@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" role="img" aria-labelledby="title description">
+  <title id="title">Cull Pear application icon</title>
+  <desc id="description">A monochrome CP monogram on a black rounded-square background.</desc>
+  <defs>
+    <linearGradient id="background" x1="130" y1="94" x2="864" y2="914" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#111214" />
+      <stop offset="0.56" stop-color="#050506" />
+      <stop offset="1" stop-color="#000000" />
+    </linearGradient>
+    <linearGradient id="letters" x1="278" y1="256" x2="724" y2="766" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#FFFFFF" />
+      <stop offset="0.64" stop-color="#F5F5F5" />
+      <stop offset="1" stop-color="#D5D5D5" />
+    </linearGradient>
+  </defs>
+
+  <rect x="48" y="48" width="928" height="928" rx="232" fill="url(#background)" />
+  <rect x="51" y="51" width="922" height="922" rx="229" fill="none" stroke="#FFFFFF" stroke-opacity="0.08" stroke-width="6" />
+
+  <path d="M468 290H394C294 290 238 370 238 512C238 654 294 734 394 734H468" fill="none" stroke="url(#letters)" stroke-width="112" stroke-linecap="square" stroke-linejoin="round" />
+  <path d="M502 734V290H650C748 290 806 348 806 438C806 528 748 582 650 582H502" fill="none" stroke="url(#letters)" stroke-width="112" stroke-linecap="square" stroke-linejoin="round" />
+</svg>

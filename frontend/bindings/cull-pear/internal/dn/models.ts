@@ -521,6 +521,7 @@ export class SiteMessageQuery {
     "readStatus": string;
     "page": number;
     "pageSize": number;
+    "manage": boolean;
 
     /** Creates a new SiteMessageQuery instance. */
     constructor($$source: Partial<SiteMessageQuery> = {}) {
@@ -535,6 +536,9 @@ export class SiteMessageQuery {
         }
         if (!("pageSize" in $$source)) {
             this["pageSize"] = 0;
+        }
+        if (!("manage" in $$source)) {
+            this["manage"] = false;
         }
 
         Object.assign(this, $$source);

@@ -10,7 +10,7 @@ import {
 } from 'react'
 
 import { appConfig } from '@/app/appConfig'
-import appIcon from '@/assets/images/app-icon.png'
+import { BrandIcon } from '@/shared/components/brand-icon'
 import { Button } from '@/shared/components/ui'
 import { createScopedClassNames } from '@/shared/lib/classNames'
 import {
@@ -217,7 +217,7 @@ export function AppSidebar({ activeView, menuVisibility, onNavigate }: AppSideba
       style={sidebarStyle}
     >
       <div className={cx('app-sidebar-product')}>
-        <img src={appIcon} alt='' />
+        <BrandIcon className={cx('app-sidebar-logo')} />
         <div>
           <strong>{appConfig.displayName}</strong>
           <span>Desktop Application</span>

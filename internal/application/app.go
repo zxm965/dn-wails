@@ -139,9 +139,12 @@ type DnService interface {
 	ListMessages(query dn.SiteMessageQuery) (dn.SiteMessageList, error)
 	MessageInbox(limit int) (dn.SiteMessageInbox, error)
 	ClaimMessageNotifications(limit int) (dn.SiteMessageClaim, error)
+	MarkMessageNotified(id int) error
 	MarkMessageRead(id int) (dn.SiteMessage, error)
 	MarkAllMessagesRead() (int, error)
 	PublishMessage(input dn.SiteMessageInput) (dn.SiteMessage, error)
+	UpdateMessage(id int, input dn.SiteMessageInput) (dn.SiteMessage, error)
+	DeleteMessage(id int) (dn.SiteMessage, error)
 	SyncOfficialMessages() (dn.OfficialMessageSyncResult, error)
 }
 

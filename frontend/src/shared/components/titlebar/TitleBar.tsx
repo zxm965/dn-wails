@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react'
 
-import appIcon from '@/assets/images/app-icon.png'
+import { BrandIcon } from '@/shared/components/brand-icon'
 import { Button } from '@/shared/components/ui'
 import { createScopedClassNames } from '@/shared/lib/classNames'
 import { isMacOS } from '@/shared/lib/platform'
@@ -24,7 +24,7 @@ export function TitleBar({ title, actions }: TitleBarProps) {
       onDoubleClick={windowManager.toggleMaximise}
     >
       <div className={cx('titlebar-brand')}>
-        <img className={cx('titlebar-logo')} src={appIcon} alt='' />
+        <BrandIcon className={cx('titlebar-logo')} />
         <span className={cx('titlebar-title')}>{title}</span>
       </div>
 

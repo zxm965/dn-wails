@@ -133,10 +133,9 @@ const overviewProductIdentity = style({
 const overviewProductIcon = style({
   width: '54px',
   height: '54px',
-  objectFit: 'cover',
-  border: '1px solid color-mix(in srgb, var(--accent) 22%, var(--border-subtle))',
-  borderRadius: '15px',
-  boxShadow: '0 12px 26px color-mix(in srgb, var(--accent) 14%, transparent)',
+  display: 'block',
+  objectFit: 'contain',
+  background: 'transparent',
 })
 
 const overviewCardEyebrow = style({

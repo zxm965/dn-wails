@@ -8,7 +8,8 @@
 - macOS `.app` 名称读取根目录 `.env` 的 `APP_DISPLAY_NAME`，内部可执行文件仍使用稳定的 `APP_NAME`。
 - `windows/Taskfile.yml`：Windows 可执行文件和 NSIS 安装器任务。
 - `linux/Taskfile.yml`：Linux 构建与打包任务。
-- `appicon.png`：生成 macOS `icons.icns`、Windows `icon.ico` 和托盘图标的源文件。
+- `appicon.svg`：Cull Pear 的黑白 CP 字标应用壳图标矢量源文件；应用内使用相同字标并由 React 组件根据主题实时着色。
+- `appicon.png`：由 `appicon.svg` 渲染的 1024 × 1024 PNG，用于生成 macOS `icons.icns`、Windows `icon.ico` 和托盘图标。
 
 平台元数据由以下命令根据 `config.yml` 更新：
 

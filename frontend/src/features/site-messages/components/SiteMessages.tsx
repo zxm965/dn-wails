@@ -1,4 +1,15 @@
-import { CheckCheck, ExternalLink, Globe2, Info, MailCheck, Plus, Search, TriangleAlert } from 'lucide-react'
+import {
+  CheckCheck,
+  ExternalLink,
+  Globe2,
+  Info,
+  MailCheck,
+  Pencil,
+  Plus,
+  Search,
+  Trash2,
+  TriangleAlert,
+} from 'lucide-react'
 import { type FormEvent, useCallback, useEffect, useState } from 'react'
 
 import { useAccount } from '@/features/account'
@@ -23,7 +34,6 @@ import {
   Pagination,
   Select,
   SpinnerIcon,
-  Switch,
   Textarea,
 } from '@/shared/components/ui'
 import { useFeedback } from '@/shared/feedback'
@@ -31,6 +41,7 @@ import { createScopedClassNames } from '@/shared/lib/classNames'
 import { openExternalURL } from '@/shared/native-kit'
 
 import {
+  deleteMessage,
   getErrorMessage,
   listMessages,
   markAllMessagesRead,
@@ -41,6 +52,7 @@ import {
   type SiteMessage,
   type SiteMessageInput,
   type SiteMessageLevel,
+  updateMessage,
 } from '../api/siteMessagesApi'
 import { useSiteMessages } from '../context/SiteMessageProvider'
 
@@ -64,8 +76,9 @@ const emptyForm: SiteMessageInput = {
 export type SiteMessageNavigationTarget = 'weekly' | 'roles' | 'messages' | 'account'
 
 export function SiteMessages({ onNavigate }: { onNavigate: (target: SiteMessageNavigationTarget) => void }) {
-  const { notify } = useFeedback()
+  const { notify, confirm } = useFeedback()
   const { user } = useAccount()
+  const isAdmin = user?.role === 1
   const messageCenter = useSiteMessages()
   const [items, setItems] = useState<SiteMessage[]>([])
   const [meta, setMeta] = useState<ListMeta>(emptyMeta)
@@ -80,13 +93,14 @@ export function SiteMessages({ onNavigate }: { onNavigate: (target: SiteMessageN
   const [publishOpen, setPublishOpen] = useState(false)
   const [publishing, setPublishing] = useState(false)
   const [syncing, setSyncing] = useState(false)
+  const [editingMessage, setEditingMessage] = useState<SiteMessage | null>(null)
   const [form, setForm] = useState<SiteMessageInput>({ ...emptyForm })
 
   const load = useCallback(
     async (page: number) => {
       setLoading(true)
       try {
-        const data = await listMessages({ ...appliedFilters, page, pageSize: 10 })
+        const data = await listMessages({ ...appliedFilters, page, pageSize: 10, manage: isAdmin })
         setItems(data.items)
         setMeta(data.meta)
         setUnreadCount(data.unreadCount)
@@ -99,7 +113,7 @@ export function SiteMessages({ onNavigate }: { onNavigate: (target: SiteMessageN
         setLoading(false)
       }
     },
-    [appliedFilters, notify],
+    [appliedFilters, isAdmin, notify],
   )
 
   useEffect(() => {
@@ -108,7 +122,7 @@ export function SiteMessages({ onNavigate }: { onNavigate: (target: SiteMessageN
 
   async function openMessage(message: SiteMessage) {
     let next = message
-    if (!message.isRead) {
+    if (!message.isRead && isMessageCurrentlyActive(message)) {
       try {
         next = await markMessageRead(message.id)
         setItems((current) => current.map((item) => (item.id === message.id ? next : item)))
@@ -161,28 +175,80 @@ export function SiteMessages({ onNavigate }: { onNavigate: (target: SiteMessageN
     }
   }
 
+  function openCreateMessage() {
+    setEditingMessage(null)
+    setForm({ ...emptyForm })
+    setPublishOpen(true)
+  }
+
+  function openEditMessage(message: SiteMessage) {
+    setEditingMessage(message)
+    setForm({
+      level: message.level,
+      title: message.title,
+      content: message.content,
+      actionLabel: message.actionLabel,
+      actionUrl: message.actionUrl,
+      actionTarget: message.actionTarget,
+      popup: true,
+      publishedAt: formatDateTimeLocal(message.publishedAt),
+      expiresAt: formatDateTimeLocal(message.expiresAt),
+    })
+    setPublishOpen(true)
+  }
+
   async function submitPublish(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
-    if (!form.title.trim()) {
-      notify({ title: '消息标题不能为空', tone: 'warning' })
+    if (!form.title.trim() || !form.content.trim()) {
+      notify({ title: '消息标题和内容不能为空', tone: 'warning' })
       return
     }
     setPublishing(true)
     try {
-      await publishMessage({
+      const input = {
         ...form,
+        popup: true,
         publishedAt: form.publishedAt ? new Date(form.publishedAt).toISOString() : '',
         expiresAt: form.expiresAt ? new Date(form.expiresAt).toISOString() : '',
-      })
+      }
+      if (editingMessage) {
+        await updateMessage(editingMessage.id, input)
+      } else {
+        await publishMessage(input)
+      }
       setForm({ ...emptyForm })
+      setEditingMessage(null)
       setPublishOpen(false)
-      notify({ title: '消息已发布', tone: 'success' })
+      notify({ title: editingMessage ? '消息已更新' : '消息已发布', tone: 'success' })
       await load(1)
       await messageCenter.refreshInbox()
     } catch (error) {
-      notify({ title: '消息发布失败', message: getErrorMessage(error, '请检查输入。'), tone: 'error' })
+      notify({
+        title: editingMessage ? '消息更新失败' : '消息发布失败',
+        message: getErrorMessage(error, '请检查输入。'),
+        tone: 'error',
+      })
     } finally {
       setPublishing(false)
+    }
+  }
+
+  async function removeMessage(message: SiteMessage) {
+    const accepted = await confirm({
+      title: '删除站内消息',
+      message: `确定删除「${message.title}」吗？删除后所有用户都无法再看到该消息。`,
+      confirmLabel: '删除',
+      tone: 'danger',
+    })
+    if (!accepted) return
+    setLoading(true)
+    try {
+      await deleteMessage(message.id)
+      notify({ title: '消息已删除', tone: 'success' })
+      await Promise.all([load(meta.page), messageCenter.refreshInbox()])
+    } catch (error) {
+      notify({ title: '消息删除失败', message: getErrorMessage(error, '请稍后重试。'), tone: 'error' })
+      setLoading(false)
     }
   }
 
@@ -217,15 +283,15 @@ export function SiteMessages({ onNavigate }: { onNavigate: (target: SiteMessageN
                 全部已读
               </Button>
             )}
-            {user?.role === 1 && (
+            {isAdmin && (
               <>
                 <Button variant='outline' disabled={syncing} onClick={() => void syncOfficial()}>
                   <SpinnerIcon icon={Globe2} spinning={syncing} aria-hidden='true' />
-                  {syncing ? '同步中…' : '同步官网'}
+                  {syncing ? '同步中…' : '同步官网数据'}
                 </Button>
-                <Button onClick={() => setPublishOpen(true)}>
+                <Button onClick={openCreateMessage}>
                   <Plus aria-hidden='true' />
-                  发布消息
+                  创建站内信
                 </Button>
               </>
             )}
@@ -287,7 +353,8 @@ export function SiteMessages({ onNavigate }: { onNavigate: (target: SiteMessageN
                   <span>
                     <span className={cx('site-message-title')}>
                       {message.title}
-                      {!message.isRead && <Badge tone='accent'>未读</Badge>}
+                      {!isAdmin && !message.isRead && <Badge tone='accent'>未读</Badge>}
+                      {isAdmin && <MessageDeliveryBadge message={message} />}
                       <Badge tone='outline'>
                         {message.source === 'desktop'
                           ? '桌面'
@@ -299,10 +366,33 @@ export function SiteMessages({ onNavigate }: { onNavigate: (target: SiteMessageN
                     {message.content && <span className={cx('site-message-content')}>{message.content}</span>}
                     <small>{formatDate(message.publishedAt)}</small>
                   </span>
-                  <Button variant='ghost' onClick={() => void openMessage(message)}>
-                    {message.actionLabel || (message.actionUrl ? '查看详情' : '查看消息')}
-                    {message.actionTarget === '_blank' && <ExternalLink aria-hidden='true' />}
-                  </Button>
+                  <div className={cx('site-message-actions')}>
+                    <Button variant='ghost' onClick={() => void openMessage(message)}>
+                      {message.actionLabel || (message.actionUrl ? '查看详情' : '查看消息')}
+                      {message.actionTarget === '_blank' && <ExternalLink aria-hidden='true' />}
+                    </Button>
+                    {isAdmin && (
+                      <>
+                        <Button
+                          variant='ghost'
+                          title='编辑消息'
+                          aria-label={`编辑 ${message.title}`}
+                          onClick={() => openEditMessage(message)}
+                        >
+                          <Pencil aria-hidden='true' />
+                        </Button>
+                        <Button
+                          className={cx('dn-danger-action')}
+                          variant='ghost'
+                          title='删除消息'
+                          aria-label={`删除 ${message.title}`}
+                          onClick={() => void removeMessage(message)}
+                        >
+                          <Trash2 aria-hidden='true' />
+                        </Button>
+                      </>
+                    )}
+                  </div>
                 </article>
               ))}
             </div>
@@ -338,16 +428,23 @@ export function SiteMessages({ onNavigate }: { onNavigate: (target: SiteMessageN
         </DialogContent>
       </Dialog>
 
-      <Dialog open={publishOpen} onOpenChange={(open) => !publishing && setPublishOpen(open)}>
+      <Dialog
+        open={publishOpen}
+        onOpenChange={(open) => {
+          if (publishing) return
+          setPublishOpen(open)
+          if (!open) setEditingMessage(null)
+        }}
+      >
         <DialogContent size='lg'>
           <form onSubmit={submitPublish}>
             <DialogHeader>
-              <DialogTitle>发布消息</DialogTitle>
-              <DialogDescription>消息保存在当前桌面应用的本地工作区。</DialogDescription>
+              <DialogTitle>{editingMessage ? '编辑站内信' : '创建站内信'}</DialogTitle>
+              <DialogDescription>到达发送时间后，用户下次登录或消息刷新时会收到一次全屏提醒。</DialogDescription>
             </DialogHeader>
             <DialogBody className={cx('dn-form-grid')}>
               <label className={cx('dn-field')}>
-                <Label>消息级别</Label>
+                <Label>发送类型</Label>
                 <Select
                   value={form.level}
                   options={[
@@ -364,6 +461,7 @@ export function SiteMessages({ onNavigate }: { onNavigate: (target: SiteMessageN
                 <Input
                   type='datetime-local'
                   value={form.publishedAt}
+                  placeholder='留空立即发送'
                   onChange={(event) => setForm((current) => ({ ...current, publishedAt: event.target.value }))}
                 />
               </label>
@@ -378,6 +476,7 @@ export function SiteMessages({ onNavigate }: { onNavigate: (target: SiteMessageN
               <label className={cx('dn-field dn-form-full')}>
                 <Label>标题</Label>
                 <Input
+                  required
                   value={form.title}
                   onChange={(event) => setForm((current) => ({ ...current, title: event.target.value }))}
                 />
@@ -385,6 +484,7 @@ export function SiteMessages({ onNavigate }: { onNavigate: (target: SiteMessageN
               <label className={cx('dn-field dn-form-full')}>
                 <Label>内容</Label>
                 <Textarea
+                  required
                   value={form.content}
                   onChange={(event) => setForm((current) => ({ ...current, content: event.target.value }))}
                 />
@@ -415,23 +515,21 @@ export function SiteMessages({ onNavigate }: { onNavigate: (target: SiteMessageN
                   onValueChange={(actionTarget) => setForm((current) => ({ ...current, actionTarget }))}
                 />
               </label>
-              <label className={cx('dn-switch-row dn-form-full')}>
-                <span>
-                  <strong>作为弹窗提醒</strong>
-                  <small>保留源项目的消息弹窗语义。</small>
-                </span>
-                <Switch
-                  checked={form.popup}
-                  onCheckedChange={(value) => setForm((current) => ({ ...current, popup: value }))}
-                />
-              </label>
             </DialogBody>
             <DialogFooter>
-              <Button type='button' variant='outline' disabled={publishing} onClick={() => setPublishOpen(false)}>
+              <Button
+                type='button'
+                variant='outline'
+                disabled={publishing}
+                onClick={() => {
+                  setPublishOpen(false)
+                  setEditingMessage(null)
+                }}
+              >
                 取消
               </Button>
               <Button type='submit' disabled={publishing}>
-                {publishing ? '发布中…' : '发布'}
+                {publishing ? '保存中…' : editingMessage ? '保存修改' : '发布站内信'}
               </Button>
             </DialogFooter>
           </form>
@@ -439,6 +537,15 @@ export function SiteMessages({ onNavigate }: { onNavigate: (target: SiteMessageN
       </Dialog>
     </div>
   )
+}
+
+function MessageDeliveryBadge({ message }: { message: SiteMessage }) {
+  const now = Date.now()
+  const publishedAt = new Date(message.publishedAt).getTime()
+  const expiresAt = message.expiresAt ? new Date(message.expiresAt).getTime() : Number.NaN
+  if (Number.isFinite(publishedAt) && publishedAt > now) return <Badge tone='info'>待发送</Badge>
+  if (Number.isFinite(expiresAt) && expiresAt <= now) return <Badge tone='neutral'>已过期</Badge>
+  return <Badge tone='success'>已发送</Badge>
 }
 
 function MessageIcon({ level }: { level: SiteMessageLevel }) {
@@ -459,6 +566,22 @@ function MessageIcon({ level }: { level: SiteMessageLevel }) {
       <Info aria-hidden='true' />
     </span>
   )
+}
+
+function isMessageCurrentlyActive(message: SiteMessage): boolean {
+  const now = Date.now()
+  const publishedAt = new Date(message.publishedAt).getTime()
+  if (Number.isFinite(publishedAt) && publishedAt > now) return false
+  const expiresAt = message.expiresAt ? new Date(message.expiresAt).getTime() : Number.NaN
+  return !Number.isFinite(expiresAt) || expiresAt > now
+}
+
+function formatDateTimeLocal(value: string): string {
+  if (!value) return ''
+  const date = new Date(value)
+  if (Number.isNaN(date.getTime())) return ''
+  const local = new Date(date.getTime() - date.getTimezoneOffset() * 60_000)
+  return local.toISOString().slice(0, 16)
 }
 
 function formatDate(value: string) {

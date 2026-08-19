@@ -18,7 +18,13 @@ const officialIntegrationKey = "dragon-nest-official-news"
 func (s *PostgresService) ListMessages(query SiteMessageQuery) (SiteMessageList, error) {
 	ctx, cancel := databaseContext()
 	defer cancel()
-	ownerID, err := databaseUserID(ctx, s)
+	var ownerID int
+	var err error
+	if query.Manage {
+		ownerID, err = s.identity.CurrentAdminUserID()
+	} else {
+		ownerID, err = databaseUserID(ctx, s)
+	}
 	if err != nil {
 		return SiteMessageList{}, err
 	}
@@ -28,11 +34,17 @@ func (s *PostgresService) ListMessages(query SiteMessageQuery) (SiteMessageList,
 	if readStatus != "read" && readStatus != "unread" {
 		readStatus = "all"
 	}
+	countQuery := messageCountQuery
+	selectQuery := messageSelectQuery
+	if query.Manage {
+		countQuery = messageManageCountQuery
+		selectQuery = messageManageSelectQuery
+	}
 	var total int
-	if err := s.pool.QueryRow(ctx, messageCountQuery, ownerID, keyword, readStatus).Scan(&total); err != nil {
+	if err := s.pool.QueryRow(ctx, countQuery, ownerID, keyword, readStatus).Scan(&total); err != nil {
 		return SiteMessageList{}, fmt.Errorf("count DN messages: %w", err)
 	}
-	rows, err := s.pool.Query(ctx, messageSelectQuery+`
+	rows, err := s.pool.Query(ctx, selectQuery+`
 		limit $4 offset $5
 	`, ownerID, keyword, readStatus, pageSize, (page-1)*pageSize)
 	if err != nil {
@@ -124,21 +136,17 @@ func (s *PostgresService) ClaimMessageNotifications(limit int) (SiteMessageClaim
 	if err != nil {
 		return SiteMessageClaim{}, err
 	}
-	tx, err := s.pool.Begin(ctx)
-	if err != nil {
-		return SiteMessageClaim{}, fmt.Errorf("begin DN notification claim: %w", err)
-	}
-	defer tx.Rollback(ctx)
-	rows, err := tx.Query(ctx, messageSelectBase+`
+	rows, err := s.pool.Query(ctx, messageSelectBase+`
 		where m.status = 1 and m.published_at <= now()
 		  and (m.expires_at is null or m.expires_at > now())
 		  and m.popup = true and r.notified_at is null and r.read_at is null
 		order by m.published_at desc, m.id desc
-		limit 50
-	`, ownerID)
+		limit $2
+	`, ownerID, limit)
 	if err != nil {
 		return SiteMessageClaim{}, fmt.Errorf("query DN notification claims: %w", err)
 	}
+	defer rows.Close()
 	items := make([]SiteMessage, 0)
 	for rows.Next() {
 		item, scanErr := scanDatabaseMessage(rows)
@@ -148,23 +156,43 @@ func (s *PostgresService) ClaimMessageNotifications(limit int) (SiteMessageClaim
 		}
 		items = append(items, item)
 	}
-	rows.Close()
-	for _, item := range items {
-		if _, err := tx.Exec(ctx, `
-			insert into sys_site_message_receipt (message_id, user_id, notified_at, created_at, updated_at)
-			values ($1, $2, now(), now(), now())
-			on conflict (message_id, user_id) do update set notified_at = excluded.notified_at, updated_at = now()
-		`, item.ID, ownerID); err != nil {
-			return SiteMessageClaim{}, fmt.Errorf("claim DN message notification: %w", err)
-		}
-	}
-	if err := tx.Commit(ctx); err != nil {
-		return SiteMessageClaim{}, fmt.Errorf("commit DN notification claims: %w", err)
-	}
-	if len(items) > limit {
-		items = items[:limit]
+	if err := rows.Err(); err != nil {
+		return SiteMessageClaim{}, fmt.Errorf("iterate DN notification claims: %w", err)
 	}
 	return SiteMessageClaim{Items: items}, nil
+}
+
+func (s *PostgresService) MarkMessageNotified(id int) error {
+	if id <= 0 {
+		return fmt.Errorf("%w: invalid site message id", ErrInvalidData)
+	}
+	ctx, cancel := databaseContext()
+	defer cancel()
+	ownerID, err := databaseUserID(ctx, s)
+	if err != nil {
+		return err
+	}
+	var exists bool
+	if err := s.pool.QueryRow(ctx, `
+		select exists(
+			select 1 from sys_site_message
+			where id=$1 and status=1 and popup=true and published_at<=now() and (expires_at is null or expires_at>now())
+		)
+	`, id).Scan(&exists); err != nil {
+		return fmt.Errorf("validate DN message notification: %w", err)
+	}
+	if !exists {
+		return fmt.Errorf("%w: site message %d", ErrNotFound, id)
+	}
+	if _, err := s.pool.Exec(ctx, `
+		insert into sys_site_message_receipt (message_id,user_id,notified_at,created_at,updated_at)
+		values ($1,$2,now(),now(),now())
+		on conflict (message_id,user_id) do update
+		set notified_at=coalesce(sys_site_message_receipt.notified_at,excluded.notified_at),updated_at=now()
+	`, id, ownerID); err != nil {
+		return fmt.Errorf("mark DN message notified: %w", err)
+	}
+	return nil
 }
 
 func (s *PostgresService) MarkMessageRead(id int) (SiteMessage, error) {
@@ -228,35 +256,12 @@ func (s *PostgresService) MarkAllMessagesRead() (int, error) {
 }
 
 func (s *PostgresService) PublishMessage(input SiteMessageInput) (SiteMessage, error) {
-	input.Level = strings.TrimSpace(input.Level)
-	input.Title = strings.TrimSpace(input.Title)
-	input.Content = strings.TrimSpace(input.Content)
-	input.ActionLabel = strings.TrimSpace(input.ActionLabel)
-	input.ActionURL = strings.TrimSpace(input.ActionURL)
-	input.ActionTarget = strings.TrimSpace(input.ActionTarget)
-	if input.Title == "" || len([]rune(input.Title)) > 200 || len([]rune(input.Content)) > 5000 || len([]rune(input.ActionLabel)) > 30 || len([]rune(input.ActionURL)) > 2048 {
-		return SiteMessage{}, fmt.Errorf("%w: invalid site message fields", ErrInvalidData)
-	}
-	if !containsString([]string{MessageLevelInfo, MessageLevelSuccess, MessageLevelWarning, MessageLevelError}, input.Level) {
-		return SiteMessage{}, fmt.Errorf("%w: unsupported site message level", ErrInvalidData)
-	}
-	if input.ActionTarget == "" {
-		input.ActionTarget = MessageTargetSelf
-	}
-	if !containsString([]string{MessageTargetSelf, MessageTargetBlank}, input.ActionTarget) {
-		return SiteMessage{}, fmt.Errorf("%w: unsupported site message target", ErrInvalidData)
-	}
-	if err := validateActionURL(input.ActionURL); err != nil {
+	normalized, err := normalizeSiteMessageInput(input, time.Now())
+	if err != nil {
 		return SiteMessage{}, err
 	}
-	publishedAt, err := optionalDatabaseTime(input.PublishedAt)
-	if err != nil {
-		return SiteMessage{}, fmt.Errorf("%w: invalid site message publish time", ErrInvalidData)
-	}
-	expiresAt, err := optionalDatabaseTime(input.ExpiresAt)
-	if err != nil {
-		return SiteMessage{}, fmt.Errorf("%w: invalid site message expiry", ErrInvalidData)
-	}
+	publishedAt, _ := optionalDatabaseTime(normalized.PublishedAt)
+	expiresAt, _ := optionalDatabaseTime(normalized.ExpiresAt)
 	ctx, cancel := databaseContext()
 	defer cancel()
 	currentID, err := s.identity.CurrentAdminUserID()
@@ -264,11 +269,70 @@ func (s *PostgresService) PublishMessage(input SiteMessageInput) (SiteMessage, e
 		return SiteMessage{}, err
 	}
 	item, err := scanDatabaseMessage(s.pool.QueryRow(ctx, messageInsertReturning,
-		"desktop", nil, input.Level, input.Title, nullableString(input.Content), nullableString(input.ActionLabel),
-		nullableString(input.ActionURL), input.ActionTarget, input.Popup, publishedAt, expiresAt, currentID, nil,
+		"desktop", nil, normalized.Level, normalized.Title, nullableString(normalized.Content), nullableString(normalized.ActionLabel),
+		nullableString(normalized.ActionURL), normalized.ActionTarget, normalized.Popup, publishedAt, expiresAt, currentID, nil,
 	))
 	if err != nil {
 		return SiteMessage{}, mapDatabaseError("publish DN message", err)
+	}
+	return item, nil
+}
+
+func (s *PostgresService) UpdateMessage(id int, input SiteMessageInput) (SiteMessage, error) {
+	if id <= 0 {
+		return SiteMessage{}, fmt.Errorf("%w: invalid site message id", ErrInvalidData)
+	}
+	normalized, err := normalizeSiteMessageInput(input, time.Now())
+	if err != nil {
+		return SiteMessage{}, err
+	}
+	publishedAt, _ := optionalDatabaseTime(normalized.PublishedAt)
+	expiresAt, _ := optionalDatabaseTime(normalized.ExpiresAt)
+	ctx, cancel := databaseContext()
+	defer cancel()
+	if _, err := s.identity.CurrentAdminUserID(); err != nil {
+		return SiteMessage{}, err
+	}
+	item, err := scanDatabaseMessage(s.pool.QueryRow(ctx, `
+		update sys_site_message
+		set level=$2,title=$3,content=$4,action_label=$5,action_url=$6,action_target=$7,
+		    popup=$8,published_at=$9,expires_at=$10,updated_at=now()
+		where id=$1 and status=1
+		returning id,source,coalesce(source_key,''),level,title,coalesce(content,''),coalesce(action_label,''),
+		          coalesce(action_url,''),action_target,popup,status,published_at,expires_at,coalesce(created_by,0),
+		          coalesce(metadata,'{}'::jsonb),null::timestamp
+	`, id, normalized.Level, normalized.Title, nullableString(normalized.Content), nullableString(normalized.ActionLabel),
+		nullableString(normalized.ActionURL), normalized.ActionTarget, normalized.Popup, publishedAt, expiresAt))
+	if errors.Is(err, pgx.ErrNoRows) {
+		return SiteMessage{}, fmt.Errorf("%w: site message %d", ErrNotFound, id)
+	}
+	if err != nil {
+		return SiteMessage{}, mapDatabaseError("update DN message", err)
+	}
+	return item, nil
+}
+
+func (s *PostgresService) DeleteMessage(id int) (SiteMessage, error) {
+	if id <= 0 {
+		return SiteMessage{}, fmt.Errorf("%w: invalid site message id", ErrInvalidData)
+	}
+	ctx, cancel := databaseContext()
+	defer cancel()
+	if _, err := s.identity.CurrentAdminUserID(); err != nil {
+		return SiteMessage{}, err
+	}
+	item, err := scanDatabaseMessage(s.pool.QueryRow(ctx, `
+		update sys_site_message set status=0,updated_at=now()
+		where id=$1 and status=1
+		returning id,source,coalesce(source_key,''),level,title,coalesce(content,''),coalesce(action_label,''),
+		          coalesce(action_url,''),action_target,popup,status,published_at,expires_at,coalesce(created_by,0),
+		          coalesce(metadata,'{}'::jsonb),null::timestamp
+	`, id))
+	if errors.Is(err, pgx.ErrNoRows) {
+		return SiteMessage{}, fmt.Errorf("%w: site message %d", ErrNotFound, id)
+	}
+	if err != nil {
+		return SiteMessage{}, mapDatabaseError("delete DN message", err)
 	}
 	return item, nil
 }
@@ -421,6 +485,21 @@ const messageCountQuery = `
 	select count(*)::int from sys_site_message m
 	left join sys_site_message_receipt r on r.message_id=m.id and r.user_id=$1
 	where m.status=1 and m.published_at<=now() and (m.expires_at is null or m.expires_at>now())
+	  and ($2='' or m.title ilike '%'||$2||'%' or coalesce(m.content,'') ilike '%'||$2||'%')
+	  and ($3='all' or ($3='read' and r.read_at is not null) or ($3='unread' and r.read_at is null))
+`
+
+const messageManageSelectQuery = messageSelectBase + `
+	where m.status=1
+	  and ($2='' or m.title ilike '%'||$2||'%' or coalesce(m.content,'') ilike '%'||$2||'%')
+	  and ($3='all' or ($3='read' and r.read_at is not null) or ($3='unread' and r.read_at is null))
+	order by m.published_at desc,m.id desc
+`
+
+const messageManageCountQuery = `
+	select count(*)::int from sys_site_message m
+	left join sys_site_message_receipt r on r.message_id=m.id and r.user_id=$1
+	where m.status=1
 	  and ($2='' or m.title ilike '%'||$2||'%' or coalesce(m.content,'') ilike '%'||$2||'%')
 	  and ($3='all' or ($3='read' and r.read_at is not null) or ($3='unread' and r.read_at is null))
 `

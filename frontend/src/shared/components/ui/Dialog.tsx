@@ -14,7 +14,7 @@ export const Dialog = DialogPrimitive.Root
 export const DialogTrigger = DialogPrimitive.Trigger
 export const DialogClose = DialogPrimitive.Close
 
-export type DialogSize = 'sm' | 'md' | 'lg'
+export type DialogSize = 'sm' | 'md' | 'lg' | 'full'
 
 export function DialogContent({
   className,
@@ -29,7 +29,7 @@ export function DialogContent({
   return (
     <DialogPrimitive.Portal>
       <DialogPrimitive.Backdrop className={cx('ui-dialog-backdrop')} />
-      <DialogPrimitive.Viewport className={cx('ui-dialog-viewport')}>
+      <DialogPrimitive.Viewport className={cx('ui-dialog-viewport')} data-size={size}>
         <DialogPrimitive.Popup data-ui='dialog' data-size={size} className={resolvedClassName} {...props}>
           {children}
           {showCloseButton && (

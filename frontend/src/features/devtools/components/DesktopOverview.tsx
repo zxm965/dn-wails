@@ -16,9 +16,9 @@ import {
 } from 'lucide-react'
 
 import { appConfig } from '@/app/appConfig'
-import appIcon from '@/assets/images/app-icon.png'
 import { useAppUpdate } from '@/features/app-update'
 import { useSettings } from '@/features/settings'
+import { BrandIcon } from '@/shared/components/brand-icon'
 import { createScopedClassNames } from '@/shared/lib/classNames'
 import { DEVTOOLS_DESKTOP_LAB_PREFERENCE, isAppViewVisible, resolveMenuVisibility } from '@/shared/navigation'
 
@@ -154,7 +154,7 @@ export function DesktopOverview({ embedded = false }: { embedded?: boolean }) {
       <div className={cx('overview-top-grid')}>
         <article className={cx('overview-product-card')}>
           <div className={cx('overview-product-identity')}>
-            <img className={cx('overview-product-icon')} src={appIcon} alt='' />
+            <BrandIcon className={cx('overview-product-icon')} />
             <div>
               <span className={cx('overview-card-eyebrow')}>Desktop application</span>
               <h3 className={cx('overview-product-name')}>{appConfig.displayName}</h3>

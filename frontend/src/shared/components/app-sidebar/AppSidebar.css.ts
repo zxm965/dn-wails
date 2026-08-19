@@ -50,6 +50,17 @@ const appSidebarProduct = style({
   },
 })
 
+const appSidebarLogo = style({
+  width: '34px',
+  height: '34px',
+  selectors: {
+    [`${appSidebar}${isCollapsed} &`]: {
+      width: '32px',
+      height: '32px',
+    },
+  },
+})
+
 const appSidebarFooter = style({
   display: 'flex',
   alignItems: 'center',
@@ -243,6 +254,7 @@ export const styles = {
   'app-sidebar': appSidebar,
   'is-viewport-compact': isViewportCompact,
   'app-sidebar-product': appSidebarProduct,
+  'app-sidebar-logo': appSidebarLogo,
   'app-sidebar-footer': appSidebarFooter,
   'app-sidebar-navigation': appSidebarNavigation,
   'app-sidebar-group': appSidebarGroup,
@@ -276,12 +288,6 @@ globalStyle(
 ${appSidebar} svg`,
   disableImageDrag as never,
 )
-
-globalStyle(`${appSidebarProduct} img`, {
-  width: '34px',
-  height: '34px',
-  objectFit: 'contain',
-})
 
 globalStyle(
   `${appSidebarProduct} div,
@@ -397,11 +403,6 @@ body${isResizingSidebar} *`,
     userSelect: 'none !important' as never,
   },
 )
-
-globalStyle(`${appSidebar}${isCollapsed} ${appSidebarProduct} img`, {
-  width: '32px',
-  height: '32px',
-})
 
 globalStyle(
   `${appSidebar}${isCollapsed} ${appSidebarProduct} div,

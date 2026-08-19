@@ -9,6 +9,7 @@ import {
   getErrorMessage,
   getMessageInbox,
   markAllMessagesRead,
+  markMessageNotified,
   markMessageRead,
   type SiteMessage,
 } from '../api/siteMessagesApi'
@@ -61,6 +62,7 @@ export function SiteMessageProvider({
   const refreshPromise = useRef<Promise<void> | null>(null)
   const popupOpenRef = useRef(false)
   const lastSyncError = useRef('')
+  const notificationAcknowledgements = useRef(new Map<number, Promise<void>>())
 
   useEffect(() => {
     popupOpenRef.current = popupOpen
@@ -69,18 +71,38 @@ export function SiteMessageProvider({
   const showMessage = useCallback((message: SiteMessage) => {
     setCenterOpen(false)
     setActiveMessage(message)
+    popupOpenRef.current = true
     setPopupOpen(true)
+  }, [])
+
+  const acknowledgeMessage = useCallback((message: SiteMessage): Promise<void> => {
+    if (!message.popup) return Promise.resolve()
+    const existing = notificationAcknowledgements.current.get(message.id)
+    if (existing) return existing
+    const request = markMessageNotified(message.id).catch((error) => {
+      notificationAcknowledgements.current.delete(message.id)
+      throw error
+    })
+    notificationAcknowledgements.current.set(message.id, request)
+    return request
   }, [])
 
   const claimPopup = useCallback(async () => {
     if (!user || popupOpenRef.current) return
     try {
-      const claimed = await claimMessageNotifications(3)
+      const claimed = await claimMessageNotifications(1)
       if (claimed.items[0]) showMessage(claimed.items[0])
     } catch {
       // Inbox refresh remains available even when claiming a popup fails.
     }
   }, [showMessage, user])
+
+  useEffect(() => {
+    if (!popupOpen || !activeMessage?.popup) return
+    void acknowledgeMessage(activeMessage).catch(() => {
+      // A failed acknowledgement intentionally leaves the message claimable on the next refresh or login.
+    })
+  }, [acknowledgeMessage, activeMessage, popupOpen])
 
   const refreshInbox = useCallback(async () => {
     if (!user) return
@@ -116,6 +138,7 @@ export function SiteMessageProvider({
     setPopupOpen(false)
     setLastSyncedAt('')
     lastSyncError.current = ''
+    notificationAcknowledgements.current.clear()
     if (!user) return
 
     void refreshInbox().then(claimPopup)
@@ -175,9 +198,21 @@ export function SiteMessageProvider({
   )
 
   const dismissPopup = useCallback(() => {
+    const current = activeMessage
+    popupOpenRef.current = false
     setPopupOpen(false)
     setActiveMessage(null)
-  }, [])
+    if (!user) return
+    if (!current) {
+      void claimPopup()
+      return
+    }
+    void acknowledgeMessage(current)
+      .then(claimPopup)
+      .catch(() => {
+        // Avoid immediately reopening the same message when acknowledgement is temporarily unavailable.
+      })
+  }, [acknowledgeMessage, activeMessage, claimPopup, user])
 
   const showAllMessages = useCallback(() => {
     setCenterOpen(false)

@@ -54,6 +54,10 @@ func (a *App) ClaimSiteMessageNotifications(limit int) (dn.SiteMessageClaim, err
 	return a.dnService.ClaimMessageNotifications(limit)
 }
 
+func (a *App) MarkSiteMessageNotified(id int) error {
+	return a.dnService.MarkMessageNotified(id)
+}
+
 func (a *App) MarkSiteMessageRead(id int) (dn.SiteMessage, error) {
 	return a.dnService.MarkMessageRead(id)
 }
@@ -64,6 +68,14 @@ func (a *App) MarkAllSiteMessagesRead() (int, error) {
 
 func (a *App) PublishSiteMessage(input dn.SiteMessageInput) (dn.SiteMessage, error) {
 	return a.dnService.PublishMessage(input)
+}
+
+func (a *App) UpdateSiteMessage(id int, input dn.SiteMessageInput) (dn.SiteMessage, error) {
+	return a.dnService.UpdateMessage(id, input)
+}
+
+func (a *App) DeleteSiteMessage(id int) (dn.SiteMessage, error) {
+	return a.dnService.DeleteMessage(id)
 }
 
 func (a *App) SyncOfficialSiteMessages() (dn.OfficialMessageSyncResult, error) {

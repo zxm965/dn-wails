@@ -258,6 +258,65 @@ func TestServiceTracksMessageReadStatePerUser(t *testing.T) {
 	}
 }
 
+func TestServiceManagesScheduledMessagesAndAcknowledgesNotifications(t *testing.T) {
+	t.Parallel()
+	service, _, _ := newAuthenticatedService(t)
+	future := time.Now().UTC().Add(time.Hour).Format(time.RFC3339Nano)
+	created, err := service.PublishMessage(SiteMessageInput{
+		Level: MessageLevelInfo, Title: "未来通知", Content: "等待登录后展示", Popup: true,
+		ActionTarget: MessageTargetSelf, PublishedAt: future,
+	})
+	if err != nil {
+		t.Fatalf("publish scheduled message: %v", err)
+	}
+	regular, err := service.ListMessages(SiteMessageQuery{Keyword: created.Title, ReadStatus: "all", Page: 1, PageSize: 10})
+	if err != nil || len(regular.Items) != 0 {
+		t.Fatalf("scheduled message leaked to regular inbox: %+v err=%v", regular.Items, err)
+	}
+	managed, err := service.ListMessages(SiteMessageQuery{Keyword: created.Title, ReadStatus: "all", Page: 1, PageSize: 10, Manage: true})
+	if err != nil || len(managed.Items) != 1 || managed.Items[0].ID != created.ID {
+		t.Fatalf("scheduled message missing from admin view: %+v err=%v", managed.Items, err)
+	}
+
+	updated, err := service.UpdateMessage(created.ID, SiteMessageInput{
+		Level: MessageLevelWarning, Title: "登录提醒", Content: "用户登录后全屏展示", Popup: true,
+		ActionTarget: MessageTargetSelf,
+	})
+	if err != nil || updated.Title != "登录提醒" || updated.Level != MessageLevelWarning {
+		t.Fatalf("update message: %+v err=%v", updated, err)
+	}
+	firstClaim, err := service.ClaimMessageNotifications(20)
+	if err != nil || !messageListContains(firstClaim.Items, created.ID) {
+		t.Fatalf("updated message was not claimable: %+v err=%v", firstClaim.Items, err)
+	}
+	secondClaim, err := service.ClaimMessageNotifications(20)
+	if err != nil || !messageListContains(secondClaim.Items, created.ID) {
+		t.Fatalf("claim should remain available until display acknowledgement: %+v err=%v", secondClaim.Items, err)
+	}
+	if err := service.MarkMessageNotified(created.ID); err != nil {
+		t.Fatalf("mark message notified: %v", err)
+	}
+	acknowledgedClaim, err := service.ClaimMessageNotifications(20)
+	if err != nil || messageListContains(acknowledgedClaim.Items, created.ID) {
+		t.Fatalf("acknowledged message was claimed again: %+v err=%v", acknowledgedClaim.Items, err)
+	}
+	deleted, err := service.DeleteMessage(created.ID)
+	if err != nil || deleted.Status != 0 {
+		t.Fatalf("delete message: %+v err=%v", deleted, err)
+	}
+	managed, err = service.ListMessages(SiteMessageQuery{Keyword: updated.Title, ReadStatus: "all", Page: 1, PageSize: 10, Manage: true})
+	if err != nil || len(managed.Items) != 0 {
+		t.Fatalf("deleted message remained visible: %+v err=%v", managed.Items, err)
+	}
+	service.mu.RLock()
+	deletedIndex := findMessageIndex(service.state.Messages, created.ID)
+	retainedAsTombstone := deletedIndex >= 0 && service.state.Messages[deletedIndex].Status == 0
+	service.mu.RUnlock()
+	if !retainedAsTombstone {
+		t.Fatal("deleted message tombstone was not retained")
+	}
+}
+
 func TestServiceChangesPassword(t *testing.T) {
 	t.Parallel()
 	service, _, profile := newAuthenticatedService(t)
@@ -292,6 +351,10 @@ func TestPasswordHashIsCompatibleWithNodeScrypt(t *testing.T) {
 func TestServiceKeepsLegacySessionAndRestrictsAdminOperations(t *testing.T) {
 	t.Parallel()
 	service, _, _ := newAuthenticatedService(t)
+	adminMessage, err := service.PublishMessage(SiteMessageInput{Level: MessageLevelInfo, Title: "管理员消息"})
+	if err != nil {
+		t.Fatalf("publish admin message: %v", err)
+	}
 	if err := service.Logout(); err != nil {
 		t.Fatalf("logout admin: %v", err)
 	}
@@ -303,6 +366,15 @@ func TestServiceKeepsLegacySessionAndRestrictsAdminOperations(t *testing.T) {
 	}
 	if _, err := service.SyncOfficialMessages(); !errors.Is(err, ErrForbidden) {
 		t.Fatalf("member should not force official sync, got %v", err)
+	}
+	if _, err := service.ListMessages(SiteMessageQuery{Manage: true, Page: 1, PageSize: 10}); !errors.Is(err, ErrForbidden) {
+		t.Fatalf("member should not list managed messages, got %v", err)
+	}
+	if _, err := service.UpdateMessage(adminMessage.ID, SiteMessageInput{Level: MessageLevelInfo, Title: "越权修改"}); !errors.Is(err, ErrForbidden) {
+		t.Fatalf("member should not update messages, got %v", err)
+	}
+	if _, err := service.DeleteMessage(adminMessage.ID); !errors.Is(err, ErrForbidden) {
+		t.Fatalf("member should not delete messages, got %v", err)
 	}
 
 	service.mu.Lock()
@@ -317,6 +389,15 @@ func TestServiceKeepsLegacySessionAndRestrictsAdminOperations(t *testing.T) {
 	if err != nil || !auth.Authenticated || auth.User == nil {
 		t.Fatalf("legacy session expiry should not force re-login: %+v err=%v", auth, err)
 	}
+}
+
+func messageListContains(items []SiteMessage, id int) bool {
+	for _, item := range items {
+		if item.ID == id {
+			return true
+		}
+	}
+	return false
 }
 
 func TestServiceMigratesLegacyDataToFirstUser(t *testing.T) {

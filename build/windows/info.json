@@ -1,10 +1,10 @@
 {
 	"fixed": {
-		"file_version": "0.0.15"
+		"file_version": "0.0.16"
 	},
 	"info": {
 		"0000": {
-			"ProductVersion": "0.0.15",
+			"ProductVersion": "0.0.16",
 			"CompanyName": "zxm965",
 			"FileDescription": "Cull Pear desktop application",
 			"LegalCopyright": "© 2026, zxm965",

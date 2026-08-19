@@ -34,6 +34,11 @@ const uiDialogViewport = style([
     placeItems: 'center',
     overflow: 'auto',
     padding: '24px',
+    selectors: {
+      "&[data-size='full']": {
+        padding: '0',
+      },
+    },
   },
   {
     '@media': {
@@ -67,6 +72,12 @@ const uiDialog = style([
       "&[data-size='lg']": {
         width: 'min(100%, 880px)',
       },
+      "&[data-size='full']": {
+        width: '100%',
+        height: '100%',
+        maxHeight: 'none',
+        borderRadius: '0',
+      },
       '&[data-starting-style], &[data-ending-style]': {
         opacity: '0',
         transform: 'translateY(10px) scale(0.985)',
@@ -79,6 +90,13 @@ const uiDialog = style([
         width: '100%',
         maxHeight: '92vh',
         borderRadius: '16px 16px 10px 10px',
+        selectors: {
+          "&[data-size='full']": {
+            height: '100%',
+            maxHeight: 'none',
+            borderRadius: '0',
+          },
+        },
       },
     },
   },

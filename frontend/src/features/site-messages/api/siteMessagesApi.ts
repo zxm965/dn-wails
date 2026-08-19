@@ -1,11 +1,14 @@
 import {
   ClaimSiteMessageNotifications,
+  DeleteSiteMessage,
   GetSiteMessageInbox,
   ListSiteMessages,
   MarkAllSiteMessagesRead,
+  MarkSiteMessageNotified,
   MarkSiteMessageRead,
   PublishSiteMessage,
   SyncOfficialSiteMessages,
+  UpdateSiteMessage,
 } from '@bindings/cull-pear/internal/application/app'
 import * as WailsDn from '@bindings/cull-pear/internal/dn/models'
 
@@ -61,6 +64,7 @@ export interface SiteMessageQuery {
   readStatus: 'all' | 'read' | 'unread'
   page: number
   pageSize: number
+  manage?: boolean
 }
 
 export interface SiteMessageList {
@@ -105,6 +109,10 @@ export function claimMessageNotifications(limit = 3): Promise<SiteMessageClaim> 
   return ClaimSiteMessageNotifications(limit) as Promise<SiteMessageClaim>
 }
 
+export function markMessageNotified(id: number): Promise<void> {
+  return MarkSiteMessageNotified(id)
+}
+
 export function markMessageRead(id: number): Promise<SiteMessage> {
   return MarkSiteMessageRead(id) as Promise<SiteMessage>
 }
@@ -115,6 +123,14 @@ export function markAllMessagesRead(): Promise<number> {
 
 export function publishMessage(input: SiteMessageInput): Promise<SiteMessage> {
   return PublishSiteMessage(WailsDn.SiteMessageInput.createFrom(input)) as Promise<SiteMessage>
+}
+
+export function updateMessage(id: number, input: SiteMessageInput): Promise<SiteMessage> {
+  return UpdateSiteMessage(id, WailsDn.SiteMessageInput.createFrom(input)) as Promise<SiteMessage>
+}
+
+export function deleteMessage(id: number): Promise<SiteMessage> {
+  return DeleteSiteMessage(id) as Promise<SiteMessage>
 }
 
 export function syncOfficialMessages(): Promise<OfficialMessageSyncResult> {

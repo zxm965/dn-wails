@@ -119,19 +119,24 @@ export function SiteMessageCenter() {
           if (!open && !messages.actionLoading) messages.dismissPopup()
         }}
       >
-        <DialogContent size='sm'>
-          <DialogHeader>
-            <DialogTitle>{messages.activeMessage?.title || '站内消息'}</DialogTitle>
+        <DialogContent size='full' showCloseButton={false}>
+          <DialogHeader className={cx('site-message-popup-header')}>
+            <DialogTitle className={cx('site-message-popup-title')}>
+              {messages.activeMessage?.title || '站内消息'}
+            </DialogTitle>
             <DialogDescription>
-              {messages.activeMessage?.level === 'warning' ? '重要消息提醒' : '站内消息'}
+              {messages.activeMessage ? formatMessageDate(messages.activeMessage.publishedAt) : '站内消息'}
             </DialogDescription>
           </DialogHeader>
-          <DialogBody>
+          <DialogBody className={cx('site-message-popup-body')}>
+            <span className={cx('site-message-popup-level')}>
+              {messages.activeMessage ? messageLevelLabel(messages.activeMessage.level) : '站内消息'}
+            </span>
             <p className={cx('site-message-popup-content')}>
               {messages.activeMessage?.content || '你收到了一条新的站内消息。'}
             </p>
           </DialogBody>
-          <DialogFooter>
+          <DialogFooter className={cx('site-message-popup-footer')}>
             <Button variant='outline' disabled={messages.actionLoading} onClick={messages.dismissPopup}>
               {messages.activeMessage?.actionUrl ? '稍后查看' : '关闭'}
             </Button>
@@ -156,6 +161,15 @@ function MessageLevelBadge({ message }: { message: SiteMessage }) {
     error: { label: '警告', tone: 'danger' as const },
   }[message.level]
   return <Badge tone={meta.tone}>{meta.label}</Badge>
+}
+
+function messageLevelLabel(level: SiteMessage['level']): string {
+  return {
+    info: '信息通知',
+    success: '活动通知',
+    warning: '重要通知',
+    error: '警告通知',
+  }[level]
 }
 
 function formatMessageDate(value: string): string {

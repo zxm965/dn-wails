@@ -538,11 +538,18 @@ func (s *Service) SyncWeeklyPlans() (WeeklyPlanSyncResult, error) {
 func (s *Service) ListMessages(query SiteMessageQuery) (SiteMessageList, error) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
-	current, err := s.authenticatedUserLocked(time.Now())
+	now := time.Now()
+	var current *user
+	var err error
+	if query.Manage {
+		current, err = s.adminUserLocked(now)
+	} else {
+		current, err = s.authenticatedUserLocked(now)
+	}
 	if err != nil {
 		return SiteMessageList{}, err
 	}
-	result := buildMessageList(s.state, current.ID, query, time.Now())
+	result := buildMessageList(s.state, current.ID, query, now)
 	result.LastSyncedAt = s.state.OfficialSync.LastSyncedAt
 	return result, nil
 }
@@ -589,43 +596,60 @@ func (s *Service) ClaimMessageNotifications(limit int) (SiteMessageClaim, error)
 	}
 	_, _ = s.syncOfficialMessages(false)
 
-	s.mu.Lock()
-	defer s.mu.Unlock()
+	s.mu.RLock()
+	defer s.mu.RUnlock()
 	current, err := s.authenticatedUserLocked(time.Now())
 	if err != nil {
 		return SiteMessageClaim{}, err
 	}
-	next := cloneState(s.state)
 	now := time.Now()
 	candidates := make([]SiteMessage, 0)
-	for _, item := range next.Messages {
+	for _, item := range s.state.Messages {
 		if !item.Popup || !isMessageActive(item, now) {
 			continue
 		}
-		receipt := findReceipt(next.MessageReceipts, current.ID, item.ID)
+		receipt := findReceipt(s.state.MessageReceipts, current.ID, item.ID)
 		if receipt != nil && (receipt.NotifiedAt != "" || receipt.ReadAt != "") {
 			continue
 		}
 		candidates = append(candidates, withReceipt(item, receipt))
 	}
 	sortMessages(candidates)
-	if len(candidates) > 50 {
-		candidates = candidates[:50]
-	}
-	if len(candidates) == 0 {
-		return SiteMessageClaim{Items: []SiteMessage{}}, nil
-	}
-	timestamp := now.UTC().Format(time.RFC3339Nano)
-	for _, item := range candidates {
-		setReceipt(&next, messageReceipt{UserID: current.ID, MessageID: item.ID, NotifiedAt: timestamp})
-	}
-	if err := s.commit(next); err != nil {
-		return SiteMessageClaim{}, err
-	}
 	if len(candidates) > limit {
 		candidates = candidates[:limit]
 	}
 	return SiteMessageClaim{Items: candidates}, nil
+}
+
+func (s *Service) MarkMessageNotified(id int) error {
+	if id <= 0 {
+		return fmt.Errorf("%w: invalid site message id", ErrInvalidData)
+	}
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	current, err := s.authenticatedUserLocked(time.Now())
+	if err != nil {
+		return err
+	}
+	next := cloneState(s.state)
+	index := findMessageIndex(next.Messages, id)
+	if index < 0 || !next.Messages[index].Popup || !isMessageActive(next.Messages[index], time.Now()) {
+		return fmt.Errorf("%w: site message %d", ErrNotFound, id)
+	}
+	receipt := findReceipt(next.MessageReceipts, current.ID, id)
+	if receipt != nil && receipt.NotifiedAt != "" {
+		return nil
+	}
+	nextReceipt := messageReceipt{
+		UserID:     current.ID,
+		MessageID:  id,
+		NotifiedAt: time.Now().UTC().Format(time.RFC3339Nano),
+	}
+	if receipt != nil {
+		nextReceipt.ReadAt = receipt.ReadAt
+	}
+	setReceipt(&next, nextReceipt)
+	return s.commit(next)
 }
 
 func (s *Service) MarkMessageRead(id int) (SiteMessage, error) {
@@ -692,42 +716,9 @@ func (s *Service) MarkAllMessagesRead() (int, error) {
 }
 
 func (s *Service) PublishMessage(input SiteMessageInput) (SiteMessage, error) {
-	input.Level = strings.TrimSpace(input.Level)
-	input.Title = strings.TrimSpace(input.Title)
-	input.Content = strings.TrimSpace(input.Content)
-	input.ActionLabel = strings.TrimSpace(input.ActionLabel)
-	input.ActionURL = strings.TrimSpace(input.ActionURL)
-	input.ActionTarget = strings.TrimSpace(input.ActionTarget)
-	input.PublishedAt = strings.TrimSpace(input.PublishedAt)
-	input.ExpiresAt = strings.TrimSpace(input.ExpiresAt)
-	if input.Title == "" || len([]rune(input.Title)) > 200 || len([]rune(input.Content)) > 5000 {
-		return SiteMessage{}, fmt.Errorf("%w: invalid site message title or content", ErrInvalidData)
-	}
-	if len([]rune(input.ActionLabel)) > 30 || len([]rune(input.ActionURL)) > 2048 {
-		return SiteMessage{}, fmt.Errorf("%w: site message action is too long", ErrInvalidData)
-	}
-	if !containsString([]string{MessageLevelInfo, MessageLevelSuccess, MessageLevelWarning, MessageLevelError}, input.Level) {
-		return SiteMessage{}, fmt.Errorf("%w: unsupported site message level", ErrInvalidData)
-	}
-	if input.ActionTarget == "" {
-		input.ActionTarget = MessageTargetSelf
-	}
-	if !containsString([]string{MessageTargetSelf, MessageTargetBlank}, input.ActionTarget) {
-		return SiteMessage{}, fmt.Errorf("%w: unsupported site message target", ErrInvalidData)
-	}
-	if err := validateActionURL(input.ActionURL); err != nil {
-		return SiteMessage{}, err
-	}
-	publishedAt, err := normalizeRFC3339(input.PublishedAt, time.Now())
+	normalized, err := normalizeSiteMessageInput(input, time.Now())
 	if err != nil {
-		return SiteMessage{}, fmt.Errorf("%w: invalid site message publish time", ErrInvalidData)
-	}
-	expiresAt := ""
-	if input.ExpiresAt != "" {
-		expiresAt, err = normalizeRFC3339(input.ExpiresAt, time.Time{})
-		if err != nil {
-			return SiteMessage{}, fmt.Errorf("%w: invalid site message expiry", ErrInvalidData)
-		}
+		return SiteMessage{}, err
 	}
 
 	s.mu.Lock()
@@ -740,16 +731,16 @@ func (s *Service) PublishMessage(input SiteMessageInput) (SiteMessage, error) {
 	created := SiteMessage{
 		ID:           next.NextMessageID,
 		Source:       "desktop",
-		Level:        input.Level,
-		Title:        input.Title,
-		Content:      input.Content,
-		ActionLabel:  input.ActionLabel,
-		ActionURL:    input.ActionURL,
-		ActionTarget: input.ActionTarget,
-		Popup:        input.Popup,
+		Level:        normalized.Level,
+		Title:        normalized.Title,
+		Content:      normalized.Content,
+		ActionLabel:  normalized.ActionLabel,
+		ActionURL:    normalized.ActionURL,
+		ActionTarget: normalized.ActionTarget,
+		Popup:        normalized.Popup,
 		Status:       1,
-		PublishedAt:  publishedAt,
-		ExpiresAt:    expiresAt,
+		PublishedAt:  normalized.PublishedAt,
+		ExpiresAt:    normalized.ExpiresAt,
 		CreatedBy:    current.ID,
 	}
 	next.NextMessageID++
@@ -758,6 +749,62 @@ func (s *Service) PublishMessage(input SiteMessageInput) (SiteMessage, error) {
 		return SiteMessage{}, err
 	}
 	return created, nil
+}
+
+func (s *Service) UpdateMessage(id int, input SiteMessageInput) (SiteMessage, error) {
+	if id <= 0 {
+		return SiteMessage{}, fmt.Errorf("%w: invalid site message id", ErrInvalidData)
+	}
+	normalized, err := normalizeSiteMessageInput(input, time.Now())
+	if err != nil {
+		return SiteMessage{}, err
+	}
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if _, err := s.adminUserLocked(time.Now()); err != nil {
+		return SiteMessage{}, err
+	}
+	next := cloneState(s.state)
+	index := findMessageIndex(next.Messages, id)
+	if index < 0 || next.Messages[index].Status != 1 {
+		return SiteMessage{}, fmt.Errorf("%w: site message %d", ErrNotFound, id)
+	}
+	next.Messages[index].Level = normalized.Level
+	next.Messages[index].Title = normalized.Title
+	next.Messages[index].Content = normalized.Content
+	next.Messages[index].ActionLabel = normalized.ActionLabel
+	next.Messages[index].ActionURL = normalized.ActionURL
+	next.Messages[index].ActionTarget = normalized.ActionTarget
+	next.Messages[index].Popup = normalized.Popup
+	next.Messages[index].PublishedAt = normalized.PublishedAt
+	next.Messages[index].ExpiresAt = normalized.ExpiresAt
+	if err := s.commit(next); err != nil {
+		return SiteMessage{}, err
+	}
+	return next.Messages[index], nil
+}
+
+func (s *Service) DeleteMessage(id int) (SiteMessage, error) {
+	if id <= 0 {
+		return SiteMessage{}, fmt.Errorf("%w: invalid site message id", ErrInvalidData)
+	}
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if _, err := s.adminUserLocked(time.Now()); err != nil {
+		return SiteMessage{}, err
+	}
+	next := cloneState(s.state)
+	index := findMessageIndex(next.Messages, id)
+	if index < 0 || next.Messages[index].Status != 1 {
+		return SiteMessage{}, fmt.Errorf("%w: site message %d", ErrNotFound, id)
+	}
+	deleted := next.Messages[index]
+	deleted.Status = 0
+	next.Messages[index] = deleted
+	if err := s.commit(next); err != nil {
+		return SiteMessage{}, err
+	}
+	return deleted, nil
 }
 
 func (s *Service) commit(next state) error {
@@ -958,11 +1005,16 @@ func buildMessageList(value state, userID int, query SiteMessageQuery, now time.
 	items := make([]SiteMessage, 0, len(value.Messages))
 	unread := 0
 	for _, item := range value.Messages {
-		if !isMessageActive(item, now) {
+		active := isMessageActive(item, now)
+		if query.Manage {
+			if item.Status != 1 {
+				continue
+			}
+		} else if !active {
 			continue
 		}
 		receipt := findReceipt(value.MessageReceipts, userID, item.ID)
-		if receipt == nil || receipt.ReadAt == "" {
+		if active && (receipt == nil || receipt.ReadAt == "") {
 			unread++
 		}
 		if !matchesText(item.Title+" "+item.Content, query.Keyword) {
@@ -1051,6 +1103,53 @@ func sortMessages(items []SiteMessage) {
 		}
 		return items[i].PublishedAt > items[j].PublishedAt
 	})
+}
+
+func normalizeSiteMessageInput(input SiteMessageInput, fallback time.Time) (SiteMessageInput, error) {
+	input.Level = strings.TrimSpace(input.Level)
+	input.Title = strings.TrimSpace(input.Title)
+	input.Content = strings.TrimSpace(input.Content)
+	input.ActionLabel = strings.TrimSpace(input.ActionLabel)
+	input.ActionURL = strings.TrimSpace(input.ActionURL)
+	input.ActionTarget = strings.TrimSpace(input.ActionTarget)
+	input.PublishedAt = strings.TrimSpace(input.PublishedAt)
+	input.ExpiresAt = strings.TrimSpace(input.ExpiresAt)
+	if input.Title == "" || len([]rune(input.Title)) > 200 || len([]rune(input.Content)) > 5000 {
+		return SiteMessageInput{}, fmt.Errorf("%w: invalid site message title or content", ErrInvalidData)
+	}
+	if len([]rune(input.ActionLabel)) > 30 || len([]rune(input.ActionURL)) > 2048 {
+		return SiteMessageInput{}, fmt.Errorf("%w: site message action is too long", ErrInvalidData)
+	}
+	if !containsString([]string{MessageLevelInfo, MessageLevelSuccess, MessageLevelWarning, MessageLevelError}, input.Level) {
+		return SiteMessageInput{}, fmt.Errorf("%w: unsupported site message level", ErrInvalidData)
+	}
+	if input.ActionTarget == "" {
+		input.ActionTarget = MessageTargetSelf
+	}
+	if !containsString([]string{MessageTargetSelf, MessageTargetBlank}, input.ActionTarget) {
+		return SiteMessageInput{}, fmt.Errorf("%w: unsupported site message target", ErrInvalidData)
+	}
+	if err := validateActionURL(input.ActionURL); err != nil {
+		return SiteMessageInput{}, err
+	}
+	publishedAt, err := normalizeRFC3339(input.PublishedAt, fallback)
+	if err != nil {
+		return SiteMessageInput{}, fmt.Errorf("%w: invalid site message publish time", ErrInvalidData)
+	}
+	input.PublishedAt = publishedAt
+	if input.ExpiresAt != "" {
+		expiresAt, parseErr := normalizeRFC3339(input.ExpiresAt, time.Time{})
+		if parseErr != nil {
+			return SiteMessageInput{}, fmt.Errorf("%w: invalid site message expiry", ErrInvalidData)
+		}
+		publishedTime, _ := time.Parse(time.RFC3339Nano, publishedAt)
+		expiresTime, _ := time.Parse(time.RFC3339Nano, expiresAt)
+		if !expiresTime.After(publishedTime) {
+			return SiteMessageInput{}, fmt.Errorf("%w: site message expiry must be after publish time", ErrInvalidData)
+		}
+		input.ExpiresAt = expiresAt
+	}
+	return input, nil
 }
 
 func validateActionURL(value string) error {

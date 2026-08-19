@@ -102,6 +102,10 @@ func (*UnavailableService) ClaimMessageNotifications(int) (SiteMessageClaim, err
 	return SiteMessageClaim{}, ErrUnavailable
 }
 
+func (*UnavailableService) MarkMessageNotified(int) error {
+	return ErrUnavailable
+}
+
 func (*UnavailableService) MarkMessageRead(int) (SiteMessage, error) {
 	return SiteMessage{}, ErrUnavailable
 }
@@ -111,6 +115,14 @@ func (*UnavailableService) MarkAllMessagesRead() (int, error) {
 }
 
 func (*UnavailableService) PublishMessage(SiteMessageInput) (SiteMessage, error) {
+	return SiteMessage{}, ErrUnavailable
+}
+
+func (*UnavailableService) UpdateMessage(int, SiteMessageInput) (SiteMessage, error) {
+	return SiteMessage{}, ErrUnavailable
+}
+
+func (*UnavailableService) DeleteMessage(int) (SiteMessage, error) {
 	return SiteMessage{}, ErrUnavailable
 }
 
