@@ -10,6 +10,9 @@ import type { Events } from "@wailsio/runtime";
 import type * as application$0 from "../../../../../cull-pear/internal/application/models.js";
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore: Unused imports
+import type * as appupdate$0 from "../../../../../cull-pear/internal/appupdate/models.js";
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment
+// @ts-ignore: Unused imports
 import type * as notification$0 from "../../../../../cull-pear/internal/notification/models.js";
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore: Unused imports
@@ -18,6 +21,7 @@ import type * as singleinstance$0 from "../../../../../cull-pear/internal/single
 declare module "@wailsio/runtime" {
     namespace Events {
         interface CustomEvents {
+            "app-update:progress": appupdate$0.Progress;
             "app:second-instance": singleinstance$0.LaunchData;
             "native-kit:file-drop": application$0.FileDrop;
             "system-notification:activated": notification$0.Activation;

@@ -1,2 +1,2 @@
 export { AppUpdateProvider, useAppUpdate } from './context/AppUpdateProvider'
-export type { ApplicationUpdateInfo, ApplicationUpdateStatus } from './api/appUpdateApi'
+export type { ApplicationUpdateInfo, ApplicationUpdateProgress, ApplicationUpdateStatus } from './api/appUpdateApi'

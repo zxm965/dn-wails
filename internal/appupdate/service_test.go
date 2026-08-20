@@ -145,6 +145,45 @@ func TestServiceDownloadsMatchingAssetBeforeInstallation(t *testing.T) {
 	}
 }
 
+func TestServiceReportsDownloadAndInstallProgress(t *testing.T) {
+	t.Parallel()
+
+	source := &sourceStub{
+		release: Release{
+			Version: "1.4.0",
+			Assets: []Asset{{
+				Name:        "cull-pear-windows-amd64-installer.exe",
+				DownloadURL: "https://example.com/update.exe",
+				Digest:      testDigest,
+				Size:        7,
+			}},
+		},
+		downloadValue: "payload",
+	}
+	service := NewService(Config{
+		AppName:        "cull-pear",
+		Version:        "1.3.0",
+		Repository:     "zxm965/dn-wails",
+		UpdateEndpoint: "https://updates.example.com/github/releases",
+		Platform:       "windows",
+		Arch:           "amd64",
+	}, source, &installerStub{supported: true})
+
+	var progress []Progress
+	if err := service.InstallWithProgress(context.Background(), "1.4.0", func(value Progress) {
+		progress = append(progress, value)
+	}); err != nil {
+		t.Fatalf("install update: %v", err)
+	}
+	if len(progress) < 2 || progress[0].Phase != "downloading" || progress[len(progress)-1].Phase != "installing" {
+		t.Fatalf("unexpected progress events: %+v", progress)
+	}
+	last := progress[len(progress)-1]
+	if last.Percent != 100 || last.DownloadedBytes != 7 || last.TotalBytes != 7 {
+		t.Fatalf("unexpected final progress: %+v", last)
+	}
+}
+
 func TestServiceRejectsChangedVersionAndMissingDigest(t *testing.T) {
 	t.Parallel()
 

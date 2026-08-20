@@ -209,6 +209,10 @@ func releaseFromGitHubRelease(updateEndpoint string, repository string, release 
 }
 
 func (s *EndpointSource) Download(ctx context.Context, asset coreupdate.Asset, destination string) error {
+	return s.DownloadWithProgress(ctx, asset, destination, nil)
+}
+
+func (s *EndpointSource) DownloadWithProgress(ctx context.Context, asset coreupdate.Asset, destination string, onProgress coreupdate.ProgressCallback) error {
 	downloadURL, err := parseHTTPSURL(asset.DownloadURL, "download")
 	if err != nil {
 		return fmt.Errorf("download update asset: %w", err)
@@ -261,7 +265,11 @@ func (s *EndpointSource) Download(ctx context.Context, asset coreupdate.Asset, d
 	}()
 
 	hash := sha256.New()
-	written, copyErr := io.Copy(io.MultiWriter(file, hash), io.LimitReader(response.Body, maxAssetSize+1))
+	reader := io.Reader(io.LimitReader(response.Body, maxAssetSize+1))
+	if onProgress != nil {
+		reader = &progressReader{reader: reader, total: asset.Size, callback: onProgress}
+	}
+	written, copyErr := io.Copy(io.MultiWriter(file, hash), reader)
 	if copyErr != nil {
 		return fmt.Errorf("save update asset: %w", copyErr)
 	}
@@ -280,6 +288,34 @@ func (s *EndpointSource) Download(ctx context.Context, asset coreupdate.Asset, d
 
 	removeFile = false
 	return nil
+}
+
+type progressReader struct {
+	reader   io.Reader
+	total    int64
+	written  int64
+	callback coreupdate.ProgressCallback
+}
+
+func (r *progressReader) Read(buffer []byte) (int, error) {
+	count, err := r.reader.Read(buffer)
+	if count > 0 {
+		r.written += int64(count)
+		percent := 0
+		if r.total > 0 {
+			percent = int(r.written * 100 / r.total)
+			if percent > 100 {
+				percent = 100
+			}
+		}
+		r.callback(coreupdate.Progress{
+			Phase:           "downloading",
+			DownloadedBytes: r.written,
+			TotalBytes:      r.total,
+			Percent:         percent,
+		})
+	}
+	return count, err
 }
 
 func setUpdateHeaders(request *http.Request, accept string) {

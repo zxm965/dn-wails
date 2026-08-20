@@ -26,6 +26,7 @@ const (
 	SystemNotificationActivatedEvent = "system-notification:activated"
 	SecondInstanceLaunchedEvent      = "app:second-instance"
 	FileDropEvent                    = "native-kit:file-drop"
+	ApplicationUpdateProgressEvent   = "app-update:progress"
 )
 
 var ErrAppNotReady = errors.New("application is not ready")
@@ -34,6 +35,7 @@ func init() {
 	wailsapplication.RegisterEvent[notification.Activation](SystemNotificationActivatedEvent)
 	wailsapplication.RegisterEvent[singleinstance.LaunchData](SecondInstanceLaunchedEvent)
 	wailsapplication.RegisterEvent[FileDrop](FileDropEvent)
+	wailsapplication.RegisterEvent[appupdate.Progress](ApplicationUpdateProgressEvent)
 }
 
 type FileDrop struct {

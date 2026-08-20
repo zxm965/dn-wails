@@ -11,6 +11,9 @@ import { Create as $Create } from "@wailsio/runtime";
 import * as application$0 from "../../../../../cull-pear/internal/application/models.js";
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore: Unused imports
+import * as appupdate$0 from "../../../../../cull-pear/internal/appupdate/models.js";
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment
+// @ts-ignore: Unused imports
 import * as notification$0 from "../../../../../cull-pear/internal/notification/models.js";
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore: Unused imports
@@ -18,15 +21,17 @@ import * as singleinstance$0 from "../../../../../cull-pear/internal/singleinsta
 
 function configure() {
     Object.freeze(Object.assign($Create.Events, {
-        "app:second-instance": $$createType0,
-        "native-kit:file-drop": $$createType1,
-        "system-notification:activated": $$createType2,
+        "app-update:progress": $$createType0,
+        "app:second-instance": $$createType1,
+        "native-kit:file-drop": $$createType2,
+        "system-notification:activated": $$createType3,
     }));
 }
 
 // Private type creation functions
-const $$createType0 = singleinstance$0.LaunchData.createFrom;
-const $$createType1 = application$0.FileDrop.createFrom;
-const $$createType2 = notification$0.Activation.createFrom;
+const $$createType0 = appupdate$0.Progress.createFrom;
+const $$createType1 = singleinstance$0.LaunchData.createFrom;
+const $$createType2 = application$0.FileDrop.createFrom;
+const $$createType3 = notification$0.Activation.createFrom;
 
 configure();

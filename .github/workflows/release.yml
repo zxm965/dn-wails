@@ -49,7 +49,7 @@ jobs:
         run: pnpm --dir frontend install --frozen-lockfile
 
       - name: Install Wails CLI
-        run: go install github.com/wailsapp/wails/v3/cmd/wails3@v3.0.0-beta.8
+        run: go install github.com/wailsapp/wails/v3/cmd/wails3@v3.0.0-beta.10
 
       - name: Check release tag
         run: node scripts/configure-release.mjs "$GITHUB_REF_NAME"
@@ -110,7 +110,7 @@ jobs:
         run: pnpm --dir frontend install --frozen-lockfile
 
       - name: Install Wails CLI
-        run: go install github.com/wailsapp/wails/v3/cmd/wails3@v3.0.0-beta.8
+        run: go install github.com/wailsapp/wails/v3/cmd/wails3@v3.0.0-beta.10
 
       - name: Install NSIS
         if: runner.os == 'Windows'

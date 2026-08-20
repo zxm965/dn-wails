@@ -81,6 +81,20 @@ const settingsUpdateError = style({
   fontSize: '11px',
 })
 
+const settingsUpdateProgress = style({
+  display: 'grid',
+  gap: '5px',
+  marginTop: '12px',
+  color: 'var(--text-secondary)',
+  fontSize: '11px',
+})
+
+const settingsUpdateProgressBar = style({
+  width: 'min(360px, 100%)',
+  height: '7px',
+  accentColor: 'var(--accent)',
+})
+
 const settingsError = style({
   padding: '12px 14px',
   color: 'var(--danger-text)',
@@ -214,6 +228,8 @@ export const styles = {
   'settings-button-secondary': settingsButtonSecondary,
   'settings-update-content': settingsUpdateContent,
   'settings-update-error': settingsUpdateError,
+  'settings-update-progress': settingsUpdateProgress,
+  'settings-update-progress-bar': settingsUpdateProgressBar,
   'settings-error': settingsError,
   'settings-section': settingsSection,
   'settings-section-title': settingsSectionTitle,

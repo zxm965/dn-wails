@@ -1,6 +1,7 @@
 package application
 
 import (
+	"context"
 	"time"
 
 	"cull-pear/internal/appupdate"
@@ -23,7 +24,19 @@ func (a *App) InstallApplicationUpdate(expectedVersion string) error {
 	if err != nil {
 		return err
 	}
-	if err := a.applicationUpdateService.Install(ctx, expectedVersion); err != nil {
+	install := a.applicationUpdateService.Install
+	if progressService, ok := a.applicationUpdateService.(interface {
+		InstallWithProgress(context.Context, string, appupdate.ProgressCallback) error
+	}); ok {
+		install = func(installContext context.Context, version string) error {
+			return progressService.InstallWithProgress(installContext, version, func(progress appupdate.Progress) {
+				if a.runtime != nil {
+					a.runtime.Event.Emit(ApplicationUpdateProgressEvent, progress)
+				}
+			})
+		}
+	}
+	if err := install(ctx, expectedVersion); err != nil {
 		return err
 	}
 

@@ -39,6 +39,7 @@ export function SettingsPanel() {
     isLoading: isUpdateLoading,
     isChecking,
     isInstalling,
+    progress: updateProgress,
     checkForUpdates,
   } = useAppUpdate()
   const { notify, confirm } = useFeedback()
@@ -333,6 +334,24 @@ export function SettingsPanel() {
                 {updateError}
               </p>
             )}
+            {updateProgress && (
+              <div className={cx('settings-update-progress')} aria-live='polite'>
+                <span>
+                  {updateProgress.phase === 'downloading'
+                    ? `正在下载更新 ${updateProgress.percent}%`
+                    : '下载完成，正在准备安装…'}
+                </span>
+                <progress
+                  className={cx('settings-update-progress-bar')}
+                  max={100}
+                  value={updateProgress.percent}
+                  aria-label='应用更新下载进度'
+                />
+                <small>
+                  {formatBytes(updateProgress.downloadedBytes)} / {formatBytes(updateProgress.totalBytes)}
+                </small>
+              </div>
+            )}
           </div>
           <Button
             type='button'
@@ -348,6 +367,20 @@ export function SettingsPanel() {
       </section>
     </div>
   )
+}
+
+function formatBytes(value: number): string {
+  if (!Number.isFinite(value) || value <= 0) return '0 B'
+  if (value < 1024) return `${Math.round(value)} B`
+  const units = ['KB', 'MB', 'GB']
+  let amount = value
+  let unit = 'B'
+  for (const nextUnit of units) {
+    amount /= 1024
+    unit = nextUnit
+    if (amount < 1024 || nextUnit === units[units.length - 1]) break
+  }
+  return `${amount.toFixed(amount >= 10 ? 0 : 1)} ${unit}`
 }
 
 interface ToggleRowProps {

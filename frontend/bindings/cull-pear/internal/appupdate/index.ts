@@ -3,5 +3,6 @@
 
 export {
     Info,
+    Progress,
     Status
 } from "./models.js";

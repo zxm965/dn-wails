@@ -46,6 +46,43 @@ export class Info {
     }
 }
 
+export class Progress {
+    "version": string;
+    "phase": string;
+    "downloadedBytes": number;
+    "totalBytes": number;
+    "percent": number;
+
+    /** Creates a new Progress instance. */
+    constructor($$source: Partial<Progress> = {}) {
+        if (!("version" in $$source)) {
+            this["version"] = "";
+        }
+        if (!("phase" in $$source)) {
+            this["phase"] = "";
+        }
+        if (!("downloadedBytes" in $$source)) {
+            this["downloadedBytes"] = 0;
+        }
+        if (!("totalBytes" in $$source)) {
+            this["totalBytes"] = 0;
+        }
+        if (!("percent" in $$source)) {
+            this["percent"] = 0;
+        }
+
+        Object.assign(this, $$source);
+    }
+
+    /**
+     * Creates a new Progress instance from a string or object.
+     */
+    static createFrom($$source: any = {}): Progress {
+        let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
+        return new Progress($$parsedSource as Partial<Progress>);
+    }
+}
+
 export class Status {
     "currentVersion": string;
     "latestVersion": string;

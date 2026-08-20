@@ -86,6 +86,10 @@ func (s *Service) Check(ctx context.Context) (Status, error) {
 }
 
 func (s *Service) Install(ctx context.Context, expectedVersion string) error {
+	return s.InstallWithProgress(ctx, expectedVersion, nil)
+}
+
+func (s *Service) InstallWithProgress(ctx context.Context, expectedVersion string, onProgress ProgressCallback) error {
 	s.installMu.Lock()
 	if s.installing {
 		s.installMu.Unlock()
@@ -138,9 +142,33 @@ func (s *Service) Install(ctx context.Context, expectedVersion string) error {
 	defer os.RemoveAll(tempDirectory)
 
 	archivePath := filepath.Join(tempDirectory, filepath.Base(asset.Name))
-	if err := s.source.Download(ctx, asset, archivePath); err != nil {
+	emitProgress := func(progress Progress) {
+		if onProgress == nil {
+			return
+		}
+		progress.Version = latestVersion
+		if progress.TotalBytes == 0 {
+			progress.TotalBytes = asset.Size
+		}
+		if progress.Percent < 0 {
+			progress.Percent = 0
+		}
+		if progress.Percent > 100 {
+			progress.Percent = 100
+		}
+		onProgress(progress)
+	}
+	emitProgress(Progress{Phase: "downloading", TotalBytes: asset.Size})
+	if progressSource, ok := s.source.(interface {
+		DownloadWithProgress(context.Context, Asset, string, ProgressCallback) error
+	}); ok {
+		if err := progressSource.DownloadWithProgress(ctx, asset, archivePath, emitProgress); err != nil {
+			return err
+		}
+	} else if err := s.source.Download(ctx, asset, archivePath); err != nil {
 		return err
 	}
+	emitProgress(Progress{Phase: "installing", DownloadedBytes: asset.Size, TotalBytes: asset.Size, Percent: 100})
 	if err := s.installer.Install(ctx, archivePath); err != nil {
 		return fmt.Errorf("prepare application update: %w", err)
 	}

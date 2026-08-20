@@ -23,6 +23,14 @@ export interface ApplicationUpdateStatus {
   publishedAt: string
 }
 
+export interface ApplicationUpdateProgress {
+  version: string
+  phase: 'downloading' | 'installing'
+  downloadedBytes: number
+  totalBytes: number
+  percent: number
+}
+
 export async function getApplicationUpdateInfo(): Promise<ApplicationUpdateInfo> {
   const value = await GetApplicationUpdateInfo()
   return {

@@ -1,3 +1,4 @@
+import { Events } from '@wailsio/runtime'
 import { createContext, type ReactNode, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react'
 
 import { useFeedback } from '@/shared/feedback'
@@ -7,6 +8,7 @@ import {
   getApplicationUpdateInfo,
   installApplicationUpdate,
   type ApplicationUpdateInfo,
+  type ApplicationUpdateProgress,
   type ApplicationUpdateStatus,
 } from '../api/appUpdateApi'
 
@@ -17,6 +19,7 @@ interface AppUpdateContextValue {
   isLoading: boolean
   isChecking: boolean
   isInstalling: boolean
+  progress: ApplicationUpdateProgress | null
   checkForUpdates: (manual?: boolean) => Promise<ApplicationUpdateStatus | null>
 }
 
@@ -28,6 +31,18 @@ function errorMessage(error: unknown, fallback: string): string {
   return fallback
 }
 
+function isApplicationUpdateProgress(value: unknown): value is ApplicationUpdateProgress {
+  if (typeof value !== 'object' || value === null) return false
+  const progress = value as Record<string, unknown>
+  return (
+    typeof progress.version === 'string' &&
+    (progress.phase === 'downloading' || progress.phase === 'installing') &&
+    typeof progress.downloadedBytes === 'number' &&
+    typeof progress.totalBytes === 'number' &&
+    typeof progress.percent === 'number'
+  )
+}
+
 export function AppUpdateProvider({ children }: { children: ReactNode }) {
   const { confirm, notify } = useFeedback()
   const [info, setInfo] = useState<ApplicationUpdateInfo | null>(null)
@@ -36,6 +51,7 @@ export function AppUpdateProvider({ children }: { children: ReactNode }) {
   const [isLoading, setIsLoading] = useState(true)
   const [isChecking, setIsChecking] = useState(false)
   const [isInstalling, setIsInstalling] = useState(false)
+  const [progress, setProgress] = useState<ApplicationUpdateProgress | null>(null)
   const autoCheckStartedRef = useRef(false)
   const operationRef = useRef<Promise<ApplicationUpdateStatus | null> | null>(null)
 
@@ -69,6 +85,13 @@ export function AppUpdateProvider({ children }: { children: ReactNode }) {
           if (!accepted) return nextStatus
 
           setIsInstalling(true)
+          setProgress({
+            version: nextStatus.latestVersion,
+            phase: 'downloading',
+            downloadedBytes: 0,
+            totalBytes: 0,
+            percent: 0,
+          })
           notify({
             title: '正在准备更新',
             message: '正在下载并校验安装包，请勿关闭应用。',
@@ -80,6 +103,7 @@ export function AppUpdateProvider({ children }: { children: ReactNode }) {
           } catch (installError: unknown) {
             const message = errorMessage(installError, '安装应用更新失败。')
             setError(message)
+            setProgress(null)
             notify({ title: '更新失败', message, tone: 'error', duration: 8000 })
             return nextStatus
           } finally {
@@ -127,9 +151,15 @@ export function AppUpdateProvider({ children }: { children: ReactNode }) {
     }
   }, [checkForUpdates])
 
+  useEffect(() => {
+    return Events.On('app-update:progress', (event) => {
+      if (isApplicationUpdateProgress(event.data)) setProgress(event.data)
+    })
+  }, [])
+
   const value = useMemo<AppUpdateContextValue>(
-    () => ({ info, status, error, isLoading, isChecking, isInstalling, checkForUpdates }),
-    [checkForUpdates, error, info, isChecking, isInstalling, isLoading, status],
+    () => ({ info, status, error, isLoading, isChecking, isInstalling, progress, checkForUpdates }),
+    [checkForUpdates, error, info, isChecking, isInstalling, isLoading, progress, status],
   )
 
   return <AppUpdateContext.Provider value={value}>{children}</AppUpdateContext.Provider>

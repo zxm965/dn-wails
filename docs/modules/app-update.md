@@ -14,8 +14,8 @@
 - `internal/platform/appupdate/config.go`：从 PostgreSQL 读取当前应用、渠道、平台和架构对应的更新源配置。
 - `internal/platform/appupdate/installer_darwin.go`：挂载新版 DMG，退出当前进程后替换应用包、卸载镜像并重新打开。
 - `internal/platform/appupdate/installer_windows.go`：退出当前进程后静默运行用户级 NSIS 安装器并重新打开应用。
-- `internal/application/update.go`：向前端暴露版本信息、检查和安装三个 Wails 用例。
-- `frontend/src/features/app-update/`：根级更新状态、启动自动检查、确认弹窗和错误反馈。
+- `internal/application/update.go`：向前端暴露版本信息、检查和安装三个 Wails 用例，并转发下载进度事件。
+- `frontend/src/features/app-update/`：根级更新状态、启动自动检查、确认弹窗、下载进度和错误反馈。
 - `frontend/src/features/devtools/components/DesktopOverview.tsx`：展示当前版本，不展示更新源地址等发布配置。
 - `frontend/src/features/settings/components/SettingsPanel.tsx`：在偏好设置最底部展示更新状态和手动检查按钮。
 - `.github/workflows/release.yml`：标签触发的双平台质量检查、构建以及 GitHub、Gitee Release 发布。
@@ -71,6 +71,8 @@ React AppUpdateProvider
 8. 当前客户端按平台精确选择 DMG 或 EXE，由 Go HTTP 客户端携带安装 ID、当前版本和平台 User-Agent 请求下载；下载后校验 Release 元数据声明的字节数和 SHA-256。
 9. 校验成功后启动平台更新助手；macOS 挂载 DMG 并在当前应用退出后替换 `.app`，Windows 静默运行用户级安装器，完成后重新启动。
 
+安装开始后，下载器按实际读取字节数回调进度。`internal/appupdate.Service` 将进度归一化为版本、阶段、已下载字节、总字节和百分比，`internal/application.App` 通过 `app-update:progress` 事件转发给前端。`AppUpdateProvider` 负责订阅并清理事件，设置页的“应用更新”区域展示下载百分比、进度条和字节数；下载完成后显示“正在准备安装”，保留原有自动重启流程。
+
 ## 数据契约
 
 ```ts
@@ -91,6 +93,14 @@ interface ApplicationUpdateStatus {
   releaseNotes: string
   releaseUrl: string
   publishedAt: string
+}
+
+interface ApplicationUpdateProgress {
+  version: string
+  phase: 'downloading' | 'installing'
+  downloadedBytes: number
+  totalBytes: number
+  percent: number
 }
 ```
 
@@ -141,6 +151,7 @@ interface GitHubReleaseEndpoint {
 - macOS 应用包所在目录必须允许当前用户写入；Windows 发布统一使用 Taskfile 的 `INSTALL_SCOPE=user`，避免自动更新请求管理员权限。
 - Windows NSIS 卸载时删除安装身份文件但保留其他应用配置；更新安装不会执行该卸载清理。macOS 删除 `.app` 没有对应卸载钩子。
 - 同一进程只允许一个安装操作；安装前再次检查版本，避免确认期间 Release 发生变化。
+- 下载器无法提供字节流进度时仍兼容旧的 `ReleaseSource.Download` 实现，前端至少显示下载开始和安装准备阶段。
 - Build 与 Release job 均关联 GitHub Environment `RELEASE`；`DATABASE_URL` 缺失、超过 8192 字符或包含控制字符时，build job 立即失败。
 - GitHub Actions 使用仓库 Secret `GITEE_TOKEN` 调用 Gitee OpenAPI；令牌只存在于工作流，不进入发布附件元数据或桌面二进制。
 - 临时 `.env.local` 使用受限权限创建并由 Go embed 写入二进制，只保存数据库地址，不进入 Git 记录，也不会主动输出到工作流日志。

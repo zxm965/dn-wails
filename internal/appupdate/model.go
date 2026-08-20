@@ -41,6 +41,16 @@ type Status struct {
 	PublishedAt     string `json:"publishedAt"`
 }
 
+type Progress struct {
+	Version         string `json:"version"`
+	Phase           string `json:"phase"`
+	DownloadedBytes int64  `json:"downloadedBytes"`
+	TotalBytes      int64  `json:"totalBytes"`
+	Percent         int    `json:"percent"`
+}
+
+type ProgressCallback func(Progress)
+
 type Asset struct {
 	Name        string
 	DownloadURL string
