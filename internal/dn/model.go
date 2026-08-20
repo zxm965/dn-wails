@@ -2,7 +2,7 @@ package dn
 
 import "cull-pear/internal/account"
 
-const CurrentVersion = 2
+const CurrentVersion = 3
 
 const (
 	UserRoleMember = account.UserRoleMember
@@ -58,53 +58,38 @@ type RoleProfessionQuery struct {
 	PageSize   int    `json:"pageSize"`
 }
 
-type WeeklyPlanCommission struct {
-	ID        int  `json:"id"`
-	Completed bool `json:"completed"`
-}
-
-type WeeklyPlanTicket struct {
-	ID        int    `json:"id"`
-	ExpiresAt string `json:"expiresAt"`
-}
-
 type WeeklyPlan struct {
-	ID                   int                    `json:"id"`
-	OwnerID              int                    `json:"ownerId"`
-	RoleName             string                 `json:"roleName"`
-	Profession           string                 `json:"profession"`
-	Priority             int                    `json:"priority"`
-	NestCommissions      []WeeklyPlanCommission `json:"nestCommissions"`
-	NestTickets          []WeeklyPlanTicket     `json:"nestTickets"`
-	LevelCommissionCount int                    `json:"levelCommissionCount"`
-	HasInvasion          bool                   `json:"hasInvasion"`
-	HasArk               bool                   `json:"hasArk"`
-	HasNightmare         bool                   `json:"hasNightmare"`
-	Remark               string                 `json:"remark"`
-	SortOrder            int                    `json:"sortOrder"`
-	RoleProfessionID     int                    `json:"roleProfessionId"`
-	CreatedAt            string                 `json:"createdAt"`
-	UpdatedAt            string                 `json:"updatedAt"`
+	ID                       int    `json:"id"`
+	OwnerID                  int    `json:"ownerId"`
+	RoleName                 string `json:"roleName"`
+	Profession               string `json:"profession"`
+	Priority                 int    `json:"priority"`
+	RemainingCommissionCount int    `json:"remainingCommissionCount"`
+	HasInvasion              bool   `json:"hasInvasion"`
+	HasArk                   bool   `json:"hasArk"`
+	HasNightmare             bool   `json:"hasNightmare"`
+	Remark                   string `json:"remark"`
+	SortOrder                int    `json:"sortOrder"`
+	RoleProfessionID         int    `json:"roleProfessionId"`
+	CreatedAt                string `json:"createdAt"`
+	UpdatedAt                string `json:"updatedAt"`
 }
 
 type WeeklyPlanInput struct {
-	ID                   int                    `json:"id"`
-	RoleProfessionID     int                    `json:"roleProfessionId"`
-	NestCommissions      []WeeklyPlanCommission `json:"nestCommissions"`
-	NestTickets          []WeeklyPlanTicket     `json:"nestTickets"`
-	LevelCommissionCount int                    `json:"levelCommissionCount"`
-	HasInvasion          bool                   `json:"hasInvasion"`
-	HasArk               bool                   `json:"hasArk"`
-	HasNightmare         bool                   `json:"hasNightmare"`
-	Remark               string                 `json:"remark"`
-	SortOrder            int                    `json:"sortOrder"`
+	ID                       int    `json:"id"`
+	RoleProfessionID         int    `json:"roleProfessionId"`
+	RemainingCommissionCount int    `json:"remainingCommissionCount"`
+	HasInvasion              bool   `json:"hasInvasion"`
+	HasArk                   bool   `json:"hasArk"`
+	HasNightmare             bool   `json:"hasNightmare"`
+	Remark                   string `json:"remark"`
+	SortOrder                int    `json:"sortOrder"`
 }
 
 type WeeklyPlanQuery struct {
 	RoleName         string `json:"roleName"`
 	Profession       string `json:"profession"`
 	Priority         int    `json:"priority"`
-	NestCommission   string `json:"nestCommission"`
 	RoleProfessionID int    `json:"roleProfessionId"`
 	Page             int    `json:"page"`
 	PageSize         int    `json:"pageSize"`
@@ -265,12 +250,52 @@ type state struct {
 }
 
 type legacyState struct {
-	Version       int              `json:"version"`
-	NextRoleID    int              `json:"nextRoleId"`
-	NextPlanID    int              `json:"nextPlanId"`
-	NextMessageID int              `json:"nextMessageId"`
-	Profile       Profile          `json:"profile"`
-	Roles         []RoleProfession `json:"roles"`
-	Plans         []WeeklyPlan     `json:"plans"`
-	Messages      []SiteMessage    `json:"messages"`
+	Version       int                `json:"version"`
+	NextRoleID    int                `json:"nextRoleId"`
+	NextPlanID    int                `json:"nextPlanId"`
+	NextMessageID int                `json:"nextMessageId"`
+	Profile       Profile            `json:"profile"`
+	Roles         []RoleProfession   `json:"roles"`
+	Plans         []legacyWeeklyPlan `json:"plans"`
+	Messages      []SiteMessage      `json:"messages"`
+}
+
+type legacyStateV2 struct {
+	Version               int                    `json:"version"`
+	NextUserID            int                    `json:"nextUserId"`
+	NextRoleID            int                    `json:"nextRoleId"`
+	NextPlanID            int                    `json:"nextPlanId"`
+	NextMessageID         int                    `json:"nextMessageId"`
+	Users                 []user                 `json:"users"`
+	Session               session                `json:"session"`
+	Roles                 []RoleProfession       `json:"roles"`
+	Plans                 []legacyWeeklyPlan     `json:"plans"`
+	Messages              []SiteMessage          `json:"messages"`
+	MessageReceipts       []messageReceipt       `json:"messageReceipts"`
+	OfficialSync          officialSyncState      `json:"officialSync"`
+	LegacyProfile         *Profile               `json:"legacyProfile,omitempty"`
+	LegacyMessageReceipts []legacyMessageReceipt `json:"legacyMessageReceipts,omitempty"`
+}
+
+type legacyWeeklyPlanCommission struct {
+	ID        int  `json:"id"`
+	Completed bool `json:"completed"`
+}
+
+type legacyWeeklyPlan struct {
+	ID                   int                          `json:"id"`
+	OwnerID              int                          `json:"ownerId"`
+	RoleName             string                       `json:"roleName"`
+	Profession           string                       `json:"profession"`
+	Priority             int                          `json:"priority"`
+	NestCommissions      []legacyWeeklyPlanCommission `json:"nestCommissions"`
+	LevelCommissionCount int                          `json:"levelCommissionCount"`
+	HasInvasion          bool                         `json:"hasInvasion"`
+	HasArk               bool                         `json:"hasArk"`
+	HasNightmare         bool                         `json:"hasNightmare"`
+	Remark               string                       `json:"remark"`
+	SortOrder            int                          `json:"sortOrder"`
+	RoleProfessionID     int                          `json:"roleProfessionId"`
+	CreatedAt            string                       `json:"createdAt"`
+	UpdatedAt            string                       `json:"updatedAt"`
 }

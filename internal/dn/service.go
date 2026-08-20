@@ -105,6 +105,15 @@ func (s *Service) Initialize() error {
 		if err := s.save(loaded); err != nil {
 			return fmt.Errorf("persist migrated dn system data: %w", err)
 		}
+	case 2:
+		var legacy legacyStateV2
+		if err := json.Unmarshal(data, &legacy); err != nil {
+			return fmt.Errorf("decode version 2 dn system data: %w", err)
+		}
+		loaded = migrateStateV2(legacy)
+		if err := s.save(loaded); err != nil {
+			return fmt.Errorf("persist migrated dn system data: %w", err)
+		}
 	case CurrentVersion:
 		if err := json.Unmarshal(data, &loaded); err != nil {
 			return fmt.Errorf("decode dn system data: %w", err)
@@ -321,9 +330,6 @@ func (s *Service) ListWeeklyPlans(query WeeklyPlanQuery) (WeeklyPlanList, error)
 		if query.RoleProfessionID > 0 && item.RoleProfessionID != query.RoleProfessionID {
 			continue
 		}
-		if !matchesNest(item.NestCommissions, query.NestCommission) {
-			continue
-		}
 		items = append(items, clonePlan(item))
 	}
 	sortPlans(items)
@@ -353,16 +359,8 @@ func (s *Service) SaveWeeklyPlan(input WeeklyPlanInput) (WeeklyPlan, error) {
 	if input.RoleProfessionID <= 0 {
 		return WeeklyPlan{}, fmt.Errorf("%w: role profession is required", ErrInvalidData)
 	}
-	if input.LevelCommissionCount < 0 || input.LevelCommissionCount > 1 || input.SortOrder < 0 {
+	if input.RemainingCommissionCount < 0 || input.RemainingCommissionCount > 6 || input.SortOrder < 0 {
 		return WeeklyPlan{}, fmt.Errorf("%w: invalid weekly plan counters", ErrInvalidData)
-	}
-	commissions, err := normalizeCommissions(input.NestCommissions)
-	if err != nil {
-		return WeeklyPlan{}, err
-	}
-	tickets, err := normalizeTickets(input.NestTickets)
-	if err != nil {
-		return WeeklyPlan{}, err
 	}
 	if len([]rune(input.Remark)) > 1000 {
 		return WeeklyPlan{}, fmt.Errorf("%w: weekly plan remark is too long", ErrInvalidData)
@@ -382,21 +380,19 @@ func (s *Service) SaveWeeklyPlan(input WeeklyPlanInput) (WeeklyPlan, error) {
 	role := next.Roles[roleIndex]
 	now := time.Now().UTC().Format(time.RFC3339Nano)
 	value := WeeklyPlan{
-		ID:                   input.ID,
-		OwnerID:              current.ID,
-		RoleName:             role.RoleName,
-		Profession:           role.Profession,
-		Priority:             role.Priority,
-		NestCommissions:      commissions,
-		NestTickets:          tickets,
-		LevelCommissionCount: input.LevelCommissionCount,
-		HasInvasion:          input.HasInvasion,
-		HasArk:               input.HasArk,
-		HasNightmare:         input.HasNightmare,
-		Remark:               input.Remark,
-		SortOrder:            input.SortOrder,
-		RoleProfessionID:     role.ID,
-		UpdatedAt:            now,
+		ID:                       input.ID,
+		OwnerID:                  current.ID,
+		RoleName:                 role.RoleName,
+		Profession:               role.Profession,
+		Priority:                 role.Priority,
+		RemainingCommissionCount: input.RemainingCommissionCount,
+		HasInvasion:              input.HasInvasion,
+		HasArk:                   input.HasArk,
+		HasNightmare:             input.HasNightmare,
+		Remark:                   input.Remark,
+		SortOrder:                input.SortOrder,
+		RoleProfessionID:         role.ID,
+		UpdatedAt:                now,
 	}
 	if input.ID == 0 {
 		value.ID = next.NextPlanID
@@ -462,9 +458,7 @@ func (s *Service) InitializeWeeklyPlans() (WeeklyPlanInitializationResult, error
 			plan.Profession = role.Profession
 			plan.Priority = role.Priority
 			plan.SortOrder = role.SortOrder
-			plan.NestCommissions = []WeeklyPlanCommission{}
-			plan.NestTickets = []WeeklyPlanTicket{}
-			plan.LevelCommissionCount = 0
+			plan.RemainingCommissionCount = 6
 			plan.HasInvasion = false
 			plan.HasArk = false
 			plan.HasNightmare = false
@@ -474,17 +468,16 @@ func (s *Service) InitializeWeeklyPlans() (WeeklyPlanInitializationResult, error
 			continue
 		}
 		next.Plans = append(next.Plans, WeeklyPlan{
-			ID:               next.NextPlanID,
-			OwnerID:          current.ID,
-			RoleName:         role.RoleName,
-			Profession:       role.Profession,
-			Priority:         role.Priority,
-			NestCommissions:  []WeeklyPlanCommission{},
-			NestTickets:      []WeeklyPlanTicket{},
-			SortOrder:        role.SortOrder,
-			RoleProfessionID: role.ID,
-			CreatedAt:        now,
-			UpdatedAt:        now,
+			ID:                       next.NextPlanID,
+			OwnerID:                  current.ID,
+			RoleName:                 role.RoleName,
+			Profession:               role.Profession,
+			Priority:                 role.Priority,
+			RemainingCommissionCount: 6,
+			SortOrder:                role.SortOrder,
+			RoleProfessionID:         role.ID,
+			CreatedAt:                now,
+			UpdatedAt:                now,
 		})
 		next.NextPlanID++
 		result.Created++
@@ -514,17 +507,16 @@ func (s *Service) SyncWeeklyPlans() (WeeklyPlanSyncResult, error) {
 			continue
 		}
 		next.Plans = append(next.Plans, WeeklyPlan{
-			ID:               next.NextPlanID,
-			OwnerID:          current.ID,
-			RoleName:         role.RoleName,
-			Profession:       role.Profession,
-			Priority:         role.Priority,
-			NestCommissions:  []WeeklyPlanCommission{},
-			NestTickets:      []WeeklyPlanTicket{},
-			SortOrder:        role.SortOrder,
-			RoleProfessionID: role.ID,
-			CreatedAt:        now,
-			UpdatedAt:        now,
+			ID:                       next.NextPlanID,
+			OwnerID:                  current.ID,
+			RoleName:                 role.RoleName,
+			Profession:               role.Profession,
+			Priority:                 role.Priority,
+			RemainingCommissionCount: 6,
+			SortOrder:                role.SortOrder,
+			RoleProfessionID:         role.ID,
+			CreatedAt:                now,
+			UpdatedAt:                now,
 		})
 		next.NextPlanID++
 		result.Created++
@@ -873,7 +865,7 @@ func migrateLegacyState(legacy legacyState) state {
 		next.LegacyProfile = &profile
 	}
 	for index, plan := range legacy.Plans {
-		next.Plans[index] = clonePlan(plan)
+		next.Plans[index] = migrateLegacyWeeklyPlan(plan)
 	}
 	for index := range next.Messages {
 		if next.Messages[index].Status == 0 {
@@ -891,12 +883,71 @@ func migrateLegacyState(legacy legacyState) state {
 	return normalizeState(next)
 }
 
+func migrateStateV2(legacy legacyStateV2) state {
+	next := state{
+		Version:               CurrentVersion,
+		NextUserID:            legacy.NextUserID,
+		NextRoleID:            legacy.NextRoleID,
+		NextPlanID:            legacy.NextPlanID,
+		NextMessageID:         legacy.NextMessageID,
+		Users:                 append([]user(nil), legacy.Users...),
+		Session:               legacy.Session,
+		Roles:                 append([]RoleProfession(nil), legacy.Roles...),
+		Plans:                 make([]WeeklyPlan, len(legacy.Plans)),
+		Messages:              cloneMessages(legacy.Messages),
+		MessageReceipts:       append([]messageReceipt(nil), legacy.MessageReceipts...),
+		OfficialSync:          legacy.OfficialSync,
+		LegacyProfile:         legacy.LegacyProfile,
+		LegacyMessageReceipts: append([]legacyMessageReceipt(nil), legacy.LegacyMessageReceipts...),
+	}
+	for index, plan := range legacy.Plans {
+		next.Plans[index] = migrateLegacyWeeklyPlan(plan)
+	}
+	return normalizeState(next)
+}
+
+func migrateLegacyWeeklyPlan(plan legacyWeeklyPlan) WeeklyPlan {
+	remaining := 6
+	if len(plan.NestCommissions) > 0 {
+		remaining = 0
+		for _, commission := range plan.NestCommissions {
+			if !commission.Completed {
+				remaining++
+			}
+		}
+		if remaining > 6 {
+			remaining = 6
+		}
+	}
+	return WeeklyPlan{
+		ID:                       plan.ID,
+		OwnerID:                  plan.OwnerID,
+		RoleName:                 plan.RoleName,
+		Profession:               plan.Profession,
+		Priority:                 plan.Priority,
+		RemainingCommissionCount: remaining,
+		HasInvasion:              plan.HasInvasion,
+		HasArk:                   plan.HasArk,
+		HasNightmare:             plan.HasNightmare,
+		Remark:                   plan.Remark,
+		SortOrder:                plan.SortOrder,
+		RoleProfessionID:         plan.RoleProfessionID,
+		CreatedAt:                plan.CreatedAt,
+		UpdatedAt:                plan.UpdatedAt,
+	}
+}
+
 func validateState(value state) error {
 	if value.Version != CurrentVersion {
 		return fmt.Errorf("%w: unsupported version %d", ErrInvalidData, value.Version)
 	}
 	if value.NextUserID <= 0 || value.NextRoleID <= 0 || value.NextPlanID <= 0 || value.NextMessageID <= 0 {
 		return fmt.Errorf("%w: invalid sequence", ErrInvalidData)
+	}
+	for _, plan := range value.Plans {
+		if plan.RemainingCommissionCount < 0 || plan.RemainingCommissionCount > 6 {
+			return fmt.Errorf("%w: invalid remaining commission count for weekly plan %d", ErrInvalidData, plan.ID)
+		}
 	}
 	return nil
 }
@@ -941,12 +992,6 @@ func normalizeState(value state) state {
 		}
 	}
 	for index := range value.Plans {
-		if value.Plans[index].NestCommissions == nil {
-			value.Plans[index].NestCommissions = []WeeklyPlanCommission{}
-		}
-		if value.Plans[index].NestTickets == nil {
-			value.Plans[index].NestTickets = []WeeklyPlanTicket{}
-		}
 		if value.Plans[index].ID >= value.NextPlanID {
 			value.NextPlanID = value.Plans[index].ID + 1
 		}
@@ -983,10 +1028,7 @@ func cloneState(value state) state {
 }
 
 func clonePlan(value WeeklyPlan) WeeklyPlan {
-	result := value
-	result.NestCommissions = append([]WeeklyPlanCommission(nil), value.NestCommissions...)
-	result.NestTickets = append([]WeeklyPlanTicket(nil), value.NestTickets...)
-	return result
+	return value
 }
 
 func cloneMessages(items []SiteMessage) []SiteMessage {
@@ -1183,79 +1225,6 @@ func normalizeRFC3339(value string, fallback time.Time) (string, error) {
 func matchesText(value string, query string) bool {
 	query = strings.ToLower(strings.TrimSpace(query))
 	return query == "" || strings.Contains(strings.ToLower(value), query)
-}
-
-func matchesNest(entries []WeeklyPlanCommission, query string) bool {
-	query = strings.TrimSpace(strings.ReplaceAll(query, "巢穴", ""))
-	if query == "" {
-		return true
-	}
-	for _, entry := range entries {
-		if strings.Contains(nestLabel(entry.ID), query) {
-			return true
-		}
-	}
-	return false
-}
-
-func nestLabel(id int) string {
-	labels := map[int]string{1: "海龙", 2: "狮蝎", 3: "K博士", 4: "大主教", 5: "巨人族", 6: "火山", 7: "守卫者", 8: "迷雾", 9: "台风金", 10: "卡伊伦"}
-	return labels[id]
-}
-
-func normalizeCommissions(items []WeeklyPlanCommission) ([]WeeklyPlanCommission, error) {
-	if len(items) > 6 {
-		return nil, fmt.Errorf("%w: at most six nest commissions are allowed", ErrInvalidData)
-	}
-	seen := make(map[int]struct{}, len(items))
-	result := make([]WeeklyPlanCommission, 0, len(items))
-	for _, item := range items {
-		if nestLabel(item.ID) == "" {
-			return nil, fmt.Errorf("%w: unknown nest commission %d", ErrInvalidData, item.ID)
-		}
-		if _, exists := seen[item.ID]; exists {
-			continue
-		}
-		seen[item.ID] = struct{}{}
-		result = append(result, item)
-	}
-	return result, nil
-}
-
-func normalizeTickets(items []WeeklyPlanTicket) ([]WeeklyPlanTicket, error) {
-	seen := make(map[string]struct{}, len(items))
-	result := make([]WeeklyPlanTicket, 0, len(items))
-	for _, item := range items {
-		item.ExpiresAt = normalizeTicketDate(item.ExpiresAt)
-		if nestLabel(item.ID) == "" || !validTicketDate(item.ExpiresAt) {
-			return nil, fmt.Errorf("%w: invalid nest ticket", ErrInvalidData)
-		}
-		key := fmt.Sprintf("%d:%s", item.ID, item.ExpiresAt)
-		if _, exists := seen[key]; exists {
-			continue
-		}
-		seen[key] = struct{}{}
-		result = append(result, item)
-	}
-	return result, nil
-}
-
-func normalizeTicketDate(value string) string {
-	value = strings.TrimSpace(value)
-	var month, day int
-	if _, err := fmt.Sscanf(value, "%d-%d", &month, &day); err != nil {
-		return value
-	}
-	return fmt.Sprintf("%d-%d", month, day)
-}
-
-func validTicketDate(value string) bool {
-	var month, day int
-	if _, err := fmt.Sscanf(value, "%d-%d", &month, &day); err != nil || month < 1 || month > 12 || day < 1 || day > 31 {
-		return false
-	}
-	date := time.Date(2024, time.Month(month), day, 0, 0, 0, 0, time.UTC)
-	return int(date.Month()) == month && date.Day() == day
 }
 
 func activeRoles(items []RoleProfession, ownerID int) []RoleProfession {

@@ -50,25 +50,13 @@ export interface RoleProfessionQuery {
   pageSize: number
 }
 
-export interface WeeklyPlanCommission {
-  id: number
-  completed: boolean
-}
-
-export interface WeeklyPlanTicket {
-  id: number
-  expiresAt: string
-}
-
 export interface WeeklyPlan {
   id: number
   ownerId: number
   roleName: string
   profession: string
   priority: number
-  nestCommissions: WeeklyPlanCommission[]
-  nestTickets: WeeklyPlanTicket[]
-  levelCommissionCount: number
+  remainingCommissionCount: number
   hasInvasion: boolean
   hasArk: boolean
   hasNightmare: boolean
@@ -82,9 +70,7 @@ export interface WeeklyPlan {
 export interface WeeklyPlanInput {
   id: number
   roleProfessionId: number
-  nestCommissions: WeeklyPlanCommission[]
-  nestTickets: WeeklyPlanTicket[]
-  levelCommissionCount: number
+  remainingCommissionCount: number
   hasInvasion: boolean
   hasArk: boolean
   hasNightmare: boolean
@@ -96,7 +82,6 @@ export interface WeeklyPlanQuery {
   roleName: string
   profession: string
   priority: number
-  nestCommission: string
   roleProfessionId: number
   page: number
   pageSize: number

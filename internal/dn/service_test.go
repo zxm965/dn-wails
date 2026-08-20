@@ -83,15 +83,14 @@ func TestServicePersistsSessionRoleAndWeeklyPlan(t *testing.T) {
 		t.Fatalf("save role: %v", err)
 	}
 	plan, err := service.SaveWeeklyPlan(WeeklyPlanInput{
-		RoleProfessionID: role.ID,
-		NestCommissions:  []WeeklyPlanCommission{{ID: 1, Completed: true}},
-		NestTickets:      []WeeklyPlanTicket{{ID: 2, ExpiresAt: "7-30"}},
-		HasInvasion:      true,
+		RoleProfessionID:         role.ID,
+		RemainingCommissionCount: 4,
+		HasInvasion:              true,
 	})
 	if err != nil {
 		t.Fatalf("save plan: %v", err)
 	}
-	if plan.OwnerID != profile.ID || plan.RoleName != role.RoleName || len(plan.NestCommissions) != 1 {
+	if plan.OwnerID != profile.ID || plan.RoleName != role.RoleName || plan.RemainingCommissionCount != 4 {
 		t.Fatalf("unexpected plan: %+v", plan)
 	}
 
@@ -175,18 +174,20 @@ func TestServiceUpdatesRoleAndCascadesPlanIdentity(t *testing.T) {
 	}
 }
 
-func TestServiceRejectsDuplicateRoleAndInvalidTicket(t *testing.T) {
+func TestServiceRejectsDuplicateRoleAndInvalidWeeklyPlanCount(t *testing.T) {
 	t.Parallel()
 	service, _, _ := newAuthenticatedService(t)
 	role, _ := service.SaveRole(RoleProfessionInput{RoleName: "重复角色", Profession: "剑皇"})
 	if _, err := service.SaveRole(RoleProfessionInput{RoleName: "重复角色", Profession: "月之领主"}); !errors.Is(err, ErrConflict) {
 		t.Fatalf("expected conflict, got %v", err)
 	}
-	if _, err := service.SaveWeeklyPlan(WeeklyPlanInput{
-		RoleProfessionID: role.ID,
-		NestTickets:      []WeeklyPlanTicket{{ID: 1, ExpiresAt: "2-31"}},
-	}); !errors.Is(err, ErrInvalidData) {
-		t.Fatalf("expected invalid ticket error, got %v", err)
+	for _, count := range []int{-1, 7} {
+		if _, err := service.SaveWeeklyPlan(WeeklyPlanInput{
+			RoleProfessionID:         role.ID,
+			RemainingCommissionCount: count,
+		}); !errors.Is(err, ErrInvalidData) {
+			t.Fatalf("expected invalid remaining commission count error for %d, got %v", count, err)
+		}
 	}
 }
 
@@ -195,9 +196,8 @@ func TestServiceInitializesAndSyncsWeeklyPlans(t *testing.T) {
 	service, _, _ := newAuthenticatedService(t)
 	first, _ := service.SaveRole(RoleProfessionInput{RoleName: "角色一", Profession: "剑皇"})
 	_, _ = service.SaveWeeklyPlan(WeeklyPlanInput{
-		RoleProfessionID:     first.ID,
-		NestCommissions:      []WeeklyPlanCommission{{ID: 1, Completed: true}},
-		LevelCommissionCount: 1,
+		RoleProfessionID:         first.ID,
+		RemainingCommissionCount: 2,
 	})
 	_, _ = service.SaveRole(RoleProfessionInput{RoleName: "角色二", Profession: "圣徒"})
 
@@ -214,7 +214,7 @@ func TestServiceInitializesAndSyncsWeeklyPlans(t *testing.T) {
 		t.Fatalf("list plans: %v", err)
 	}
 	for _, plan := range plans {
-		if len(plan.NestCommissions) != 0 || plan.LevelCommissionCount != 0 {
+		if plan.RemainingCommissionCount != 6 {
 			t.Fatalf("weekly plan was not reset: %+v", plan)
 		}
 	}
@@ -411,8 +411,12 @@ func TestServiceMigratesLegacyDataToFirstUser(t *testing.T) {
 		NextMessageID: 2,
 		Profile:       Profile{ID: 1, Account: "local", Name: "旧资料名称", Email: "local@dn.app", Avatar: "data:image/png;base64,AA==", Role: 1, Status: 1, CreatedAt: now},
 		Roles:         []RoleProfession{{ID: 1, RoleName: "旧角色", Profession: "剑皇", CreatedAt: now, UpdatedAt: now}},
-		Plans:         []WeeklyPlan{{ID: 1, RoleProfessionID: 1, RoleName: "旧角色", Profession: "剑皇", NestCommissions: []WeeklyPlanCommission{}, NestTickets: []WeeklyPlanTicket{}, CreatedAt: now, UpdatedAt: now}},
-		Messages:      []SiteMessage{{ID: 1, Source: "desktop", Level: MessageLevelInfo, Title: "旧消息", PublishedAt: now, ReadAt: now}},
+		Plans: []legacyWeeklyPlan{{
+			ID: 1, RoleProfessionID: 1, RoleName: "旧角色", Profession: "剑皇",
+			NestCommissions: []legacyWeeklyPlanCommission{{ID: 1, Completed: true}, {ID: 2}},
+			CreatedAt:       now, UpdatedAt: now,
+		}},
+		Messages: []SiteMessage{{ID: 1, Source: "desktop", Level: MessageLevelInfo, Title: "旧消息", PublishedAt: now, ReadAt: now}},
 	}
 	data, _ := json.Marshal(legacy)
 	if err := store.Save(storageKey, data); err != nil {
@@ -433,9 +437,44 @@ func TestServiceMigratesLegacyDataToFirstUser(t *testing.T) {
 	if err != nil || roles.Meta.Total != 1 || roles.Items[0].OwnerID != profile.ID {
 		t.Fatalf("legacy roles were not claimed: %+v err=%v", roles, err)
 	}
+	plans, err := service.AllWeeklyPlans()
+	if err != nil || len(plans) != 1 || plans[0].RemainingCommissionCount != 1 {
+		t.Fatalf("legacy weekly plan was not migrated: %+v err=%v", plans, err)
+	}
 	messages, err := service.ListMessages(SiteMessageQuery{ReadStatus: "read", Page: 1, PageSize: 10})
 	if err != nil || len(messages.Items) != 1 || messages.Items[0].ID != 1 {
 		t.Fatalf("legacy read receipt was not claimed: %+v err=%v", messages, err)
+	}
+}
+
+func TestServiceMigratesVersionTwoWeeklyPlanDetails(t *testing.T) {
+	t.Parallel()
+	store := newMemoryStore()
+	legacy := legacyStateV2{
+		Version:       2,
+		NextUserID:    1,
+		NextRoleID:    1,
+		NextPlanID:    2,
+		NextMessageID: 1,
+		Plans: []legacyWeeklyPlan{{
+			ID: 1,
+			NestCommissions: []legacyWeeklyPlanCommission{
+				{ID: 1, Completed: true},
+				{ID: 2},
+				{ID: 3},
+			},
+		}},
+	}
+	data, _ := json.Marshal(legacy)
+	if err := store.Save(storageKey, data); err != nil {
+		t.Fatalf("save version 2 data: %v", err)
+	}
+	service := NewService(store)
+	if err := service.Initialize(); err != nil {
+		t.Fatalf("migrate version 2 service: %v", err)
+	}
+	if service.state.Version != CurrentVersion || len(service.state.Plans) != 1 || service.state.Plans[0].RemainingCommissionCount != 2 {
+		t.Fatalf("version 2 weekly plan was not migrated: %+v", service.state.Plans)
 	}
 }
 

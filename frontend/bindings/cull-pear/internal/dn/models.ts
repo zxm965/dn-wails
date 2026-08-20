@@ -559,9 +559,7 @@ export class WeeklyPlan {
     "roleName": string;
     "profession": string;
     "priority": number;
-    "nestCommissions": WeeklyPlanCommission[];
-    "nestTickets": WeeklyPlanTicket[];
-    "levelCommissionCount": number;
+    "remainingCommissionCount": number;
     "hasInvasion": boolean;
     "hasArk": boolean;
     "hasNightmare": boolean;
@@ -588,14 +586,8 @@ export class WeeklyPlan {
         if (!("priority" in $$source)) {
             this["priority"] = 0;
         }
-        if (!("nestCommissions" in $$source)) {
-            this["nestCommissions"] = [];
-        }
-        if (!("nestTickets" in $$source)) {
-            this["nestTickets"] = [];
-        }
-        if (!("levelCommissionCount" in $$source)) {
-            this["levelCommissionCount"] = 0;
+        if (!("remainingCommissionCount" in $$source)) {
+            this["remainingCommissionCount"] = 0;
         }
         if (!("hasInvasion" in $$source)) {
             this["hasInvasion"] = false;
@@ -629,41 +621,8 @@ export class WeeklyPlan {
      * Creates a new WeeklyPlan instance from a string or object.
      */
     static createFrom($$source: any = {}): WeeklyPlan {
-        const $$createField5_0 = $$createType8;
-        const $$createField6_0 = $$createType10;
         let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
-        if ("nestCommissions" in $$parsedSource) {
-            $$parsedSource["nestCommissions"] = $$createField5_0($$parsedSource["nestCommissions"]);
-        }
-        if ("nestTickets" in $$parsedSource) {
-            $$parsedSource["nestTickets"] = $$createField6_0($$parsedSource["nestTickets"]);
-        }
         return new WeeklyPlan($$parsedSource as Partial<WeeklyPlan>);
-    }
-}
-
-export class WeeklyPlanCommission {
-    "id": number;
-    "completed": boolean;
-
-    /** Creates a new WeeklyPlanCommission instance. */
-    constructor($$source: Partial<WeeklyPlanCommission> = {}) {
-        if (!("id" in $$source)) {
-            this["id"] = 0;
-        }
-        if (!("completed" in $$source)) {
-            this["completed"] = false;
-        }
-
-        Object.assign(this, $$source);
-    }
-
-    /**
-     * Creates a new WeeklyPlanCommission instance from a string or object.
-     */
-    static createFrom($$source: any = {}): WeeklyPlanCommission {
-        let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
-        return new WeeklyPlanCommission($$parsedSource as Partial<WeeklyPlanCommission>);
     }
 }
 
@@ -699,9 +658,7 @@ export class WeeklyPlanInitializationResult {
 export class WeeklyPlanInput {
     "id": number;
     "roleProfessionId": number;
-    "nestCommissions": WeeklyPlanCommission[];
-    "nestTickets": WeeklyPlanTicket[];
-    "levelCommissionCount": number;
+    "remainingCommissionCount": number;
     "hasInvasion": boolean;
     "hasArk": boolean;
     "hasNightmare": boolean;
@@ -716,14 +673,8 @@ export class WeeklyPlanInput {
         if (!("roleProfessionId" in $$source)) {
             this["roleProfessionId"] = 0;
         }
-        if (!("nestCommissions" in $$source)) {
-            this["nestCommissions"] = [];
-        }
-        if (!("nestTickets" in $$source)) {
-            this["nestTickets"] = [];
-        }
-        if (!("levelCommissionCount" in $$source)) {
-            this["levelCommissionCount"] = 0;
+        if (!("remainingCommissionCount" in $$source)) {
+            this["remainingCommissionCount"] = 0;
         }
         if (!("hasInvasion" in $$source)) {
             this["hasInvasion"] = false;
@@ -748,15 +699,7 @@ export class WeeklyPlanInput {
      * Creates a new WeeklyPlanInput instance from a string or object.
      */
     static createFrom($$source: any = {}): WeeklyPlanInput {
-        const $$createField2_0 = $$createType8;
-        const $$createField3_0 = $$createType10;
         let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
-        if ("nestCommissions" in $$parsedSource) {
-            $$parsedSource["nestCommissions"] = $$createField2_0($$parsedSource["nestCommissions"]);
-        }
-        if ("nestTickets" in $$parsedSource) {
-            $$parsedSource["nestTickets"] = $$createField3_0($$parsedSource["nestTickets"]);
-        }
         return new WeeklyPlanInput($$parsedSource as Partial<WeeklyPlanInput>);
     }
 }
@@ -781,7 +724,7 @@ export class WeeklyPlanList {
      * Creates a new WeeklyPlanList instance from a string or object.
      */
     static createFrom($$source: any = {}): WeeklyPlanList {
-        const $$createField0_0 = $$createType12;
+        const $$createField0_0 = $$createType8;
         const $$createField1_0 = $$createType2;
         let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
         if ("items" in $$parsedSource) {
@@ -798,7 +741,6 @@ export class WeeklyPlanQuery {
     "roleName": string;
     "profession": string;
     "priority": number;
-    "nestCommission": string;
     "roleProfessionId": number;
     "page": number;
     "pageSize": number;
@@ -813,9 +755,6 @@ export class WeeklyPlanQuery {
         }
         if (!("priority" in $$source)) {
             this["priority"] = 0;
-        }
-        if (!("nestCommission" in $$source)) {
-            this["nestCommission"] = "";
         }
         if (!("roleProfessionId" in $$source)) {
             this["roleProfessionId"] = 0;
@@ -864,31 +803,6 @@ export class WeeklyPlanSyncResult {
     }
 }
 
-export class WeeklyPlanTicket {
-    "id": number;
-    "expiresAt": string;
-
-    /** Creates a new WeeklyPlanTicket instance. */
-    constructor($$source: Partial<WeeklyPlanTicket> = {}) {
-        if (!("id" in $$source)) {
-            this["id"] = 0;
-        }
-        if (!("expiresAt" in $$source)) {
-            this["expiresAt"] = "";
-        }
-
-        Object.assign(this, $$source);
-    }
-
-    /**
-     * Creates a new WeeklyPlanTicket instance from a string or object.
-     */
-    static createFrom($$source: any = {}): WeeklyPlanTicket {
-        let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
-        return new WeeklyPlanTicket($$parsedSource as Partial<WeeklyPlanTicket>);
-    }
-}
-
 // Private type creation functions
 const $$createType0 = RoleProfession.createFrom;
 const $$createType1 = $Create.Array($$createType0);
@@ -897,9 +811,5 @@ const $$createType3 = SiteMessageMetadata.createFrom;
 const $$createType4 = $Create.Nullable($$createType3);
 const $$createType5 = SiteMessage.createFrom;
 const $$createType6 = $Create.Array($$createType5);
-const $$createType7 = WeeklyPlanCommission.createFrom;
+const $$createType7 = WeeklyPlan.createFrom;
 const $$createType8 = $Create.Array($$createType7);
-const $$createType9 = WeeklyPlanTicket.createFrom;
-const $$createType10 = $Create.Array($$createType9);
-const $$createType11 = WeeklyPlan.createFrom;
-const $$createType12 = $Create.Array($$createType11);

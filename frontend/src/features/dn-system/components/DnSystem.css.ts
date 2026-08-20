@@ -60,7 +60,7 @@ const dnRoleFilterGrid = style([
 
 const dnWeeklyFilterGrid = style([
   {
-    gridTemplateColumns: 'minmax(130px, 1fr) minmax(140px, 1fr) minmax(110px, 0.7fr) minmax(150px, 1fr) auto',
+    gridTemplateColumns: 'minmax(130px, 1fr) minmax(140px, 1fr) minmax(110px, 0.7fr) auto',
   },
   {
     '@container': {
@@ -163,8 +163,10 @@ const dnRoleCards = style({
 
 const dnPlanGrid = style({
   display: 'grid',
-  gridTemplateColumns: 'repeat(auto-fit, minmax(min(290px, 100%), 1fr))',
-  gap: '12px',
+  gridTemplateColumns: 'repeat(auto-fill, minmax(min(320px, 100%), 360px))',
+  alignItems: 'start',
+  justifyContent: 'start',
+  gap: '14px',
 })
 
 const dnRoleCard = style([
@@ -197,14 +199,20 @@ const dnRoleCard = style([
 
 const dnPlanCard = style([
   {
+    position: 'relative',
     minWidth: '0',
     display: 'grid',
-    gap: '13px',
-    padding: '15px',
-    background: 'color-mix(in srgb, var(--surface-muted) 42%, transparent)',
+    alignContent: 'start',
+    gap: '14px',
+    overflow: 'hidden',
+    padding: '16px',
+    background:
+      'linear-gradient(150deg, color-mix(in srgb, var(--accent-muted) 26%, var(--surface-elevated)) 0%, color-mix(in srgb, var(--surface-muted) 44%, var(--surface-elevated)) 46%, color-mix(in srgb, var(--surface-muted) 28%, transparent) 100%)',
     border: '1px solid var(--border-subtle)',
-    borderRadius: '12px',
-    transition: 'opacity 140ms ease,\n    border-color 140ms ease,\n    background-color 140ms ease',
+    borderRadius: '14px',
+    boxShadow: 'inset 0 2px 0 color-mix(in srgb, var(--accent) 36%, transparent)',
+    transition:
+      'opacity 140ms ease,\n    border-color 140ms ease,\n    box-shadow 140ms ease,\n    transform 140ms ease',
   },
   {
     '@media': {
@@ -216,12 +224,58 @@ const dnPlanCard = style([
   {
     selectors: {
       '&:hover': {
-        background: 'var(--surface-muted)',
-        borderColor: 'var(--border-strong)',
+        borderColor: 'color-mix(in srgb, var(--accent) 28%, var(--border-strong))',
+        boxShadow:
+          'inset 0 2px 0 color-mix(in srgb, var(--accent) 52%, transparent), 0 12px 26px rgba(6, 12, 21, 0.08)',
+        transform: 'translateY(-1px)',
       },
     },
   },
 ])
+
+const dnPlanCardHeader = style({
+  minWidth: '0',
+  display: 'grid',
+  gridTemplateColumns: '40px minmax(0, 1fr) auto',
+  alignItems: 'center',
+  gap: '11px',
+})
+
+const dnPlanAvatar = style({
+  width: '40px',
+  height: '40px',
+  display: 'grid',
+  placeItems: 'center',
+  color: 'var(--accent)',
+  fontSize: '15px',
+  fontWeight: '850',
+  background: 'var(--accent-muted)',
+  border: '1px solid color-mix(in srgb, var(--accent) 22%, transparent)',
+  borderRadius: '12px',
+})
+
+const dnPlanIdentity = style({
+  minWidth: '0',
+  display: 'grid',
+  gap: '3px',
+})
+
+const dnPlanRoleName = style({
+  overflow: 'hidden',
+  fontSize: '14px',
+  fontWeight: '850',
+  lineHeight: '1.25',
+  textOverflow: 'ellipsis',
+  whiteSpace: 'nowrap',
+})
+
+const dnPlanProfession = style({
+  overflow: 'hidden',
+  color: 'var(--text-tertiary)',
+  fontSize: '11px',
+  textOverflow: 'ellipsis',
+  whiteSpace: 'nowrap',
+})
 
 const isUpdating = style({
   selectors: {
@@ -251,11 +305,14 @@ const dnRoleStats = style({
 })
 
 const dnPlanRemark = style({
-  minHeight: '34px',
   margin: '0',
+  padding: '9px 11px',
   color: 'var(--text-secondary)',
   fontSize: '11px',
-  lineHeight: '1.5',
+  lineHeight: '1.55',
+  background: 'color-mix(in srgb, var(--surface-muted) 74%, transparent)',
+  borderLeft: '2px solid color-mix(in srgb, var(--accent) 52%, transparent)',
+  borderRadius: '4px 9px 9px 4px',
 })
 
 const dnFormGrid = style([
@@ -293,9 +350,98 @@ const dnAlertWarning = style({
   borderColor: 'rgba(231, 167, 47, 0.2)',
 })
 
-const dnPlanSection = style({
+const dnPlanCommissionPanel = style({
   display: 'grid',
+  gap: '11px',
+  padding: '13px',
+  background: 'color-mix(in srgb, var(--surface-elevated) 56%, transparent)',
+  border: '1px solid var(--border-subtle)',
+  borderRadius: '12px',
+})
+
+const dnPlanCommissionHeading = style({
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'space-between',
+  gap: '12px',
+})
+
+const dnPlanCommissionCopy = style({
+  minWidth: '0',
+  display: 'grid',
+  gap: '3px',
+})
+
+const dnPlanCommissionLabel = style({
+  color: 'var(--text-primary)',
+  fontSize: '12px',
+  fontWeight: '800',
+})
+
+const dnPlanCommissionMeta = style({
+  color: 'var(--text-tertiary)',
+  fontSize: '10px',
+})
+
+const dnPlanCommissionCount = style({
+  color: 'var(--accent)',
+  fontSize: '28px',
+  fontWeight: '900',
+  lineHeight: '1',
+  letterSpacing: '-0.04em',
+})
+
+const dnPlanCommissionTotal = style({
+  marginLeft: '3px',
+  color: 'var(--text-tertiary)',
+  fontSize: '11px',
+  fontWeight: '700',
+  letterSpacing: '0',
+})
+
+const dnPlanCounterActions = style({
+  display: 'grid',
+  gridTemplateColumns: '28px minmax(0, 1fr) 28px',
+  alignItems: 'center',
   gap: '8px',
+})
+
+const dnPlanCounterCopy = style({
+  overflow: 'hidden',
+  color: 'var(--text-secondary)',
+  fontSize: '10px',
+  fontWeight: '700',
+  textAlign: 'center',
+  textOverflow: 'ellipsis',
+  whiteSpace: 'nowrap',
+})
+
+const dnPlanWeeklySection = style({
+  display: 'grid',
+  gap: '9px',
+})
+
+const dnPlanWeeklyHeading = style({
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'space-between',
+  gap: '10px',
+})
+
+const dnPlanWeeklyCopy = style({
+  minWidth: '0',
+  display: 'grid',
+  gap: '2px',
+})
+
+const dnPlanWeeklyTitle = style({
+  fontSize: '11px',
+  fontWeight: '800',
+})
+
+const dnPlanWeeklyMeta = style({
+  color: 'var(--text-tertiary)',
+  fontSize: '10px',
 })
 
 const dnSectionHeading = style({
@@ -308,11 +454,11 @@ const dnSectionHeading = style({
   fontWeight: '750',
 })
 
-const dnStatusGrid = style([
+const dnPlanFlags = style([
   {
     display: 'grid',
     gridTemplateColumns: 'repeat(3, minmax(0, 1fr))',
-    gap: '5px',
+    gap: '6px',
   },
   {
     '@container': {
@@ -323,51 +469,76 @@ const dnStatusGrid = style([
   },
 ])
 
-const dnStatusToggle = style({
+const dnPlanFlag = style({
   minWidth: '0',
-  padding: '0 6px',
-  fontSize: '10px',
-  overflow: 'visible',
-})
-
-const dnTicketChips = style({
   display: 'flex',
-  flexWrap: 'wrap',
-  gap: '6px',
-})
-
-const dnMuted = style({
-  color: 'var(--text-tertiary)',
-  fontSize: '11px',
-})
-
-const dnPlanFlags = style([
-  {
-    display: 'grid',
-    gridTemplateColumns: 'repeat(2, minmax(0, 1fr))',
-    gap: '8px',
-  },
-  {
-    '@container': {
-      'dn-page (max-width: 620px)': {
-        gridTemplateColumns: '1fr',
-      },
+  alignItems: 'center',
+  justifyContent: 'space-between',
+  gap: '8px',
+  padding: '8px',
+  background: 'color-mix(in srgb, var(--surface-muted) 76%, transparent)',
+  border: '1px solid transparent',
+  borderRadius: '10px',
+  transition: 'background-color 140ms ease, border-color 140ms ease',
+  selectors: {
+    "&[data-completed='true']": {
+      background: 'var(--accent-muted)',
+      borderColor: 'color-mix(in srgb, var(--accent) 22%, transparent)',
     },
   },
-])
+  '@media': {
+    '(prefers-reduced-motion: reduce)': {
+      transition: 'none',
+    },
+  },
+})
+
+const dnPlanFlagCopy = style({
+  minWidth: '0',
+  display: 'grid',
+  gap: '2px',
+})
+
+const dnPlanFlagTitle = style({
+  overflow: 'hidden',
+  color: 'var(--text-secondary)',
+  fontSize: '10px',
+  fontWeight: '800',
+  textOverflow: 'ellipsis',
+  whiteSpace: 'nowrap',
+})
+
+const dnPlanFlagStatus = style({
+  color: 'var(--text-tertiary)',
+  fontSize: '9px',
+})
+
+const dnPlanActions = style({
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'space-between',
+  gap: '10px',
+  paddingTop: '11px',
+  borderTop: '1px solid var(--border-subtle)',
+})
+
+const dnPlanSort = style({
+  color: 'var(--text-tertiary)',
+  fontSize: '9px',
+})
+
+const dnPlanActionButtons = style({
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'flex-end',
+  gap: '3px',
+})
 
 const dnEditorSwitches = style([
   {
     display: 'grid',
-    gridTemplateColumns: 'repeat(2, minmax(0, 1fr))',
+    gridTemplateColumns: 'repeat(auto-fit, minmax(min(150px, 100%), 1fr))',
     gap: '8px',
-  },
-  {
-    '@container': {
-      'dn-page (max-width: 620px)': {
-        gridTemplateColumns: '1fr',
-      },
-    },
   },
 ])
 
@@ -388,67 +559,44 @@ const dnPlanEditor = style({
   gap: '24px',
 })
 
-const dnNestPicker = style([
-  {
-    display: 'grid',
-    gridTemplateColumns: 'repeat(5, minmax(0, 1fr))',
-    gap: '8px',
-  },
-  {
-    '@container': {
-      'dn-page (max-width: 880px)': {
-        gridTemplateColumns: 'repeat(3, minmax(0, 1fr))',
-      },
-    },
-  },
-  {
-    '@container': {
-      'dn-page (max-width: 620px)': {
-        gridTemplateColumns: 'repeat(2, minmax(0, 1fr))',
-      },
-    },
-  },
-  {
-    '@container': {
-      'dn-page (max-width: 410px)': {
-        gridTemplateColumns: '1fr',
-      },
-    },
-  },
-])
-
-const isSelected = style({
-  selectors: {
-    [`${dnStatusToggle}&`]: {
-      color: 'var(--accent)',
-      background: 'var(--accent-muted)',
-      borderColor: 'var(--accent)',
-    },
-    [`${dnStatusToggle}&::after`]: {
-      position: 'absolute',
-      top: '-5px',
-      right: '-5px',
-      width: '14px',
-      height: '14px',
-      display: 'grid',
-      placeItems: 'center',
-      color: 'var(--button-primary-text)',
-      fontSize: '9px',
-      background: 'var(--accent)',
-      borderRadius: '50%',
-      content: "'✓'",
-    },
-    [`${dnNestPicker} label&`]: {
-      color: 'var(--text-primary)',
-      background: 'var(--accent-muted)',
-      borderColor: 'var(--accent)',
-    },
-  },
+const dnPlanCountEditor = style({
+  display: 'grid',
+  gridTemplateColumns: '28px minmax(0, 1fr) 28px',
+  alignItems: 'center',
+  gap: '12px',
+  padding: '14px',
+  background: 'var(--surface-muted)',
+  border: '1px solid var(--border-subtle)',
+  borderRadius: '12px',
 })
 
-const dnTicketEditor = style({
-  display: 'grid',
-  gap: '8px',
+const dnPlanCountValue = style({
+  minWidth: '0',
+  display: 'flex',
+  alignItems: 'baseline',
+  justifyContent: 'center',
+  gap: '5px',
+})
+
+const dnPlanCountNumber = style({
+  color: 'var(--accent)',
+  fontSize: '28px',
+  fontWeight: '900',
+  lineHeight: '1',
+})
+
+const dnPlanCountUnit = style({
+  color: 'var(--text-tertiary)',
+  fontSize: '10px',
+})
+
+const dnPlanCountScale = style({
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'space-between',
+  gap: '12px',
+  color: 'var(--text-tertiary)',
+  fontSize: '9px',
 })
 
 const dnEmptyAction = style({
@@ -703,6 +851,11 @@ export const styles = {
   'dn-plan-grid': dnPlanGrid,
   'dn-role-card': dnRoleCard,
   'dn-plan-card': dnPlanCard,
+  'dn-plan-card-header': dnPlanCardHeader,
+  'dn-plan-avatar': dnPlanAvatar,
+  'dn-plan-identity': dnPlanIdentity,
+  'dn-plan-role-name': dnPlanRoleName,
+  'dn-plan-profession': dnPlanProfession,
   'is-updating': isUpdating,
   'dn-role-stats': dnRoleStats,
   'dn-plan-remark': dnPlanRemark,
@@ -710,19 +863,37 @@ export const styles = {
   'dn-form-full': dnFormFull,
   'dn-alert': dnAlert,
   'dn-alert-warning': dnAlertWarning,
-  'dn-plan-section': dnPlanSection,
+  'dn-plan-commission-panel': dnPlanCommissionPanel,
+  'dn-plan-commission-heading': dnPlanCommissionHeading,
+  'dn-plan-commission-copy': dnPlanCommissionCopy,
+  'dn-plan-commission-label': dnPlanCommissionLabel,
+  'dn-plan-commission-meta': dnPlanCommissionMeta,
+  'dn-plan-commission-count': dnPlanCommissionCount,
+  'dn-plan-commission-total': dnPlanCommissionTotal,
+  'dn-plan-counter-actions': dnPlanCounterActions,
+  'dn-plan-counter-copy': dnPlanCounterCopy,
+  'dn-plan-weekly-section': dnPlanWeeklySection,
+  'dn-plan-weekly-heading': dnPlanWeeklyHeading,
+  'dn-plan-weekly-copy': dnPlanWeeklyCopy,
+  'dn-plan-weekly-title': dnPlanWeeklyTitle,
+  'dn-plan-weekly-meta': dnPlanWeeklyMeta,
   'dn-section-heading': dnSectionHeading,
-  'dn-status-grid': dnStatusGrid,
-  'dn-status-toggle': dnStatusToggle,
-  'is-selected': isSelected,
-  'dn-ticket-chips': dnTicketChips,
-  'dn-muted': dnMuted,
   'dn-plan-flags': dnPlanFlags,
+  'dn-plan-flag': dnPlanFlag,
+  'dn-plan-flag-copy': dnPlanFlagCopy,
+  'dn-plan-flag-title': dnPlanFlagTitle,
+  'dn-plan-flag-status': dnPlanFlagStatus,
+  'dn-plan-actions': dnPlanActions,
+  'dn-plan-sort': dnPlanSort,
+  'dn-plan-action-buttons': dnPlanActionButtons,
   'dn-editor-switches': dnEditorSwitches,
   'dn-switch-row': dnSwitchRow,
   'dn-plan-editor': dnPlanEditor,
-  'dn-nest-picker': dnNestPicker,
-  'dn-ticket-editor': dnTicketEditor,
+  'dn-plan-count-editor': dnPlanCountEditor,
+  'dn-plan-count-value': dnPlanCountValue,
+  'dn-plan-count-number': dnPlanCountNumber,
+  'dn-plan-count-unit': dnPlanCountUnit,
+  'dn-plan-count-scale': dnPlanCountScale,
   'dn-empty-action': dnEmptyAction,
   'site-message-list': siteMessageList,
   'site-message-item': siteMessageItem,
@@ -835,59 +1006,30 @@ globalStyle(`${dnSectionHeading} ${buttonStyles.root}`, {
   padding: '0',
 })
 
-globalStyle(`${dnTicketChips} > span`, {
-  display: 'inline-flex',
-  alignItems: 'center',
-  overflow: 'hidden',
-  border: '1px solid var(--border-subtle)',
-  borderRadius: '999px',
-})
-
-globalStyle(`${dnTicketChips} ${buttonStyles.root}`, {
-  width: 'var(--button-height-sm)',
-  padding: '0',
-  borderRadius: '0',
-})
-
 globalStyle(
-  `${dnPlanFlags} label,
-${dnEditorSwitches} label`,
+  `${dnPlanCounterActions} ${buttonStyles.root},
+${dnPlanCountEditor} ${buttonStyles.root}`,
   {
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    gap: '10px',
-    padding: '9px 10px',
-    color: 'var(--text-secondary)',
-    fontSize: '11px',
-    background: 'var(--surface-muted)',
-    borderRadius: '9px',
+    width: 'var(--button-height-sm)',
+    padding: '0',
   },
 )
+
+globalStyle(`${dnEditorSwitches} label`, {
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'space-between',
+  gap: '10px',
+  padding: '9px 10px',
+  color: 'var(--text-secondary)',
+  fontSize: '11px',
+  background: 'var(--surface-muted)',
+  borderRadius: '9px',
+})
 
 globalStyle(`${dnPlanEditor} > section`, {
   display: 'grid',
   gap: '10px',
-})
-
-globalStyle(`${dnNestPicker} label`, {
-  display: 'flex',
-  alignItems: 'center',
-  gap: '8px',
-  padding: '9px',
-  color: 'var(--text-secondary)',
-  fontSize: '11px',
-  border: '1px solid var(--border-subtle)',
-  borderRadius: '9px',
-})
-
-globalStyle(`${dnTicketEditor} > div`, {
-  display: 'grid',
-  gridTemplateColumns: 'minmax(130px, 1fr) minmax(120px, 0.7fr) auto',
-  gap: '8px',
-  padding: '10px',
-  background: 'var(--surface-muted)',
-  borderRadius: '10px',
 })
 
 globalStyle(`${siteMessageItem} > span:nth-child(2)`, {
@@ -990,14 +1132,6 @@ globalStyle(`${siteMessageActions} ${buttonStyles.root}:first-child`, {
     'dn-page (max-width: 620px)': {
       maxWidth: 'none',
       flex: '1',
-    },
-  },
-})
-
-globalStyle(`${dnTicketEditor} > div`, {
-  '@container': {
-    'dn-page (max-width: 620px)': {
-      gridTemplateColumns: '1fr',
     },
   },
 })

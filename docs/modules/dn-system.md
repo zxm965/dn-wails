@@ -11,7 +11,7 @@ Go 服务通过 `pgxpool` 直连 PostgreSQL；本地构建从 `.env.local` 读�
 - `internal/dn/database_config.go`：按“进程环境优先、嵌入 `.env.local` 兜底”解析 PostgreSQL 连接配置。
 - `internal/dn/postgres_service.go`：DN 独立数据库连接池、必要表健康检查，并通过窄接口依赖全局账号身份。
 - `internal/dn/postgres_roles.go`：`dn_role_profession` 角色职业查询和维护。
-- `internal/dn/postgres_weekly.go`：`dn_weekly_plan` 周计划查询、维护、同步和重置。
+- `internal/dn/postgres_weekly.go`：`dn_weekly_plan` 周计划查询、维护、同步和重置；复用历史计数列保存剩余委托数量。
 - `internal/dn/postgres_messages.go`：`sys_site_message`、回执、官网消息同步和集成状态。
 - `internal/dn/model.go`：角色、周计划和消息 DTO；账号常量与历史本地数据 DTO 通过类型别名兼容 `internal/account`。
 - `internal/dn/unavailable_service.go`：未配置安全连接时维持应用生命周期，并让 DN 用例返回明确的不可用错误。
@@ -41,7 +41,7 @@ React DN page / SiteMessageProvider
 ## 数据契约
 
 - `RoleProfession`：用户归属、角色名、职业、权重、备注、排序和关联计划数。
-- `WeeklyPlan`：用户归属、角色关联、最多六个巢穴委托、巢穴票、每日疲劳、侵蚀/方舟/噩梦、备注和排序。
+- `WeeklyPlan`：用户归属、角色关联、`0..6` 的剩余委托数量、侵蚀/方舟/噩梦、备注和排序。
 - `SiteMessage`：来源、级别、标题、内容、动作、弹窗语义、发布时间、有效期、官网分类元数据和当前用户的已读状态。
 - `sys_site_message_receipt`：按用户与消息保存 `notified_at` 和 `read_at`。
 - `OfficialMessageSyncResult`：是否跳过、官网获取数、新增数和同步时间。
@@ -81,10 +81,13 @@ DN 的两个业务路由在 `routeConfig.ts` 中统一声明 `requiresAuth: true
 
 重置每周任务
   → 保留当前用户的角色与排序
-  → 清空巢穴委托、巢穴票和完成状态
+  → 剩余委托数量恢复为 6
+  → 清空侵蚀、方舟和噩梦完成状态
 ```
 
 所有角色和周计划读写都在 Go 层验证账号归属，不能通过传入其他账号的 ID 越权访问。
+
+新版本不再暴露巢穴类型明细、巢穴票或每日疲劳。为避免新增线上数据库列，`remainingCommissionCount` 复用历史 `level_commission_count` 列；保存、同步和重置时会清空历史 `nest_commissions`、`nest_tickets` 数据。首次读取当前用户周计划时，历史票券列尚未写入迁移标记的记录会按旧委托中未完成项数量折算为剩余数量，没有旧委托明细时按 6 处理，并且只更新该用户的数据；旧本地 v1/v2 状态文件执行相同迁移。
 
 ### 消息与官网同步
 
@@ -107,8 +110,7 @@ DN 的两个业务路由在 `routeConfig.ts` 中统一声明 `requiresAuth: true
 - 创建、编辑、删除消息和官网强制同步都要求管理员，否则返回禁止操作错误。
 - 角色名在同一用户的活动记录中不能重复；删除角色会删除该用户关联周计划。
 - 权重只允许 `0..2`，排序不能小于 0。
-- 巢穴委托最多六个，只接受已知巢穴 ID。
-- 巢穴票日期统一为 `M-D`，并校验真实日历日期。
+- 剩余委托数量只能是 `0..6` 的整数，前端控件限制范围，Go 服务仍执行最终校验。
 - 消息动作只接受应用内 `/path` 或 HTTP(S) URL；过期、未发布或禁用消息不会出现在收件箱。
 - 官网同步失败不会阻断本地消息读取，会通过消息盒子展示同步错误。
 
@@ -117,6 +119,8 @@ DN 的两个业务路由在 `routeConfig.ts` 中统一声明 `requiresAuth: true
 - 两个 DN 业务页、独立消息页面、消息盒子和弹窗全部使用共享 UI 与应用语义主题令牌，跟随主题、强调色、密度、按钮尺寸和字体缩放即时变化。
 - 三个业务页统一使用共享 `PageHeader`，保持页头高度、渐变背景、标题基线和操作区布局一致。
 - 页面基于 `dn-page` Container Query 适配常规桌面、`1024 × 768` 最小窗口和极窄内容宽度。
+- 周计划卡片网格将常规列宽限制在 `320–360px` 并保持左对齐，只有一条计划时不拉伸占满整行；窄内容宽度下仍自动使用完整可用宽度。
+- 周计划卡片以剩余委托数量和完成进度为主信息，通过左加右减按钮快速更新；侵蚀、方舟和噩梦使用紧凑状态面板，备注与编辑/删除操作保持次级层级。
 - 表格只在卡片内部横向滚动，不造成整页横向滚动；卡片、过滤器、消息行和弹窗逐级降为单列。
 
 ## 接入方式

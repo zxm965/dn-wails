@@ -1,24 +1,9 @@
 import type { BadgeTone } from '@/shared/components/ui'
 
-import type { WeeklyPlanCommission, WeeklyPlanTicket } from '../api/dnSystemApi'
-
 export const PRIORITY_OPTIONS = [
   { label: '大号', value: 0 },
   { label: '主力', value: 2 },
   { label: '小号', value: 1 },
-] as const
-
-export const NEST_OPTIONS = [
-  { id: 1, label: '海龙' },
-  { id: 2, label: '狮蝎' },
-  { id: 3, label: 'K博士' },
-  { id: 4, label: '大主教' },
-  { id: 5, label: '巨人族' },
-  { id: 6, label: '火山' },
-  { id: 7, label: '守卫者' },
-  { id: 8, label: '迷雾' },
-  { id: 9, label: '台风金' },
-  { id: 10, label: '卡伊伦' },
 ] as const
 
 export const PROFESSION_OPTIONS = [
@@ -90,31 +75,4 @@ export function priorityMeta(value: number): { label: string; tone: BadgeTone; r
   const resolved = PRIORITY_OPTIONS[index] ?? PRIORITY_OPTIONS[PRIORITY_OPTIONS.length - 1]
   const tones: BadgeTone[] = ['danger', 'accent', 'outline']
   return { label: resolved.label, tone: tones[index] ?? 'outline', rank: index < 0 ? PRIORITY_OPTIONS.length : index }
-}
-
-export function getNestLabel(id: number): string {
-  return NEST_OPTIONS.find((item) => item.id === id)?.label ?? `未知巢穴 #${id}`
-}
-
-export function normalizeTicketDate(value: string): string {
-  const match = value.trim().match(/^(?:\d{4}[-/.])?(\d{1,2})[-/.月](\d{1,2})日?$/)
-  return match ? `${Number(match[1])}-${Number(match[2])}` : value.trim()
-}
-
-export function isValidTicketDate(value: string): boolean {
-  const normalized = normalizeTicketDate(value)
-  const match = normalized.match(/^(\d{1,2})-(\d{1,2})$/)
-  if (!match) return false
-  const month = Number(match[1])
-  const day = Number(match[2])
-  const date = new Date(Date.UTC(2024, month - 1, day))
-  return month >= 1 && month <= 12 && day >= 1 && date.getUTCMonth() === month - 1 && date.getUTCDate() === day
-}
-
-export function cloneCommissions(items: WeeklyPlanCommission[]): WeeklyPlanCommission[] {
-  return items.map((item) => ({ ...item }))
-}
-
-export function cloneTickets(items: WeeklyPlanTicket[]): WeeklyPlanTicket[] {
-  return items.map((item) => ({ ...item }))
 }

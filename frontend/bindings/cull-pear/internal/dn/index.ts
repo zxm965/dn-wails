@@ -16,11 +16,9 @@ export {
     SiteMessageMetadata,
     SiteMessageQuery,
     WeeklyPlan,
-    WeeklyPlanCommission,
     WeeklyPlanInitializationResult,
     WeeklyPlanInput,
     WeeklyPlanList,
     WeeklyPlanQuery,
-    WeeklyPlanSyncResult,
-    WeeklyPlanTicket
+    WeeklyPlanSyncResult
 } from "./models.js";
