@@ -11,6 +11,7 @@
 - `frontend/src/shared/components/ui/index.ts`：公共导出入口。
 - `frontend/src/features/settings/`：持久化并配置普通操作按钮的默认尺寸。
 - `frontend/src/shared/theme/ThemeProvider.tsx`：将默认尺寸同步到 `html[data-button-size]`。
+- `ControlSize`：供 Select、Input 和 PasswordInput 复用同一组 `sm/md/lg` 尺寸值。
 
 ## 尺寸契约
 
@@ -25,6 +26,8 @@ type ButtonSize = 'sm' | 'md' | 'lg'
 | `lg` | 36px | 侧栏导航、窗口控制等结构性按钮 |
 
 `size` 是可选属性。省略时读取偏好设置中的默认尺寸；显式传入时只允许上述三个值，并覆盖用户默认值。
+
+Select、Input 和 PasswordInput 复用相同尺寸令牌；省略 `size` 时同样跟随用户默认按钮尺寸。
 
 ## 接入方式
 

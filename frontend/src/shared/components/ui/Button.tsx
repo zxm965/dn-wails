@@ -5,6 +5,7 @@ import { classNames } from '@/shared/lib/classNames'
 import { styles } from './Button.css'
 
 export type ButtonSize = 'sm' | 'md' | 'lg'
+export type ControlSize = ButtonSize
 export type ButtonVariant = 'primary' | 'secondary' | 'outline' | 'ghost' | 'danger'
 
 export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {

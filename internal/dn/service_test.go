@@ -62,7 +62,7 @@ func TestServiceRequiresAuthentication(t *testing.T) {
 	if err := service.Initialize(); err != nil {
 		t.Fatalf("initialize service: %v", err)
 	}
-	if _, err := service.ListRoles(RoleProfessionQuery{Priority: -1}); !errors.Is(err, ErrUnauthenticated) {
+	if _, err := service.ListRoles(RoleProfessionQuery{}); !errors.Is(err, ErrUnauthenticated) {
 		t.Fatalf("expected authentication error, got %v", err)
 	}
 	state, err := service.AuthState()
@@ -102,7 +102,7 @@ func TestServicePersistsSessionRoleAndWeeklyPlan(t *testing.T) {
 	if err != nil || !auth.Authenticated || auth.User == nil || auth.User.ID != profile.ID {
 		t.Fatalf("session was not restored: %+v err=%v", auth, err)
 	}
-	roles, err := reloaded.ListRoles(RoleProfessionQuery{Priority: -1, Page: 1, PageSize: 15})
+	roles, err := reloaded.ListRoles(RoleProfessionQuery{Page: 1, PageSize: 15})
 	if err != nil {
 		t.Fatalf("list roles: %v", err)
 	}
@@ -132,7 +132,7 @@ func TestServiceIsolatesUserData(t *testing.T) {
 	if second.Role != UserRoleMember {
 		t.Fatalf("second user should be a member: %+v", second)
 	}
-	secondRoles, err := service.ListRoles(RoleProfessionQuery{Priority: -1})
+	secondRoles, err := service.ListRoles(RoleProfessionQuery{})
 	if err != nil || secondRoles.Meta.Total != 0 {
 		t.Fatalf("second user can see first user's roles: %+v err=%v", secondRoles, err)
 	}
@@ -146,7 +146,7 @@ func TestServiceIsolatesUserData(t *testing.T) {
 	if err != nil || loggedIn.ID != first.ID {
 		t.Fatalf("login first user: %+v err=%v", loggedIn, err)
 	}
-	firstRoles, err := service.ListRoles(RoleProfessionQuery{Priority: -1})
+	firstRoles, err := service.ListRoles(RoleProfessionQuery{})
 	if err != nil || firstRoles.Meta.Total != 1 {
 		t.Fatalf("first user's role missing: %+v err=%v", firstRoles, err)
 	}
@@ -188,6 +188,53 @@ func TestServiceRejectsDuplicateRoleAndInvalidWeeklyPlanCount(t *testing.T) {
 		}); !errors.Is(err, ErrInvalidData) {
 			t.Fatalf("expected invalid remaining commission count error for %d, got %v", count, err)
 		}
+	}
+}
+
+func TestServiceLinksSpecialWeeklyCommissionsToRemainingCount(t *testing.T) {
+	t.Parallel()
+	service, _, _ := newAuthenticatedService(t)
+	role, err := service.SaveRole(RoleProfessionInput{RoleName: "联动角色", Profession: "剑皇"})
+	if err != nil {
+		t.Fatalf("save role: %v", err)
+	}
+
+	plan, err := service.SaveWeeklyPlan(WeeklyPlanInput{
+		RoleProfessionID:         role.ID,
+		RemainingCommissionCount: WeeklyCommissionTotal,
+		HasArk:                   true,
+	})
+	if err != nil {
+		t.Fatalf("save ark plan: %v", err)
+	}
+	if plan.RemainingCommissionCount != WeeklyCommissionTotal-1 {
+		t.Fatalf("ark should consume one commission: %+v", plan)
+	}
+
+	plan, err = service.SaveWeeklyPlan(WeeklyPlanInput{
+		ID:                       plan.ID,
+		RoleProfessionID:         role.ID,
+		RemainingCommissionCount: WeeklyCommissionTotal,
+		HasArk:                   true,
+		HasNightmare:             true,
+	})
+	if err != nil {
+		t.Fatalf("save ark and nightmare plan: %v", err)
+	}
+	if plan.RemainingCommissionCount != ManualWeeklyCommissionTotal {
+		t.Fatalf("special commissions should leave four manual slots: %+v", plan)
+	}
+
+	plan, err = service.SaveWeeklyPlan(WeeklyPlanInput{
+		ID:                       plan.ID,
+		RoleProfessionID:         role.ID,
+		RemainingCommissionCount: 0,
+	})
+	if err != nil {
+		t.Fatalf("save reset special plan: %v", err)
+	}
+	if plan.RemainingCommissionCount != LinkedWeeklyCommissionTotal {
+		t.Fatalf("incomplete special commissions should remain counted: %+v", plan)
 	}
 }
 
@@ -433,7 +480,7 @@ func TestServiceMigratesLegacyDataToFirstUser(t *testing.T) {
 	if profile.Name != "旧资料名称" || profile.Avatar == "" || profile.Role != UserRoleAdmin {
 		t.Fatalf("legacy profile was not claimed: %+v", profile)
 	}
-	roles, err := service.ListRoles(RoleProfessionQuery{Priority: -1})
+	roles, err := service.ListRoles(RoleProfessionQuery{})
 	if err != nil || roles.Meta.Total != 1 || roles.Items[0].OwnerID != profile.ID {
 		t.Fatalf("legacy roles were not claimed: %+v err=%v", roles, err)
 	}

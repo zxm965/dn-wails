@@ -27,8 +27,7 @@ func (s *PostgresService) ListRoles(query RoleProfessionQuery) (RoleProfessionLi
 		where owner_id = $1 and deleted_at is null
 		  and ($2 = '' or role_name ilike '%' || $2 || '%')
 		  and ($3 = '' or profession ilike '%' || $3 || '%')
-		  and ($4 < 0 or priority = $4)
-		`, ownerID, roleName, profession, query.Priority).Scan(&total); err != nil {
+		`, ownerID, roleName, profession).Scan(&total); err != nil {
 		return RoleProfessionList{}, fmt.Errorf("count DN roles: %w", err)
 	}
 	rows, err := s.pool.Query(ctx, `
@@ -40,11 +39,10 @@ func (s *PostgresService) ListRoles(query RoleProfessionQuery) (RoleProfessionLi
 		where r.owner_id = $1 and r.deleted_at is null
 		  and ($2 = '' or r.role_name ilike '%' || $2 || '%')
 		  and ($3 = '' or r.profession ilike '%' || $3 || '%')
-		  and ($4 < 0 or r.priority = $4)
 		group by r.id
 		order by r.sort_order asc, r.id asc
-		limit $5 offset $6
-		`, ownerID, roleName, profession, query.Priority, pageSize, (page-1)*pageSize)
+		limit $4 offset $5
+		`, ownerID, roleName, profession, pageSize, (page-1)*pageSize)
 	if err != nil {
 		return RoleProfessionList{}, fmt.Errorf("list DN roles: %w", err)
 	}

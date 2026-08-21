@@ -6,9 +6,9 @@ import { useState } from 'react'
 
 import { createScopedClassNames } from '@/shared/lib/classNames'
 
-import { Button } from './Button'
+import { Button, type ControlSize } from './Button'
 
-import { styles } from './FormControls.css'
+import { sizes, styles } from './FormControls.css'
 
 const cx = createScopedClassNames(styles)
 
@@ -16,15 +16,21 @@ export function Label({ className, ...props }: LabelHTMLAttributes<HTMLLabelElem
   return <label data-ui='label' className={cx('ui-label', className)} {...props} />
 }
 
-export function Input({ className, ...props }: InputHTMLAttributes<HTMLInputElement>) {
-  return <input data-ui='input' className={cx('ui-input', className)} {...props} />
+export type InputProps = Omit<InputHTMLAttributes<HTMLInputElement>, 'size'> & {
+  size?: ControlSize
 }
 
-export function PasswordInput({ className, ...props }: Omit<InputHTMLAttributes<HTMLInputElement>, 'type'>) {
+export function Input({ className, size, ...props }: InputProps) {
+  return <input data-ui='input' className={cx('ui-input', size ? sizes[size] : undefined, className)} {...props} />
+}
+
+export type PasswordInputProps = Omit<InputProps, 'type'>
+
+export function PasswordInput({ className, size, ...props }: PasswordInputProps) {
   const [visible, setVisible] = useState(false)
   return (
     <span className={cx('ui-password-input', className)}>
-      <Input {...props} className={cx('ui-password-input-control')} type={visible ? 'text' : 'password'} />
+      <Input {...props} size={size} className={cx('ui-password-input-control')} type={visible ? 'text' : 'password'} />
       <Button
         className={cx('ui-password-input-toggle')}
         size='sm'

@@ -70,6 +70,34 @@ export const WEEKLY_FLAGS = [
 
 export type WeeklyFlagKey = (typeof WEEKLY_FLAGS)[number]['key']
 
+export const WEEKLY_COMMISSION_TOTAL = 6
+export const LINKED_WEEKLY_COMMISSION_TOTAL = 2
+export const MANUAL_WEEKLY_COMMISSION_TOTAL = WEEKLY_COMMISSION_TOTAL - LINKED_WEEKLY_COMMISSION_TOTAL
+
+export function linkedCommissionRemaining(hasArk: boolean, hasNightmare: boolean): number {
+  return LINKED_WEEKLY_COMMISSION_TOTAL - Number(hasArk) - Number(hasNightmare)
+}
+
+export function normalizeRemainingCommissionCount(count: number, hasArk: boolean, hasNightmare: boolean): number {
+  const minimum = linkedCommissionRemaining(hasArk, hasNightmare)
+  const maximum = minimum + MANUAL_WEEKLY_COMMISSION_TOTAL
+  return Math.min(maximum, Math.max(minimum, count))
+}
+
+export function toggleLinkedCommissionCount(
+  count: number,
+  hasArk: boolean,
+  hasNightmare: boolean,
+  key: 'hasArk' | 'hasNightmare',
+  nextValue: boolean,
+): number {
+  const currentCount = normalizeRemainingCommissionCount(count, hasArk, hasNightmare)
+  const nextHasArk = key === 'hasArk' ? nextValue : hasArk
+  const nextHasNightmare = key === 'hasNightmare' ? nextValue : hasNightmare
+  const nextCount = currentCount + (nextValue ? -1 : 1)
+  return normalizeRemainingCommissionCount(nextCount, nextHasArk, nextHasNightmare)
+}
+
 export function priorityMeta(value: number): { label: string; tone: BadgeTone; rank: number } {
   const index = PRIORITY_OPTIONS.findIndex((option) => option.value === value)
   const resolved = PRIORITY_OPTIONS[index] ?? PRIORITY_OPTIONS[PRIORITY_OPTIONS.length - 1]

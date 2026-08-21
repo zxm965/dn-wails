@@ -5,6 +5,34 @@ import "cull-pear/internal/account"
 const CurrentVersion = 3
 
 const (
+	WeeklyCommissionTotal       = 6
+	LinkedWeeklyCommissionTotal = 2
+	ManualWeeklyCommissionTotal = WeeklyCommissionTotal - LinkedWeeklyCommissionTotal
+)
+
+func normalizeWeeklyCommissionCount(count int, hasArk bool, hasNightmare bool) (int, error) {
+	if count < 0 || count > WeeklyCommissionTotal {
+		return 0, ErrInvalidData
+	}
+	linkedRemaining := LinkedWeeklyCommissionTotal
+	if hasArk {
+		linkedRemaining--
+	}
+	if hasNightmare {
+		linkedRemaining--
+	}
+	minimum := linkedRemaining
+	maximum := linkedRemaining + ManualWeeklyCommissionTotal
+	if count < minimum {
+		return minimum, nil
+	}
+	if count > maximum {
+		return maximum, nil
+	}
+	return count, nil
+}
+
+const (
 	UserRoleMember = account.UserRoleMember
 	UserRoleAdmin  = account.UserRoleAdmin
 
@@ -53,7 +81,6 @@ type RoleProfessionInput struct {
 type RoleProfessionQuery struct {
 	RoleName   string `json:"roleName"`
 	Profession string `json:"profession"`
-	Priority   int    `json:"priority"`
 	Page       int    `json:"page"`
 	PageSize   int    `json:"pageSize"`
 }
@@ -89,7 +116,6 @@ type WeeklyPlanInput struct {
 type WeeklyPlanQuery struct {
 	RoleName         string `json:"roleName"`
 	Profession       string `json:"profession"`
-	Priority         int    `json:"priority"`
 	RoleProfessionID int    `json:"roleProfessionId"`
 	Page             int    `json:"page"`
 	PageSize         int    `json:"pageSize"`

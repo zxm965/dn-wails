@@ -42,14 +42,24 @@ import {
   type WeeklyPlan,
   type WeeklyPlanInput,
 } from '../api/dnSystemApi'
-import { PRIORITY_OPTIONS, PROFESSION_OPTIONS, priorityMeta, WEEKLY_FLAGS, type WeeklyFlagKey } from '../model/dnSystem'
+import {
+  MANUAL_WEEKLY_COMMISSION_TOTAL,
+  PROFESSION_OPTIONS,
+  linkedCommissionRemaining,
+  normalizeRemainingCommissionCount,
+  priorityMeta,
+  toggleLinkedCommissionCount,
+  WEEKLY_COMMISSION_TOTAL,
+  WEEKLY_FLAGS,
+  type WeeklyFlagKey,
+} from '../model/dnSystem'
 
 import { styles } from './DnSystem.css'
 
 const cx = createScopedClassNames(styles)
 
 const emptyMeta: ListMeta = { total: 0, totalPages: 0, page: 1, pageSize: 20 }
-const emptyFilters = { roleName: '', profession: '', priority: -1, roleProfessionId: 0 }
+const emptyFilters = { roleName: '', profession: '', roleProfessionId: 0 }
 
 function inputFromPlan(plan: WeeklyPlan): WeeklyPlanInput {
   return {
@@ -264,16 +274,6 @@ export function DnWeeklyPlans({ onNavigateRoles }: { onNavigateRoles: () => void
                 onValueChange={(profession) => setFilters((current) => ({ ...current, profession }))}
               />
             </Field>
-            <Field label='角色权重'>
-              <Select
-                value={filters.priority}
-                options={[
-                  { value: -1, label: '全部' },
-                  ...PRIORITY_OPTIONS.map((item) => ({ value: item.value, label: item.label })),
-                ]}
-                onValueChange={(priority) => setFilters((current) => ({ ...current, priority }))}
-              />
-            </Field>
             <div className={cx('dn-filter-actions')}>
               <Button variant='secondary' disabled={loading} onClick={applyFilters}>
                 <Search aria-hidden='true' />
@@ -298,7 +298,21 @@ export function DnWeeklyPlans({ onNavigateRoles }: { onNavigateRoles: () => void
                   onRemainingCommissionChange={(remainingCommissionCount) =>
                     void quickUpdate(plan, { remainingCommissionCount })
                   }
-                  onToggleFlag={(key) => void quickUpdate(plan, { [key]: !plan[key] })}
+                  onToggleFlag={(key) => {
+                    const nextValue = !plan[key]
+                    if (key === 'hasInvasion') {
+                      void quickUpdate(plan, { hasInvasion: nextValue })
+                      return
+                    }
+                    const remainingCommissionCount = toggleLinkedCommissionCount(
+                      plan.remainingCommissionCount,
+                      plan.hasArk,
+                      plan.hasNightmare,
+                      key,
+                      nextValue,
+                    )
+                    void quickUpdate(plan, { [key]: nextValue, remainingCommissionCount })
+                  }}
                 />
               ))}
             </div>
@@ -356,8 +370,13 @@ function PlanCard({
   onToggleFlag: (key: WeeklyFlagKey) => void
 }) {
   const priority = priorityMeta(plan.priority)
-  const remainingCommissionCount = Math.min(6, Math.max(0, plan.remainingCommissionCount))
-  const completedCommissionCount = 6 - remainingCommissionCount
+  const remainingCommissionCount = normalizeRemainingCommissionCount(
+    plan.remainingCommissionCount,
+    plan.hasArk,
+    plan.hasNightmare,
+  )
+  const manualRemaining = remainingCommissionCount - linkedCommissionRemaining(plan.hasArk, plan.hasNightmare)
+  const completedCommissionCount = WEEKLY_COMMISSION_TOTAL - remainingCommissionCount
   const completedWeeklyCount = WEEKLY_FLAGS.filter((flag) => plan[flag.key]).length
   const roleInitial = Array.from(plan.roleName.trim())[0] ?? '?'
 
@@ -379,20 +398,22 @@ function PlanCard({
         <div className={cx('dn-plan-commission-heading')}>
           <div className={cx('dn-plan-commission-copy')}>
             <span className={cx('dn-plan-commission-label')}>剩余委托</span>
-            <small className={cx('dn-plan-commission-meta')}>{completedCommissionCount}/6 已完成</small>
+            <small className={cx('dn-plan-commission-meta')}>
+              {completedCommissionCount}/{WEEKLY_COMMISSION_TOTAL} 已完成
+            </small>
           </div>
           <strong className={cx('dn-plan-commission-count')}>
             {remainingCommissionCount}
-            <small className={cx('dn-plan-commission-total')}>/6</small>
+            <small className={cx('dn-plan-commission-total')}>/{WEEKLY_COMMISSION_TOTAL}</small>
           </strong>
         </div>
-        <Progress value={(completedCommissionCount / 6) * 100} aria-label='委托完成进度' />
+        <Progress value={(completedCommissionCount / WEEKLY_COMMISSION_TOTAL) * 100} aria-label='委托完成进度' />
         <div className={cx('dn-plan-counter-actions')}>
           <Button
             size='sm'
             variant='outline'
             aria-label='增加剩余委托数量'
-            disabled={updating || remainingCommissionCount === 6}
+            disabled={updating || manualRemaining === MANUAL_WEEKLY_COMMISSION_TOTAL}
             onClick={() => onRemainingCommissionChange(remainingCommissionCount + 1)}
           >
             <Plus aria-hidden='true' />
@@ -404,7 +425,7 @@ function PlanCard({
             size='sm'
             variant='outline'
             aria-label='减少剩余委托数量'
-            disabled={updating || remainingCommissionCount === 0}
+            disabled={updating || manualRemaining === 0}
             onClick={() => onRemainingCommissionChange(remainingCommissionCount - 1)}
           >
             <Minus aria-hidden='true' />
@@ -415,8 +436,8 @@ function PlanCard({
       <section className={cx('dn-plan-weekly-section')}>
         <div className={cx('dn-plan-weekly-heading')}>
           <div className={cx('dn-plan-weekly-copy')}>
-            <strong className={cx('dn-plan-weekly-title')}>其他周常</strong>
-            <span className={cx('dn-plan-weekly-meta')}>快速标记完成状态</span>
+            <strong className={cx('dn-plan-weekly-title')}>周常状态</strong>
+            <span className={cx('dn-plan-weekly-meta')}>侵蚀独立，方舟/噩梦计入委托</span>
           </div>
           <Badge tone={completedWeeklyCount === WEEKLY_FLAGS.length ? 'success' : 'outline'}>
             {completedWeeklyCount}/{WEEKLY_FLAGS.length}
@@ -482,8 +503,34 @@ function PlanEditor({
   }
 
   function setRemainingCommissionCount(value: number) {
-    update('remainingCommissionCount', Math.min(6, Math.max(0, value)))
+    if (!form) return
+    update('remainingCommissionCount', normalizeRemainingCommissionCount(value, form.hasArk, form.hasNightmare))
   }
+
+  function toggleFlag(key: WeeklyFlagKey, value: boolean) {
+    if (!form) return
+    if (key !== 'hasArk' && key !== 'hasNightmare') {
+      update(key, value)
+      return
+    }
+    onFormChange({
+      ...form,
+      [key]: value,
+      remainingCommissionCount: toggleLinkedCommissionCount(
+        form.remainingCommissionCount,
+        form.hasArk,
+        form.hasNightmare,
+        key,
+        value,
+      ),
+    })
+  }
+
+  const linkedRemaining = form ? linkedCommissionRemaining(form.hasArk, form.hasNightmare) : 0
+  const remainingCommissionCount = form
+    ? normalizeRemainingCommissionCount(form.remainingCommissionCount, form.hasArk, form.hasNightmare)
+    : 0
+  const manualRemaining = remainingCommissionCount - linkedRemaining
 
   return (
     <Dialog open={open} onOpenChange={(nextOpen) => !saving && onOpenChange(nextOpen)}>
@@ -492,7 +539,9 @@ function PlanEditor({
           <form onSubmit={onSubmit}>
             <DialogHeader>
               <DialogTitle>编辑周计划</DialogTitle>
-              <DialogDescription>更新剩余委托数量和本周完成状态。</DialogDescription>
+              <DialogDescription>
+                方舟和噩梦属于 6 个委托，会随完成状态自动计入；加减仅调整其他 4 个委托。
+              </DialogDescription>
             </DialogHeader>
             <DialogBody className={cx('dn-plan-editor')}>
               <div className={cx('dn-form-grid')}>
@@ -519,7 +568,9 @@ function PlanEditor({
               <section>
                 <div className={cx('dn-section-heading')}>
                   <strong>剩余委托</strong>
-                  <span>{form.remainingCommissionCount}/6</span>
+                  <span>
+                    {remainingCommissionCount}/{WEEKLY_COMMISSION_TOTAL}
+                  </span>
                 </div>
                 <div className={cx('dn-plan-count-editor')}>
                   <Button
@@ -527,13 +578,13 @@ function PlanEditor({
                     size='sm'
                     variant='outline'
                     aria-label='增加剩余委托数量'
-                    disabled={form.remainingCommissionCount === 6}
-                    onClick={() => setRemainingCommissionCount(form.remainingCommissionCount + 1)}
+                    disabled={manualRemaining === MANUAL_WEEKLY_COMMISSION_TOTAL}
+                    onClick={() => setRemainingCommissionCount(remainingCommissionCount + 1)}
                   >
                     <Plus aria-hidden='true' />
                   </Button>
                   <div className={cx('dn-plan-count-value')}>
-                    <strong className={cx('dn-plan-count-number')}>{form.remainingCommissionCount}</strong>
+                    <strong className={cx('dn-plan-count-number')}>{remainingCommissionCount}</strong>
                     <span className={cx('dn-plan-count-unit')}>个剩余</span>
                   </div>
                   <Button
@@ -541,28 +592,28 @@ function PlanEditor({
                     size='sm'
                     variant='outline'
                     aria-label='减少剩余委托数量'
-                    disabled={form.remainingCommissionCount === 0}
-                    onClick={() => setRemainingCommissionCount(form.remainingCommissionCount - 1)}
+                    disabled={manualRemaining === 0}
+                    onClick={() => setRemainingCommissionCount(remainingCommissionCount - 1)}
                   >
                     <Minus aria-hidden='true' />
                   </Button>
                 </div>
                 <Slider
                   aria-label='剩余委托数量'
-                  min={0}
-                  max={6}
+                  min={linkedRemaining}
+                  max={linkedRemaining + MANUAL_WEEKLY_COMMISSION_TOTAL}
                   step={1}
-                  value={form.remainingCommissionCount}
+                  value={remainingCommissionCount}
                   onValueChange={setRemainingCommissionCount}
                 />
                 <div className={cx('dn-plan-count-scale')}>
-                  <span>0 · 全部完成</span>
-                  <span>6 · 全部待完成</span>
+                  <span>{linkedRemaining} · 方舟/噩梦按当前状态计入</span>
+                  <span>{linkedRemaining + MANUAL_WEEKLY_COMMISSION_TOTAL} · 其他 4 个待完成</span>
                 </div>
               </section>
 
               <section>
-                <strong>其他周常</strong>
+                <strong>周常状态</strong>
                 <div className={cx('dn-editor-switches')}>
                   {WEEKLY_FLAGS.map((flag) => (
                     <label key={flag.key}>
@@ -570,7 +621,7 @@ function PlanEditor({
                       <Switch
                         aria-label={`${flag.label}完成状态`}
                         checked={form[flag.key]}
-                        onCheckedChange={(value) => update(flag.key, value)}
+                        onCheckedChange={(value) => toggleFlag(flag.key, value)}
                       />
                     </label>
                   ))}

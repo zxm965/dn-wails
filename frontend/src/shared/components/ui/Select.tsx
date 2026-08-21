@@ -3,7 +3,9 @@ import { Check, ChevronDown, ChevronUp } from 'lucide-react'
 
 import { createScopedClassNames } from '@/shared/lib/classNames'
 
-import { styles } from './Select.css'
+import type { ControlSize } from './Button'
+
+import { sizes, styles } from './Select.css'
 
 const cx = createScopedClassNames(styles)
 
@@ -20,6 +22,7 @@ export interface SelectProps<Value extends SelectValue> extends Omit<
   'children' | 'items' | 'multiple' | 'onValueChange'
 > {
   className?: string
+  size?: ControlSize
   options: ReadonlyArray<SelectOption<Value>>
   placeholder?: string
   'aria-label'?: string
@@ -30,6 +33,7 @@ export interface SelectProps<Value extends SelectValue> extends Omit<
 
 export function Select<Value extends SelectValue>({
   className,
+  size,
   options,
   placeholder = '请选择',
   disabled,
@@ -50,7 +54,7 @@ export function Select<Value extends SelectValue>({
     >
       <SelectPrimitive.Trigger
         data-ui='select'
-        className={cx('ui-select-trigger', className)}
+        className={cx('ui-select-trigger', size ? sizes[size] : undefined, className)}
         aria-label={ariaLabel}
         aria-labelledby={ariaLabelledBy}
         aria-describedby={ariaDescribedBy}

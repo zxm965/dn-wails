@@ -147,6 +147,37 @@ const settingsAccent = style({
   boxShadow: '0 0 0 1px var(--border-strong)',
 })
 
+const settingsButtonSizeOptions = style({
+  display: 'flex',
+  alignItems: 'center',
+  gap: '8px',
+  height: '44px',
+  minHeight: '44px',
+  padding: '0',
+  background: 'transparent',
+  border: '0',
+})
+
+const settingsButtonSizeButton = style({
+  flex: '1 1 0',
+  minWidth: '0',
+  padding: '0 10px',
+})
+
+const settingsButtonSizeButtonSelected = style({
+  color: 'var(--accent-hover)',
+  background: 'var(--accent-muted)',
+  borderColor: 'color-mix(in srgb, var(--accent) 45%, var(--border-strong))',
+  boxShadow: 'none',
+  selectors: {
+    '&:hover:not(:disabled)': {
+      color: 'var(--accent-hover)',
+      background: 'var(--accent-muted)',
+      borderColor: 'color-mix(in srgb, var(--accent) 45%, var(--border-strong))',
+    },
+  },
+})
+
 const isGreen = style({
   background: '#07c160',
 })
@@ -237,6 +268,9 @@ export const styles = {
   'settings-fieldset': settingsFieldset,
   'settings-field': settingsField,
   'settings-accent': settingsAccent,
+  'settings-button-size-options': settingsButtonSizeOptions,
+  'settings-button-size-button': settingsButtonSizeButton,
+  'settings-button-size-button-selected': settingsButtonSizeButtonSelected,
   'is-green': isGreen,
   'is-blue': isBlue,
   'is-purple': isPurple,

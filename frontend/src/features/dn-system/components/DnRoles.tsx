@@ -43,7 +43,7 @@ import { styles } from './DnSystem.css'
 const cx = createScopedClassNames(styles)
 
 const emptyMeta: ListMeta = { total: 0, totalPages: 0, page: 1, pageSize: 15 }
-const emptyFilters = { roleName: '', profession: '', priority: -1 }
+const emptyFilters = { roleName: '', profession: '' }
 const emptyForm: RoleProfessionInput = { id: 0, roleName: '', profession: '', priority: 0, remark: '', sortOrder: 0 }
 
 export function DnRoles() {
@@ -182,16 +182,6 @@ export function DnRoles() {
                   })),
                 ]}
                 onValueChange={(profession) => setFilters((current) => ({ ...current, profession }))}
-              />
-            </Field>
-            <Field label='角色权重'>
-              <Select
-                value={filters.priority}
-                options={[
-                  { value: -1, label: '全部' },
-                  ...PRIORITY_OPTIONS.map((item) => ({ value: item.value, label: item.label })),
-                ]}
-                onValueChange={(priority) => setFilters((current) => ({ ...current, priority }))}
               />
             </Field>
             <div className={cx('dn-filter-actions')}>

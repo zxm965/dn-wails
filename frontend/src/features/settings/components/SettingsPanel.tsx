@@ -233,13 +233,27 @@ export function SettingsPanel() {
 
           <fieldset className={cx('settings-fieldset')}>
             <legend>默认按钮尺寸</legend>
-            <RadioGroup
-              aria-label='默认按钮尺寸'
-              name='button-size'
-              value={settings.appearance.buttonSize}
-              options={BUTTON_SIZE_OPTIONS}
-              onValueChange={(buttonSize) => updateAppearance('buttonSize', buttonSize)}
-            />
+            <div className={cx('settings-button-size-options')} role='group' aria-label='默认按钮尺寸'>
+              {BUTTON_SIZE_OPTIONS.map((option) => (
+                <Button
+                  key={option.value}
+                  type='button'
+                  size={option.value}
+                  variant={settings.appearance.buttonSize === option.value ? 'secondary' : 'outline'}
+                  ripple={false}
+                  className={cx(
+                    'settings-button-size-button',
+                    settings.appearance.buttonSize === option.value
+                      ? 'settings-button-size-button-selected'
+                      : undefined,
+                  )}
+                  aria-pressed={settings.appearance.buttonSize === option.value}
+                  onClick={() => updateAppearance('buttonSize', option.value)}
+                >
+                  {option.label}
+                </Button>
+              ))}
+            </div>
           </fieldset>
 
           <label className={cx('settings-field')}>

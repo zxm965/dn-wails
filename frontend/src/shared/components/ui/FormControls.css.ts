@@ -1,4 +1,4 @@
-import { globalStyle, style } from '@vanilla-extract/css'
+import { globalStyle, style, styleVariants } from '@vanilla-extract/css'
 
 const uiLabel = style({
   display: 'inline-flex',
@@ -12,7 +12,8 @@ const uiLabel = style({
 const uiInput = style({
   width: '100%',
   minWidth: '0',
-  height: 'var(--control-height)',
+  height: 'var(--button-height-default)',
+  minHeight: 'var(--button-height-default)',
   padding: '0 11px',
   color: 'var(--text-primary)',
   background: 'var(--surface-muted)',
@@ -30,6 +31,21 @@ const uiInput = style({
   },
   '::placeholder': {
     color: 'var(--text-tertiary)',
+  },
+})
+
+const sizes = styleVariants({
+  sm: {
+    height: 'var(--button-height-sm)',
+    minHeight: 'var(--button-height-sm)',
+  },
+  md: {
+    height: 'var(--button-height-md)',
+    minHeight: 'var(--button-height-md)',
+  },
+  lg: {
+    height: 'var(--button-height-lg)',
+    minHeight: 'var(--button-height-lg)',
   },
 })
 
@@ -172,6 +188,8 @@ export const styles = {
   'ui-checkbox-indicator': uiCheckboxIndicator,
   'ui-switch-thumb': uiSwitchThumb,
 } as const
+
+export { sizes }
 
 globalStyle(`${uiPasswordInputToggle} svg`, {
   width: '15px',

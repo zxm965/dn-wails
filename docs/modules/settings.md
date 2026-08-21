@@ -67,7 +67,7 @@ React SettingsProvider → GetSettings
 
 ## 接入方式
 
-React 组件通过 `useSettings` 读取和更新设置。所有配置项取消独立保存按钮，菜单、主题、强调色、密度、按钮尺寸、文字缩放、通知和窗口行为在控件变化时立即更新并自动持久化。主题、强调色和按钮尺寸使用共享 `RadioGroup`，文字缩放使用共享 `Slider`，布尔设置使用共享 `Switch`，下拉选项使用共享 `Select`；设置页不直接渲染原生交互控件。Go 模块通过 `SettingsService` 获取当前快照，不直接读写 JSON 文件。
+React 组件通过 `useSettings` 读取和更新设置。所有配置项取消独立保存按钮，菜单、主题、强调色、密度、按钮尺寸、文字缩放、通知和窗口行为在控件变化时立即更新并自动持久化。主题和强调色使用共享 `RadioGroup`，默认按钮尺寸使用三枚带 `sm/md/lg` 尺寸的共享 `Button`，文字缩放使用共享 `Slider`，布尔设置使用共享 `Switch`，下拉选项使用共享 `Select`；按钮尺寸选择器固定容器高度，切换时不引发布局跳动。设置页不直接渲染原生交互控件。Go 模块通过 `SettingsService` 获取当前快照，不直接读写 JSON 文件。
 
 左侧菜单使用 `menuConfig.ts` 作为渲染、偏好选项和显隐读取的共同配置。`menuVisibility` 只保存用户按唯一 key 做出的覆盖值；未保存的 key 使用配置中的 `defaultVisible`。当前 `dn-system` 和 `devtools` 默认隐藏，独立的 `site-messages` 默认显示，`settings` 始终显示且不提供关闭开关。DevTools 下的“桌面实验室”继续使用默认关闭的兼容 key `devtools-desktop`：父开关关闭时子开关以关闭状态禁用，父开关开启后可单独切换。新增可配置菜单或子偏好时补充同一配置项即可进入偏好设置列表。
 

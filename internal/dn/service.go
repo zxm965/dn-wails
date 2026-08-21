@@ -178,9 +178,6 @@ func (s *Service) ListRoles(query RoleProfessionQuery) (RoleProfessionList, erro
 		if item.OwnerID != current.ID || item.DeletedAt != "" || !matchesText(item.RoleName, query.RoleName) || !matchesText(item.Profession, query.Profession) {
 			continue
 		}
-		if query.Priority >= 0 && item.Priority != query.Priority {
-			continue
-		}
 		item.WeeklyPlanCount = countPlansForRole(s.state.Plans, current.ID, item.ID)
 		items = append(items, item)
 	}
@@ -324,9 +321,6 @@ func (s *Service) ListWeeklyPlans(query WeeklyPlanQuery) (WeeklyPlanList, error)
 		if item.OwnerID != current.ID || !matchesText(item.RoleName, query.RoleName) || !matchesText(item.Profession, query.Profession) {
 			continue
 		}
-		if query.Priority >= 0 && item.Priority != query.Priority {
-			continue
-		}
 		if query.RoleProfessionID > 0 && item.RoleProfessionID != query.RoleProfessionID {
 			continue
 		}
@@ -359,9 +353,15 @@ func (s *Service) SaveWeeklyPlan(input WeeklyPlanInput) (WeeklyPlan, error) {
 	if input.RoleProfessionID <= 0 {
 		return WeeklyPlan{}, fmt.Errorf("%w: role profession is required", ErrInvalidData)
 	}
-	if input.RemainingCommissionCount < 0 || input.RemainingCommissionCount > 6 || input.SortOrder < 0 {
+	remainingCommissionCount, countErr := normalizeWeeklyCommissionCount(
+		input.RemainingCommissionCount,
+		input.HasArk,
+		input.HasNightmare,
+	)
+	if countErr != nil || input.SortOrder < 0 {
 		return WeeklyPlan{}, fmt.Errorf("%w: invalid weekly plan counters", ErrInvalidData)
 	}
+	input.RemainingCommissionCount = remainingCommissionCount
 	if len([]rune(input.Remark)) > 1000 {
 		return WeeklyPlan{}, fmt.Errorf("%w: weekly plan remark is too long", ErrInvalidData)
 	}

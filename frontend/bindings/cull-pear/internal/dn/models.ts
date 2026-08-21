@@ -209,7 +209,6 @@ export class RoleProfessionList {
 export class RoleProfessionQuery {
     "roleName": string;
     "profession": string;
-    "priority": number;
     "page": number;
     "pageSize": number;
 
@@ -220,9 +219,6 @@ export class RoleProfessionQuery {
         }
         if (!("profession" in $$source)) {
             this["profession"] = "";
-        }
-        if (!("priority" in $$source)) {
-            this["priority"] = 0;
         }
         if (!("page" in $$source)) {
             this["page"] = 0;
@@ -740,7 +736,6 @@ export class WeeklyPlanList {
 export class WeeklyPlanQuery {
     "roleName": string;
     "profession": string;
-    "priority": number;
     "roleProfessionId": number;
     "page": number;
     "pageSize": number;
@@ -752,9 +747,6 @@ export class WeeklyPlanQuery {
         }
         if (!("profession" in $$source)) {
             this["profession"] = "";
-        }
-        if (!("priority" in $$source)) {
-            this["priority"] = 0;
         }
         if (!("roleProfessionId" in $$source)) {
             this["roleProfessionId"] = 0;

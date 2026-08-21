@@ -45,7 +45,6 @@ export interface RoleProfessionInput {
 export interface RoleProfessionQuery {
   roleName: string
   profession: string
-  priority: number
   page: number
   pageSize: number
 }
@@ -81,7 +80,6 @@ export interface WeeklyPlanInput {
 export interface WeeklyPlanQuery {
   roleName: string
   profession: string
-  priority: number
   roleProfessionId: number
   page: number
   pageSize: number

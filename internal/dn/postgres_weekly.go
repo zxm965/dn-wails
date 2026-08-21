@@ -24,10 +24,9 @@ func (s *PostgresService) ListWeeklyPlans(query WeeklyPlanQuery) (WeeklyPlanList
 		where p.owner_id = $1
 		  and ($2 = '' or p.role_name ilike '%' || $2 || '%')
 		  and ($3 = '' or coalesce(p.profession, '') ilike '%' || $3 || '%')
-		  and ($4 < 0 or p.priority = $4)
-		  and ($5 <= 0 or p.role_profession_id = $5)
+		  and ($4 <= 0 or p.role_profession_id = $4)
 		order by p.sort_order asc, p.id asc
-	`, ownerID, strings.TrimSpace(query.RoleName), strings.TrimSpace(query.Profession), query.Priority, query.RoleProfessionID)
+	`, ownerID, strings.TrimSpace(query.RoleName), strings.TrimSpace(query.Profession), query.RoleProfessionID)
 	if err != nil {
 		return WeeklyPlanList{}, fmt.Errorf("list DN weekly plans: %w", err)
 	}
@@ -79,9 +78,15 @@ func (s *PostgresService) SaveWeeklyPlan(input WeeklyPlanInput) (WeeklyPlan, err
 	if input.RoleProfessionID <= 0 {
 		return WeeklyPlan{}, fmt.Errorf("%w: role profession is required", ErrInvalidData)
 	}
-	if input.RemainingCommissionCount < 0 || input.RemainingCommissionCount > 6 || input.SortOrder < 0 {
+	remainingCommissionCount, countErr := normalizeWeeklyCommissionCount(
+		input.RemainingCommissionCount,
+		input.HasArk,
+		input.HasNightmare,
+	)
+	if countErr != nil || input.SortOrder < 0 {
 		return WeeklyPlan{}, fmt.Errorf("%w: invalid weekly plan counters", ErrInvalidData)
 	}
+	input.RemainingCommissionCount = remainingCommissionCount
 	if len([]rune(input.Remark)) > 1000 {
 		return WeeklyPlan{}, fmt.Errorf("%w: weekly plan remark is too long", ErrInvalidData)
 	}
