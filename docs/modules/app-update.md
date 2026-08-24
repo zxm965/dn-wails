@@ -13,7 +13,7 @@
 - `internal/installation/`：生成和持久化下载门禁使用的 UUID v4 安装 ID、首次安装版本与最近运行版本。
 - `internal/platform/appupdate/config.go`：从 PostgreSQL 读取当前应用、渠道、平台和架构对应的更新源配置。
 - `internal/platform/appupdate/installer_darwin.go`：挂载新版 DMG，退出当前进程后替换应用包、卸载镜像并重新打开。
-- `internal/platform/appupdate/installer_windows.go`：退出当前进程后静默运行用户级 NSIS 安装器并重新打开应用。
+- `internal/platform/appupdate/installer_windows.go` 与 `windows_update_script.go`：退出当前进程后由脱离父进程的 PowerShell 助手运行用户级 NSIS 安装器，处理 Windows 可执行文件短暂锁定、有限重试、替换校验和应用重启。
 - `internal/application/update.go`：向前端暴露版本信息、检查和安装三个 Wails 用例，并转发下载进度事件。
 - `frontend/src/features/app-update/`：根级更新状态、启动自动检查、确认弹窗、下载进度和错误反馈。
 - `frontend/src/features/devtools/components/DesktopOverview.tsx`：展示当前版本，不展示更新源地址等发布配置。
@@ -69,7 +69,7 @@ React AppUpdateProvider
 6. 自动检查和手动检查发现新版后都通过统一确认窗口询问用户，不静默安装。
 7. 用户确认后重新读取 Release 元数据，确保确认期间版本未发生变化。
 8. 当前客户端按平台精确选择 DMG 或 EXE，由 Go HTTP 客户端携带安装 ID、当前版本和平台 User-Agent 请求下载；下载后校验 Release 元数据声明的字节数和 SHA-256。
-9. 校验成功后启动平台更新助手；macOS 挂载 DMG 并在当前应用退出后替换 `.app`，Windows 静默运行用户级安装器，完成后重新启动。
+9. 校验成功后启动平台更新助手；macOS 挂载 DMG 并在当前应用退出后替换 `.app`，Windows 等待当前进程退出和短暂文件锁释放，静默运行用户级安装器并在确认已替换可执行文件后重新启动。Windows 助手日志写入系统临时目录下的 `cull-pear-update-<pid>.log`。
 
 安装开始后，下载器按实际读取字节数回调进度。`internal/appupdate.Service` 将进度归一化为版本、阶段、已下载字节、总字节和百分比，`internal/application.App` 通过 `app-update:progress` 事件转发给前端。`AppUpdateProvider` 负责订阅并清理事件，设置页的“应用更新”区域展示下载百分比、进度条和字节数；下载完成后显示“正在准备安装”，保留原有自动重启流程。
 

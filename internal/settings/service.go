@@ -42,6 +42,13 @@ func (s *Service) Initialize() error {
 	if err := json.Unmarshal(data, &loaded); err != nil {
 		return fmt.Errorf("decode application settings: %w", err)
 	}
+	if loaded.Version == CurrentVersion-1 {
+		loaded.Version = CurrentVersion
+		loaded.DragonNest = Default().DragonNest
+		if err := s.persist(loaded); err != nil {
+			return fmt.Errorf("persist migrated application settings: %w", err)
+		}
+	}
 	if err := validate(loaded); err != nil {
 		return err
 	}
@@ -152,8 +159,18 @@ func validate(value AppSettings) error {
 	if !contains([]string{CloseBehaviorQuit, CloseBehaviorHide}, value.Window.CloseBehavior) {
 		return fmt.Errorf("%w: unsupported close behavior %q", ErrInvalidSettings, value.Window.CloseBehavior)
 	}
+	if !contains(dragonNestShortcutKeys(), value.DragonNest.ShortcutKey) {
+		return fmt.Errorf("%w: unsupported Dragon Nest shortcut %q", ErrInvalidSettings, value.DragonNest.ShortcutKey)
+	}
+	if len(value.DragonNest.TargetPath) > 4096 || strings.ContainsAny(value.DragonNest.TargetPath, "\r\n") {
+		return fmt.Errorf("%w: invalid Dragon Nest target path", ErrInvalidSettings)
+	}
 
 	return nil
+}
+
+func dragonNestShortcutKeys() []string {
+	return []string{"F1", "F2", "F3", "F4", "F5", "F6", "F7", "F8", "F9", "F10", "F11", "F12"}
 }
 
 func contains(values []string, target string) bool {

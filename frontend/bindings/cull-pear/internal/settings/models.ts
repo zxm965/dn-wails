@@ -11,6 +11,7 @@ export class AppSettings {
     "notifications": Notifications;
     "navigation": Navigation;
     "window": Window;
+    "dragonNest": DragonNest;
 
     /** Creates a new AppSettings instance. */
     constructor($$source: Partial<AppSettings> = {}) {
@@ -29,6 +30,9 @@ export class AppSettings {
         if (!("window" in $$source)) {
             this["window"] = (new Window());
         }
+        if (!("dragonNest" in $$source)) {
+            this["dragonNest"] = (new DragonNest());
+        }
 
         Object.assign(this, $$source);
     }
@@ -41,6 +45,7 @@ export class AppSettings {
         const $$createField2_0 = $$createType1;
         const $$createField3_0 = $$createType2;
         const $$createField4_0 = $$createType3;
+        const $$createField5_0 = $$createType4;
         let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
         if ("appearance" in $$parsedSource) {
             $$parsedSource["appearance"] = $$createField1_0($$parsedSource["appearance"]);
@@ -53,6 +58,9 @@ export class AppSettings {
         }
         if ("window" in $$parsedSource) {
             $$parsedSource["window"] = $$createField4_0($$parsedSource["window"]);
+        }
+        if ("dragonNest" in $$parsedSource) {
+            $$parsedSource["dragonNest"] = $$createField5_0($$parsedSource["dragonNest"]);
         }
         return new AppSettings($$parsedSource as Partial<AppSettings>);
     }
@@ -95,6 +103,35 @@ export class Appearance {
     }
 }
 
+export class DragonNest {
+    "shortcutEnabled": boolean;
+    "shortcutKey": string;
+    "targetPath": string;
+
+    /** Creates a new DragonNest instance. */
+    constructor($$source: Partial<DragonNest> = {}) {
+        if (!("shortcutEnabled" in $$source)) {
+            this["shortcutEnabled"] = false;
+        }
+        if (!("shortcutKey" in $$source)) {
+            this["shortcutKey"] = "";
+        }
+        if (!("targetPath" in $$source)) {
+            this["targetPath"] = "";
+        }
+
+        Object.assign(this, $$source);
+    }
+
+    /**
+     * Creates a new DragonNest instance from a string or object.
+     */
+    static createFrom($$source: any = {}): DragonNest {
+        let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
+        return new DragonNest($$parsedSource as Partial<DragonNest>);
+    }
+}
+
 export class Navigation {
     "menuVisibility": { [_ in string]?: boolean };
 
@@ -111,7 +148,7 @@ export class Navigation {
      * Creates a new Navigation instance from a string or object.
      */
     static createFrom($$source: any = {}): Navigation {
-        const $$createField0_0 = $$createType4;
+        const $$createField0_0 = $$createType5;
         let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
         if ("menuVisibility" in $$parsedSource) {
             $$parsedSource["menuVisibility"] = $$createField0_0($$parsedSource["menuVisibility"]);
@@ -174,7 +211,7 @@ export class Window {
      * Creates a new Window instance from a string or object.
      */
     static createFrom($$source: any = {}): Window {
-        const $$createField3_0 = $$createType6;
+        const $$createField3_0 = $$createType7;
         let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
         if ("bounds" in $$parsedSource) {
             $$parsedSource["bounds"] = $$createField3_0($$parsedSource["bounds"]);
@@ -225,6 +262,7 @@ const $$createType0 = Appearance.createFrom;
 const $$createType1 = Notifications.createFrom;
 const $$createType2 = Navigation.createFrom;
 const $$createType3 = Window.createFrom;
-const $$createType4 = $Create.Map($Create.Any, $Create.Any);
-const $$createType5 = WindowBounds.createFrom;
-const $$createType6 = $Create.Nullable($$createType5);
+const $$createType4 = DragonNest.createFrom;
+const $$createType5 = $Create.Map($Create.Any, $Create.Any);
+const $$createType6 = WindowBounds.createFrom;
+const $$createType7 = $Create.Nullable($$createType6);

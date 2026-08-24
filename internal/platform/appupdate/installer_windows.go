@@ -13,29 +13,6 @@ import (
 	"syscall"
 )
 
-const windowsUpdateScript = `param(
-  [int]$ProcessId,
-  [string]$InstallerPath,
-  [string]$ExecutablePath,
-  [string]$LogPath
-)
-
-try {
-  Wait-Process -Id $ProcessId -ErrorAction SilentlyContinue
-  $installer = Start-Process -FilePath $InstallerPath -ArgumentList '/S' -Wait -PassThru
-  if ($installer.ExitCode -ne 0) {
-    "Installer exited with code $($installer.ExitCode)." | Out-File -FilePath $LogPath -Encoding utf8
-    exit $installer.ExitCode
-  }
-  if (Test-Path -LiteralPath $ExecutablePath) {
-    Start-Process -FilePath $ExecutablePath
-  }
-} catch {
-  $_ | Out-File -FilePath $LogPath -Encoding utf8
-  exit 1
-}
-`
-
 func (i *Installer) Supported() bool {
 	return i.appName != ""
 }
@@ -64,7 +41,7 @@ func (i *Installer) Install(_ context.Context, archivePath string) error {
 	if err := os.WriteFile(scriptPath, []byte(windowsUpdateScript), 0o600); err != nil {
 		return fmt.Errorf("write update helper: %w", err)
 	}
-	logPath := filepath.Join(workDirectory, "install-update.log")
+	logPath := filepath.Join(os.TempDir(), fmt.Sprintf("%s-update-%d.log", i.appName, os.Getpid()))
 
 	command := exec.Command(
 		"powershell.exe",
@@ -78,7 +55,7 @@ func (i *Installer) Install(_ context.Context, archivePath string) error {
 		"-LogPath", logPath,
 	)
 	command.SysProcAttr = &syscall.SysProcAttr{
-		CreationFlags: 0x00000008 | 0x00000200,
+		CreationFlags: 0x00000008 | 0x00000200 | 0x08000000,
 		HideWindow:    true,
 	}
 	if err := command.Start(); err != nil {

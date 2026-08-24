@@ -8,6 +8,8 @@ export type {
   ButtonSize,
   CloseBehavior,
   Density,
+  DragonNestSettings,
+  DragonNestShortcutKey,
   NavigationSettings,
   NotificationSettings,
   ThemeMode,

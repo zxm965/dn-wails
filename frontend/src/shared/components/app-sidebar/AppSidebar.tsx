@@ -220,7 +220,7 @@ export function AppSidebar({ activeView, menuVisibility, onNavigate }: AppSideba
         <BrandIcon className={cx('app-sidebar-logo')} />
         <div>
           <strong>{appConfig.displayName}</strong>
-          <span>Desktop Application</span>
+          <span>今天赚了吗</span>
         </div>
       </div>
 

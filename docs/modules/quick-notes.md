@@ -11,7 +11,7 @@
 - `internal/quicknotes/unavailable_service.go`：数据库未配置时的明确降级实现，并向运行状态报告不可用。
 - `internal/application/quicknotes.go`：提供给前端的 Wails 门面方法。
 - `frontend/src/features/quick-notes/api/`：生成绑定适配和前端类型。
-- `frontend/src/features/quick-notes/components/`：笔记列表、搜索、编辑器和自动保存状态。
+- `frontend/src/features/quick-notes/components/`：笔记列表、搜索、Markdown 预览、编辑器和自动保存状态。
 - `frontend/src/shared/navigation/menuConfig.ts`：注册不带分组标题的“快速笔记”入口。
 
 ## 依赖关系
@@ -84,9 +84,16 @@ Wails 门面提供：
       → 查询当前 owner_id 的活动笔记
 ```
 
+### 预览与编辑
+
+- 进入快速笔记后右侧默认显示只读 Markdown 预览，标题和正文不会直接进入可编辑状态。
+- 点击“编辑”切换为编辑窗口；“分栏”模式同时显示编辑器和实时预览，内容变化会立即反映到预览区域。
+- 当前预览支持标题、段落、换行、粗体、斜体、删除线、行内代码、代码块、引用、有序/无序列表、分隔线和 HTTP(S)/mailto 链接。链接通过 Native Kit 在系统浏览器中打开，禁止不安全协议。
+- 新建笔记后直接进入编辑模式；切换已有笔记时恢复为预览模式，避免误修改。
+
 ### 自动保存
 
-- 标题、正文或置顶状态变化后等待 700ms，再提交完整 `QuickNoteInput`。
+- 在编辑或分栏模式下，标题、正文或置顶状态变化后等待 700ms，再提交完整 `QuickNoteInput`。
 - 切换笔记、新建笔记或离开页面前会尝试保存仍未提交的草稿。
 - 用户可使用保存按钮或 `⌘/Ctrl + S` 立即保存，使用 `⌘/Ctrl + N` 新建笔记。
 - 保存失败不会清空本地编辑状态，并通过 Toast 与编辑器状态提示错误。
@@ -109,6 +116,7 @@ Wails 门面提供：
 
 - 页面基于右侧内容区域使用 Container Queries。
 - 常规宽度使用“笔记列表 + 编辑器”双栏布局。
+- 右侧预览、编辑和分栏模式共用同一内容区域；分栏模式在内容宽度小于 700px 时切换为上下布局。
 - 内容宽度小于 700px 时切换为上下布局，列表限制高度并独立滚动。
 - 标题、列表时间和底部状态均具有文本溢出保护，不产生整页横向滚动。
 - 所有操作使用共享 `Button`，搜索、标题和正文复用共享表单控件。

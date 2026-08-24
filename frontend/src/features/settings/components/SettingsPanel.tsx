@@ -2,9 +2,16 @@ import { useAppUpdate } from '@/features/app-update'
 import { Button, PageHeader, RadioGroup, Select, Slider, Switch } from '@/shared/components/ui'
 import { useFeedback } from '@/shared/feedback'
 import { createScopedClassNames } from '@/shared/lib/classNames'
+import { isWindows } from '@/shared/lib/platform'
 import { CONFIGURABLE_MENU_ENTRIES, resolveMenuVisibility, type MenuPreferenceKey } from '@/shared/navigation'
 
-import { type AccentColor, type AppSettings, type ButtonSize, type ThemeMode } from '../api/settingsApi'
+import {
+  DRAGON_NEST_SHORTCUT_OPTIONS,
+  type AccentColor,
+  type AppSettings,
+  type ButtonSize,
+  type ThemeMode,
+} from '../api/settingsApi'
 import { useSettings } from '../context/SettingsProvider'
 
 import { styles } from './SettingsPanel.css'
@@ -78,6 +85,16 @@ export function SettingsPanel() {
     void updateSettings((current) => ({
       ...current,
       window: { ...current.window, [key]: value },
+    })).catch(() => undefined)
+  }
+
+  function updateDragonNest<Key extends keyof AppSettings['dragonNest']>(
+    key: Key,
+    value: AppSettings['dragonNest'][Key],
+  ) {
+    void updateSettings((current) => ({
+      ...current,
+      dragonNest: { ...current.dragonNest, [key]: value },
     })).catch(() => undefined)
   }
 
@@ -181,6 +198,46 @@ export function SettingsPanel() {
               </div>
             )
           })}
+        </div>
+      </section>
+
+      <section className={cx('settings-section')}>
+        <div className={cx('settings-section-title')}>
+          <h2>DN惊鸿</h2>
+          <p>可选的全局快捷键，仅 Windows 支持。默认快捷键为 F4，关闭后不会占用系统快捷键。</p>
+        </div>
+        <div className={cx('settings-grid')}>
+          <label className={cx('settings-field')}>
+            <span>快捷键</span>
+            <Select
+              aria-label='DN 结束进程快捷键'
+              value={settings.dragonNest.shortcutKey}
+              disabled={!isWindows() || !settings.dragonNest.shortcutEnabled}
+              options={DRAGON_NEST_SHORTCUT_OPTIONS.map((key) => ({ value: key, label: key }))}
+              onValueChange={(shortcutKey) => updateDragonNest('shortcutKey', shortcutKey)}
+            />
+          </label>
+          <div className={cx('settings-field settings-inline-note')}>
+            <span>快捷目标</span>
+            <small className={cx('settings-inline-note-copy')}>
+              {settings.dragonNest.targetPath
+                ? `已记录：${settings.dragonNest.targetPath.split(/[\\/]/).pop() ?? settings.dragonNest.targetPath}`
+                : '尚未记录，成功结束一次进程后自动记录'}
+            </small>
+          </div>
+        </div>
+        <div className={cx('settings-toggles')}>
+          <ToggleRow
+            title='启用全局快捷键'
+            description={
+              isWindows()
+                ? `在应用后台按 ${settings.dragonNest.shortcutKey} 快速结束已记录的 DN 进程。`
+                : '当前系统不是 Windows，暂不支持全局结束进程快捷键。'
+            }
+            checked={settings.dragonNest.shortcutEnabled}
+            disabled={!isWindows()}
+            onChange={(checked) => updateDragonNest('shortcutEnabled', checked)}
+          />
         </div>
       </section>
 

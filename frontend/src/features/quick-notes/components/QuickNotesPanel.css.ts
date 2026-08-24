@@ -221,11 +221,39 @@ const quickNotesTitleInput = style({
   },
 })
 
+const quickNotesTitle = style({
+  minWidth: '0',
+  flex: '1',
+  margin: '0',
+  overflow: 'hidden',
+  color: 'var(--text-primary)',
+  fontSize: 'clamp(18px, 2.4vw, 24px)',
+  fontWeight: '800',
+  lineHeight: '1.3',
+  textOverflow: 'ellipsis',
+  whiteSpace: 'nowrap',
+})
+
 const quickNotesEditorActions = style({
   display: 'flex',
   alignItems: 'center',
   justifyContent: 'flex-end',
   gap: '5px',
+  flexWrap: 'wrap',
+})
+
+const quickNotesModeSwitch = style({
+  display: 'flex',
+  alignItems: 'center',
+  gap: '1px',
+  padding: '0',
+})
+
+const quickNotesModeButton = style({
+  width: '30px',
+  padding: '0',
+  gap: '0',
+  fontSize: '0',
 })
 
 const quickNotesSaveStatus = style({
@@ -270,6 +298,39 @@ const quickNotesContent = style({
   },
 })
 
+const quickNotesSplitView = style([
+  {
+    minWidth: '0',
+    minHeight: '0',
+    flex: '1',
+    display: 'grid',
+    gridTemplateColumns: 'minmax(0, 1fr) minmax(0, 1fr)',
+    gap: '14px',
+    marginTop: '14px',
+  },
+  {
+    '@container': {
+      'quick-notes-page (max-width: 700px)': {
+        gridTemplateColumns: 'minmax(0, 1fr)',
+        gridTemplateRows: 'minmax(260px, 1fr) minmax(220px, 1fr)',
+      },
+    },
+  },
+])
+
+const quickNotesSplitEditor = style({
+  height: '100%',
+  marginTop: '0',
+})
+
+const quickNotesSplitPreview = style({
+  height: '100%',
+  padding: '14px 16px',
+  background: 'color-mix(in srgb, var(--surface-muted) 42%, transparent)',
+  border: '1px solid var(--border-subtle)',
+  borderRadius: 'var(--control-radius)',
+})
+
 const quickNotesEditorFooter = style({
   display: 'flex',
   alignItems: 'center',
@@ -312,13 +373,19 @@ export const styles = {
   'quick-notes-editor-panel': quickNotesEditorPanel,
   'quick-notes-editor-header': quickNotesEditorHeader,
   'quick-notes-title-input': quickNotesTitleInput,
+  'quick-notes-title': quickNotesTitle,
   'quick-notes-editor-actions': quickNotesEditorActions,
+  'quick-notes-mode-switch': quickNotesModeSwitch,
+  'quick-notes-mode-button': quickNotesModeButton,
   'quick-notes-save-status': quickNotesSaveStatus,
   'is-saved': isSaved,
   'is-pending': isPending,
   'is-saving': isSaving,
   'is-error': isError,
   'quick-notes-content': quickNotesContent,
+  'quick-notes-split-view': quickNotesSplitView,
+  'quick-notes-split-editor': quickNotesSplitEditor,
+  'quick-notes-split-preview': quickNotesSplitPreview,
   'quick-notes-editor-footer': quickNotesEditorFooter,
   'quick-notes-editor-footer-item': quickNotesEditorFooterItem,
   'quick-notes-empty-editor': quickNotesEmptyEditor,

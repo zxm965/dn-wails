@@ -3,4 +3,5 @@ allowBuilds:
 minimumReleaseAgeExclude:
   - lucide-react@1.33.0
   - sonner@2.0.8
-  - '@wailsio/runtime@3.0.0-beta.10'
+  - '@wailsio/runtime@3.0.0-beta.12'
+  - '@types/react-dom@19.2.5'

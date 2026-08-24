@@ -39,6 +39,7 @@ function cloneSettings(settings: AppSettings): AppSettings {
       ...settings.window,
       bounds: settings.window.bounds ? { ...settings.window.bounds } : undefined,
     },
+    dragonNest: { ...settings.dragonNest },
   }
 }
 

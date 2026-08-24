@@ -3,7 +3,9 @@ package application
 import (
 	"context"
 	"errors"
+	"fmt"
 	"log"
+	"strings"
 	"sync"
 	"time"
 
@@ -11,6 +13,7 @@ import (
 	"cull-pear/internal/appupdate"
 	"cull-pear/internal/diagnostics"
 	"cull-pear/internal/dn"
+	"cull-pear/internal/dnprocess"
 	"cull-pear/internal/lifecycle"
 	"cull-pear/internal/nativekit"
 	"cull-pear/internal/notification"
@@ -159,6 +162,13 @@ type QuickNotesService interface {
 	Delete(id int64) error
 }
 
+type DnProcessService interface {
+	List() ([]dnprocess.Info, error)
+	Terminate(target dnprocess.Target) (dnprocess.Info, error)
+	TerminateConfigured(path string) (dnprocess.Info, error)
+	Health() error
+}
+
 type Dependencies struct {
 	Runtime            *wailsapplication.App
 	SystemNotification SystemNotificationService
@@ -173,6 +183,7 @@ type Dependencies struct {
 	Account            AccountService
 	Dn                 DnService
 	QuickNotes         QuickNotesService
+	DnProcess          DnProcessService
 }
 
 // App is the Wails v3 service exposed to the frontend.
@@ -190,6 +201,10 @@ type App struct {
 	accountService            AccountService
 	dnService                 DnService
 	quickNotesService         QuickNotesService
+	dnProcessService          DnProcessService
+
+	shortcutMu                   sync.Mutex
+	registeredDragonNestShortcut string
 
 	mu                    sync.RWMutex
 	ctx                   context.Context
@@ -213,6 +228,7 @@ func New(dependencies Dependencies) *App {
 		accountService:            dependencies.Account,
 		dnService:                 dependencies.Dn,
 		quickNotesService:         dependencies.QuickNotes,
+		dnProcessService:          dependencies.DnProcess,
 	}
 }
 
@@ -238,6 +254,9 @@ func (a *App) ServiceStartup(ctx context.Context, _ wailsapplication.ServiceOpti
 	}
 	if err := a.quickNotesService.Initialize(); err != nil {
 		log.Printf("initialize quick notes: %v", err)
+	}
+	if err := a.syncDragonNestShortcut(a.settingsService.Get().DragonNest); err != nil {
+		log.Printf("register Dragon Nest shortcut: %v", err)
 	}
 	a.lifecycleService.Start(time.Now())
 	return nil
@@ -328,6 +347,9 @@ func (a *App) QuitApplication() error {
 }
 
 func (a *App) ServiceShutdown() error {
+	if err := a.syncDragonNestShortcut(settings.DragonNest{}); err != nil {
+		log.Printf("unregister Dragon Nest shortcut: %v", err)
+	}
 	a.lifecycleService.Stop()
 	if err := a.quickNotesService.Close(); err != nil {
 		log.Printf("close quick notes database: %v", err)
@@ -346,6 +368,40 @@ func (a *App) ServiceShutdown() error {
 	a.ctx = nil
 	a.runtimeReady = false
 	a.mu.Unlock()
+	return nil
+}
+
+func (a *App) syncDragonNestShortcut(config settings.DragonNest) error {
+	a.shortcutMu.Lock()
+	defer a.shortcutMu.Unlock()
+
+	if a.runtime == nil {
+		return nil
+	}
+	desired := ""
+	if config.ShortcutEnabled {
+		desired = strings.TrimSpace(config.ShortcutKey)
+	}
+	if desired == a.registeredDragonNestShortcut {
+		return nil
+	}
+	if a.registeredDragonNestShortcut != "" {
+		if err := a.runtime.GlobalShortcut.Unregister(a.registeredDragonNestShortcut); err != nil {
+			return fmt.Errorf("unregister %q: %w", a.registeredDragonNestShortcut, err)
+		}
+		a.registeredDragonNestShortcut = ""
+	}
+	if desired == "" {
+		return nil
+	}
+	if err := a.runtime.GlobalShortcut.Register(desired, func() {
+		if _, err := a.KillDragonNestProcess(); err != nil {
+			log.Printf("kill Dragon Nest process from shortcut: %v", err)
+		}
+	}); err != nil {
+		return fmt.Errorf("register %q: %w", desired, err)
+	}
+	a.registeredDragonNestShortcut = desired
 	return nil
 }
 

@@ -53,6 +53,9 @@ func TestServiceInitializesDefaultsAndPersistsUpdates(t *testing.T) {
 	if current.Appearance.ButtonSize != ButtonSizeMD {
 		t.Fatalf("expected default button size %q, got %q", ButtonSizeMD, current.Appearance.ButtonSize)
 	}
+	if current.DragonNest.ShortcutEnabled || current.DragonNest.ShortcutKey != DefaultDragonNestShortcutKey {
+		t.Fatalf("unexpected Dragon Nest shortcut defaults: %+v", current.DragonNest)
+	}
 	if current.Navigation.MenuVisibility == nil || len(current.Navigation.MenuVisibility) != 0 {
 		t.Fatalf("expected empty default menu visibility overrides, got %+v", current.Navigation.MenuVisibility)
 	}
@@ -108,6 +111,11 @@ func TestServiceRejectsInvalidSettings(t *testing.T) {
 	}
 
 	value.Appearance.ButtonSize = ButtonSizeMD
+	value.DragonNest.ShortcutKey = "Ctrl+F4"
+	if _, err := service.Update(value); !errors.Is(err, ErrInvalidSettings) {
+		t.Fatalf("expected invalid Dragon Nest shortcut error, got %v", err)
+	}
+	value.DragonNest.ShortcutKey = DefaultDragonNestShortcutKey
 	value.Navigation.MenuVisibility[" invalid-key"] = true
 	if _, err := service.Update(value); !errors.Is(err, ErrInvalidSettings) {
 		t.Fatalf("expected invalid menu key error, got %v", err)
@@ -153,5 +161,24 @@ func TestServiceRejectsOutdatedSettingsVersion(t *testing.T) {
 	service := NewService(store)
 	if err := service.Initialize(); !errors.Is(err, ErrInvalidSettings) {
 		t.Fatalf("expected outdated settings to be rejected, got %v", err)
+	}
+}
+
+func TestServiceMigratesVersionSixSettings(t *testing.T) {
+	t.Parallel()
+
+	store := newMemoryStore()
+	store.data[storageKey] = []byte(`{"version":6,"appearance":{"themeMode":"dark","accent":"purple","density":"comfortable","buttonSize":"md","fontScale":1},"notifications":{"enabled":true,"showPreview":true,"doNotDisturb":false},"navigation":{"menuVisibility":{"dn-system":true}},"window":{"closeBehavior":"hide","alwaysOnTop":false,"rememberBounds":true}}`)
+
+	service := NewService(store)
+	if err := service.Initialize(); err != nil {
+		t.Fatalf("migrate settings: %v", err)
+	}
+	value := service.Get()
+	if value.Version != CurrentVersion || value.Appearance.ThemeMode != ThemeDark || !value.Navigation.MenuVisibility["dn-system"] {
+		t.Fatalf("legacy settings were not preserved: %+v", value)
+	}
+	if value.DragonNest.ShortcutKey != DefaultDragonNestShortcutKey || value.DragonNest.ShortcutEnabled {
+		t.Fatalf("unexpected migrated Dragon Nest settings: %+v", value.DragonNest)
 	}
 }

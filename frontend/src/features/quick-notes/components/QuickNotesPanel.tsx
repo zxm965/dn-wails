@@ -1,9 +1,10 @@
-import { FileText, Pin, PinOff, Plus, Save, Search, Trash2 } from 'lucide-react'
+import { Columns3, Eye, FileText, Pencil, Pin, PinOff, Plus, Save, Search, Trash2 } from 'lucide-react'
 import { useEffect, useMemo, useRef, useState, type KeyboardEvent } from 'react'
 
 import { Button, Input, ListState, PageHeader, Textarea } from '@/shared/components/ui'
 import { useFeedback } from '@/shared/feedback'
 import { createScopedClassNames } from '@/shared/lib/classNames'
+import { openExternalURL } from '@/shared/native-kit'
 
 import {
   deleteQuickNote,
@@ -12,12 +13,14 @@ import {
   type QuickNote,
   type QuickNoteInput,
 } from '../api/quickNotesApi'
+import { MarkdownPreview } from './MarkdownPreview'
 
 import { styles } from './QuickNotesPanel.css'
 
 const cx = createScopedClassNames(styles)
 
 type SaveStatus = 'saved' | 'pending' | 'saving' | 'error'
+type NoteViewMode = 'preview' | 'edit' | 'split'
 
 function noteFingerprint(note: QuickNoteInput): string {
   return JSON.stringify([note.title, note.content, note.pinned])
@@ -54,6 +57,7 @@ export function QuickNotesPanel() {
   const [search, setSearch] = useState('')
   const [loading, setLoading] = useState(true)
   const [creating, setCreating] = useState(false)
+  const [viewMode, setViewMode] = useState<NoteViewMode>('preview')
   const [saveStatus, setSaveStatus] = useState<SaveStatus>('saved')
   const [loadError, setLoadError] = useState('')
   const draftRef = useRef<QuickNote | null>(null)
@@ -66,10 +70,11 @@ export function QuickNotesPanel() {
     return notes.filter((note) => `${note.title}\n${note.content}`.toLocaleLowerCase().includes(keyword))
   }, [notes, search])
 
-  function activateNote(note: QuickNote | null) {
+  function activateNote(note: QuickNote | null, nextViewMode: NoteViewMode = 'preview') {
     selectedIDRef.current = note?.id ?? null
     draftRef.current = note
     setDraft(note)
+    setViewMode(nextViewMode)
     setSaveStatus('saved')
   }
 
@@ -130,7 +135,7 @@ export function QuickNotesPanel() {
       const created = await saveQuickNote({ id: 0, title: '', content: '', pinned: false })
       savedFingerprints.current.set(created.id, noteFingerprint(created))
       setNotes((items) => sortNotes([...items, created]))
-      activateNote(created)
+      activateNote(created, 'edit')
     } catch (error) {
       notify({ title: '新建笔记失败', message: errorMessage(error, '请稍后重试。'), tone: 'error' })
     } finally {
@@ -170,6 +175,14 @@ export function QuickNotesPanel() {
     if (event.key.toLocaleLowerCase() === 'n') {
       event.preventDefault()
       void createNote()
+    }
+  }
+
+  async function openLink(url: string) {
+    try {
+      await openExternalURL(url)
+    } catch (error) {
+      notify({ title: '链接打开失败', message: errorMessage(error, '请稍后重试。'), tone: 'error' })
     }
   }
 
@@ -290,18 +303,57 @@ export function QuickNotesPanel() {
           {draft ? (
             <>
               <header className={cx('quick-notes-editor-header')}>
-                <Input
-                  className={cx('quick-notes-title-input')}
-                  aria-label='笔记标题'
-                  maxLength={120}
-                  value={draft.title}
-                  placeholder='笔记标题'
-                  onChange={(event) => updateDraft({ title: event.target.value })}
-                />
+                {viewMode === 'preview' ? (
+                  <h2 className={cx('quick-notes-title')}>{draft.title || '未命名笔记'}</h2>
+                ) : (
+                  <Input
+                    className={cx('quick-notes-title-input')}
+                    aria-label='笔记标题'
+                    maxLength={120}
+                    value={draft.title}
+                    placeholder='笔记标题'
+                    onChange={(event) => updateDraft({ title: event.target.value })}
+                  />
+                )}
                 <div className={cx('quick-notes-editor-actions')}>
                   <span className={cx(`quick-notes-save-status is-${saveStatus}`)} aria-live='polite'>
                     {saveStatusText}
                   </span>
+                  <div className={cx('quick-notes-mode-switch')} role='group' aria-label='笔记显示模式'>
+                    <Button
+                      className={cx('quick-notes-mode-button')}
+                      size='sm'
+                      variant={viewMode === 'preview' ? 'secondary' : 'ghost'}
+                      aria-pressed={viewMode === 'preview'}
+                      aria-label='预览笔记'
+                      title='预览笔记'
+                      onClick={() => setViewMode('preview')}
+                    >
+                      <Eye aria-hidden='true' />
+                    </Button>
+                    <Button
+                      className={cx('quick-notes-mode-button')}
+                      size='sm'
+                      variant={viewMode === 'edit' ? 'secondary' : 'ghost'}
+                      aria-pressed={viewMode === 'edit'}
+                      aria-label='编辑笔记'
+                      title='编辑笔记'
+                      onClick={() => setViewMode('edit')}
+                    >
+                      <Pencil aria-hidden='true' />
+                    </Button>
+                    <Button
+                      className={cx('quick-notes-mode-button')}
+                      size='sm'
+                      variant={viewMode === 'split' ? 'secondary' : 'ghost'}
+                      aria-pressed={viewMode === 'split'}
+                      aria-label='分栏实时预览'
+                      title='分栏实时预览'
+                      onClick={() => setViewMode('split')}
+                    >
+                      <Columns3 aria-hidden='true' />
+                    </Button>
+                  </div>
                   <Button
                     size='sm'
                     variant='ghost'
@@ -327,15 +379,36 @@ export function QuickNotesPanel() {
                   </Button>
                 </div>
               </header>
-              <Textarea
-                className={cx('quick-notes-content')}
-                aria-label='笔记内容'
-                maxLength={100000}
-                value={draft.content}
-                placeholder='开始记录…'
-                spellCheck
-                onChange={(event) => updateDraft({ content: event.target.value })}
-              />
+              {viewMode === 'preview' && <MarkdownPreview content={draft.content} onOpenLink={openLink} />}
+              {viewMode === 'edit' && (
+                <Textarea
+                  className={cx('quick-notes-content')}
+                  aria-label='笔记内容'
+                  maxLength={100000}
+                  value={draft.content}
+                  placeholder='开始记录…支持 Markdown 语法'
+                  spellCheck
+                  onChange={(event) => updateDraft({ content: event.target.value })}
+                />
+              )}
+              {viewMode === 'split' && (
+                <div className={cx('quick-notes-split-view')}>
+                  <Textarea
+                    className={cx('quick-notes-content', 'quick-notes-split-editor')}
+                    aria-label='笔记内容编辑器'
+                    maxLength={100000}
+                    value={draft.content}
+                    placeholder='开始记录…支持 Markdown 语法'
+                    spellCheck
+                    onChange={(event) => updateDraft({ content: event.target.value })}
+                  />
+                  <MarkdownPreview
+                    className={cx('quick-notes-split-preview')}
+                    content={draft.content}
+                    onOpenLink={openLink}
+                  />
+                </div>
+              )}
               <footer className={cx('quick-notes-editor-footer')}>
                 <span className={cx('quick-notes-editor-footer-item')}>
                   {draft.content.length.toLocaleString('zh-CN')} 字符

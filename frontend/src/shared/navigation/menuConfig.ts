@@ -1,5 +1,6 @@
 import {
   CalendarCheck,
+  Skull,
   Mails,
   NotebookPen,
   Settings,
@@ -131,16 +132,17 @@ export const MENU_GROUPS = defineMenuGroups([
       },
       {
         key: 'dn-system',
-        label: 'DN 周常',
+        label: 'DN惊鸿',
         icon: Sparkles,
         defaultVisible: false,
         defaultView: 'dn-weekly',
         preference: {
-          description: '显示 DN 周计划和角色管理入口。',
+          description: '显示 Plan、Role 和 Kill 入口。',
         },
         children: [
-          { key: 'dn-weekly', view: 'dn-weekly', label: '周计划', icon: CalendarCheck },
-          { key: 'dn-roles', view: 'dn-roles', label: '角色', icon: UsersRound },
+          { key: 'dn-weekly', view: 'dn-weekly', label: 'Plan', icon: CalendarCheck },
+          { key: 'dn-roles', view: 'dn-roles', label: 'Role', icon: UsersRound },
+          { key: 'dn-kill-process', view: 'dn-kill-process', label: 'Kill', icon: Skull },
         ],
       },
     ],

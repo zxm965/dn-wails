@@ -40,16 +40,40 @@ export interface WindowSettings {
   bounds?: WindowBounds
 }
 
+export interface DragonNestSettings {
+  shortcutEnabled: boolean
+  shortcutKey: string
+  targetPath: string
+}
+
 export interface AppSettings {
   version: number
   appearance: AppearanceSettings
   notifications: NotificationSettings
   navigation: NavigationSettings
   window: WindowSettings
+  dragonNest: DragonNestSettings
 }
 
+export const DRAGON_NEST_SHORTCUT_OPTIONS = [
+  'F1',
+  'F2',
+  'F3',
+  'F4',
+  'F5',
+  'F6',
+  'F7',
+  'F8',
+  'F9',
+  'F10',
+  'F11',
+  'F12',
+] as const
+
+export type DragonNestShortcutKey = (typeof DRAGON_NEST_SHORTCUT_OPTIONS)[number]
+
 export const DEFAULT_SETTINGS: AppSettings = {
-  version: 6,
+  version: 7,
   appearance: {
     themeMode: 'system',
     accent: 'green',
@@ -69,6 +93,11 @@ export const DEFAULT_SETTINGS: AppSettings = {
     closeBehavior: 'quit',
     alwaysOnTop: false,
     rememberBounds: true,
+  },
+  dragonNest: {
+    shortcutEnabled: false,
+    shortcutKey: 'F4',
+    targetPath: '',
   },
 }
 
@@ -109,6 +138,11 @@ function normalizeSettings(value: WailsAppSettings): AppSettings {
             maximised: value.window.bounds.maximised,
           }
         : undefined,
+    },
+    dragonNest: {
+      shortcutEnabled: value.dragonNest.shortcutEnabled,
+      shortcutKey: value.dragonNest.shortcutKey as DragonNestShortcutKey,
+      targetPath: value.dragonNest.targetPath,
     },
   }
 }

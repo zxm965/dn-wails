@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 
 import { AccountLogin, AccountPanel, AccountTitleBarButton, useAccount } from '@/features/account'
 import { DevToolsPanel } from '@/features/devtools'
-import { DnRoles, DnWeeklyPlans } from '@/features/dn-system'
+import { DnRoles, DnProcessKiller, DnWeeklyPlans } from '@/features/dn-system'
 import { QuickNotesPanel } from '@/features/quick-notes'
 import { DEFAULT_SETTINGS, SettingsPanel, useSettings } from '@/features/settings'
 import {
@@ -63,6 +63,7 @@ export default function App() {
   function renderDnView() {
     if (activeView === 'dn-weekly') return <DnWeeklyPlans onNavigateRoles={() => setActiveView('dn-roles')} />
     if (activeView === 'dn-roles') return <DnRoles />
+    if (activeView === 'dn-kill-process') return <DnProcessKiller />
     if (activeView === 'site-messages') return <SiteMessages onNavigate={navigateDn} />
     return null
   }

@@ -1,6 +1,8 @@
 package settings
 
-const CurrentVersion = 6
+const CurrentVersion = 7
+
+const DefaultDragonNestShortcutKey = "F4"
 
 const (
 	ThemeSystem = "system"
@@ -56,12 +58,19 @@ type Window struct {
 	Bounds         *WindowBounds `json:"bounds,omitempty"`
 }
 
+type DragonNest struct {
+	ShortcutEnabled bool   `json:"shortcutEnabled"`
+	ShortcutKey     string `json:"shortcutKey"`
+	TargetPath      string `json:"targetPath"`
+}
+
 type AppSettings struct {
 	Version       int           `json:"version"`
 	Appearance    Appearance    `json:"appearance"`
 	Notifications Notifications `json:"notifications"`
 	Navigation    Navigation    `json:"navigation"`
 	Window        Window        `json:"window"`
+	DragonNest    DragonNest    `json:"dragonNest"`
 }
 
 func Default() AppSettings {
@@ -86,6 +95,10 @@ func Default() AppSettings {
 			CloseBehavior:  CloseBehaviorQuit,
 			AlwaysOnTop:    false,
 			RememberBounds: true,
+		},
+		DragonNest: DragonNest{
+			ShortcutEnabled: false,
+			ShortcutKey:     DefaultDragonNestShortcutKey,
 		},
 	}
 }

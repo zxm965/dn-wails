@@ -1,8 +1,8 @@
-# DN 周常模块
+# DN惊鸿模块
 
 ## 模块目标
 
-将 `dn-next` 的角色职业、周计划和站内消息迁移到 Wails 桌面应用。DN 模块只处理 DN 业务数据，不再负责登录、注册、会话、个人资料、头像或密码管理；这些能力统一由[全局账号模块](account.md)提供。
+将 `dn-next` 的角色职业、周计划、站内消息和 Windows 游戏进程快捷结束能力迁移到 Wails 桌面应用。DN 模块只处理 DN 业务数据和本地游戏工具，不再负责登录、注册、会话、个人资料、头像或密码管理；这些能力统一由[全局账号模块](account.md)提供。
 
 Go 服务通过 `pgxpool` 直连 PostgreSQL；本地构建从 `.env.local` 读取连接串，正式构建从 GitHub Environment Secret 生成并嵌入相同配置。
 
@@ -19,9 +19,11 @@ Go 服务通过 `pgxpool` 直连 PostgreSQL；本地构建从 `.env.local` 读�
 - `internal/application/dn.go`：只暴露 DN 角色、周计划和消息 Wails 门面方法。
 - `frontend/src/features/dn-system/api/`：生成绑定适配和 DN 角色/周计划业务类型。
 - `frontend/src/features/dn-system/model/`：职业/巢穴常量、优先级和日期校验。
-- `frontend/src/features/dn-system/components/`：DN 周计划和角色两个业务页面及响应式样式。
+- `frontend/src/features/dn-system/components/`：Plan、Role 和 Kill 三个业务页面及响应式样式。
+- `internal/dnprocess/`：龙之谷候选进程识别、目标校验和终止规则。
+- `internal/platform/dnprocess/`：Windows 进程快照、路径读取和进程终止适配；非 Windows 返回不可用状态。
 - `frontend/src/features/site-messages/`：独立站内消息页面、消息盒子、Provider 和 API 适配，详见[站内消息模块](site-messages.md)。
-- `frontend/src/shared/navigation/menuConfig.ts`：DN 父入口、两个子菜单和独立站内消息菜单的显隐偏好配置。
+- `frontend/src/shared/navigation/menuConfig.ts`：DN惊鸿父入口、Plan/Role/Kill 三个子菜单和独立站内消息菜单的显隐偏好配置。
 
 ## 依赖关系
 
@@ -103,6 +105,14 @@ DN 的两个业务路由在 `routeConfig.ts` 中统一声明 `requiresAuth: true
 - 官网分类为 `102,103,104,8021,8022,8023,122,7364,8167`，来源地址为龙之谷官网 `GetNewsList.ashx`。
 - 站内路径动作由 React 切换 DN 子页面；兼容的 `/account` 动作进入全局个人信息页；HTTP(S) 地址通过 Native Kit 在系统浏览器打开。
 
+### Kill 进程工具
+
+- 页面打开时不自动扫描，用户点击“扫描进程”后才读取当前运行的龙之谷候选进程。
+- 进程名和路径匹配不区分大小写；后端在结束前重新校验 PID、名称和完整路径，避免 PID 复用导致误杀。
+- 选择候选进程后可直接结束；首次成功结束后自动保存目标路径，供全局快捷键使用。
+- 快捷键默认关闭，默认键为 `F4`，可在设置中选择 `F1` 到 `F12`；只在 Windows 尝试注册，不自动提权。
+- 没有已记录路径且同时存在多个候选进程时，快捷键不会自动选择，用户需要打开 Kill 页面手动选择。
+
 ## 错误与边界
 
 - 缺少或无法解析 `DATABASE_URL` 时应用仍可启动；进入 DN 页面后显示服务不可用，设置、诊断和更新等公共功能不受影响。
@@ -116,16 +126,17 @@ DN 的两个业务路由在 `routeConfig.ts` 中统一声明 `requiresAuth: true
 
 ## 主题与响应式
 
-- 两个 DN 业务页、独立消息页面、消息盒子和弹窗全部使用共享 UI 与应用语义主题令牌，跟随主题、强调色、密度、按钮尺寸和字体缩放即时变化。
-- 三个业务页统一使用共享 `PageHeader`，保持页头高度、渐变背景、标题基线和操作区布局一致。
+- Plan、Role、Kill 三个 DN 页面、独立消息页面、消息盒子和弹窗全部使用共享 UI 与应用语义主题令牌，跟随主题、强调色、密度、按钮尺寸和字体缩放即时变化。
+- 三个 DN 页面统一使用共享 `PageHeader`，保持页头高度、渐变背景、标题基线和操作区布局一致。
 - 页面基于 `dn-page` Container Query 适配常规桌面、`1024 × 768` 最小窗口和极窄内容宽度。
 - 周计划卡片网格将常规列宽限制在 `320–360px` 并保持左对齐，只有一条计划时不拉伸占满整行；窄内容宽度下仍自动使用完整可用宽度。
-- 周计划卡片以剩余委托数量和完成进度为主信息，通过左加右减按钮快速更新另外 4 个普通委托；方舟和噩梦使用紧凑状态面板，切换完成状态时自动同步剩余委托数量。侵蚀不计入这 6 个委托，备注与编辑/删除操作保持次级层级。
+- Plan 卡片以剩余委托数量和完成进度为主信息，通过左加右减按钮快速更新另外 4 个普通委托；方舟和噩梦使用紧凑状态面板，切换完成状态时自动同步剩余委托数量。侵蚀不计入这 6 个委托，备注与编辑/删除操作保持次级层级。
+- Kill 页面保持空状态优先：进入后显示扫描按钮，扫描结果只展示疑似龙之谷的非系统进程；窄宽度下候选进程卡片和危险操作区逐级降为单列。
 - 表格只在卡片内部横向滚动，不造成整页横向滚动；卡片、过滤器、消息行和弹窗逐级降为单列。
 
 ## 接入方式
 
-`main.tsx` 装配全局 `AccountProvider`，`App.tsx` 根据路由元数据执行认证保护，并在应用壳内装配 `SiteMessageProvider`。DN 周常侧栏入口默认隐藏，用户在“偏好设置 → 左侧菜单”开启唯一 key `dn-system` 后，侧栏显示 DN 周常父入口和两个子页面；站内消息使用不带分组标题、独立且默认显示的唯一 key `site-messages`，也可在同一处单独隐藏。登录后标题栏显示全局消息盒子和个人头像，消息盒子的“查看全部消息”跳转到独立站内消息页面。
+`main.tsx` 装配全局 `AccountProvider`，`App.tsx` 根据路由元数据执行认证保护，并在应用壳内装配 `SiteMessageProvider`。DN惊鸿侧栏入口默认隐藏，用户在“偏好设置 → 左侧菜单”开启唯一 key `dn-system` 后，侧栏显示 DN惊鸿父入口和 Plan、Role、Kill 三个子页面；站内消息使用不带分组标题、独立且默认显示的唯一 key `site-messages`，也可在同一处单独隐藏。登录后标题栏显示全局消息盒子和个人头像，消息盒子的“查看全部消息”跳转到独立站内消息页面。
 
 本地配置：
 

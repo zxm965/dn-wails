@@ -72,7 +72,7 @@ func (a *App) GetRuntimeStatus() RuntimeStatus {
 		},
 		{
 			key:         "dn-system",
-			label:       "DN 周常",
+			label:       "DN惊鸿",
 			readyDetail: "角色、周计划与消息表正常",
 			required:    true,
 			run:         a.dnService.Health,

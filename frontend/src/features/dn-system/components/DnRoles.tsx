@@ -146,7 +146,7 @@ export function DnRoles() {
     <div className={cx('dn-page')}>
       <PageHeader
         eyebrow='DN workspace'
-        title='角色'
+        title='Role'
         subtitle='维护周计划所使用的角色和职业。'
         actions={
           <>

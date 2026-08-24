@@ -21,6 +21,9 @@ import * as appupdate$0 from "../appupdate/models.js";
 import * as dn$0 from "../dn/models.js";
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore: Unused imports
+import * as dnprocess$0 from "../dnprocess/models.js";
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment
+// @ts-ignore: Unused imports
 import * as nativekit$0 from "../nativekit/models.js";
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore: Unused imports
@@ -145,39 +148,51 @@ export function InstallApplicationUpdate(expectedVersion: string): $CancellableP
     return $Call.ByID(2918507696, expectedVersion);
 }
 
+export function KillDragonNestProcess(): $CancellablePromise<dnprocess$0.Info> {
+    return $Call.ByID(3093591292).then(($result: any) => {
+        return $$createType17($result);
+    });
+}
+
 export function ListAllDnWeeklyPlans(): $CancellablePromise<dn$0.WeeklyPlan[]> {
     return $Call.ByID(3833714304).then(($result: any) => {
-        return $$createType17($result);
+        return $$createType18($result);
     });
 }
 
 export function ListDnRoleOptions(): $CancellablePromise<dn$0.RoleProfession[]> {
     return $Call.ByID(3803055926).then(($result: any) => {
-        return $$createType18($result);
+        return $$createType19($result);
     });
 }
 
 export function ListDnRoles(query: dn$0.RoleProfessionQuery): $CancellablePromise<dn$0.RoleProfessionList> {
     return $Call.ByID(1681849057, query).then(($result: any) => {
-        return $$createType19($result);
+        return $$createType20($result);
     });
 }
 
 export function ListDnWeeklyPlans(query: dn$0.WeeklyPlanQuery): $CancellablePromise<dn$0.WeeklyPlanList> {
     return $Call.ByID(3984086525, query).then(($result: any) => {
-        return $$createType20($result);
+        return $$createType21($result);
+    });
+}
+
+export function ListDragonNestProcesses(): $CancellablePromise<dnprocess$0.Info[]> {
+    return $Call.ByID(4218085744).then(($result: any) => {
+        return $$createType22($result);
     });
 }
 
 export function ListQuickNotes(): $CancellablePromise<quicknotes$0.Note[]> {
     return $Call.ByID(3611448438).then(($result: any) => {
-        return $$createType22($result);
+        return $$createType24($result);
     });
 }
 
 export function ListSiteMessages(query: dn$0.SiteMessageQuery): $CancellablePromise<dn$0.SiteMessageList> {
     return $Call.ByID(1907897541, query).then(($result: any) => {
-        return $$createType23($result);
+        return $$createType25($result);
     });
 }
 
@@ -219,7 +234,7 @@ export function OpenExternalURL(rawURL: string): $CancellablePromise<void> {
 
 export function OpenFiles(options: nativekit$0.OpenFilesOptions): $CancellablePromise<string[]> {
     return $Call.ByID(3716198309, options).then(($result: any) => {
-        return $$createType24($result);
+        return $$createType26($result);
     });
 }
 
@@ -275,7 +290,7 @@ export function SaveFile(options: nativekit$0.SaveFileOptions): $CancellableProm
 
 export function SaveQuickNote(input: quicknotes$0.NoteInput): $CancellablePromise<quicknotes$0.Note> {
     return $Call.ByID(542893622, input).then(($result: any) => {
-        return $$createType21($result);
+        return $$createType23($result);
     });
 }
 
@@ -289,13 +304,19 @@ export function ShowMessageDialog(options: nativekit$0.MessageDialogOptions): $C
 
 export function SyncDnWeeklyPlans(): $CancellablePromise<dn$0.WeeklyPlanSyncResult> {
     return $Call.ByID(3398052580).then(($result: any) => {
-        return $$createType25($result);
+        return $$createType27($result);
     });
 }
 
 export function SyncOfficialSiteMessages(): $CancellablePromise<dn$0.OfficialMessageSyncResult> {
     return $Call.ByID(3990901871).then(($result: any) => {
-        return $$createType26($result);
+        return $$createType28($result);
+    });
+}
+
+export function TerminateDragonNestProcess(target: dnprocess$0.Target): $CancellablePromise<dnprocess$0.Info> {
+    return $Call.ByID(79659205, target).then(($result: any) => {
+        return $$createType17($result);
     });
 }
 
@@ -339,13 +360,15 @@ const $$createType13 = settings$0.AppSettings.createFrom;
 const $$createType14 = dn$0.SiteMessageInbox.createFrom;
 const $$createType15 = $models.SystemNotificationStatus.createFrom;
 const $$createType16 = dn$0.WeeklyPlanInitializationResult.createFrom;
-const $$createType17 = $Create.Array($$createType3);
-const $$createType18 = $Create.Array($$createType2);
-const $$createType19 = dn$0.RoleProfessionList.createFrom;
-const $$createType20 = dn$0.WeeklyPlanList.createFrom;
-const $$createType21 = quicknotes$0.Note.createFrom;
-const $$createType22 = $Create.Array($$createType21);
-const $$createType23 = dn$0.SiteMessageList.createFrom;
-const $$createType24 = $Create.Array($Create.Any);
-const $$createType25 = dn$0.WeeklyPlanSyncResult.createFrom;
-const $$createType26 = dn$0.OfficialMessageSyncResult.createFrom;
+const $$createType17 = dnprocess$0.Info.createFrom;
+const $$createType18 = $Create.Array($$createType3);
+const $$createType19 = $Create.Array($$createType2);
+const $$createType20 = dn$0.RoleProfessionList.createFrom;
+const $$createType21 = dn$0.WeeklyPlanList.createFrom;
+const $$createType22 = $Create.Array($$createType17);
+const $$createType23 = quicknotes$0.Note.createFrom;
+const $$createType24 = $Create.Array($$createType23);
+const $$createType25 = dn$0.SiteMessageList.createFrom;
+const $$createType26 = $Create.Array($Create.Any);
+const $$createType27 = dn$0.WeeklyPlanSyncResult.createFrom;
+const $$createType28 = dn$0.OfficialMessageSyncResult.createFrom;

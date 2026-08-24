@@ -16,11 +16,13 @@ import (
 	"cull-pear/internal/buildinfo"
 	"cull-pear/internal/diagnostics"
 	"cull-pear/internal/dn"
+	"cull-pear/internal/dnprocess"
 	"cull-pear/internal/installation"
 	"cull-pear/internal/lifecycle"
 	"cull-pear/internal/nativekit"
 	"cull-pear/internal/notification"
 	platformappupdate "cull-pear/internal/platform/appupdate"
+	platformdnprocess "cull-pear/internal/platform/dnprocess"
 	platformnativekit "cull-pear/internal/platform/nativekit"
 	platformnotification "cull-pear/internal/platform/notification"
 	platformsingleinstance "cull-pear/internal/platform/singleinstance"
@@ -71,6 +73,8 @@ func main() {
 	accountService := appservice.AccountService(account.NewUnavailableService())
 	dnService := appservice.DnService(dn.NewUnavailableService())
 	quickNotesService := appservice.QuickNotesService(quicknotes.NewUnavailableService())
+	dnProcessService := appservice.DnProcessService(dnprocess.NewUnavailableService())
+	dnProcessService = platformdnprocess.New()
 	databaseURL, databaseConfigErr := dn.ResolveDatabaseURL(runtimeConfigData)
 	if databaseConfigErr == nil {
 		postgresAccount, accountErr := account.NewPostgresService(databaseURL, settingsStore)
@@ -205,6 +209,7 @@ func main() {
 		Account:            accountService,
 		Dn:                 dnService,
 		QuickNotes:         quickNotesService,
+		DnProcess:          dnProcessService,
 	})
 	wailsApp.RegisterService(application.NewService(facade))
 
