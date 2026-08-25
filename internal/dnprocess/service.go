@@ -6,14 +6,8 @@ import (
 )
 
 var knownProcessNames = map[string]struct{}{
-	"dn.exe":                {},
-	"dnclient.exe":          {},
-	"dnclient64.exe":        {},
-	"dnclientx64.exe":       {},
-	"dnlauncher.exe":        {},
-	"dragonnest.exe":        {},
-	"dragonnest_reborn.exe": {},
-	"dragonnestx64.exe":     {},
+	"dragonnest.exe":     {},
+	"dragonnest_x64.exe": {},
 }
 
 type service struct {
@@ -93,6 +87,5 @@ func isDragonNestProcess(item Info) bool {
 	if _, ok := knownProcessNames[name]; ok {
 		return true
 	}
-	path := strings.ToLower(strings.TrimSpace(item.Path))
-	return strings.Contains(path, "dragonnest") || strings.Contains(path, "dragon nest")
+	return false
 }

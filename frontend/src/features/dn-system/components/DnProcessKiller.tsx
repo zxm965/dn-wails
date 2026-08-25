@@ -101,7 +101,7 @@ export function DnProcessKiller() {
       <Card className={cx('dn-process-card')}>
         <CardContent>
           <div className={cx('dn-process-intro')}>
-            <strong className={cx('dn-process-intro-strong')}>只显示疑似龙之谷进程</strong>
+            <strong className={cx('dn-process-intro-strong')}>只显示龙之谷进程</strong>
             <span>首次结束成功后会记住该进程路径，启用快捷键时优先结束同一路径的进程。</span>
             {settings.dragonNest.shortcutEnabled && (
               <span className={cx('dn-process-shortcut-hint')}>

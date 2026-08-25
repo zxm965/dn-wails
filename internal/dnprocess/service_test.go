@@ -21,24 +21,26 @@ func (p *platformStub) Terminate(target Target) error {
 
 func TestServiceListFiltersDragonNestCandidates(t *testing.T) {
 	service := NewService(&platformStub{items: []Info{
-		{PID: 10, Name: "DragonNest.EXE", Path: `C:\Games\DragonNest\dragonnest.exe`},
-		{PID: 11, Name: "notepad.exe", Path: `C:\Windows\notepad.exe`},
-		{PID: 12, Name: "game.exe", Path: `D:\Dragon Nest\game.exe`},
+		{PID: 10, Name: "DragonNest.EXE", Path: `C:\Games\DragonNest\DragonNest.exe`},
+		{PID: 11, Name: "DragonNest_X64.Exe", Path: `D:\WeGameApps\DragonNest\DragonNest_x64.exe`},
+		{PID: 12, Name: "dn.exe", Path: `C:\Games\DragonNest\dn.exe`},
+		{PID: 13, Name: "DragonNest_Reborn.exe", Path: `C:\Games\DragonNest\DragonNest_Reborn.exe`},
+		{PID: 14, Name: "game.exe", Path: `D:\Dragon Nest\game.exe`},
 	}})
 
 	items, err := service.List()
 	if err != nil {
 		t.Fatalf("list candidates: %v", err)
 	}
-	if len(items) != 2 || items[0].PID != 10 || items[1].PID != 12 {
+	if len(items) != 2 || items[0].PID != 10 || items[1].PID != 11 {
 		t.Fatalf("unexpected candidates: %+v", items)
 	}
 }
 
 func TestServiceTerminateConfiguredRequiresSingleCandidateWithoutPath(t *testing.T) {
 	service := NewService(&platformStub{items: []Info{
-		{PID: 10, Name: "dragonnest.exe", Path: `C:\Games\DragonNest\dragonnest.exe`},
-		{PID: 12, Name: "dragonnestx64.exe", Path: `D:\Dragon Nest\dragonnestx64.exe`},
+		{PID: 10, Name: "DragonNest.exe", Path: `C:\Games\DragonNest\DragonNest.exe`},
+		{PID: 12, Name: "DragonNest_x64.exe", Path: `D:\Dragon Nest\DragonNest_x64.exe`},
 	}})
 
 	if _, err := service.TerminateConfigured(""); !errors.Is(err, ErrMultiple) {
@@ -48,12 +50,12 @@ func TestServiceTerminateConfiguredRequiresSingleCandidateWithoutPath(t *testing
 
 func TestServiceTerminateConfiguredUsesExactPath(t *testing.T) {
 	platform := &platformStub{items: []Info{
-		{PID: 10, Name: "dragonnest.exe", Path: `C:\Games\DragonNest\dragonnest.exe`},
-		{PID: 12, Name: "dragonnestx64.exe", Path: `D:\Dragon Nest\dragonnestx64.exe`},
+		{PID: 10, Name: "DragonNest.exe", Path: `C:\Games\DragonNest\DragonNest.exe`},
+		{PID: 12, Name: "DragonNest_x64.exe", Path: `D:\Dragon Nest\DragonNest_x64.exe`},
 	}}
 	service := NewService(platform)
 
-	item, err := service.TerminateConfigured(`d:\dragon nest\dragonnestx64.exe`)
+	item, err := service.TerminateConfigured(`d:\dragon nest\dragonnest_x64.exe`)
 	if err != nil {
 		t.Fatalf("terminate configured process: %v", err)
 	}
