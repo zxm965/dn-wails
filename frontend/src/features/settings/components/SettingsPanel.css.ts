@@ -139,23 +139,6 @@ const settingsFieldset = style({
 
 const settingsField = style({})
 
-const settingsInlineNote = style({
-  minWidth: '0',
-  display: 'grid',
-  alignContent: 'start',
-  gap: '8px',
-  color: 'var(--text-secondary)',
-})
-
-const settingsInlineNoteCopy = style({
-  overflow: 'hidden',
-  color: 'var(--text-tertiary)',
-  fontSize: '11px',
-  lineHeight: '1.55',
-  textOverflow: 'ellipsis',
-  whiteSpace: 'nowrap',
-})
-
 const settingsAccent = style({
   width: '20px',
   height: '20px',
@@ -284,8 +267,6 @@ export const styles = {
   'settings-grid': settingsGrid,
   'settings-fieldset': settingsFieldset,
   'settings-field': settingsField,
-  'settings-inline-note': settingsInlineNote,
-  'settings-inline-note-copy': settingsInlineNoteCopy,
   'settings-accent': settingsAccent,
   'settings-button-size-options': settingsButtonSizeOptions,
   'settings-button-size-button': settingsButtonSizeButton,

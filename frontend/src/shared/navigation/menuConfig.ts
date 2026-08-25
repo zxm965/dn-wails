@@ -132,7 +132,7 @@ export const MENU_GROUPS = defineMenuGroups([
       },
       {
         key: 'dn-system',
-        label: 'DN Tools',
+        label: 'DNTools',
         icon: Sparkles,
         defaultVisible: false,
         defaultView: 'dn-weekly',

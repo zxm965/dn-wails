@@ -1,4 +1,4 @@
-# DN Tools模块
+# DNTools模块
 
 ## 模块目标
 
@@ -19,11 +19,11 @@ Go 服务通过 `pgxpool` 直连 PostgreSQL；本地构建从 `.env.local` 读�
 - `internal/application/dn.go`：只暴露 DN 角色、周计划和消息 Wails 门面方法。
 - `frontend/src/features/dn-system/api/`：生成绑定适配和 DN 角色/周计划业务类型。
 - `frontend/src/features/dn-system/model/`：职业/巢穴常量、优先级和日期校验。
-- `frontend/src/features/dn-system/components/`：周常、角色和进程三个业务页面及响应式样式。
+- `frontend/src/features/dn-system/components/`：周常、角色和进程三个业务页面及响应式样式；进程页同时承载 DN 全局快捷键配置。
 - `internal/dnprocess/`：龙之谷候选进程识别、目标校验和终止规则。
 - `internal/platform/dnprocess/`：Windows 进程快照、路径读取和进程终止适配；非 Windows 返回不可用状态。
 - `frontend/src/features/site-messages/`：独立站内消息页面、消息盒子、Provider 和 API 适配，详见[站内消息模块](site-messages.md)。
-- `frontend/src/shared/navigation/menuConfig.ts`：DN Tools父入口、周常/角色/进程三个子菜单和独立站内消息菜单的显隐偏好配置。
+- `frontend/src/shared/navigation/menuConfig.ts`：DNTools父入口、周常/角色/进程三个子菜单和独立站内消息菜单的显隐偏好配置。
 
 ## 依赖关系
 
@@ -110,7 +110,7 @@ DN 的两个业务路由在 `routeConfig.ts` 中统一声明 `requiresAuth: true
 - 页面打开时不自动扫描，用户点击“扫描进程”后才读取当前运行的龙之谷候选进程。
 - 仅扫描名称为 `DragonNest.exe` 或 `DragonNest_x64.exe` 的进程，进程名匹配不区分大小写，不再按路径关键字扩大候选范围；后端在结束前重新校验 PID、名称和完整路径，避免 PID 复用导致误杀。
 - 选择候选进程后可直接结束；首次成功结束后自动保存目标路径，供全局快捷键使用。
-- 快捷键默认关闭，默认键为 `F4`，可在设置中选择 `F1` 到 `F12`；只在 Windows 尝试注册，不自动提权。
+- 快捷键默认关闭，默认键为 `F4`，可在 `DNTools · 进程` 页面选择 `F1` 到 `F12`；只在 Windows 尝试注册，不自动提权。
 - 没有已记录路径且同时存在多个候选进程时，快捷键不会自动选择，用户需要打开“进程”页面手动选择。
 
 ## 错误与边界
@@ -131,12 +131,12 @@ DN 的两个业务路由在 `routeConfig.ts` 中统一声明 `requiresAuth: true
 - 页面基于 `dn-page` Container Query 适配常规桌面、`1024 × 768` 最小窗口和极窄内容宽度。
 - 周计划卡片网格将常规列宽限制在 `320–360px` 并保持左对齐，只有一条计划时不拉伸占满整行；窄内容宽度下仍自动使用完整可用宽度。
 - 周常卡片以剩余委托数量和完成进度为主信息，通过左加右减按钮快速更新另外 4 个普通委托；方舟和噩梦使用紧凑状态面板，切换完成状态时自动同步剩余委托数量。侵蚀不计入这 6 个委托，备注与编辑/删除操作保持次级层级。
-- 进程页面保持空状态优先：进入后显示扫描按钮，扫描结果只展示疑似龙之谷的非系统进程；窄宽度下候选进程卡片和危险操作区逐级降为单列。
+- 进程页面保持空状态优先：进入后显示扫描按钮，扫描结果只展示疑似龙之谷的非系统进程；全局快捷键配置与进程操作位于同一工具页，窄宽度下候选进程卡片、危险操作区和配置网格逐级降为单列。
 - 表格只在卡片内部横向滚动，不造成整页横向滚动；卡片、过滤器、消息行和弹窗逐级降为单列。
 
 ## 接入方式
 
-`main.tsx` 装配全局 `AccountProvider`，`App.tsx` 根据路由元数据执行认证保护，并在应用壳内装配 `SiteMessageProvider`。DN Tools侧栏入口默认隐藏，用户在“偏好设置 → 左侧菜单”开启唯一 key `dn-system` 后，侧栏显示 DN Tools父入口和周常、角色、进程三个子页面；站内消息使用不带分组标题、独立且默认显示的唯一 key `site-messages`，也可在同一处单独隐藏。登录后标题栏显示全局消息盒子和个人头像，消息盒子的“查看全部消息”跳转到独立站内消息页面。
+`main.tsx` 装配全局 `AccountProvider`，`App.tsx` 根据路由元数据执行认证保护，并在应用壳内装配 `SiteMessageProvider`。DNTools侧栏入口默认隐藏，用户在“偏好设置 → 左侧菜单”开启唯一 key `dn-system` 后，侧栏显示 DNTools父入口和周常、角色、进程三个子页面；站内消息使用不带分组标题、独立且默认显示的唯一 key `site-messages`，也可在同一处单独隐藏。登录后标题栏显示全局消息盒子和个人头像，消息盒子的“查看全部消息”跳转到独立站内消息页面。
 
 本地配置：
 

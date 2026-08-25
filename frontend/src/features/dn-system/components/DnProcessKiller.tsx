@@ -1,10 +1,23 @@
 import { RefreshCw, Skull, TriangleAlert } from 'lucide-react'
 import { useCallback, useState } from 'react'
 
-import { useSettings } from '@/features/settings'
-import { Button, Card, CardContent, ListState, PageHeader, SpinnerIcon } from '@/shared/components/ui'
+import { DRAGON_NEST_SHORTCUT_OPTIONS, useSettings, type AppSettings } from '@/features/settings'
+import {
+  Button,
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+  ListState,
+  PageHeader,
+  Select,
+  SpinnerIcon,
+  Switch,
+} from '@/shared/components/ui'
 import { useFeedback } from '@/shared/feedback'
 import { createScopedClassNames } from '@/shared/lib/classNames'
+import { isWindows } from '@/shared/lib/platform'
 
 import {
   getProcessErrorMessage,
@@ -29,7 +42,7 @@ function formatScannedAt(value: Date | null): string {
 
 export function DnProcessKiller() {
   const { notify } = useFeedback()
-  const { settings, updateSettings } = useSettings()
+  const { settings, isSaving: isSettingsSaving, error: settingsError, updateSettings } = useSettings()
   const [items, setItems] = useState<DragonNestProcess[]>([])
   const [selectedPID, setSelectedPID] = useState<number | null>(null)
   const [scanning, setScanning] = useState(false)
@@ -39,6 +52,16 @@ export function DnProcessKiller() {
   const [scannedAt, setScannedAt] = useState<Date | null>(null)
 
   const selected = items.find((item) => item.pid === selectedPID) ?? null
+
+  function updateDragonNest<Key extends keyof AppSettings['dragonNest']>(
+    key: Key,
+    value: AppSettings['dragonNest'][Key],
+  ) {
+    void updateSettings((current) => ({
+      ...current,
+      dragonNest: { ...current.dragonNest, [key]: value },
+    })).catch(() => undefined)
+  }
 
   const scan = useCallback(async () => {
     setScanning(true)
@@ -87,7 +110,7 @@ export function DnProcessKiller() {
   return (
     <div className={cx('dn-process-page')}>
       <PageHeader
-        eyebrow='DN Tools'
+        eyebrow='DNTools'
         title='进程'
         subtitle='扫描当前运行的龙之谷进程，选择后快速结束。'
         actions={
@@ -179,6 +202,63 @@ export function DnProcessKiller() {
               </div>
             </div>
           )}
+        </CardContent>
+      </Card>
+
+      <Card className={cx('dn-process-settings-card')}>
+        <CardHeader className={cx('dn-process-settings-header')}>
+          <div>
+            <CardTitle>DNTools</CardTitle>
+            <CardDescription>
+              可选的全局快捷键，仅 Windows 支持。默认快捷键为 F4，关闭后不会占用系统快捷键。
+            </CardDescription>
+          </div>
+          <span className={cx('dn-process-settings-status')} aria-live='polite'>
+            {isSettingsSaving ? '正在同步…' : '修改后自动保存'}
+          </span>
+        </CardHeader>
+        <CardContent>
+          {settingsError && (
+            <p className={cx('dn-process-settings-error')} role='alert'>
+              {settingsError}
+            </p>
+          )}
+          <div className={cx('dn-process-settings-grid')}>
+            <label className={cx('dn-process-settings-field')}>
+              <span className={cx('dn-process-settings-field-label')}>快捷键</span>
+              <Select
+                aria-label='DN 结束进程快捷键'
+                value={settings.dragonNest.shortcutKey}
+                disabled={!isWindows() || !settings.dragonNest.shortcutEnabled}
+                options={DRAGON_NEST_SHORTCUT_OPTIONS.map((key) => ({ value: key, label: key }))}
+                onValueChange={(shortcutKey) => updateDragonNest('shortcutKey', shortcutKey)}
+              />
+            </label>
+            <div className={cx('dn-process-settings-field', 'dn-process-settings-inline-note')}>
+              <span className={cx('dn-process-settings-field-label')}>快捷目标</span>
+              <small className={cx('dn-process-settings-note-copy')}>
+                {settings.dragonNest.targetPath
+                  ? `已记录：${settings.dragonNest.targetPath.split(/[\\/]/).pop() ?? settings.dragonNest.targetPath}`
+                  : '尚未记录，成功结束一次进程后自动记录'}
+              </small>
+            </div>
+          </div>
+          <label className={cx('dn-process-settings-toggle')}>
+            <span className={cx('dn-process-settings-toggle-copy')}>
+              <strong className={cx('dn-process-settings-toggle-title')}>启用全局快捷键</strong>
+              <small className={cx('dn-process-settings-toggle-description')}>
+                {isWindows()
+                  ? `在应用后台按 ${settings.dragonNest.shortcutKey} 快速结束已记录的 DN 进程。`
+                  : '当前系统不是 Windows，暂不支持全局结束进程快捷键。'}
+              </small>
+            </span>
+            <Switch
+              aria-label='启用全局快捷键'
+              checked={settings.dragonNest.shortcutEnabled}
+              disabled={!isWindows()}
+              onCheckedChange={(checked) => updateDragonNest('shortcutEnabled', checked)}
+            />
+          </label>
         </CardContent>
       </Card>
     </div>

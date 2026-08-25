@@ -7,9 +7,9 @@ export interface AppRouteDefinition {
 export const APP_ROUTES = {
   'quick-notes': { title: '快速笔记', requiresAuth: true, navigation: 'menu' },
   account: { title: '个人信息', requiresAuth: true, navigation: 'standalone' },
-  'dn-weekly': { title: 'DN Tools · 周常', requiresAuth: true, navigation: 'menu' },
-  'dn-roles': { title: 'DN Tools · 角色', requiresAuth: true, navigation: 'menu' },
-  'dn-kill-process': { title: 'DN Tools · 进程', requiresAuth: false, navigation: 'menu' },
+  'dn-weekly': { title: 'DNTools · 周常', requiresAuth: true, navigation: 'menu' },
+  'dn-roles': { title: 'DNTools · 角色', requiresAuth: true, navigation: 'menu' },
+  'dn-kill-process': { title: 'DNTools · 进程', requiresAuth: false, navigation: 'menu' },
   'site-messages': { title: '站内消息', requiresAuth: true, navigation: 'menu' },
   settings: { title: '偏好设置', requiresAuth: false, navigation: 'menu' },
   devtools: { title: 'DevTools', requiresAuth: false, navigation: 'menu' },
