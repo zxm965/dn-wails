@@ -8,7 +8,6 @@ import {
   CardContent,
   CardDescription,
   CardHeader,
-  CardTitle,
   ListState,
   PageHeader,
   Select,
@@ -124,7 +123,6 @@ export function DnProcessKiller() {
       <Card className={cx('dn-process-card')}>
         <CardContent>
           <div className={cx('dn-process-intro')}>
-            <strong className={cx('dn-process-intro-strong')}>只显示龙之谷进程</strong>
             <span>首次结束成功后会记住该进程路径，启用快捷键时优先结束同一路径的进程。</span>
             {settings.dragonNest.shortcutEnabled && (
               <span className={cx('dn-process-shortcut-hint')}>
@@ -208,7 +206,6 @@ export function DnProcessKiller() {
       <Card className={cx('dn-process-settings-card')}>
         <CardHeader className={cx('dn-process-settings-header')}>
           <div>
-            <CardTitle>DNTools</CardTitle>
             <CardDescription>
               可选的全局快捷键，仅 Windows 支持。默认快捷键为 F4，关闭后不会占用系统快捷键。
             </CardDescription>

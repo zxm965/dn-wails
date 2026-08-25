@@ -118,11 +118,6 @@ const processIntro = style({
   lineHeight: '1.65',
 })
 
-const processIntroStrong = style({
-  color: 'var(--text-primary)',
-  fontSize: '13px',
-})
-
 const processMeta = style({
   display: 'flex',
   alignItems: 'center',
@@ -280,7 +275,6 @@ export const styles = {
   'dn-process-settings-toggle-description': processSettingsToggleDescription,
   'dn-process-settings-error': processSettingsError,
   'dn-process-intro': processIntro,
-  'dn-process-intro-strong': processIntroStrong,
   'dn-process-meta': processMeta,
   'dn-process-meta-text': processMetaText,
   'dn-process-list': processList,
