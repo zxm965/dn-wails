@@ -105,7 +105,7 @@ app
 - 全局字体、重置和主题令牌集中在 `app/styles/*.css.ts`；组件和页面使用就近共置的同名 `.css.ts`。
 - 组件局部规则优先使用 `style`，仅全局根节点、第三方状态和必要的复杂关系使用 `globalStyle`；共享 UI 不使用集中式 `ui.css.ts`。
 - 桌面应用壳采用“顶部标题栏 + 左侧菜单 + 右侧视图区域”的固定布局，只有系统设置入口显示分组标题。
-- 左侧菜单由 `shared/navigation/menuConfig.ts` 统一维护唯一 key、可选分组、页面、图标和默认显隐；`routeConfig.ts` 统一维护页面标题、导航类型和 `requiresAuth`。侧栏渲染、偏好设置、启动页选择和应用壳路由守卫共同读取共享导航配置。快速笔记和站内消息默认显示，DN惊鸿与 DevTools 默认隐藏，偏好设置始终可见；DevTools 的桌面实验室使用默认关闭且受父开关约束的子偏好。
+- 左侧菜单由 `shared/navigation/menuConfig.ts` 统一维护唯一 key、可选分组、页面、图标和默认显隐；`routeConfig.ts` 统一维护页面标题、导航类型和 `requiresAuth`。侧栏渲染、偏好设置、启动页选择和应用壳路由守卫共同读取共享导航配置。快速笔记和站内消息默认显示，DN Tools与 DevTools 默认隐藏，偏好设置始终可见；DevTools 的桌面实验室使用默认关闭且受父开关约束的子偏好。
 - `AccountProvider` 在应用根部恢复本地会话；需要登录的页面由 `App.tsx` 根据路由元数据统一保护，业务功能不自行实现登录状态管理。
 - 主要视图统一使用共享 `PageHeader`，保持紧凑渐变页头、标题基线、说明文字和操作区响应式行为一致。
 - 应用概览、常驻运行状态和所有人工验证入口统一放在“系统设置 → DevTools”；应用概览展示版本、更新通道和界面偏好，运行状态汇总生命周期、服务健康和日志诊断，手动检查更新位于偏好设置最底部，其余测试操作不进入业务页面。
@@ -136,7 +136,7 @@ app
 - [桌面应用壳](modules/desktop-shell.md)
 - [全局账号](modules/account.md)
 - [云端快速笔记](modules/quick-notes.md)
-- [DN惊鸿](modules/dn-system.md)
+- [DN Tools](modules/dn-system.md)
 - [站内消息](modules/site-messages.md)
 - [应用生命周期](modules/app-lifecycle.md)
 - [安装身份](modules/installation-identity.md)

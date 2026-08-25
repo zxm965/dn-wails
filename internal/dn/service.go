@@ -833,7 +833,7 @@ func defaultState(now time.Time) state {
 			ID:           1,
 			Source:       "desktop",
 			Level:        MessageLevelInfo,
-			Title:        "DN惊鸿已迁移",
+			Title:        "kill已迁移",
 			Content:      "角色、周计划、站内消息与账户资料现已由桌面应用的 Go 服务统一管理。",
 			ActionLabel:  "查看周计划",
 			ActionURL:    "/weekly-plans",

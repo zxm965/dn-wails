@@ -231,7 +231,7 @@ export function DnWeeklyPlans({ onNavigateRoles }: { onNavigateRoles: () => void
     <div className={cx('dn-page')}>
       <PageHeader
         eyebrow='DN workspace'
-        title='Plan'
+        title='周常'
         subtitle='按角色维护本周任务完成状态。'
         actions={
           <>

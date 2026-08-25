@@ -87,8 +87,8 @@ export function DnProcessKiller() {
   return (
     <div className={cx('dn-process-page')}>
       <PageHeader
-        eyebrow='DN惊鸿'
-        title='Kill'
+        eyebrow='DN Tools'
+        title='进程'
         subtitle='扫描当前运行的龙之谷进程，选择后快速结束。'
         actions={
           <Button variant='outline' disabled={scanning || terminating} onClick={() => void scan()}>

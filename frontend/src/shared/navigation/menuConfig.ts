@@ -132,17 +132,17 @@ export const MENU_GROUPS = defineMenuGroups([
       },
       {
         key: 'dn-system',
-        label: 'DN惊鸿',
+        label: 'DN Tools',
         icon: Sparkles,
         defaultVisible: false,
         defaultView: 'dn-weekly',
         preference: {
-          description: '显示 Plan、Role 和 Kill 入口。',
+          description: '显示周常、角色和进程入口。',
         },
         children: [
-          { key: 'dn-weekly', view: 'dn-weekly', label: 'Plan', icon: CalendarCheck },
-          { key: 'dn-roles', view: 'dn-roles', label: 'Role', icon: UsersRound },
-          { key: 'dn-kill-process', view: 'dn-kill-process', label: 'Kill', icon: Skull },
+          { key: 'dn-weekly', view: 'dn-weekly', label: '周常', icon: CalendarCheck },
+          { key: 'dn-roles', view: 'dn-roles', label: '角色', icon: UsersRound },
+          { key: 'dn-kill-process', view: 'dn-kill-process', label: '进程', icon: Skull },
         ],
       },
     ],

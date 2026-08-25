@@ -203,7 +203,7 @@ export function SettingsPanel() {
 
       <section className={cx('settings-section')}>
         <div className={cx('settings-section-title')}>
-          <h2>DN惊鸿</h2>
+          <h2>DN Tools</h2>
           <p>可选的全局快捷键，仅 Windows 支持。默认快捷键为 F4，关闭后不会占用系统快捷键。</p>
         </div>
         <div className={cx('settings-grid')}>
