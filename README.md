@@ -74,7 +74,7 @@ wails3 task dev
 
 ## 发布与更新
 
-项目 Git 仓库以 `https://gitee.com/zxm965/dn-wails.git` 为准。推送 `vMAJOR.MINOR.PATCH` 标签后，现有 GitHub Actions 工作流使用 Wails v3 Taskfile 构建 macOS universal ZIP、DMG 和 Windows amd64 用户级 NSIS 安装器，并同时发布 GitHub、Gitee Release。客户端通过数据库配置的 `update_endpoint` 基础地址分别请求 `/latest` 获取 GitHub Release 元数据、请求 `/download?version=...&filename=...` 下载资源，当前 macOS 自动更新使用 DMG：
+项目 Git 仓库以 `https://gitee.com/zxm965/dn-wails.git` 为准。推送 `vMAJOR.MINOR.PATCH` 标签后，现有 GitHub Actions 工作流使用 Wails v3 Taskfile 构建 macOS universal ZIP、DMG、Windows amd64 应用本体和用户级 NSIS 安装器，并同时发布 GitHub、Gitee Release。客户端通过数据库配置的 `update_endpoint` 基础地址分别请求 `/latest` 获取 GitHub Release 元数据、请求 `/download?version=...&filename=...` 下载资源，当前 macOS 自动更新使用 DMG：
 
 ```bash
 git tag v1.0.0

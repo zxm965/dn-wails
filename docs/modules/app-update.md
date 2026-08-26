@@ -14,6 +14,7 @@
 - `internal/platform/appupdate/config.go`：从 PostgreSQL 读取当前应用、渠道、平台和架构对应的更新源配置。
 - `internal/platform/appupdate/installer_darwin.go`：挂载新版 DMG，退出当前进程后替换应用包、卸载镜像并重新打开。
 - `internal/platform/appupdate/installer_windows.go` 与 `windows_update_script.go`：退出当前进程后由脱离父进程的 PowerShell 助手运行用户级 NSIS 安装器，处理 Windows 可执行文件短暂锁定、有限重试、替换校验和应用重启。
+- `build/windows/nsis/compile.ps1`：在 Windows runner 上显式调用 `makensis` 编译 `project.nsi`，校验输入和非空安装器输出。
 - `internal/application/update.go`：向前端暴露版本信息、检查和安装三个 Wails 用例，并转发下载进度事件。
 - `frontend/src/features/app-update/`：根级更新状态、启动自动检查、确认弹窗、下载进度和错误反馈。
 - `frontend/src/features/devtools/components/DesktopOverview.tsx`：展示当前版本，不展示更新源地址等发布配置。
@@ -33,6 +34,7 @@ Gitee repository tag vX.Y.Z
   → 现有镜像同步标签到 GitHub
   → GitHub Actions
       ├── macOS universal .zip / .dmg
+      ├── Windows amd64 application .exe
       ├── Windows amd64 NSIS installer
       ├── GitHub Release + 发布资源
       └── Gitee Release + 同路径同名发布资源
@@ -53,8 +55,8 @@ React AppUpdateProvider
 3. 双端 build job 从 GitHub Environment `RELEASE` 读取 `secrets.DATABASE_URL`，生成不进入 Git 记录的临时 `.env.local`。
 4. 工作流用 `wails3 task common:update:build-assets` 同步平台元数据，并通过 linker flags 注入运行时版本和仓库。
 5. macOS 使用 `wails3 task darwin:package:universal` 构建名为 `Cull Pear.app` 的 universal 应用包，再生成 `cull-pear-*` 发布 ZIP 和供当前客户端自动更新、手动安装的 DMG。
-6. Windows runner 安装 NSIS 后使用 `wails3 task windows:package ARCH=amd64 INSTALL_SCOPE=user` 构建用户级安装器。
-7. 两端资源成功后为 ZIP、DMG 和 EXE 计算大小与 SHA-256，并生成 GitHub Release 对应的附加元数据和 `SHA256SUMS.txt`。
+6. Windows runner 安装 NSIS 后使用 `wails3 task windows:package ARCH=amd64 INSTALL_SCOPE=user` 构建用户级安装器；任务通过 `build/windows/nsis/compile.ps1` 显式调用 `makensis` 并验证安装器已生成。发布同时保留纯应用 `cull-pear-windows-amd64.exe`，供人工诊断或直接运行；自动更新仍只选择 NSIS 安装器。
+7. 两端资源成功后为所有发布文件计算大小与 SHA-256，并生成 GitHub Release 对应的附加元数据和 `SHA256SUMS.txt`。
 8. 创建或更新 GitHub Release，并上传应用安装资源和校验文件；客户端通过转发接口读取 GitHub Release JSON。
 9. 通过 Gitee OpenAPI 创建或更新同标签 Release，删除同名旧附件后上传当前 ZIP、DMG、EXE、附件元数据和校验文件；客户端下载统一通过 Nexus Proxy 的 GitHub Release Download 接口完成，不再依赖 Gitee 同路径附件或 `browser_download_url` 域名改写。
 10. Gitee 发布中断时可手动运行 `Republish Gitee release`，输入稳定标签后从对应 GitHub Release 恢复安装包，并只补齐缺失或大小不一致的 Gitee 附件。
@@ -127,6 +129,7 @@ interface GitHubReleaseEndpoint {
 
 - macOS 发布压缩包：`cull-pear-darwin-universal.zip`，内部应用包为 `Cull Pear.app`
 - macOS 当前客户端自动更新与手动安装：`cull-pear-darwin-universal.dmg`，DMG 卷与应用展示名为 `Cull Pear`
+- Windows 应用本体：`cull-pear-windows-amd64.exe`
 - Windows 自动更新与手动安装：`cull-pear-windows-amd64-installer.exe`
 - 自动更新发现与资源元数据：`update_endpoint` 对应的 `/latest` 转发接口返回的 GitHub Release JSON
 - 自动更新下载：`update_endpoint` 对应的 `/download?version=...&filename=...` 转发接口

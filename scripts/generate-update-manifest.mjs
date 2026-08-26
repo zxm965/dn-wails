@@ -4,11 +4,12 @@ import { lstat, writeFile } from 'node:fs/promises'
 import { resolve } from 'node:path'
 
 const maximumAssetSize = 1024 * 1024 * 1024
-const assetNames = [
+const requiredAssetNames = [
   'cull-pear-darwin-universal.dmg',
   'cull-pear-darwin-universal.zip',
   'cull-pear-windows-amd64-installer.exe',
 ]
+const optionalAssetNames = ['cull-pear-windows-amd64.exe']
 
 const tag = process.argv[2]?.trim() ?? ''
 const repository = process.argv[3]?.trim() ?? ''
@@ -28,6 +29,16 @@ const publishedAtInput = process.env.RELEASE_PUBLISHED_AT?.trim() || new Date().
 const publishedAtDate = new Date(publishedAtInput)
 if (Number.isNaN(publishedAtDate.getTime())) throw new Error('RELEASE_PUBLISHED_AT must be a valid date')
 const publishedAt = publishedAtDate.toISOString()
+
+const assetNames = [...requiredAssetNames]
+for (const name of optionalAssetNames) {
+  try {
+    const fileInfo = await lstat(resolve(releaseDirectory, name))
+    if (fileInfo.isFile()) assetNames.push(name)
+  } catch (error) {
+    if (error?.code !== 'ENOENT') throw error
+  }
+}
 
 const assets = []
 for (const name of assetNames) {

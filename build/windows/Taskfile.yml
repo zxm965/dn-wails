@@ -120,18 +120,32 @@ tasks:
         vars:
           ARCH: '{{.ARCH}}'
           LD_FLAGS: '{{.LD_FLAGS}}'
-    preconditions:
-      - sh: '[ "{{.INSTALL_SCOPE}}" = "user" ] || [ "{{.INSTALL_SCOPE}}" = "machine" ]'
-        msg: "INSTALL_SCOPE must be 'user' or 'machine', got '{{.INSTALL_SCOPE}}'"
     cmds:
+      - cmd: >-
+          test "{{.INSTALL_SCOPE}}" = "user" || test "{{.INSTALL_SCOPE}}" = "machine"
+        platforms: [linux, darwin]
       # Create the Microsoft WebView2 bootstrapper if it doesn't exist
       - wails3 generate webview2bootstrapper -dir "{{.ROOT_DIR}}/build/windows/nsis"
-      - |
-        {{if eq OS "windows"}}
-        makensis {{if eq .INSTALL_SCOPE "user"}}-DWAILS_INSTALL_SCOPE=user -DREQUEST_EXECUTION_LEVEL=user {{end}}-DARG_WAILS_{{.ARG_FLAG}}_BINARY="{{.ROOT_DIR}}\{{.BIN_DIR}}\{{.APP_NAME}}.exe" project.nsi
-        {{else}}
-        makensis {{if eq .INSTALL_SCOPE "user"}}-DWAILS_INSTALL_SCOPE=user -DREQUEST_EXECUTION_LEVEL=user {{end}}-DARG_WAILS_{{.ARG_FLAG}}_BINARY="{{.ROOT_DIR}}/{{.BIN_DIR}}/{{.APP_NAME}}.exe" project.nsi
-        {{end}}
+      # Use an explicit PowerShell entrypoint on Windows. The Taskfile shell
+      # can otherwise swallow the NSIS exit code or mis-handle paths with
+      # spaces, leaving the build without a usable installer artifact.
+      - cmd: >-
+          powershell -NoProfile -NonInteractive -ExecutionPolicy Bypass
+          -File "{{.ROOT_DIR}}\build\windows\nsis\compile.ps1"
+          -ProjectRoot "{{.ROOT_DIR}}"
+          -AppName "{{.APP_NAME}}"
+          -Arch "{{.ARCH}}"
+          -InstallScope "{{.INSTALL_SCOPE}}"
+        platforms: [windows]
+      - cmd: >-
+          makensis
+          {{if eq .INSTALL_SCOPE "user"}}-DWAILS_INSTALL_SCOPE=user -DREQUEST_EXECUTION_LEVEL=user {{end}}
+          -DARG_WAILS_{{.ARG_FLAG}}_BINARY="{{.ROOT_DIR}}/{{.BIN_DIR}}/{{.APP_NAME}}.exe"
+          project.nsi
+        platforms: [linux, darwin]
+      - cmd: >-
+          test -s "{{.ROOT_DIR}}/{{.BIN_DIR}}/{{.APP_NAME}}-{{.ARCH}}-installer.exe"
+        platforms: [linux, darwin]
     vars:
       ARCH: '{{.ARCH | default ARCH}}'
       ARG_FLAG: '{{if eq .ARCH "amd64"}}AMD64{{else}}ARM64{{end}}'
@@ -165,8 +179,10 @@ tasks:
     deps:
       - task: create:nsis:installer
         vars:
+          ARCH: '{{.ARCH | default ARCH}}'
           INSTALL_SCOPE: '{{.INSTALL_SCOPE | default "machine"}}'
     vars:
+      ARCH: '{{.ARCH | default ARCH}}'
       INSTALL_SCOPE: '{{.INSTALL_SCOPE | default "machine"}}'
     cmds:
-      - wails3 tool sign --input "build/windows/nsis/{{.APP_NAME}}-installer.exe" {{if .SIGN_CERTIFICATE}}--certificate "{{.SIGN_CERTIFICATE}}"{{end}} {{if .SIGN_THUMBPRINT}}--thumbprint "{{.SIGN_THUMBPRINT}}"{{end}} {{if .TIMESTAMP_SERVER}}--timestamp "{{.TIMESTAMP_SERVER}}"{{end}}
+      - wails3 tool sign --input "{{.BIN_DIR}}/{{.APP_NAME}}-{{.ARCH}}-installer.exe" {{if .SIGN_CERTIFICATE}}--certificate "{{.SIGN_CERTIFICATE}}"{{end}} {{if .SIGN_THUMBPRINT}}--thumbprint "{{.SIGN_THUMBPRINT}}"{{end}} {{if .TIMESTAMP_SERVER}}--timestamp "{{.TIMESTAMP_SERVER}}"{{end}}

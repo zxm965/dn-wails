@@ -161,8 +161,22 @@ jobs:
           $version = $env:GITHUB_REF_NAME.TrimStart('v')
           $ldflags = "-X cull-pear/internal/buildinfo.Version=$version -X cull-pear/internal/buildinfo.Repository=$env:GITEE_REPOSITORY"
           wails3 task windows:package ARCH=amd64 INSTALL_SCOPE=user LD_FLAGS=$ldflags
-          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-          Move-Item bin/cull-pear-amd64-installer.exe bin/cull-pear-windows-amd64-installer.exe
+          if ($LASTEXITCODE -ne 0) { throw "Windows NSIS packaging failed with exit code $LASTEXITCODE" }
+
+          $installer = Join-Path $pwd 'bin/cull-pear-amd64-installer.exe'
+          if (-not (Test-Path -LiteralPath $installer -PathType Leaf)) {
+            throw "Windows NSIS installer was not generated: $installer"
+          }
+          if ((Get-Item -LiteralPath $installer).Length -le 0) {
+            throw "Windows NSIS installer is empty: $installer"
+          }
+          Move-Item -LiteralPath $installer -Destination 'bin/cull-pear-windows-amd64-installer.exe' -Force
+
+          $binary = Join-Path $pwd 'bin/cull-pear.exe'
+          if (-not (Test-Path -LiteralPath $binary -PathType Leaf)) {
+            throw "Windows application binary was not generated: $binary"
+          }
+          Copy-Item -LiteralPath $binary -Destination 'bin/cull-pear-windows-amd64.exe' -Force
 
       - name: Upload macOS packages
         if: runner.os == 'macOS'
@@ -179,7 +193,9 @@ jobs:
         uses: actions/upload-artifact@v7.0.1
         with:
           name: ${{ matrix.artifact }}
-          path: bin/cull-pear-windows-amd64-installer.exe
+          path: |
+            bin/cull-pear-windows-amd64.exe
+            bin/cull-pear-windows-amd64-installer.exe
           if-no-files-found: error
 
   release:

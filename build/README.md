@@ -6,7 +6,7 @@
 - `Taskfile.yml`：前端依赖、bindings、图标和通用构建任务。
 - `darwin/Taskfile.yml`：macOS 原生、universal、`.app` 和 DMG 任务。
 - macOS `.app` 名称读取根目录 `.env` 的 `APP_DISPLAY_NAME`，内部可执行文件仍使用稳定的 `APP_NAME`。
-- `windows/Taskfile.yml`：Windows 可执行文件和 NSIS 安装器任务。
+- `windows/Taskfile.yml`：Windows 可执行文件和 NSIS 安装器任务；Windows CI 通过 `windows/nsis/compile.ps1` 编译并校验 NSIS 安装器。
 - `linux/Taskfile.yml`：Linux 构建与打包任务。
 - `appicon.svg`：Cull Pear 的黑白 CP 字标应用壳图标矢量源文件；应用内使用相同字标并由 React 组件根据主题实时着色。
 - `appicon.png`：由 `appicon.svg` 渲染的 1024 × 1024 PNG，用于生成 macOS `icons.icns`、Windows `icon.ico` 和托盘图标。
