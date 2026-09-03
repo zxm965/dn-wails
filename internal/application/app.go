@@ -150,6 +150,7 @@ type DnService interface {
 	PublishMessage(input dn.SiteMessageInput) (dn.SiteMessage, error)
 	UpdateMessage(id int, input dn.SiteMessageInput) (dn.SiteMessage, error)
 	DeleteMessage(id int) (dn.SiteMessage, error)
+	CheckOfficialMessagesOnLogin() (dn.OfficialMessageSyncResult, error)
 	SyncOfficialMessages() (dn.OfficialMessageSyncResult, error)
 }
 

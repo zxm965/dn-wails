@@ -79,7 +79,7 @@ const overviewTag = style({
 const overviewTopGrid = style([
   {
     display: 'grid',
-    gridTemplateColumns: 'minmax(0, 1.45fr) minmax(250px, 0.8fr)',
+    gridTemplateColumns: 'repeat(3, minmax(0, 1fr))',
     gap: '12px',
   },
   {
@@ -93,6 +93,7 @@ const overviewTopGrid = style([
 
 const overviewProductCard = style({
   position: 'relative',
+  gridColumn: 'span 2',
   minWidth: '0',
   minHeight: '190px',
   overflow: 'hidden',
@@ -116,6 +117,11 @@ const overviewProductCard = style({
       content: '""',
       background: 'radial-gradient(circle, color-mix(in srgb, var(--accent) 12%, transparent), transparent 70%)',
       pointerEvents: 'none',
+    },
+  },
+  '@container': {
+    'desktop-overview (max-width: 760px)': {
+      gridColumn: 'auto',
     },
   },
 })

@@ -1,7 +1,7 @@
 allowBuilds:
   esbuild: true
 minimumReleaseAgeExclude:
-  - lucide-react@1.33.0
+  - lucide-react@1.39.0
   - sonner@2.0.8
-  - '@wailsio/runtime@3.0.0-beta.12'
+  - '@wailsio/runtime@3.0.0-beta.16'
   - '@types/react-dom@19.2.5'

@@ -82,13 +82,6 @@ func (s *PostgresService) MessageInbox(limit int) (SiteMessageInbox, error) {
 	if limit > 20 {
 		limit = 20
 	}
-	syncError := ""
-	if _, err := s.syncPostgresOfficialMessages(false); err != nil {
-		if errors.Is(err, ErrUnauthenticated) {
-			return SiteMessageInbox{}, err
-		}
-		syncError = err.Error()
-	}
 	ctx, cancel := databaseContext()
 	defer cancel()
 	ownerID, err := databaseUserID(ctx, s)
@@ -119,7 +112,7 @@ func (s *PostgresService) MessageInbox(limit int) (SiteMessageInbox, error) {
 		return SiteMessageInbox{}, err
 	}
 	lastSyncedAt, _ := s.databaseLastSyncedAt(ctx)
-	return SiteMessageInbox{Items: items, UnreadCount: unread, LastSyncedAt: lastSyncedAt, SyncError: syncError}, nil
+	return SiteMessageInbox{Items: items, UnreadCount: unread, LastSyncedAt: lastSyncedAt}, nil
 }
 
 func (s *PostgresService) ClaimMessageNotifications(limit int) (SiteMessageClaim, error) {
@@ -129,7 +122,6 @@ func (s *PostgresService) ClaimMessageNotifications(limit int) (SiteMessageClaim
 	if limit > 20 {
 		limit = 20
 	}
-	_, _ = s.syncPostgresOfficialMessages(false)
 	ctx, cancel := databaseContext()
 	defer cancel()
 	ownerID, err := databaseUserID(ctx, s)
@@ -341,15 +333,14 @@ func (s *PostgresService) SyncOfficialMessages() (OfficialMessageSyncResult, err
 	return s.syncPostgresOfficialMessages(true)
 }
 
-func (s *PostgresService) syncPostgresOfficialMessages(force bool) (OfficialMessageSyncResult, error) {
-	var authErr error
-	if force {
-		_, authErr = s.identity.CurrentAdminUserID()
-	} else {
-		_, authErr = s.identity.CurrentUserID()
-	}
-	if authErr != nil {
-		return OfficialMessageSyncResult{}, authErr
+func (s *PostgresService) CheckOfficialMessagesOnLogin() (OfficialMessageSyncResult, error) {
+	return s.syncPostgresOfficialMessages(false)
+}
+
+func (s *PostgresService) syncPostgresOfficialMessages(manual bool) (OfficialMessageSyncResult, error) {
+	userID, err := s.identity.CurrentUserID()
+	if err != nil {
+		return OfficialMessageSyncResult{}, err
 	}
 	s.syncMu.Lock()
 	defer s.syncMu.Unlock()
@@ -357,16 +348,32 @@ func (s *PostgresService) syncPostgresOfficialMessages(force bool) (OfficialMess
 	defer cancel()
 	var data []byte
 	var lastSyncedAt time.Time
-	err := s.pool.QueryRow(ctx, `select coalesce(data, '{}'::jsonb), last_synced_at from sys_integration_state where key=$1`, officialIntegrationKey).Scan(&data, &lastSyncedAt)
+	err = s.pool.QueryRow(ctx, `select coalesce(data, '{}'::jsonb), last_synced_at from sys_integration_state where key=$1`, officialIntegrationKey).Scan(&data, &lastSyncedAt)
 	if err != nil && !errors.Is(err, pgx.ErrNoRows) {
 		return OfficialMessageSyncResult{}, fmt.Errorf("load official sync state: %w", err)
 	}
-	freshness := officialSyncFreshness
-	if force {
-		freshness = officialForceMinInterval
-	}
-	if err == nil && time.Since(lastSyncedAt) < freshness {
+	now := time.Now().UTC()
+	if manual && err == nil && now.Sub(lastSyncedAt) < officialForceMinInterval {
 		return OfficialMessageSyncResult{Skipped: true, SyncedAt: formatDatabaseTime(lastSyncedAt)}, nil
+	}
+	loginIntegrationKey := officialLoginIntegrationKey(userID)
+	if !manual {
+		var previousLoginAt time.Time
+		loginErr := s.pool.QueryRow(ctx, `select last_synced_at from sys_integration_state where key=$1`, loginIntegrationKey).Scan(&previousLoginAt)
+		if loginErr != nil && !errors.Is(loginErr, pgx.ErrNoRows) {
+			return OfficialMessageSyncResult{}, fmt.Errorf("load official login sync state: %w", loginErr)
+		}
+		loginIsRecent := loginErr == nil && now.Sub(previousLoginAt) < officialLoginSyncInterval
+		if _, updateErr := s.pool.Exec(ctx, `
+			insert into sys_integration_state (key,data,last_synced_at,created_at,updated_at)
+			values ($1,'{}'::jsonb,$2,now(),now())
+			on conflict (key) do update set last_synced_at=excluded.last_synced_at,updated_at=now()
+		`, loginIntegrationKey, now); updateErr != nil {
+			return OfficialMessageSyncResult{}, fmt.Errorf("update official login sync state: %w", updateErr)
+		}
+		if loginIsRecent {
+			return OfficialMessageSyncResult{Skipped: true, SyncedAt: formatDatabaseTime(lastSyncedAt)}, nil
+		}
 	}
 	items, err := fetchOfficialNews(s.httpClient)
 	if err != nil {
@@ -426,7 +433,7 @@ func (s *PostgresService) syncPostgresOfficialMessages(force bool) (OfficialMess
 			latest = item.PublishedAt
 		}
 	}
-	syncedAt := time.Now().UTC()
+	syncedAt := now
 	integrationData, _ := json.Marshal(map[string]string{"latestPublishedAt": latest.UTC().Format(time.RFC3339Nano)})
 	if _, err := tx.Exec(ctx, `
 		insert into sys_integration_state (key,data,last_synced_at,created_at,updated_at)
@@ -439,6 +446,10 @@ func (s *PostgresService) syncPostgresOfficialMessages(force bool) (OfficialMess
 		return OfficialMessageSyncResult{}, fmt.Errorf("commit official message sync: %w", err)
 	}
 	return OfficialMessageSyncResult{Fetched: len(items), Published: published, SyncedAt: formatDatabaseTime(syncedAt)}, nil
+}
+
+func officialLoginIntegrationKey(userID int) string {
+	return fmt.Sprintf("%s-login-%d", officialIntegrationKey, userID)
 }
 
 func (s *PostgresService) databaseUnreadCount(ctx context.Context, userID int) (int, error) {

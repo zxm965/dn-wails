@@ -258,7 +258,7 @@ export function SiteMessages({ onNavigate }: { onNavigate: (target: SiteMessageN
       const result = await syncOfficialMessages()
       notify({
         title: result.skipped ? '官网消息近期已同步' : `官网消息同步完成：新增 ${result.published} 条`,
-        message: result.skipped ? '两次手动同步至少间隔 2 分钟。' : `本次获取 ${result.fetched} 条官网消息。`,
+        message: result.skipped ? '两次主动同步至少间隔 2 分钟。' : `本次获取 ${result.fetched} 条官网消息。`,
         tone: 'success',
       })
       await Promise.all([load(1), messageCenter.refreshInbox()])
@@ -283,17 +283,15 @@ export function SiteMessages({ onNavigate }: { onNavigate: (target: SiteMessageN
                 全部已读
               </Button>
             )}
+            <Button variant='outline' disabled={syncing} onClick={() => void syncOfficial()}>
+              <SpinnerIcon icon={Globe2} spinning={syncing} aria-hidden='true' />
+              {syncing ? '同步中…' : '同步'}
+            </Button>
             {isAdmin && (
-              <>
-                <Button variant='outline' disabled={syncing} onClick={() => void syncOfficial()}>
-                  <SpinnerIcon icon={Globe2} spinning={syncing} aria-hidden='true' />
-                  {syncing ? '同步中…' : '同步官网数据'}
-                </Button>
-                <Button onClick={openCreateMessage}>
-                  <Plus aria-hidden='true' />
-                  创建站内信
-                </Button>
-              </>
+              <Button onClick={openCreateMessage}>
+                <Plus aria-hidden='true' />
+                创建站内信
+              </Button>
             )}
           </>
         }

@@ -78,6 +78,10 @@ func (a *App) DeleteSiteMessage(id int) (dn.SiteMessage, error) {
 	return a.dnService.DeleteMessage(id)
 }
 
+func (a *App) CheckOfficialSiteMessagesOnLogin() (dn.OfficialMessageSyncResult, error) {
+	return a.dnService.CheckOfficialMessagesOnLogin()
+}
+
 func (a *App) SyncOfficialSiteMessages() (dn.OfficialMessageSyncResult, error) {
 	return a.dnService.SyncOfficialMessages()
 }

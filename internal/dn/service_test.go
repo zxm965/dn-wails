@@ -5,6 +5,7 @@ import (
 	"errors"
 	"io"
 	"net/http"
+	"strconv"
 	"strings"
 	"testing"
 	"time"
@@ -411,9 +412,6 @@ func TestServiceKeepsLegacySessionAndRestrictsAdminOperations(t *testing.T) {
 	if _, err := service.PublishMessage(SiteMessageInput{Level: MessageLevelInfo, Title: "越权消息"}); !errors.Is(err, ErrForbidden) {
 		t.Fatalf("member should not publish messages, got %v", err)
 	}
-	if _, err := service.SyncOfficialMessages(); !errors.Is(err, ErrForbidden) {
-		t.Fatalf("member should not force official sync, got %v", err)
-	}
 	if _, err := service.ListMessages(SiteMessageQuery{Manage: true, Page: 1, PageSize: 10}); !errors.Is(err, ErrForbidden) {
 		t.Fatalf("member should not list managed messages, got %v", err)
 	}
@@ -533,6 +531,7 @@ func (fn roundTripFunc) RoundTrip(request *http.Request) (*http.Response, error)
 
 func TestServiceSyncsOfficialMessages(t *testing.T) {
 	t.Parallel()
+	requestCount := 0
 	publishedAt := time.Now().UTC().Add(-time.Hour).Format("2006-01-02 15:04:05")
 	listPayload, _ := json.Marshal(map[string]any{
 		"dataList": [][]any{
@@ -546,6 +545,7 @@ func TestServiceSyncsOfficialMessages(t *testing.T) {
 		"ReturnObject": string(listPayload),
 	})
 	client := &http.Client{Transport: roundTripFunc(func(request *http.Request) (*http.Response, error) {
+		requestCount++
 		if request.URL.String() != officialNewsListURL || request.Method != http.MethodPost {
 			t.Fatalf("unexpected official request: %s %s", request.Method, request.URL)
 		}
@@ -570,7 +570,63 @@ func TestServiceSyncsOfficialMessages(t *testing.T) {
 	}
 	second, err := service.SyncOfficialMessages()
 	if err != nil || !second.Skipped {
-		t.Fatalf("expected force interval skip: %+v err=%v", second, err)
+		t.Fatalf("expected manual interval skip: %+v err=%v", second, err)
+	}
+	if requestCount != 1 {
+		t.Fatalf("expected manual interval to avoid a second request, got %d", requestCount)
+	}
+	if err := service.Logout(); err != nil {
+		t.Fatalf("logout admin: %v", err)
+	}
+	member, err := service.Register(RegistrationInput{Account: "member", Email: "member@example.com", Password: "password-456"})
+	if err != nil {
+		t.Fatalf("register member: %v", err)
+	}
+	memberSync, err := service.SyncOfficialMessages()
+	if err != nil || !memberSync.Skipped {
+		t.Fatalf("expected member manual sync to share the two-minute limit: %+v err=%v", memberSync, err)
+	}
+
+	restartedService := NewServiceWithHTTPClient(store, client)
+	if err := restartedService.Initialize(); err != nil {
+		t.Fatalf("initialize restarted service: %v", err)
+	}
+	if _, err := restartedService.CheckOfficialMessagesOnLogin(); err != nil {
+		t.Fatalf("check official messages for the first member login: %v", err)
+	}
+	if requestCount != 2 {
+		t.Fatalf("expected the first member login to check official messages, got %d requests", requestCount)
+	}
+
+	recentLoginService := NewServiceWithHTTPClient(store, client)
+	if err := recentLoginService.Initialize(); err != nil {
+		t.Fatalf("initialize recent-login service: %v", err)
+	}
+	recentLogin, err := recentLoginService.CheckOfficialMessagesOnLogin()
+	if err != nil || !recentLogin.Skipped {
+		t.Fatalf("expected a login within 30 minutes to skip the official request: %+v err=%v", recentLogin, err)
+	}
+	if requestCount != 2 {
+		t.Fatalf("expected recent login to keep request count at 2, got %d", requestCount)
+	}
+
+	recentLoginService.mu.Lock()
+	next := cloneState(recentLoginService.state)
+	next.OfficialSync.LastLoginAtByUser[strconv.Itoa(member.ID)] = time.Now().UTC().Add(-31 * time.Minute).Format(time.RFC3339Nano)
+	if err := recentLoginService.commit(next); err != nil {
+		recentLoginService.mu.Unlock()
+		t.Fatalf("age member login timestamp: %v", err)
+	}
+	recentLoginService.mu.Unlock()
+	staleLoginService := NewServiceWithHTTPClient(store, client)
+	if err := staleLoginService.Initialize(); err != nil {
+		t.Fatalf("initialize stale-login service: %v", err)
+	}
+	if _, err := staleLoginService.CheckOfficialMessagesOnLogin(); err != nil {
+		t.Fatalf("check official messages after 30 minutes: %v", err)
+	}
+	if requestCount != 3 {
+		t.Fatalf("expected a login after 30 minutes to request official messages, got %d requests", requestCount)
 	}
 	messages, err := service.ListMessages(SiteMessageQuery{Keyword: "维护", ReadStatus: "all", Page: 1, PageSize: 10})
 	if err != nil || len(messages.Items) != 1 || messages.Items[0].Source != "dragon-nest-official" {

@@ -126,6 +126,10 @@ func (*UnavailableService) DeleteMessage(int) (SiteMessage, error) {
 	return SiteMessage{}, ErrUnavailable
 }
 
+func (*UnavailableService) CheckOfficialMessagesOnLogin() (OfficialMessageSyncResult, error) {
+	return OfficialMessageSyncResult{}, ErrUnavailable
+}
+
 func (*UnavailableService) SyncOfficialMessages() (OfficialMessageSyncResult, error) {
 	return OfficialMessageSyncResult{}, ErrUnavailable
 }

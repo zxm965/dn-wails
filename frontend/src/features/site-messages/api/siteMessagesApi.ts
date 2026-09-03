@@ -1,4 +1,5 @@
 import {
+  CheckOfficialSiteMessagesOnLogin,
   ClaimSiteMessageNotifications,
   DeleteSiteMessage,
   GetSiteMessageInbox,
@@ -135,4 +136,8 @@ export function deleteMessage(id: number): Promise<SiteMessage> {
 
 export function syncOfficialMessages(): Promise<OfficialMessageSyncResult> {
   return SyncOfficialSiteMessages() as Promise<OfficialMessageSyncResult>
+}
+
+export function checkOfficialMessagesOnLogin(): Promise<OfficialMessageSyncResult> {
+  return CheckOfficialSiteMessagesOnLogin() as Promise<OfficialMessageSyncResult>
 }

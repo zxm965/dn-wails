@@ -122,13 +122,6 @@ const dnFilterActions = style([
   },
 ])
 
-const dnViewSwitch = style({
-  display: 'flex',
-  justifyContent: 'flex-end',
-  gap: '3px',
-  marginBottom: '12px',
-})
-
 const dnTableWrap = style({
   maxWidth: '100%',
   overflowX: 'auto',
@@ -155,12 +148,6 @@ const dnDangerAction = style({
   color: 'var(--danger-text)',
 })
 
-const dnRoleCards = style({
-  display: 'grid',
-  gridTemplateColumns: 'repeat(auto-fit, minmax(min(290px, 100%), 1fr))',
-  gap: '12px',
-})
-
 const dnPlanGrid = style({
   display: 'grid',
   gridTemplateColumns: 'repeat(auto-fill, minmax(min(320px, 100%), 360px))',
@@ -168,34 +155,6 @@ const dnPlanGrid = style({
   justifyContent: 'start',
   gap: '14px',
 })
-
-const dnRoleCard = style([
-  {
-    minWidth: '0',
-    display: 'grid',
-    gap: '13px',
-    padding: '15px',
-    background: 'color-mix(in srgb, var(--surface-muted) 42%, transparent)',
-    border: '1px solid var(--border-subtle)',
-    borderRadius: '12px',
-    transition: 'opacity 140ms ease,\n    border-color 140ms ease,\n    background-color 140ms ease',
-  },
-  {
-    '@media': {
-      '(prefers-reduced-motion: reduce)': {
-        transition: 'none',
-      },
-    },
-  },
-  {
-    selectors: {
-      '&:hover': {
-        background: 'var(--surface-muted)',
-        borderColor: 'var(--border-strong)',
-      },
-    },
-  },
-])
 
 const dnPlanCard = style([
   {
@@ -291,17 +250,11 @@ const dnRowActions = style({
   justifyContent: 'flex-end',
   gap: '3px',
   selectors: {
-    [`${dnRoleCard} &, ${dnPlanCard} &`]: {
+    [`${dnPlanCard} &`]: {
       paddingTop: '10px',
       borderTop: '1px solid var(--border-subtle)',
     },
   },
-})
-
-const dnRoleStats = style({
-  display: 'grid',
-  gridTemplateColumns: 'repeat(2, minmax(0, 1fr))',
-  gap: '8px',
 })
 
 const dnPlanRemark = style({
@@ -841,15 +794,12 @@ export const styles = {
   'site-message-filters': siteMessageFilters,
   'dn-field': dnField,
   'dn-filter-actions': dnFilterActions,
-  'dn-view-switch': dnViewSwitch,
   'dn-table-wrap': dnTableWrap,
   'dn-table': dnTable,
   'dn-table-remark': dnTableRemark,
   'dn-row-actions': dnRowActions,
   'dn-danger-action': dnDangerAction,
-  'dn-role-cards': dnRoleCards,
   'dn-plan-grid': dnPlanGrid,
-  'dn-role-card': dnRoleCard,
   'dn-plan-card': dnPlanCard,
   'dn-plan-card-header': dnPlanCardHeader,
   'dn-plan-avatar': dnPlanAvatar,
@@ -857,7 +807,6 @@ export const styles = {
   'dn-plan-role-name': dnPlanRoleName,
   'dn-plan-profession': dnPlanProfession,
   'is-updating': isUpdating,
-  'dn-role-stats': dnRoleStats,
   'dn-plan-remark': dnPlanRemark,
   'dn-form-grid': dnFormGrid,
   'dn-form-full': dnFormFull,
@@ -976,29 +925,6 @@ globalStyle(`${dnTable} tbody tr:hover`, {
 
 globalStyle(`${dnTable} td:last-child`, {
   textAlign: 'right',
-})
-
-globalStyle(`${dnRoleStats} span`, {
-  display: 'grid',
-  gap: '4px',
-  padding: '10px',
-  color: 'var(--text-tertiary)',
-  fontSize: '10px',
-  background: 'var(--surface-muted)',
-  borderRadius: '8px',
-})
-
-globalStyle(`${dnRoleStats} strong`, {
-  color: 'var(--text-primary)',
-  fontSize: '12px',
-})
-
-globalStyle(`${dnRoleCard} > p`, {
-  minHeight: '34px',
-  margin: '0',
-  color: 'var(--text-secondary)',
-  fontSize: '11px',
-  lineHeight: '1.5',
 })
 
 globalStyle(`${dnSectionHeading} ${buttonStyles.root}`, {

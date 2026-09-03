@@ -1,4 +1,4 @@
-import { LayoutGrid, Pencil, Plus, RefreshCw, Search, Table2, Trash2 } from 'lucide-react'
+import { Pencil, Plus, RefreshCw, Search, Trash2 } from 'lucide-react'
 import { type FormEvent, type ReactNode, useCallback, useEffect, useState } from 'react'
 
 import {
@@ -54,7 +54,6 @@ export function DnRoles() {
   const [appliedFilters, setAppliedFilters] = useState(emptyFilters)
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
-  const [view, setView] = useState<'table' | 'card'>('table')
   const [editorOpen, setEditorOpen] = useState(false)
   const [form, setForm] = useState<RoleProfessionInput>(emptyForm)
 
@@ -196,32 +195,8 @@ export function DnRoles() {
           </div>
         </CardHeader>
         <CardContent>
-          <div className={cx('dn-view-switch')} role='group' aria-label='切换角色展示方式'>
-            <Button
-              size='sm'
-              variant={view === 'table' ? 'secondary' : 'ghost'}
-              aria-pressed={view === 'table'}
-              onClick={() => setView('table')}
-            >
-              <Table2 aria-hidden='true' />
-              表格
-            </Button>
-            <Button
-              size='sm'
-              variant={view === 'card' ? 'secondary' : 'ghost'}
-              aria-pressed={view === 'card'}
-              onClick={() => setView('card')}
-            >
-              <LayoutGrid aria-hidden='true' />
-              卡片
-            </Button>
-          </div>
           {items.length ? (
-            view === 'table' ? (
-              <RoleTable items={items} onEdit={openEdit} onDelete={(item) => void remove(item)} />
-            ) : (
-              <RoleCards items={items} onEdit={openEdit} onDelete={(item) => void remove(item)} />
-            )
+            <RoleTable items={items} onEdit={openEdit} onDelete={(item) => void remove(item)} />
           ) : (
             <ListState loading={loading} emptyText='暂无角色记录' />
           )}
@@ -361,51 +336,6 @@ function RoleTable({
           ))}
         </tbody>
       </table>
-    </div>
-  )
-}
-
-function RoleCards({
-  items,
-  onEdit,
-  onDelete,
-}: {
-  items: RoleProfession[]
-  onEdit: (item: RoleProfession) => void
-  onDelete: (item: RoleProfession) => void
-}) {
-  return (
-    <div className={cx('dn-role-cards')}>
-      {items.map((item) => (
-        <article key={item.id} className={cx('dn-role-card')}>
-          <div className={cx('dn-card-heading-row')}>
-            <div>
-              <strong>{item.roleName}</strong>
-              <span>{item.profession}</span>
-            </div>
-            <Badge tone={priorityMeta(item.priority).tone}>{priorityMeta(item.priority).label}</Badge>
-          </div>
-          <div className={cx('dn-role-stats')}>
-            <span>
-              排序<strong>{item.sortOrder}</strong>
-            </span>
-            <span>
-              周计划<strong>{item.weeklyPlanCount} 条</strong>
-            </span>
-          </div>
-          <p>{item.remark || '无备注'}</p>
-          <div className={cx('dn-row-actions')}>
-            <Button size='sm' variant='ghost' onClick={() => onEdit(item)}>
-              <Pencil aria-hidden='true' />
-              编辑
-            </Button>
-            <Button size='sm' variant='ghost' className={cx('dn-danger-action')} onClick={() => onDelete(item)}>
-              <Trash2 aria-hidden='true' />
-              删除
-            </Button>
-          </div>
-        </article>
-      ))}
     </div>
   )
 }

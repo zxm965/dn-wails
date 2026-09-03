@@ -254,8 +254,9 @@ type legacyMessageReceipt struct {
 }
 
 type officialSyncState struct {
-	LatestPublishedAt string `json:"latestPublishedAt"`
-	LastSyncedAt      string `json:"lastSyncedAt"`
+	LatestPublishedAt string            `json:"latestPublishedAt"`
+	LastSyncedAt      string            `json:"lastSyncedAt"`
+	LastLoginAtByUser map[string]string `json:"lastLoginAtByUser,omitempty"`
 }
 
 type state struct {

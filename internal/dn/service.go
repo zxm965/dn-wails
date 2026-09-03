@@ -553,14 +553,6 @@ func (s *Service) MessageInbox(limit int) (SiteMessageInbox, error) {
 	if limit > 20 {
 		limit = 20
 	}
-	syncError := ""
-	if _, err := s.syncOfficialMessages(false); err != nil {
-		if errors.Is(err, ErrUnauthenticated) {
-			return SiteMessageInbox{}, err
-		}
-		syncError = err.Error()
-	}
-
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 	current, err := s.authenticatedUserLocked(time.Now())
@@ -575,7 +567,6 @@ func (s *Service) MessageInbox(limit int) (SiteMessageInbox, error) {
 		Items:        items,
 		UnreadCount:  unread,
 		LastSyncedAt: s.state.OfficialSync.LastSyncedAt,
-		SyncError:    syncError,
 	}, nil
 }
 
@@ -586,8 +577,6 @@ func (s *Service) ClaimMessageNotifications(limit int) (SiteMessageClaim, error)
 	if limit > 20 {
 		limit = 20
 	}
-	_, _ = s.syncOfficialMessages(false)
-
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 	current, err := s.authenticatedUserLocked(time.Now())
@@ -981,6 +970,9 @@ func normalizeState(value state) state {
 	if value.MessageReceipts == nil {
 		value.MessageReceipts = []messageReceipt{}
 	}
+	if value.OfficialSync.LastLoginAtByUser == nil {
+		value.OfficialSync.LastLoginAtByUser = map[string]string{}
+	}
 	for _, item := range value.Users {
 		if item.ID >= value.NextUserID {
 			value.NextUserID = item.ID + 1
@@ -1019,6 +1011,10 @@ func cloneState(value state) state {
 	}
 	result.Messages = cloneMessages(value.Messages)
 	result.MessageReceipts = append([]messageReceipt(nil), value.MessageReceipts...)
+	result.OfficialSync.LastLoginAtByUser = make(map[string]string, len(value.OfficialSync.LastLoginAtByUser))
+	for userID, loggedInAt := range value.OfficialSync.LastLoginAtByUser {
+		result.OfficialSync.LastLoginAtByUser[userID] = loggedInAt
+	}
 	result.LegacyMessageReceipts = append([]legacyMessageReceipt(nil), value.LegacyMessageReceipts...)
 	if value.LegacyProfile != nil {
 		profile := *value.LegacyProfile

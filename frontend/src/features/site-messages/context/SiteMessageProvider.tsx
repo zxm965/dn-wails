@@ -5,6 +5,7 @@ import { useFeedback } from '@/shared/feedback'
 import { openExternalURL } from '@/shared/native-kit'
 
 import {
+  checkOfficialMessagesOnLogin,
   claimMessageNotifications,
   getErrorMessage,
   getMessageInbox,
@@ -51,6 +52,7 @@ export function SiteMessageProvider({
 }) {
   const { notify } = useFeedback()
   const { user } = useAccount()
+  const userId = user?.id ?? 0
   const [inboxItems, setInboxItems] = useState<SiteMessage[]>([])
   const [unreadCount, setUnreadCount] = useState(0)
   const [loading, setLoading] = useState(false)
@@ -88,14 +90,14 @@ export function SiteMessageProvider({
   }, [])
 
   const claimPopup = useCallback(async () => {
-    if (!user || popupOpenRef.current) return
+    if (!userId || popupOpenRef.current) return
     try {
       const claimed = await claimMessageNotifications(1)
       if (claimed.items[0]) showMessage(claimed.items[0])
     } catch {
       // Inbox refresh remains available even when claiming a popup fails.
     }
-  }, [showMessage, user])
+  }, [showMessage, userId])
 
   useEffect(() => {
     if (!popupOpen || !activeMessage?.popup) return
@@ -105,7 +107,7 @@ export function SiteMessageProvider({
   }, [acknowledgeMessage, activeMessage, popupOpen])
 
   const refreshInbox = useCallback(async () => {
-    if (!user) return
+    if (!userId) return
     if (refreshPromise.current) return refreshPromise.current
     setLoading(true)
     const request = (async () => {
@@ -128,7 +130,7 @@ export function SiteMessageProvider({
     })()
     refreshPromise.current = request
     return request
-  }, [notify, user])
+  }, [notify, userId])
 
   useEffect(() => {
     setInboxItems([])
@@ -139,12 +141,17 @@ export function SiteMessageProvider({
     setLastSyncedAt('')
     lastSyncError.current = ''
     notificationAcknowledgements.current.clear()
-    if (!user) return
+    if (!userId) return
 
-    void refreshInbox().then(claimPopup)
+    void checkOfficialMessagesOnLogin()
+      .catch((error) => {
+        notify({ title: '官网消息同步暂时失败', message: getErrorMessage(error, '请稍后再试。'), tone: 'warning' })
+      })
+      .then(refreshInbox)
+      .then(claimPopup)
     const timer = window.setInterval(() => void refreshInbox().then(claimPopup), 5 * 60 * 1000)
     return () => window.clearInterval(timer)
-  }, [claimPopup, refreshInbox, user])
+  }, [claimPopup, notify, refreshInbox, userId])
 
   useEffect(() => {
     if (centerOpen) void refreshInbox()
@@ -202,7 +209,7 @@ export function SiteMessageProvider({
     popupOpenRef.current = false
     setPopupOpen(false)
     setActiveMessage(null)
-    if (!user) return
+    if (!userId) return
     if (!current) {
       void claimPopup()
       return
@@ -212,7 +219,7 @@ export function SiteMessageProvider({
       .catch(() => {
         // Avoid immediately reopening the same message when acknowledgement is temporarily unavailable.
       })
-  }, [acknowledgeMessage, activeMessage, claimPopup, user])
+  }, [acknowledgeMessage, activeMessage, claimPopup, userId])
 
   const showAllMessages = useCallback(() => {
     setCenterOpen(false)

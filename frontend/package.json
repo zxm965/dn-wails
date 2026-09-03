@@ -16,23 +16,23 @@
   "dependencies": {
     "@base-ui/react": "^1.7.0",
     "@vanilla-extract/css": "^1.21.2",
-    "@wailsio/runtime": "3.0.0-beta.12",
+    "@wailsio/runtime": "3.0.0-beta.16",
     "json5": "^2.2.3",
-    "lucide-react": "^1.33.0",
+    "lucide-react": "^1.39.0",
     "react": "^19.2.8",
     "react-dom": "^19.2.8",
     "sonner": "^2.0.8"
   },
   "devDependencies": {
-    "@types/node": "^26.2.0",
+    "@types/node": "^26.4.1",
     "@types/react": "^19.2.18",
     "@types/react-dom": "^19.2.5",
     "@vanilla-extract/vite-plugin": "^5.2.6",
-    "@vitejs/plugin-react": "^6.1.0",
-    "oxfmt": "^0.64.0",
-    "oxlint": "^1.79.0",
+    "@vitejs/plugin-react": "^6.1.1",
+    "oxfmt": "^0.66.0",
+    "oxlint": "^1.81.0",
     "typescript": "^5.9.3",
     "vite": "^8.2.2"
   },
-  "packageManager": "pnpm@11.20.0"
+  "packageManager": "pnpm@11.25.0+sha512.5cde925b4f075f725eb71fbae18a42ffe784524789f19b61c731cb8721ec28aaee160e01a8d5af4fedb2a42cdbf300efe23db356b0d4a17b4d63e11f8ab7c956"
 }

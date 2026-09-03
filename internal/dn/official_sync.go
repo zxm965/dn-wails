@@ -14,13 +14,13 @@ import (
 )
 
 const (
-	officialBaseURL          = "https://dn.web.sdo.com/web12"
-	officialNewsListURL      = officialBaseURL + "/handler/GetNewsList.ashx"
-	officialNewsDetailURL    = officialBaseURL + "/news/newsContent.html"
-	officialCategories       = "102,103,104,8021,8022,8023,122,7364,8167"
-	officialSyncFreshness    = 30 * time.Minute
-	officialForceMinInterval = 2 * time.Minute
-	officialInitialLookback  = 48 * time.Hour
+	officialBaseURL           = "https://dn.web.sdo.com/web12"
+	officialNewsListURL       = officialBaseURL + "/handler/GetNewsList.ashx"
+	officialNewsDetailURL     = officialBaseURL + "/news/newsContent.html"
+	officialCategories        = "102,103,104,8021,8022,8023,122,7364,8167"
+	officialLoginSyncInterval = 30 * time.Minute
+	officialForceMinInterval  = 2 * time.Minute
+	officialInitialLookback   = 48 * time.Hour
 )
 
 type officialAPIResponse struct {
@@ -49,31 +49,48 @@ func (s *Service) SyncOfficialMessages() (OfficialMessageSyncResult, error) {
 	return s.syncOfficialMessages(true)
 }
 
-func (s *Service) syncOfficialMessages(force bool) (OfficialMessageSyncResult, error) {
-	s.mu.RLock()
-	var authErr error
-	if force {
-		_, authErr = s.adminUserLocked(time.Now())
-	} else {
-		_, authErr = s.authenticatedUserLocked(time.Now())
-	}
-	s.mu.RUnlock()
-	if authErr != nil {
-		return OfficialMessageSyncResult{}, authErr
-	}
+func (s *Service) CheckOfficialMessagesOnLogin() (OfficialMessageSyncResult, error) {
+	return s.syncOfficialMessages(false)
+}
 
+func (s *Service) syncOfficialMessages(manual bool) (OfficialMessageSyncResult, error) {
 	s.syncMu.Lock()
 	defer s.syncMu.Unlock()
 
 	s.mu.RLock()
-	lastSyncedAt := s.state.OfficialSync.LastSyncedAt
-	s.mu.RUnlock()
-	freshness := officialSyncFreshness
-	if force {
-		freshness = officialForceMinInterval
+	current, err := s.authenticatedUserLocked(time.Now())
+	if err != nil {
+		s.mu.RUnlock()
+		return OfficialMessageSyncResult{}, err
 	}
-	if lastSync, err := time.Parse(time.RFC3339Nano, lastSyncedAt); err == nil && time.Since(lastSync) < freshness {
-		return OfficialMessageSyncResult{Skipped: true, SyncedAt: lastSyncedAt}, nil
+	userID := current.ID
+	lastSyncedAt := s.state.OfficialSync.LastSyncedAt
+	lastLoginAt := s.state.OfficialSync.LastLoginAtByUser[strconv.Itoa(userID)]
+	s.mu.RUnlock()
+	now := time.Now().UTC()
+	if manual {
+		if lastSync, parseErr := time.Parse(time.RFC3339Nano, lastSyncedAt); parseErr == nil && now.Sub(lastSync) < officialForceMinInterval {
+			return OfficialMessageSyncResult{Skipped: true, SyncedAt: lastSyncedAt}, nil
+		}
+	} else {
+		previousLogin, parseErr := time.Parse(time.RFC3339Nano, lastLoginAt)
+		loginIsRecent := parseErr == nil && now.Sub(previousLogin) < officialLoginSyncInterval
+		s.mu.Lock()
+		current, authErr := s.authenticatedUserLocked(time.Now())
+		if authErr != nil || current.ID != userID {
+			s.mu.Unlock()
+			return OfficialMessageSyncResult{}, ErrUnauthenticated
+		}
+		next := cloneState(s.state)
+		next.OfficialSync.LastLoginAtByUser[strconv.Itoa(userID)] = now.Format(time.RFC3339Nano)
+		if err := s.commit(next); err != nil {
+			s.mu.Unlock()
+			return OfficialMessageSyncResult{}, err
+		}
+		s.mu.Unlock()
+		if loginIsRecent {
+			return OfficialMessageSyncResult{Skipped: true, SyncedAt: lastSyncedAt}, nil
+		}
 	}
 
 	items, err := s.fetchOfficialNews()
@@ -86,12 +103,9 @@ func (s *Service) syncOfficialMessages(force bool) (OfficialMessageSyncResult, e
 
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	if force {
-		if _, err := s.adminUserLocked(time.Now()); err != nil {
-			return OfficialMessageSyncResult{}, err
-		}
-	} else if _, err := s.authenticatedUserLocked(time.Now()); err != nil {
-		return OfficialMessageSyncResult{}, err
+	current, err = s.authenticatedUserLocked(time.Now())
+	if err != nil || current.ID != userID {
+		return OfficialMessageSyncResult{}, ErrUnauthenticated
 	}
 
 	next := cloneState(s.state)
@@ -155,10 +169,11 @@ func (s *Service) syncOfficialMessages(force bool) (OfficialMessageSyncResult, e
 			latest = item.PublishedAt
 		}
 	}
-	syncedAt := time.Now().UTC().Format(time.RFC3339Nano)
+	syncedAt := now.Format(time.RFC3339Nano)
 	next.OfficialSync = officialSyncState{
 		LatestPublishedAt: latest.UTC().Format(time.RFC3339Nano),
 		LastSyncedAt:      syncedAt,
+		LastLoginAtByUser: next.OfficialSync.LastLoginAtByUser,
 	}
 	if err := s.commit(next); err != nil {
 		return OfficialMessageSyncResult{}, err
