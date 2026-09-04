@@ -46,6 +46,11 @@ function Get-ExecutableHash {
 
 try {
   Write-UpdateLog "update helper started (pid=$ProcessId installer=$InstallerPath executable=$ExecutablePath)"
+  $applicationDirectory = Split-Path -Parent $ExecutablePath
+  if (-not (Test-Path -LiteralPath $applicationDirectory -PathType Container)) {
+    throw "application directory does not exist: $applicationDirectory"
+  }
+  Write-UpdateLog "install target resolved to $applicationDirectory"
   Wait-ForProcessExit
   $oldHash = Get-ExecutableHash
   $installerDirectory = Split-Path -Parent $InstallerPath
@@ -55,7 +60,12 @@ try {
   # released. Retry only a bounded number of times and keep every exit code in
   # the log so a failed update is diagnosable without a visible console.
   for ($attempt = 1; $attempt -le 20; $attempt++) {
-    $installer = Start-Process -FilePath $InstallerPath -ArgumentList @('/S') -WorkingDirectory $installerDirectory -Wait -PassThru
+    # NSIS does not retain a directory selected by a previous installation in
+    # silent mode. /D must be the final argument and deliberately remains
+    # unquoted: NSIS consumes the rest of the command line as the directory,
+    # including spaces. This keeps custom and non-system-drive installations
+    # in place instead of silently writing the update to the default C: path.
+    $installer = Start-Process -FilePath $InstallerPath -ArgumentList @('/S', "/D=$applicationDirectory") -WorkingDirectory $installerDirectory -Wait -PassThru
     Write-UpdateLog "installer attempt $attempt exited with code $($installer.ExitCode)"
     if ($installer.ExitCode -eq 0) {
       $newHash = Get-ExecutableHash
@@ -78,7 +88,6 @@ try {
   # process. Start-Process returns after launch, so verify that it did not
   # immediately terminate with a startup error.
   Start-Sleep -Milliseconds 1000
-  $applicationDirectory = Split-Path -Parent $ExecutablePath
   $restarted = $null
   for ($attempt = 1; $attempt -le 3; $attempt++) {
     $restarted = Start-Process -FilePath $ExecutablePath -WorkingDirectory $applicationDirectory -PassThru
@@ -95,6 +104,18 @@ try {
   throw "restarted application exited with code $($restarted.ExitCode)"
 } catch {
   Write-UpdateLog "update helper failed: $($_.Exception.Message)"
+  # A failed silent update must not leave the user with an application that
+  # simply disappeared. Best-effort recovery reopens the existing executable;
+  # the retained log still contains the actual installer failure.
+  try {
+    if (Test-Path -LiteralPath $ExecutablePath -PathType Leaf) {
+      $applicationDirectory = Split-Path -Parent $ExecutablePath
+      Start-Process -FilePath $ExecutablePath -WorkingDirectory $applicationDirectory | Out-Null
+      Write-UpdateLog "restarted existing application after update failure"
+    }
+  } catch {
+    Write-UpdateLog "failed to restart existing application: $($_.Exception.Message)"
+  }
   exit 1
 }
 `

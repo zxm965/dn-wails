@@ -197,6 +197,7 @@ func main() {
 
 	facade = appservice.New(appservice.Dependencies{
 		Runtime:            wailsApp,
+		GlobalShortcut:     wailsApp.GlobalShortcut,
 		SystemNotification: notificationService,
 		Settings:           settingsService,
 		Lifecycle:          lifecycleService,

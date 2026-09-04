@@ -74,14 +74,38 @@ ManifestDPIAware true
 Name "${INFO_PRODUCTNAME}"
 OutFile "..\..\..\bin\${INFO_PROJECTNAME}-${ARCH}-installer.exe" # Name of the installer's file.
 !if "${WAILS_INSTALL_SCOPE}" == "user"
-    InstallDir "$LOCALAPPDATA\Programs\${INFO_PRODUCTNAME}"
+    !define DEFAULT_INSTALL_DIR "$LOCALAPPDATA\Programs\${INFO_PRODUCTNAME}"
 !else
-    InstallDir "$PROGRAMFILES64\${INFO_COMPANYNAME}\${INFO_PRODUCTNAME}"
+    !define DEFAULT_INSTALL_DIR "$PROGRAMFILES64\${INFO_COMPANYNAME}\${INFO_PRODUCTNAME}"
 !endif
+InstallDir "${DEFAULT_INSTALL_DIR}"
 ShowInstDetails show # This will always show the installation details.
 
 Function .onInit
    !insertmacro wails.checkArchitecture
+
+   # Preserve an explicitly supplied /D path. Without /D, recover the existing
+   # install directory so silent updates launched by older clients can replace
+   # custom and non-system-drive installations instead of using the C: default.
+   StrCmp $INSTDIR "${DEFAULT_INSTALL_DIR}" 0 installDirectoryReady
+
+   SetRegView 64
+   !if "${WAILS_INSTALL_SCOPE}" == "user"
+       ReadRegStr $0 HKCU "${UNINST_KEY}" "InstallLocation"
+       ReadRegStr $1 HKCU "${UNINST_KEY}" "DisplayIcon"
+   !else
+       ReadRegStr $0 HKLM "${UNINST_KEY}" "InstallLocation"
+       ReadRegStr $1 HKLM "${UNINST_KEY}" "DisplayIcon"
+   !endif
+   StrCmp $0 "" 0 validatePreviousInstallDirectory
+   StrCmp $1 "" installDirectoryReady
+   ${GetParent} "$1" $0
+
+validatePreviousInstallDirectory:
+   IfFileExists "$0\${PRODUCT_EXECUTABLE}" 0 installDirectoryReady
+   StrCpy $INSTDIR "$0"
+
+installDirectoryReady:
 FunctionEnd
 
 Section
@@ -100,6 +124,12 @@ Section
     !insertmacro wails.associateCustomProtocols
 
     !insertmacro wails.writeUninstaller
+    SetRegView 64
+    !if "${WAILS_INSTALL_SCOPE}" == "user"
+        WriteRegStr HKCU "${UNINST_KEY}" "InstallLocation" "$INSTDIR"
+    !else
+        WriteRegStr HKLM "${UNINST_KEY}" "InstallLocation" "$INSTDIR"
+    !endif
 SectionEnd
 
 Section "uninstall"

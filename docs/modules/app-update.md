@@ -13,7 +13,8 @@
 - `internal/installation/`：生成和持久化下载门禁使用的 UUID v4 安装 ID、首次安装版本与最近运行版本。
 - `internal/platform/appupdate/config.go`：从 PostgreSQL 读取当前应用、渠道、平台和架构对应的更新源配置。
 - `internal/platform/appupdate/installer_darwin.go`：挂载新版 DMG，退出当前进程后替换应用包、卸载镜像并重新打开。
-- `internal/platform/appupdate/installer_windows.go` 与 `windows_update_script.go`：退出当前进程后由脱离父进程的 PowerShell 助手运行用户级 NSIS 安装器，处理 Windows 可执行文件短暂锁定、有限重试、替换校验和应用重启。
+- `internal/platform/appupdate/installer_windows.go` 与 `windows_update_script.go`：退出当前进程后由脱离父进程的 PowerShell 助手运行用户级 NSIS 安装器，将当前 exe 所在目录作为静默安装目标，处理 Windows 可执行文件短暂锁定、有限重试、替换校验、失败恢复和应用重启。
+- `build/windows/nsis/project.nsi`：定义安装内容，并从既有卸载注册信息恢复自定义安装目录、持久化 `InstallLocation`，兼容尚未携带显式安装目录的旧版更新助手。
 - `build/windows/nsis/compile.ps1`：在 Windows runner 上显式调用 `makensis` 编译 `project.nsi`，校验输入和非空安装器输出。
 - `internal/application/update.go`：向前端暴露版本信息、检查和安装三个 Wails 用例，并转发下载进度事件。
 - `frontend/src/features/app-update/`：根级更新状态、启动自动检查、确认弹窗、下载进度和错误反馈。
@@ -71,7 +72,7 @@ React AppUpdateProvider
 6. 自动检查和手动检查发现新版后都通过统一确认窗口询问用户，不静默安装。
 7. 用户确认后重新读取 Release 元数据，确保确认期间版本未发生变化。
 8. 当前客户端按平台精确选择 DMG 或 EXE，由 Go HTTP 客户端携带安装 ID、当前版本和平台 User-Agent 请求下载；下载后校验 Release 元数据声明的字节数和 SHA-256。
-9. 校验成功后启动平台更新助手；macOS 挂载 DMG 并在当前应用退出后替换 `.app`，Windows 等待当前进程退出和短暂文件锁释放，静默运行用户级安装器并在确认已替换可执行文件后重新启动。Windows 助手日志写入系统临时目录下的 `cull-pear-update-<pid>.log`。
+9. 校验成功后启动平台更新助手；macOS 挂载 DMG 并在当前应用退出后替换 `.app`。Windows 从当前 exe 推导原安装目录，将 NSIS 的 `/D=<原安装目录>` 作为最后一个参数进行静默安装，等待当前进程退出和短暂文件锁释放，确认原路径的可执行文件已经替换后重新启动。安装器自身也会从卸载注册信息中的 `InstallLocation` 或 `DisplayIcon` 恢复既有目录，使旧版更新助手下载到新版安装包时仍可原地更新。Windows 助手日志写入系统临时目录下的 `cull-pear-update-<pid>.log`；安装失败时会记录原因并尽力重新打开旧程序。
 
 安装开始后，下载器按实际读取字节数回调进度。`internal/appupdate.Service` 将进度归一化为版本、阶段、已下载字节、总字节和百分比，`internal/application.App` 通过 `app-update:progress` 事件转发给前端。`AppUpdateProvider` 负责订阅并清理事件，设置页的“应用更新”区域展示下载百分比、进度条和字节数；下载完成后显示“正在准备安装”，保留原有自动重启流程。
 
@@ -152,6 +153,8 @@ interface GitHubReleaseEndpoint {
 - 下载只接受 HTTPS、声明大小不超过 1 GiB 且带 SHA-256 digest 的资源；大小或摘要不一致时删除临时文件并拒绝安装。
 - Gitee 普通项目单个 Release 附件不能超过 100 MB，仓库附件总量不能超过 1 GB；发布脚本会在上传前拒绝超过单附件限制的构建产物。
 - macOS 应用包所在目录必须允许当前用户写入；Windows 发布统一使用 Taskfile 的 `INSTALL_SCOPE=user`，避免自动更新请求管理员权限。
+- Windows 静默更新必须把 `/D=<当前 exe 所在目录>` 放在 NSIS 参数末尾；该值不加引号，因为 NSIS 会把 `/D=` 后的全部剩余命令行（包括空格）解释为安装目录。安装包没有 Authenticode 签名是独立风险：SmartScreen 可能提示，启用强制策略或 Smart App Control 的设备还可能直接阻止未知未签名程序；但签名状态不会改变用户级安装目录，不能用它解释跨盘静默安装落到默认目录的问题，也无法通过更新器代码保证绕过系统执行策略。
+- 旧版本如果已经把一次失败更新安装到默认 C 盘，卸载注册信息可能已被改写为 C 盘路径；这类客户端需要先手动把修复版本安装回原目录一次，之后自动更新会持续沿用当前 exe 所在目录。
 - Windows NSIS 卸载时删除安装身份文件但保留其他应用配置；更新安装不会执行该卸载清理。macOS 删除 `.app` 没有对应卸载钩子。
 - 同一进程只允许一个安装操作；安装前再次检查版本，避免确认期间 Release 发生变化。
 - 下载器无法提供字节流进度时仍兼容旧的 `ReleaseSource.Download` 实现，前端至少显示下载开始和安装准备阶段。

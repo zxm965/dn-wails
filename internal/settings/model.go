@@ -1,8 +1,8 @@
 package settings
 
-const CurrentVersion = 7
+const CurrentVersion = 8
 
-const DefaultDragonNestShortcutKey = "F4"
+const DefaultDragonNestShortcutKey = "Ctrl+F4"
 
 const (
 	ThemeSystem = "system"

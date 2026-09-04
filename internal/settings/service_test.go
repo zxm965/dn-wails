@@ -111,7 +111,7 @@ func TestServiceRejectsInvalidSettings(t *testing.T) {
 	}
 
 	value.Appearance.ButtonSize = ButtonSizeMD
-	value.DragonNest.ShortcutKey = "Ctrl+F4"
+	value.DragonNest.ShortcutKey = "F4"
 	if _, err := service.Update(value); !errors.Is(err, ErrInvalidSettings) {
 		t.Fatalf("expected invalid Dragon Nest shortcut error, got %v", err)
 	}
@@ -164,11 +164,11 @@ func TestServiceRejectsOutdatedSettingsVersion(t *testing.T) {
 	}
 }
 
-func TestServiceMigratesVersionSixSettings(t *testing.T) {
+func TestServiceMigratesVersionSevenSettingsAndResetsShortcut(t *testing.T) {
 	t.Parallel()
 
 	store := newMemoryStore()
-	store.data[storageKey] = []byte(`{"version":6,"appearance":{"themeMode":"dark","accent":"purple","density":"comfortable","buttonSize":"md","fontScale":1},"notifications":{"enabled":true,"showPreview":true,"doNotDisturb":false},"navigation":{"menuVisibility":{"dn-system":true}},"window":{"closeBehavior":"hide","alwaysOnTop":false,"rememberBounds":true}}`)
+	store.data[storageKey] = []byte(`{"version":7,"appearance":{"themeMode":"dark","accent":"purple","density":"comfortable","buttonSize":"md","fontScale":1},"notifications":{"enabled":true,"showPreview":true,"doNotDisturb":false},"navigation":{"menuVisibility":{"dn-system":true}},"window":{"closeBehavior":"hide","alwaysOnTop":false,"rememberBounds":true},"dragonNest":{"shortcutEnabled":true,"shortcutKey":"F8","targetPath":"C:\\Games\\DragonNest.exe"}}`)
 
 	service := NewService(store)
 	if err := service.Initialize(); err != nil {
@@ -180,5 +180,8 @@ func TestServiceMigratesVersionSixSettings(t *testing.T) {
 	}
 	if value.DragonNest.ShortcutKey != DefaultDragonNestShortcutKey || value.DragonNest.ShortcutEnabled {
 		t.Fatalf("unexpected migrated Dragon Nest settings: %+v", value.DragonNest)
+	}
+	if value.DragonNest.TargetPath != `C:\Games\DragonNest.exe` {
+		t.Fatalf("expected the configured process target to be preserved: %+v", value.DragonNest)
 	}
 }

@@ -39,6 +39,10 @@ function formatScannedAt(value: Date | null): string {
   }).format(value)
 }
 
+function formatShortcut(key: string): string {
+  return key.replaceAll('+', ' + ')
+}
+
 export function DnProcessKiller() {
   const { notify } = useFeedback()
   const { settings, isSaving: isSettingsSaving, error: settingsError, updateSettings } = useSettings()
@@ -126,7 +130,8 @@ export function DnProcessKiller() {
             <span>首次结束成功后会记住该进程路径，启用快捷键时优先结束同一路径的进程。</span>
             {settings.dragonNest.shortcutEnabled && (
               <span className={cx('dn-process-shortcut-hint')}>
-                快捷键已启用 <kbd className={cx('dn-process-shortcut-key')}>{settings.dragonNest.shortcutKey}</kbd>
+                快捷键已启用{' '}
+                <kbd className={cx('dn-process-shortcut-key')}>{formatShortcut(settings.dragonNest.shortcutKey)}</kbd>
               </span>
             )}
           </div>
@@ -207,7 +212,7 @@ export function DnProcessKiller() {
         <CardHeader className={cx('dn-process-settings-header')}>
           <div>
             <CardDescription>
-              可选的全局快捷键，仅 Windows 支持。默认快捷键为 F4，关闭后不会占用系统快捷键。
+              可选的全局快捷键，仅 Windows 支持。默认快捷键为 Ctrl + F4，关闭后不会占用系统快捷键。
             </CardDescription>
           </div>
           <span className={cx('dn-process-settings-status')} aria-live='polite'>
@@ -227,7 +232,7 @@ export function DnProcessKiller() {
                 aria-label='DN 结束进程快捷键'
                 value={settings.dragonNest.shortcutKey}
                 disabled={!isWindows() || !settings.dragonNest.shortcutEnabled}
-                options={DRAGON_NEST_SHORTCUT_OPTIONS.map((key) => ({ value: key, label: key }))}
+                options={DRAGON_NEST_SHORTCUT_OPTIONS.map((key) => ({ value: key, label: formatShortcut(key) }))}
                 onValueChange={(shortcutKey) => updateDragonNest('shortcutKey', shortcutKey)}
               />
             </label>
@@ -245,7 +250,7 @@ export function DnProcessKiller() {
               <strong className={cx('dn-process-settings-toggle-title')}>启用全局快捷键</strong>
               <small className={cx('dn-process-settings-toggle-description')}>
                 {isWindows()
-                  ? `在应用后台按 ${settings.dragonNest.shortcutKey} 快速结束已记录的 DN 进程。`
+                  ? `窗口失焦、最小化或隐藏到托盘后，按 ${formatShortcut(settings.dragonNest.shortcutKey)} 快速结束已记录的 DN 进程。`
                   : '当前系统不是 Windows，暂不支持全局结束进程快捷键。'}
               </small>
             </span>

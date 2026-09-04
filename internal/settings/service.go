@@ -44,7 +44,8 @@ func (s *Service) Initialize() error {
 	}
 	if loaded.Version == CurrentVersion-1 {
 		loaded.Version = CurrentVersion
-		loaded.DragonNest = Default().DragonNest
+		loaded.DragonNest.ShortcutEnabled = false
+		loaded.DragonNest.ShortcutKey = DefaultDragonNestShortcutKey
 		if err := s.persist(loaded); err != nil {
 			return fmt.Errorf("persist migrated application settings: %w", err)
 		}
@@ -170,7 +171,10 @@ func validate(value AppSettings) error {
 }
 
 func dragonNestShortcutKeys() []string {
-	return []string{"F1", "F2", "F3", "F4", "F5", "F6", "F7", "F8", "F9", "F10", "F11", "F12"}
+	return []string{
+		"Ctrl+F1", "Ctrl+F2", "Ctrl+F3", "Ctrl+F4", "Ctrl+F5", "Ctrl+F6",
+		"Ctrl+F7", "Ctrl+F8", "Ctrl+F9", "Ctrl+F10", "Ctrl+F11",
+	}
 }
 
 func contains(values []string, target string) bool {

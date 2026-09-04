@@ -22,10 +22,12 @@ App ServiceStartup
 WindowRuntimeReady
   → 恢复窗口
   → lifecycle.MarkReady
+  → 注册启用的 DN Windows 全局快捷键
   → 回放第二实例事件
   → 注册通知响应处理
 
 App ServiceShutdown
+  → 注销 DN Windows 全局快捷键
   → lifecycle.Stop
   → 依次关闭云端快速笔记、DN、全局账号与诊断资源
 
@@ -50,6 +52,7 @@ interface LifecycleStatus {
 - 依赖 WebView 的窗口恢复和前端事件只在 `WindowRuntimeReady` 后执行。
 - runtime 就绪前收到的第二实例数据会暂存并在就绪后按顺序发送。
 - 生命周期先标记为就绪，再注册可选通知响应；通知能力失败不得阻断窗口可用状态。
+- DN 全局快捷键在 Wails 应用消息循环和窗口 runtime 就绪后注册，窗口失焦、最小化或隐藏到托盘不会注销；仅在应用关闭或用户关闭快捷键时注销。
 - 全局账号先于 DN 和快速笔记初始化，确保依赖账号身份的业务服务可读取已持久化的会话；关闭时按相反顺序释放连接池。
 - 安装身份先于可能触发更新下载的前端运行阶段初始化；初始化失败不会阻止主窗口启动，但更新下载不会发送缺少身份的请求。
 - 并发状态使用互斥锁保护。
