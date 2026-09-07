@@ -9,9 +9,9 @@ import (
 
 func configureUpdateHelperProcess(command *exec.Cmd) {
 	command.SysProcAttr = &syscall.SysProcAttr{
-		// DETACHED_PROCESS | CREATE_NEW_PROCESS_GROUP. CREATE_NO_WINDOW is
-		// ignored when DETACHED_PROCESS is present and is intentionally omitted.
-		CreationFlags: 0x00000008 | 0x00000200,
+		// Windows PowerShell 5.1 needs a windowless console to initialise
+		// reliably. DETACHED_PROCESS can exit before running a -File script.
+		CreationFlags: 0x08000000 | 0x00000200, // CREATE_NO_WINDOW | CREATE_NEW_PROCESS_GROUP
 		HideWindow:    true,
 	}
 }

@@ -1,0 +1,42 @@
+name: Windows updater regression
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'internal/appupdate/**'
+      - 'internal/platform/appupdate/**'
+      - 'build/windows/nsis/**'
+      - 'go.mod'
+      - 'go.sum'
+      - '.github/workflows/windows-updater-tests.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  updater:
+    name: Windows PowerShell 5.1 and NSIS
+    runs-on: windows-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7.0.1
+      - uses: actions/setup-go@v7.0.0
+        with:
+          go-version-file: go.mod
+          cache: true
+      - name: Install NSIS
+        shell: pwsh
+        run: |
+          choco install nsis --yes --no-progress
+          if ($LASTEXITCODE -ne 0) { throw 'NSIS installation failed' }
+          "${env:ProgramFiles(x86)}\NSIS" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
+      - name: Verify update handoff and real NSIS installation
+        shell: pwsh
+        env:
+          CULL_PEAR_TEST_POWERSHELL: powershell.exe
+          CULL_PEAR_REQUIRE_NSIS_TEST: '1'
+        run: |
+          go test ./internal/appupdate ./internal/platform/appupdate -v -count=1 -timeout 5m -parallel 4
+          if ($LASTEXITCODE -ne 0) { throw 'Windows updater integration tests failed' }

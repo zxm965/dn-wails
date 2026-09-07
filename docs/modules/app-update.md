@@ -210,6 +210,8 @@ CULL_PEAR_TEST_MAKENSIS=/path/to/makensis go test ./internal/platform/appupdate 
 
 `testdata/updatefixture` 构建临时旧应用、新应用与故障注入安装器。集成测试执行实际 PowerShell 脚本及 Go 交接函数，验证中文/空格/方括号路径、规范及改名 EXE、就绪失败、取消、父进程未退出、瞬时/持续文件锁退出码、安装器卡死、摘要错误和新程序启动失败。macOS/Linux 仅将 Windows `taskkill` 边界替换为 .NET 进程树终止；模拟安装器的锁错误不能替代 Windows 内核文件锁测试。
 
-Windows 发布构建在打包前强制执行更新集成测试，使用 `powershell.exe` 和真实 `makensis`。真实 NSIS 测试使用唯一的测试产品注册信息、临时目标和测试应用，完成后精确清理测试快捷方式及卸载注册项，不执行会触及真实安装身份的生产卸载程序。任何测试失败均阻止后续构建和 Release 发布。
+Windows 助手使用 `CREATE_NO_WINDOW | CREATE_NEW_PROCESS_GROUP`，为 Windows PowerShell 5.1 提供无可见窗口的控制台。不能使用 `DETACHED_PROCESS`：在该模式下 PowerShell 可能以退出码 0 提前结束，脚本和日志均未执行。专用 Windows 回归测试验证隐藏脚本确实执行、标准输出/错误被捕获且退出码正确。
+
+`.github/workflows/windows-updater-tests.yml` 在 main 分支相关文件变动时先执行 Windows PowerShell 5.1 和真实 NSIS 集成测试，也支持手动触发，允许创建发布标签前取得原生平台验证结果。Windows 发布构建仍在打包前强制执行同组测试。真实 NSIS 测试使用唯一的测试产品注册信息、临时目标和测试应用，完成后精确清理测试快捷方式及卸载注册项，不执行会触及真实安装身份的生产卸载程序。任何测试失败均阻止后续构建和 Release 发布。
 
 实际挂载 DMG 并替换 macOS `.app`、真实 Wails 窗口启动、Windows 系统执行策略和签名提示仍必须分别在对应桌面系统上人工验证。
