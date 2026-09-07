@@ -212,6 +212,8 @@ CULL_PEAR_TEST_MAKENSIS=/path/to/makensis go test ./internal/platform/appupdate 
 
 Windows 助手使用 `CREATE_NO_WINDOW | CREATE_NEW_PROCESS_GROUP`，为 Windows PowerShell 5.1 提供无可见窗口的控制台。不能使用 `DETACHED_PROCESS`：在该模式下 PowerShell 可能以退出码 0 提前结束，脚本和日志均未执行。专用 Windows 回归测试验证隐藏脚本确实执行、标准输出/错误被捕获且退出码正确。
 
+文件摘要通过 .NET `SHA256` 流式计算，不依赖 `Get-FileHash` 的模块自动加载，避免从 PowerShell 7 等宿主继承的 `PSModulePath` 使 Windows PowerShell 5.1 校验失败；输出日志统一采用 UTF-8，保留中文路径。
+
 `.github/workflows/windows-updater-tests.yml` 在 main 分支相关文件变动时先执行 Windows PowerShell 5.1 和真实 NSIS 集成测试，也支持手动触发，允许创建发布标签前取得原生平台验证结果。Windows 发布构建仍在打包前强制执行同组测试。真实 NSIS 测试使用唯一的测试产品注册信息、临时目标和测试应用，完成后精确清理测试快捷方式及卸载注册项，不执行会触及真实安装身份的生产卸载程序。任何测试失败均阻止后续构建和 Release 发布。
 
 实际挂载 DMG 并替换 macOS `.app`、真实 Wails 窗口启动、Windows 系统执行策略和签名提示仍必须分别在对应桌面系统上人工验证。

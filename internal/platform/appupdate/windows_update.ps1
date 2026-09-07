@@ -3,6 +3,7 @@ param([Parameter(Mandatory = $true)][string]$ConfigPath)
 $ErrorActionPreference = 'Stop'
 $config = Get-Content -LiteralPath $ConfigPath -Raw -Encoding UTF8 | ConvertFrom-Json
 $utf8 = New-Object System.Text.UTF8Encoding($false)
+[Console]::OutputEncoding = $utf8
 
 function Write-UpdateLog {
   param([string]$Message)
@@ -21,7 +22,17 @@ function Write-UpdateResult {
 function Get-UpdateHash {
   param([string]$Path)
   if (-not (Test-Path -LiteralPath $Path -PathType Leaf)) { return '' }
-  return (Get-FileHash -LiteralPath $Path -Algorithm SHA256).Hash
+  # Get-FileHash is a module function in Windows PowerShell 5.1. A process
+  # launched from pwsh can inherit a PSModulePath that cannot resolve it.
+  $algorithm = [Security.Cryptography.SHA256]::Create()
+  $stream = $null
+  try {
+    $stream = [IO.File]::OpenRead($Path)
+    return [BitConverter]::ToString($algorithm.ComputeHash($stream)).Replace('-', '')
+  } finally {
+    if ($null -ne $stream) { $stream.Dispose() }
+    $algorithm.Dispose()
+  }
 }
 
 function Test-UpdateParentRunning {
