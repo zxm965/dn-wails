@@ -4,20 +4,30 @@ package appupdate
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"io"
 	"os"
 	"os/exec"
 	"path/filepath"
-	"strconv"
-	"syscall"
+	"time"
+
+	coreupdate "cull-pear/internal/appupdate"
 )
 
 func (i *Installer) Supported() bool {
 	return i.appName != ""
 }
 
-func (i *Installer) Install(_ context.Context, archivePath string) error {
+func (i *Installer) Install(ctx context.Context, archivePath string, target coreupdate.InstallTarget) error {
+	installerDigest, err := parseSHA256Digest(target.InstallerDigest)
+	if err != nil {
+		return err
+	}
+	executableDigest, err := parseSHA256Digest(target.ExecutableDigest)
+	if err != nil {
+		return err
+	}
 	executablePath, err := os.Executable()
 	if err != nil {
 		return fmt.Errorf("resolve current executable: %w", err)
@@ -41,7 +51,38 @@ func (i *Installer) Install(_ context.Context, archivePath string) error {
 	if err := os.WriteFile(scriptPath, []byte(windowsUpdateScript), 0o600); err != nil {
 		return fmt.Errorf("write update helper: %w", err)
 	}
-	logPath := filepath.Join(os.TempDir(), fmt.Sprintf("%s-update-%d.log", i.appName, os.Getpid()))
+	resultPath, err := i.resultPath()
+	if err != nil {
+		return err
+	}
+	logDirectory := filepath.Join(filepath.Dir(resultPath), "update-logs")
+	if err := os.MkdirAll(logDirectory, 0o700); err != nil {
+		return fmt.Errorf("create update log directory: %w", err)
+	}
+	config := windowsUpdateConfig{
+		ProcessID:             os.Getpid(),
+		InstallerPath:         installerPath,
+		ExecutablePath:        executablePath,
+		TargetPath:            filepath.Join(filepath.Dir(executablePath), i.appName+".exe"),
+		InstallerSHA256:       installerDigest,
+		ExecutableSHA256:      executableDigest,
+		Version:               target.Version,
+		LogPath:               filepath.Join(logDirectory, filepath.Base(workDirectory)+".log"),
+		ResultPath:            resultPath,
+		ReadyPath:             filepath.Join(workDirectory, "ready"),
+		CommitPath:            filepath.Join(workDirectory, "commit"),
+		WorkDirectory:         workDirectory,
+		ParentTimeoutSeconds:  60,
+		InstallTimeoutSeconds: 120,
+	}
+	data, err := json.Marshal(config)
+	if err != nil {
+		return fmt.Errorf("encode update helper configuration: %w", err)
+	}
+	configPath := filepath.Join(workDirectory, "config.json")
+	if err := os.WriteFile(configPath, data, 0o600); err != nil {
+		return fmt.Errorf("write update helper configuration: %w", err)
+	}
 
 	command := exec.Command(
 		"powershell.exe",
@@ -49,20 +90,10 @@ func (i *Installer) Install(_ context.Context, archivePath string) error {
 		"-NonInteractive",
 		"-ExecutionPolicy", "Bypass",
 		"-File", scriptPath,
-		"-ProcessId", strconv.Itoa(os.Getpid()),
-		"-InstallerPath", installerPath,
-		"-ExecutablePath", executablePath,
-		"-LogPath", logPath,
+		"-ConfigPath", configPath,
 	)
-	command.SysProcAttr = &syscall.SysProcAttr{
-		CreationFlags: 0x00000008 | 0x00000200 | 0x08000000,
-		HideWindow:    true,
-	}
-	if err := command.Start(); err != nil {
-		return fmt.Errorf("start update helper: %w", err)
-	}
-	if err := command.Process.Release(); err != nil {
-		return fmt.Errorf("detach update helper: %w", err)
+	if _, err := launchWindowsUpdateHelper(ctx, command, config, 20*time.Second); err != nil {
+		return err
 	}
 
 	cleanup = false

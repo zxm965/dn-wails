@@ -135,6 +135,11 @@ export function AppUpdateProvider({ children }: { children: ReactNode }) {
       .then((nextInfo) => {
         if (!active) return
         setInfo(nextInfo)
+        if (nextInfo.lastUpdateError) {
+          setError(nextInfo.lastUpdateError)
+          notify({ title: '上次更新未完成', message: nextInfo.lastUpdateError, tone: 'error', duration: 10000 })
+          return
+        }
         if (nextInfo.configured && nextInfo.canInstall && !autoCheckStartedRef.current) {
           autoCheckStartedRef.current = true
           void checkForUpdates(false)
@@ -149,7 +154,7 @@ export function AppUpdateProvider({ children }: { children: ReactNode }) {
     return () => {
       active = false
     }
-  }, [checkForUpdates])
+  }, [checkForUpdates, notify])
 
   useEffect(() => {
     return Events.On('app-update:progress', (event) => {

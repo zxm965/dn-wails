@@ -18,12 +18,13 @@ var (
 )
 
 type Info struct {
-	CurrentVersion string `json:"currentVersion"`
-	Repository     string `json:"repository"`
-	Platform       string `json:"platform"`
-	Arch           string `json:"arch"`
-	Configured     bool   `json:"configured"`
-	CanInstall     bool   `json:"canInstall"`
+	CurrentVersion  string `json:"currentVersion"`
+	Repository      string `json:"repository"`
+	Platform        string `json:"platform"`
+	Arch            string `json:"arch"`
+	Configured      bool   `json:"configured"`
+	CanInstall      bool   `json:"canInstall"`
+	LastUpdateError string `json:"lastUpdateError"`
 }
 
 type SourceConfig struct {
@@ -74,5 +75,13 @@ type ReleaseSource interface {
 
 type Installer interface {
 	Supported() bool
-	Install(ctx context.Context, archivePath string) error
+	Install(ctx context.Context, archivePath string, target InstallTarget) error
+}
+
+// InstallTarget supplies the release identity verified before handing control
+// to an external installer. ExecutableDigest is required for Windows NSIS.
+type InstallTarget struct {
+	Version          string
+	InstallerDigest  string
+	ExecutableDigest string
 }

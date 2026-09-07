@@ -84,6 +84,13 @@ ShowInstDetails show # This will always show the installation details.
 Function .onInit
    !insertmacro wails.checkArchitecture
 
+   # A new updater always supplies the exact target after /D, even when that
+   # directory happens to equal the default and stale registry data differs.
+   ${GetParameters} $R0
+   ClearErrors
+   ${GetOptions} $R0 "/UPDATE" $R1
+   IfErrors 0 installDirectoryReady
+
    # Preserve an explicitly supplied /D path. Without /D, recover the existing
    # install directory so silent updates launched by older clients can replace
    # custom and non-system-drive installations instead of using the C: default.
@@ -111,11 +118,25 @@ FunctionEnd
 Section
     !insertmacro wails.setShellContext
 
+    # An already running application has a working WebView2 runtime. Avoid
+    # creating a bootstrapper process tree during a bounded silent update.
+    ${GetParameters} $R0
+    ClearErrors
+    ${GetOptions} $R0 "/UPDATE" $R1
+    IfErrors installWebviewRuntime skipWebviewRuntime
+installWebviewRuntime:
     !insertmacro wails.webview2runtime
+skipWebviewRuntime:
 
     SetOutPath $INSTDIR
 
+    SetOverwrite on
+    IfSilent 0 writeExecutable
+    SetOverwrite try
+writeExecutable:
+    ClearErrors
     !insertmacro wails.files
+    IfErrors executableWriteFailed
 
     CreateShortcut "$SMPROGRAMS\${INFO_PRODUCTNAME}.lnk" "$INSTDIR\${PRODUCT_EXECUTABLE}"
     CreateShortCut "$DESKTOP\${INFO_PRODUCTNAME}.lnk" "$INSTDIR\${PRODUCT_EXECUTABLE}"
@@ -130,6 +151,13 @@ Section
     !else
         WriteRegStr HKLM "${UNINST_KEY}" "InstallLocation" "$INSTDIR"
     !endif
+    Goto installationComplete
+executableWriteFailed:
+    # The updater can retry transient locks. Never report success or overwrite
+    # uninstall metadata when the application file could not be written.
+    SetErrorLevel 73
+    Quit
+installationComplete:
 SectionEnd
 
 Section "uninstall"

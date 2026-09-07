@@ -9,6 +9,8 @@ import (
 	"os/exec"
 	"path/filepath"
 	"syscall"
+
+	coreupdate "cull-pear/internal/appupdate"
 )
 
 const darwinUpdateScript = `#!/bin/sh
@@ -68,7 +70,7 @@ func (i *Installer) Supported() bool {
 	return i.appName != "" && i.bundleName != ""
 }
 
-func (i *Installer) Install(ctx context.Context, imagePath string) error {
+func (i *Installer) Install(ctx context.Context, imagePath string, _ coreupdate.InstallTarget) error {
 	executablePath, err := os.Executable()
 	if err != nil {
 		return fmt.Errorf("resolve current executable: %w", err)

@@ -35,19 +35,21 @@ type installerStub struct {
 	supported bool
 	installed bool
 	content   string
+	target    InstallTarget
 }
 
 func (s *installerStub) Supported() bool {
 	return s.supported
 }
 
-func (s *installerStub) Install(_ context.Context, archivePath string) error {
+func (s *installerStub) Install(_ context.Context, archivePath string, target InstallTarget) error {
 	data, err := os.ReadFile(archivePath)
 	if err != nil {
 		return err
 	}
 	s.installed = true
 	s.content = string(data)
+	s.target = target
 	return nil
 }
 
@@ -123,7 +125,7 @@ func TestServiceDownloadsMatchingAssetBeforeInstallation(t *testing.T) {
 				DownloadURL: "https://example.com/update.exe",
 				Digest:      testDigest,
 				Size:        7,
-			}},
+			}, {Name: "cull-pear-windows-amd64.exe", Digest: testDigest}},
 		},
 		downloadValue: "payload",
 	}
@@ -143,6 +145,32 @@ func TestServiceDownloadsMatchingAssetBeforeInstallation(t *testing.T) {
 	if !source.downloaded || !installer.installed || installer.content != "payload" {
 		t.Fatalf("expected downloaded payload to be installed: source=%t installer=%t content=%q", source.downloaded, installer.installed, installer.content)
 	}
+	if installer.target.Version != "1.4.0" || installer.target.InstallerDigest != testDigest || installer.target.ExecutableDigest != testDigest {
+		t.Fatalf("installer did not receive verified release identity: %+v", installer.target)
+	}
+}
+
+func TestWindowsInstallRequiresExecutableDigestBeforeDownloading(t *testing.T) {
+	t.Parallel()
+	for _, digest := range []string{"", "sha256:invalid"} {
+		t.Run(digest, func(t *testing.T) {
+			source := &sourceStub{release: Release{Version: "1.1.0", Assets: []Asset{
+				{Name: "cull-pear-windows-amd64-installer.exe", Digest: testDigest},
+				{Name: "cull-pear-windows-amd64.exe", Digest: digest},
+			}}}
+			service := NewService(Config{AppName: "cull-pear", Version: "1.0.0", Repository: "owner/repo", UpdateEndpoint: "https://example.com", Platform: "windows", Arch: "amd64"}, source, &installerStub{supported: true})
+			if err := service.Install(context.Background(), "1.1.0"); !errors.Is(err, ErrDigestUnavailable) {
+				t.Fatalf("unexpected error: %v", err)
+			}
+			if source.downloaded {
+				t.Fatal("invalid executable digest must fail before downloading")
+			}
+			source.release.Assets = source.release.Assets[:1]
+			if err := service.Install(context.Background(), "1.1.0"); !errors.Is(err, ErrAssetUnavailable) {
+				t.Fatalf("unexpected missing binary error: %v", err)
+			}
+		})
+	}
 }
 
 func TestServiceReportsDownloadAndInstallProgress(t *testing.T) {
@@ -156,7 +184,7 @@ func TestServiceReportsDownloadAndInstallProgress(t *testing.T) {
 				DownloadURL: "https://example.com/update.exe",
 				Digest:      testDigest,
 				Size:        7,
-			}},
+			}, {Name: "cull-pear-windows-amd64.exe", Digest: testDigest}},
 		},
 		downloadValue: "payload",
 	}

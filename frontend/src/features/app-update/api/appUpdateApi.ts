@@ -11,6 +11,7 @@ export interface ApplicationUpdateInfo {
   arch: string
   configured: boolean
   canInstall: boolean
+  lastUpdateError: string
 }
 
 export interface ApplicationUpdateStatus {
@@ -40,6 +41,7 @@ export async function getApplicationUpdateInfo(): Promise<ApplicationUpdateInfo>
     arch: value.arch,
     configured: value.configured,
     canInstall: value.canInstall,
+    lastUpdateError: value.lastUpdateError,
   }
 }
 

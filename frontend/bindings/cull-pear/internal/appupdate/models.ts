@@ -12,6 +12,7 @@ export class Info {
     "arch": string;
     "configured": boolean;
     "canInstall": boolean;
+    "lastUpdateError": string;
 
     /** Creates a new Info instance. */
     constructor($$source: Partial<Info> = {}) {
@@ -32,6 +33,9 @@ export class Info {
         }
         if (!("canInstall" in $$source)) {
             this["canInstall"] = false;
+        }
+        if (!("lastUpdateError" in $$source)) {
+            this["lastUpdateError"] = "";
         }
 
         Object.assign(this, $$source);

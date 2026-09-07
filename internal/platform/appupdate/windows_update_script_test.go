@@ -7,27 +7,6 @@ import (
 	"testing"
 )
 
-func TestWindowsUpdateScriptProtectsInstallAndRestartHandoff(t *testing.T) {
-	t.Parallel()
-
-	for _, fragment := range []string{
-		"timed out waiting for process",
-		"Start-Sleep -Milliseconds 1000",
-		"install target resolved to $applicationDirectory",
-		"Get-FileHash -LiteralPath $ExecutablePath -Algorithm SHA256",
-		"for ($attempt = 1; $attempt -le 20; $attempt++)",
-		`-ArgumentList @('/S', "/D=$applicationDirectory")`,
-		"installer did not replace the installed executable",
-		"for ($attempt = 1; $attempt -le 3; $attempt++)",
-		"Start-Process -FilePath $ExecutablePath -WorkingDirectory $applicationDirectory -PassThru",
-		"restarted existing application after update failure",
-	} {
-		if !strings.Contains(windowsUpdateScript, fragment) {
-			t.Fatalf("windows update script is missing %q", fragment)
-		}
-	}
-}
-
 func TestWindowsNSISInstallerRecoversPreviousInstallDirectory(t *testing.T) {
 	t.Parallel()
 

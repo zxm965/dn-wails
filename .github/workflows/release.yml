@@ -131,6 +131,16 @@ jobs:
           $env:PATH = "$nsisBin;$env:PATH"
           Get-Command makensis -ErrorAction Stop | Select-Object -ExpandProperty Source
 
+      - name: Verify Windows update handoff and NSIS installation
+        if: runner.os == 'Windows'
+        shell: pwsh
+        env:
+          CULL_PEAR_TEST_POWERSHELL: powershell.exe
+          CULL_PEAR_REQUIRE_NSIS_TEST: '1'
+        run: |
+          go test ./internal/appupdate ./internal/platform/appupdate -count=1 -timeout 5m -parallel 4
+          if ($LASTEXITCODE -ne 0) { throw 'Windows updater integration tests failed; release is blocked.' }
+
       - name: Configure release version
         shell: bash
         run: |

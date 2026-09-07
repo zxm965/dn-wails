@@ -45,13 +45,18 @@ func (s *Service) Info() Info {
 	_, versionErr := parseVersion(s.config.Version)
 	configured := s.config.Repository != "" && s.config.UpdateEndpoint != "" && versionErr == nil && s.source != nil
 	canInstall := configured && s.assetName != "" && s.installer != nil && s.installer.Supported()
+	lastUpdateError := ""
+	if reporter, ok := s.installer.(interface{ LastUpdateError() string }); ok {
+		lastUpdateError = reporter.LastUpdateError()
+	}
 	return Info{
-		CurrentVersion: s.config.Version,
-		Repository:     s.config.Repository,
-		Platform:       s.config.Platform,
-		Arch:           s.config.Arch,
-		Configured:     configured,
-		CanInstall:     canInstall,
+		CurrentVersion:  s.config.Version,
+		Repository:      s.config.Repository,
+		Platform:        s.config.Platform,
+		Arch:            s.config.Arch,
+		Configured:      configured,
+		CanInstall:      canInstall,
+		LastUpdateError: lastUpdateError,
 	}
 }
 
@@ -134,6 +139,18 @@ func (s *Service) InstallWithProgress(ctx context.Context, expectedVersion strin
 	if !hasSHA256Digest(asset.Digest) {
 		return fmt.Errorf("%w: %s", ErrDigestUnavailable, asset.Name)
 	}
+	target := InstallTarget{Version: latestVersion, InstallerDigest: asset.Digest}
+	if s.config.Platform == "windows" {
+		binaryName := s.config.AppName + "-windows-" + s.config.Arch + ".exe"
+		binary, found := findAsset(release.Assets, binaryName)
+		if !found {
+			return fmt.Errorf("%w: %s", ErrAssetUnavailable, binaryName)
+		}
+		if !hasSHA256Digest(binary.Digest) {
+			return fmt.Errorf("%w: %s", ErrDigestUnavailable, binaryName)
+		}
+		target.ExecutableDigest = binary.Digest
+	}
 
 	tempDirectory, err := os.MkdirTemp("", s.config.AppName+"-update-*")
 	if err != nil {
@@ -169,7 +186,7 @@ func (s *Service) InstallWithProgress(ctx context.Context, expectedVersion strin
 		return err
 	}
 	emitProgress(Progress{Phase: "installing", DownloadedBytes: asset.Size, TotalBytes: asset.Size, Percent: 100})
-	if err := s.installer.Install(ctx, archivePath); err != nil {
+	if err := s.installer.Install(ctx, archivePath, target); err != nil {
 		return fmt.Errorf("prepare application update: %w", err)
 	}
 	return nil
