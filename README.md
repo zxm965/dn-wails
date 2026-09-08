@@ -1,6 +1,6 @@
 # Cull Pear
 
-基于 Wails v3、React 和 TypeScript 的桌面应用。当前锁定 `github.com/wailsapp/wails/v3 v3.0.0-beta.16`，前端使用 `@wailsio/runtime v3.0.0-beta.16`，以 v3 Service、typed events、Taskfile 构建系统和原生系统托盘为基础，不保留 Wails v2 兼容层。
+基于 Wails v3、React 和 TypeScript 的桌面应用。当前锁定 `github.com/wailsapp/wails/v3 v3.0.0-beta.17`，前端使用 `@wailsio/runtime v3.0.0-beta.17`，以 v3 Service、typed events、Taskfile 构建系统和原生系统托盘为基础，不保留 Wails v2 兼容层。
 
 界面采用顶部自定义标题栏、左侧菜单和右侧视图区域；仅系统设置入口保留分组标题。关闭行为设为隐藏时，主窗口会保留在后台，并可通过系统托盘的“显示主窗口”恢复；托盘菜单也提供“退出”。
 
@@ -14,6 +14,7 @@
 │   ├── darwin/                    # macOS 打包资源与任务
 │   ├── linux/                     # Linux 打包资源与任务
 │   └── windows/                   # Windows NSIS 资源与任务
+├── database/migrations/           # PostgreSQL 结构迁移脚本
 ├── main.go                        # 组合根：App、Window、Service 与 SystemTray
 ├── internal/
 │   ├── application/               # 暴露给前端的 Wails v3 Service 门面
@@ -26,6 +27,7 @@
 │   ├── nativekit/                 # 原生能力规则与类型
 │   ├── notification/              # 系统通知规则与类型
 │   ├── quicknotes/                # 云端快速笔记规则与 PostgreSQL 持久化
+│   ├── tasks/                     # 云端任务、重复计划与 PostgreSQL 持久化
 │   ├── settings/                  # 类型化应用设置
 │   ├── singleinstance/            # 单实例启动数据处理
 │   ├── storage/                   # 用户配置文件存储

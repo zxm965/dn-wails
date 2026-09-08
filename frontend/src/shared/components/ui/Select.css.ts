@@ -95,6 +95,8 @@ const uiSelectPopup = style([
   {
     width: '100%',
     maxHeight: 'min(var(--available-height), 320px)',
+    display: 'flex',
+    flexDirection: 'column',
     overflow: 'hidden',
     padding: '5px',
     color: 'var(--text-primary)',
@@ -122,6 +124,8 @@ const uiSelectPopup = style([
 ])
 
 const uiSelectList = style({
+  minHeight: '0',
+  flex: '1 1 auto',
   maxHeight: 'min(calc(var(--available-height) - 12px), 300px)',
   overflowY: 'auto',
   overscrollBehavior: 'contain',
@@ -177,14 +181,6 @@ const uiSelectItemIndicator = style({
   color: 'var(--accent)',
 })
 
-const uiSelectScrollArrow = style({
-  height: '22px',
-  display: 'grid',
-  placeItems: 'center',
-  color: 'var(--text-tertiary)',
-  background: 'var(--surface-elevated)',
-})
-
 export const styles = {
   'ui-select-trigger': uiSelectTrigger,
   'ui-select-value': uiSelectValue,
@@ -195,7 +191,6 @@ export const styles = {
   'ui-select-item': uiSelectItem,
   'ui-select-item-text': uiSelectItemText,
   'ui-select-item-indicator': uiSelectItemIndicator,
-  'ui-select-scroll-arrow': uiSelectScrollArrow,
 } as const
 
 export { sizes }
@@ -209,9 +204,4 @@ globalStyle(`${uiSelectItemIndicator} svg`, {
   width: '13px',
   height: '13px',
   strokeWidth: '2.2',
-})
-
-globalStyle(`${uiSelectScrollArrow} svg`, {
-  width: '14px',
-  height: '14px',
 })

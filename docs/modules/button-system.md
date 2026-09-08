@@ -10,7 +10,7 @@
 - `frontend/src/shared/components/ui/Button.css.ts`：按钮高度令牌、局部样式、尺寸选择器和波纹关键帧。
 - `frontend/src/shared/components/ui/index.ts`：公共导出入口。
 - `frontend/src/features/settings/`：持久化并配置普通操作按钮的默认尺寸。
-- `frontend/src/shared/theme/ThemeProvider.tsx`：将默认尺寸同步到 `html[data-button-size]`。
+- `frontend/src/features/settings/context/SettingsProvider.tsx`：将默认尺寸同步到 `html[data-button-size]`。
 - `ControlSize`：供 Select、Input 和 PasswordInput 复用同一组 `sm/md/lg` 尺寸值。
 
 ## 尺寸契约

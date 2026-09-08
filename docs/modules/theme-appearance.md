@@ -7,7 +7,7 @@
 ## 目录与职责
 
 - `internal/settings/model.go`：外观设置持久化模型和允许值。
-- `frontend/src/shared/theme/ThemeProvider.tsx`：计算有效主题并同步 DOM。
+- `frontend/src/features/settings/context/SettingsProvider.tsx`：计算有效主题并同步 DOM，外观状态不再使用独立 Provider。
 - `frontend/src/app/styles/global.css.ts`：通过 vanilla-extract 全局 API 维护字体、重置、主题变量和强调色变量。
 - `frontend/src/features/settings/components/SettingsPanel.tsx`：外观设置界面。
 
@@ -29,7 +29,7 @@ interface AppearanceSettings {
 
 ```text
 SettingsProvider 读取设置
-  → ThemeProvider 计算系统/显式主题
+  → 计算系统/显式主题
   → 设置 html[data-theme/data-accent/data-density/data-button-size]
   → 更新 --font-scale
   → Button 读取默认高度变量

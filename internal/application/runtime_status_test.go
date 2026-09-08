@@ -34,6 +34,13 @@ type runtimeQuickNotesStub struct {
 
 func (s runtimeQuickNotesStub) Health() error { return s.err }
 
+type runtimeTasksStub struct {
+	TasksService
+	err error
+}
+
+func (s runtimeTasksStub) Health() error { return s.err }
+
 type runtimeLifecycleStub struct {
 	LifecycleService
 	status lifecycle.Status
@@ -73,6 +80,7 @@ func TestGetRuntimeStatusReportsSafeServiceHealth(t *testing.T) {
 		QuickNotes: runtimeQuickNotesStub{
 			err: nil,
 		},
+		Tasks: runtimeTasksStub{},
 		Lifecycle: runtimeLifecycleStub{status: lifecycle.Status{
 			StartedAt:           startedAt,
 			Ready:               true,
@@ -97,8 +105,8 @@ func TestGetRuntimeStatusReportsSafeServiceHealth(t *testing.T) {
 	if !status.Ready || status.SecondInstanceCount != 2 || status.UptimeSeconds < 290 {
 		t.Fatalf("unexpected lifecycle status: %+v", status)
 	}
-	if len(status.Services) != 6 {
-		t.Fatalf("expected six services, got %+v", status.Services)
+	if len(status.Services) != 7 {
+		t.Fatalf("expected seven services, got %+v", status.Services)
 	}
 	if status.Services[0].Status != RuntimeServiceUnavailable {
 		t.Fatalf("expected account service to be unavailable: %+v", status.Services[0])
@@ -106,8 +114,11 @@ func TestGetRuntimeStatusReportsSafeServiceHealth(t *testing.T) {
 	if status.Services[1].Status != RuntimeServiceReady {
 		t.Fatalf("expected quick notes service to be ready: %+v", status.Services[1])
 	}
-	if status.Services[2].Status != RuntimeServiceError {
-		t.Fatalf("expected DN service error: %+v", status.Services[2])
+	if status.Services[2].Status != RuntimeServiceReady {
+		t.Fatalf("expected tasks service to be ready: %+v", status.Services[2])
+	}
+	if status.Services[3].Status != RuntimeServiceError {
+		t.Fatalf("expected DN service error: %+v", status.Services[3])
 	}
 	for _, service := range status.Services {
 		if strings.Contains(service.Detail, "secret") || strings.Contains(service.Detail, "postgres://") {
@@ -126,6 +137,7 @@ func TestGetRuntimeStatusIsHealthyWhenRequiredServicesAreReady(t *testing.T) {
 		Account:            runtimeAccountStub{},
 		Dn:                 runtimeDnStub{},
 		QuickNotes:         runtimeQuickNotesStub{},
+		Tasks:              runtimeTasksStub{},
 		Lifecycle:          runtimeLifecycleStub{status: lifecycle.Status{StartedAt: time.Now(), Ready: true}},
 		Diagnostics:        runtimeDiagnosticsStub{},
 		SystemNotification: runtimeNotificationStub{status: notification.Status{Available: true, Authorized: true}},

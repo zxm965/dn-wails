@@ -8,6 +8,7 @@ import (
 	"cull-pear/internal/account"
 	"cull-pear/internal/dn"
 	"cull-pear/internal/quicknotes"
+	"cull-pear/internal/tasks"
 )
 
 const (
@@ -69,6 +70,13 @@ func (a *App) GetRuntimeStatus() RuntimeStatus {
 			readyDetail: "云端笔记连接与数据表正常",
 			required:    true,
 			run:         a.quickNotesService.Health,
+		},
+		{
+			key:         "tasks",
+			label:       "任务清单",
+			readyDetail: "云端任务连接与数据表正常",
+			required:    true,
+			run:         a.tasksService.Health,
 		},
 		{
 			key:         "dn-system",
@@ -144,7 +152,10 @@ func runtimeHealthStatus(check runtimeHealthCheck, err error) RuntimeServiceStat
 		status.Detail = check.readyDetail
 		return status
 	}
-	if errors.Is(err, account.ErrUnavailable) || errors.Is(err, dn.ErrUnavailable) || errors.Is(err, quicknotes.ErrUnavailable) {
+	if errors.Is(err, account.ErrUnavailable) ||
+		errors.Is(err, dn.ErrUnavailable) ||
+		errors.Is(err, quicknotes.ErrUnavailable) ||
+		errors.Is(err, tasks.ErrUnavailable) {
 		status.Status = RuntimeServiceUnavailable
 		status.Detail = "当前构建未配置服务，或必要数据表尚未就绪"
 		return status

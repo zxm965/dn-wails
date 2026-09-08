@@ -21,7 +21,7 @@
 ## 依赖与组合
 
 ```text
-ThemeProvider
+SettingsProvider
   → CSS semantic tokens
   → shared/components/ui
       → Button
@@ -30,6 +30,8 @@ ThemeProvider
   → existing features + dn-system
 ```
 
+全局 Toast、确认框和 Overlay 由 `InteractionProvider` 统一挂载；业务模块继续分别通过 `useFeedback` 和 `useOverlay` 获取最小语义 API。
+
 Base UI 的弹层和组合组件使用 `render={<Button />}`，避免业务模块直接创建原生按钮。`PasswordInput` 的显隐操作同样使用固定结构的 `Button`，按钮固定在输入框内部右侧。`#root` 使用 `isolation: isolate`，保证 Portal 弹层位于应用内容之上。
 
 每个组件从同名 `.css.ts` 导入局部类。基础规则使用 `style`；跨局部类的后代/相邻关系和 Base UI 的 `data-*` 状态通过引用局部类的 `globalStyle` 表达，不允许重新引入全局语义类或集中式 `ui.css.ts`。
@@ -37,7 +39,7 @@ Base UI 的弹层和组合组件使用 `render={<Button />}`，避免业务模�
 ## 主题与响应式
 
 - 所有组件读取 `--surface-*`、`--text-*`、`--border-*`、`--accent`、`--danger-*` 和全局间距变量。
-- Select 触发器、Input 和 PasswordInput 使用与 Button 一致的默认高度，也支持显式 `sm/md/lg` 尺寸；Textarea 保持多行输入的最小高度。选项弹层通过 Portal 避免被卡片裁切，并在窄窗口下限制为可视区域宽高。
+- Select 触发器、Input 和 PasswordInput 使用与 Button 一致的默认高度，也支持显式 `sm/md/lg` 尺寸；Textarea 保持多行输入的最小高度。选项弹层通过 Portal 避免被卡片裁切，并在窄窗口下限制为可视区域宽高；长列表直接通过滚轮、触控板或键盘滚动，不渲染额外的上下滚动按钮。
 - RadioGroup、Slider、Checkbox 和 Switch 统一使用 Base UI 的受控状态与隐藏表单输入，业务模块不直接渲染原生 radio、range 或 checkbox。
 - Dialog 在窄窗口下贴近底部并让操作按钮纵向全宽；内容区域独立滚动。
 - PageHeader 统一主要视图的紧凑渐变背景、eyebrow、标题、说明和操作区，并在 Container Query 下自动切换为纵向布局。

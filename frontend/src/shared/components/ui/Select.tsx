@@ -1,5 +1,5 @@
 import { Select as SelectPrimitive } from '@base-ui/react/select'
-import { Check, ChevronDown, ChevronUp } from 'lucide-react'
+import { Check, ChevronDown } from 'lucide-react'
 
 import { createScopedClassNames } from '@/shared/lib/classNames'
 
@@ -74,9 +74,6 @@ export function Select<Value extends SelectValue>({
           alignItemWithTrigger={false}
         >
           <SelectPrimitive.Popup className={cx('ui-select-popup')}>
-            <SelectPrimitive.ScrollUpArrow className={cx('ui-select-scroll-arrow')}>
-              <ChevronUp aria-hidden='true' />
-            </SelectPrimitive.ScrollUpArrow>
             <SelectPrimitive.List className={cx('ui-select-list')}>
               {options.map((option) => (
                 <SelectPrimitive.Item
@@ -95,9 +92,6 @@ export function Select<Value extends SelectValue>({
                 </SelectPrimitive.Item>
               ))}
             </SelectPrimitive.List>
-            <SelectPrimitive.ScrollDownArrow className={cx('ui-select-scroll-arrow')}>
-              <ChevronDown aria-hidden='true' />
-            </SelectPrimitive.ScrollDownArrow>
           </SelectPrimitive.Popup>
         </SelectPrimitive.Positioner>
       </SelectPrimitive.Portal>

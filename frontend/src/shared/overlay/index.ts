@@ -1,2 +1,2 @@
-export { OverlayProvider, useOverlay } from './OverlayProvider'
-export type { OverlayController, OverlayOptions, OverlaySize } from './OverlayProvider'
+export { useOverlay } from '@/shared/interaction'
+export type { OverlayController, OverlayOptions, OverlaySize } from '@/shared/interaction'

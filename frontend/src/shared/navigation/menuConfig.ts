@@ -1,8 +1,10 @@
 import {
   CalendarCheck,
+  CalendarDays,
   Skull,
   Mails,
   NotebookPen,
+  ListChecks,
   Settings,
   Sparkles,
   UsersRound,
@@ -111,6 +113,16 @@ export const MENU_GROUPS = defineMenuGroups([
     key: 'main-navigation',
     entries: [
       {
+        key: 'calendar',
+        view: 'calendar',
+        label: '日历中心',
+        icon: CalendarDays,
+        defaultVisible: true,
+        preference: {
+          description: '显示公历、农历，以及中国法定节假日和调休补班安排。',
+        },
+      },
+      {
         key: 'quick-notes',
         view: 'quick-notes',
         label: '快速笔记',
@@ -118,6 +130,16 @@ export const MENU_GROUPS = defineMenuGroups([
         defaultVisible: true,
         preference: {
           description: '显示云端快速笔记、搜索、置顶和自动保存入口。',
+        },
+      },
+      {
+        key: 'tasks',
+        view: 'tasks',
+        label: '任务清单',
+        icon: ListChecks,
+        defaultVisible: true,
+        preference: {
+          description: '显示任务清单、星标、重复计划、子任务和完成记录。',
         },
       },
       {

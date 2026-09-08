@@ -20,6 +20,7 @@ import (
 	"cull-pear/internal/quicknotes"
 	"cull-pear/internal/settings"
 	"cull-pear/internal/singleinstance"
+	"cull-pear/internal/tasks"
 	"cull-pear/internal/windowmanager"
 
 	wailsapplication "github.com/wailsapp/wails/v3/pkg/application"
@@ -163,6 +164,22 @@ type QuickNotesService interface {
 	Delete(id int64) error
 }
 
+type TasksService interface {
+	Initialize() error
+	Close() error
+	Health() error
+	Workspace() (tasks.Workspace, error)
+	SaveList(input tasks.ListInput) (tasks.List, error)
+	DeleteList(id int64) error
+	ReorderLists(input tasks.ReorderListsInput) error
+	SaveTask(input tasks.TaskInput) (tasks.Task, error)
+	SetCompleted(id int64, completed bool) (tasks.Workspace, error)
+	DeleteTask(id int64, deleteSeries bool) error
+	DeleteCompleted(listID int64) (int64, error)
+	ReorderTasks(input tasks.ReorderTasksInput) error
+	ClaimDueReminders(limit int) ([]tasks.Task, error)
+}
+
 type DnProcessService interface {
 	List() ([]dnprocess.Info, error)
 	Terminate(target dnprocess.Target) (dnprocess.Info, error)
@@ -190,6 +207,7 @@ type Dependencies struct {
 	Account            AccountService
 	Dn                 DnService
 	QuickNotes         QuickNotesService
+	Tasks              TasksService
 	DnProcess          DnProcessService
 }
 
@@ -209,6 +227,7 @@ type App struct {
 	accountService            AccountService
 	dnService                 DnService
 	quickNotesService         QuickNotesService
+	tasksService              TasksService
 	dnProcessService          DnProcessService
 
 	shortcutMu                   sync.Mutex
@@ -237,6 +256,7 @@ func New(dependencies Dependencies) *App {
 		accountService:            dependencies.Account,
 		dnService:                 dependencies.Dn,
 		quickNotesService:         dependencies.QuickNotes,
+		tasksService:              dependencies.Tasks,
 		dnProcessService:          dependencies.DnProcess,
 	}
 }
@@ -263,6 +283,9 @@ func (a *App) ServiceStartup(ctx context.Context, _ wailsapplication.ServiceOpti
 	}
 	if err := a.quickNotesService.Initialize(); err != nil {
 		log.Printf("initialize quick notes: %v", err)
+	}
+	if err := a.tasksService.Initialize(); err != nil {
+		log.Printf("initialize tasks: %v", err)
 	}
 	a.lifecycleService.Start(time.Now())
 	return nil
@@ -360,6 +383,9 @@ func (a *App) ServiceShutdown() error {
 		log.Printf("unregister Dragon Nest shortcut: %v", err)
 	}
 	a.lifecycleService.Stop()
+	if err := a.tasksService.Close(); err != nil {
+		log.Printf("close tasks database: %v", err)
+	}
 	if err := a.quickNotesService.Close(); err != nil {
 		log.Printf("close quick notes database: %v", err)
 	}

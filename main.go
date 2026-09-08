@@ -31,6 +31,7 @@ import (
 	"cull-pear/internal/settings"
 	"cull-pear/internal/singleinstance"
 	"cull-pear/internal/storage"
+	"cull-pear/internal/tasks"
 	"cull-pear/internal/windowmanager"
 
 	"github.com/wailsapp/wails/v3/pkg/application"
@@ -73,6 +74,7 @@ func main() {
 	accountService := appservice.AccountService(account.NewUnavailableService())
 	dnService := appservice.DnService(dn.NewUnavailableService())
 	quickNotesService := appservice.QuickNotesService(quicknotes.NewUnavailableService())
+	tasksService := appservice.TasksService(tasks.NewUnavailableService())
 	dnProcessService := appservice.DnProcessService(dnprocess.NewUnavailableService())
 	dnProcessService = platformdnprocess.New()
 	databaseURL, databaseConfigErr := dn.ResolveDatabaseURL(runtimeConfigData)
@@ -93,6 +95,12 @@ func main() {
 				log.Printf("quick notes database service is unavailable: invalid DATABASE_URL")
 			} else {
 				quickNotesService = postgresQuickNotes
+			}
+			postgresTasks, tasksErr := tasks.NewPostgresService(databaseURL, postgresAccount)
+			if tasksErr != nil {
+				log.Printf("tasks database service is unavailable: invalid DATABASE_URL")
+			} else {
+				tasksService = postgresTasks
 			}
 		}
 	} else {
@@ -210,6 +218,7 @@ func main() {
 		Account:            accountService,
 		Dn:                 dnService,
 		QuickNotes:         quickNotesService,
+		Tasks:              tasksService,
 		DnProcess:          dnProcessService,
 	})
 	wailsApp.RegisterService(application.NewService(facade))

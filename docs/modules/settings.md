@@ -10,9 +10,9 @@
 - `internal/settings/service.go`：读取、校验、保存、重置和窗口边界更新。
 - `internal/application/settings.go`：Wails 设置绑定门面。
 - `frontend/src/features/settings/api/`：生成类型转换和 API 封装。
-- `frontend/src/features/settings/context/`：全局设置状态。
+- `frontend/src/features/settings/context/`：全局设置状态，并将外观设置同步到 DOM。
 - `frontend/src/features/settings/components/SettingsPanel.tsx`：设置界面。
-- `frontend/src/shared/navigation/menuConfig.ts`：菜单唯一 key、结构、标题、图标、默认显隐和偏好说明的单一配置源；站内消息在这里作为独立菜单项配置。
+- `frontend/src/shared/navigation/menuConfig.ts`：菜单唯一 key、结构、标题、图标、默认显隐和偏好说明的单一配置源；日历与站内消息在这里作为独立菜单项配置。
 - `frontend/src/shared/components/app-sidebar/`：通过“系统设置 → 偏好设置”进入设置页。
 
 ## 数据结构
@@ -49,7 +49,7 @@ AppSettings
 App ServiceStartup → Settings.Initialize → Storage.Load
 React SettingsProvider → GetSettings
 用户修改任一控件 → 乐观更新全局状态 → 串行 UpdateSettings → 校验 → Storage.Save
-  ├── ThemeProvider 应用外观
+  ├── SettingsProvider 应用外观
   ├── Button 应用默认按钮尺寸
   ├── Notification 使用新策略
   ├── AppSidebar 按菜单唯一 key 过滤入口
@@ -73,7 +73,7 @@ React SettingsProvider → GetSettings
 
 React 组件通过 `useSettings` 读取和更新设置。所有配置项取消独立保存按钮，菜单、主题、强调色、密度、按钮尺寸、文字缩放、通知和窗口行为在控件变化时立即更新并自动持久化。主题和强调色使用共享 `RadioGroup`，默认按钮尺寸使用三枚带 `sm/md/lg` 尺寸的共享 `Button`，文字缩放使用共享 `Slider`，布尔设置使用共享 `Switch`，下拉选项使用共享 `Select`；按钮尺寸选择器固定容器高度，切换时不引发布局跳动。设置页不直接渲染原生交互控件。Go 模块通过 `SettingsService` 获取当前快照，不直接读写 JSON 文件。
 
-左侧菜单使用 `menuConfig.ts` 作为渲染、偏好选项和显隐读取的共同配置。`menuVisibility` 只保存用户按唯一 key 做出的覆盖值；未保存的 key 使用配置中的 `defaultVisible`。当前 `dn-system` 和 `devtools` 默认隐藏，独立的 `site-messages` 默认显示，`settings` 始终显示且不提供关闭开关。DNTools 的 Windows 全局快捷键仍由 `AppSettings.dragonNest` 持久化，但配置 UI 已迁移到 `DNTools · 进程` 页面；默认关闭、默认 `Ctrl+F4`，快捷键只接受 `Ctrl+F1` 到 `Ctrl+F11` 的完整组合。系统注册在 `WindowRuntimeReady` 后执行，窗口失焦、最小化或隐藏到托盘后仍由 Windows 全局快捷键响应；用户成功手动结束一次候选进程后，目标路径会被保存供快捷键使用。DevTools 下的“桌面实验室”继续使用默认关闭的兼容 key `devtools-desktop`：父开关关闭时子开关以关闭状态禁用，父开关开启后可单独切换。新增可配置菜单或子偏好时补充同一配置项即可进入偏好设置列表。
+左侧菜单使用 `menuConfig.ts` 作为渲染、偏好选项和显隐读取的共同配置。`menuVisibility` 只保存用户按唯一 key 做出的覆盖值；未保存的 key 使用配置中的 `defaultVisible`。当前 `dn-system` 和 `devtools` 默认隐藏，独立的 `quick-notes`、`calendar`、`tasks` 和 `site-messages` 默认显示，`settings` 始终显示且不提供关闭开关。隐藏当前入口后，React Router 导航守卫会替换为第一个可见路由。DNTools 的 Windows 全局快捷键仍由 `AppSettings.dragonNest` 持久化，但配置 UI 已迁移到 `DNTools · 进程` 页面；默认关闭、默认 `Ctrl+F4`，快捷键只接受 `Ctrl+F1` 到 `Ctrl+F11` 的完整组合。系统注册在 `WindowRuntimeReady` 后执行，窗口失焦、最小化或隐藏到托盘后仍由 Windows 全局快捷键响应；用户成功手动结束一次候选进程后，目标路径会被保存供快捷键使用。DevTools 下的“桌面实验室”继续使用默认关闭的兼容 key `devtools-desktop`：父开关关闭时子开关以关闭状态禁用，父开关开启后可单独切换。新增可配置菜单或子偏好时补充同一配置项即可进入偏好设置列表。
 
 应用更新检查位于设置页最底部的“应用更新”区块；DevTools 的应用概览只展示当前版本，不再提供手动更新入口。
 

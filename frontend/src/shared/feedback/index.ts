@@ -1,2 +1,2 @@
-export { FeedbackProvider, useFeedback } from './FeedbackProvider'
-export type { ConfirmOptions, FeedbackTone, ToastOptions } from './FeedbackProvider'
+export { useFeedback } from '@/shared/interaction'
+export type { ConfirmOptions, FeedbackTone, ToastOptions } from '@/shared/interaction'

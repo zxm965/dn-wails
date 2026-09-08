@@ -3,12 +3,7 @@ import { createRoot } from 'react-dom/client'
 import '@wailsio/runtime'
 
 import App from '@/app/App'
-import { AccountProvider } from '@/features/account'
-import { AppUpdateProvider } from '@/features/app-update'
-import { SettingsProvider } from '@/features/settings'
-import { FeedbackProvider } from '@/shared/feedback'
-import { OverlayProvider } from '@/shared/overlay'
-import { ThemeProvider } from '@/shared/theme'
+import { AppProviders } from '@/app/AppProviders'
 
 import '@/app/styles/global.css'
 
@@ -18,18 +13,8 @@ const root = createRoot(container!)
 
 root.render(
   <React.StrictMode>
-    <SettingsProvider>
-      <ThemeProvider>
-        <OverlayProvider>
-          <FeedbackProvider>
-            <AppUpdateProvider>
-              <AccountProvider>
-                <App />
-              </AccountProvider>
-            </AppUpdateProvider>
-          </FeedbackProvider>
-        </OverlayProvider>
-      </ThemeProvider>
-    </SettingsProvider>
+    <AppProviders>
+      <App />
+    </AppProviders>
   </React.StrictMode>,
 )

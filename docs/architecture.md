@@ -17,7 +17,8 @@ main
 │   ├── ApplicationUpdateService 接口
 │   ├── AccountService 接口
 │   ├── DnService 接口
-│   └── QuickNotesService 接口
+│   ├── QuickNotesService 接口
+│   └── TasksService 接口
 ├── account（全局账号、持久会话与 PostgreSQL 身份服务）
 ├── appupdate（版本比较、更新检查与安装用例）
 ├── buildinfo（构建期版本与发布元数据）
@@ -28,6 +29,7 @@ main
 ├── nativekit（原生能力规则）
 ├── notification（消息通知规则）
 ├── quicknotes（云端快速笔记规则与 PostgreSQL 持久化）
+├── tasks（云端任务、重复计划与 PostgreSQL 持久化）
 ├── settings（应用设置）
 ├── singleinstance（第二实例数据规则）
 ├── storage（本地存储）
@@ -53,7 +55,12 @@ main
 ```text
 app
 ├── appConfig（只读全局展示配置）
+├── AppProviders（顶层 Provider 组合与依赖顺序）
 ├── features
+│   ├── calendar
+│   │   ├── components
+│   │   ├── data
+│   │   └── model
 │   ├── app-update
 │   │   ├── api
 │   │   └── context
@@ -76,6 +83,9 @@ app
 │   ├── quick-notes
 │   │   ├── api
 │   │   └── components
+│   ├── tasks
+│   │   ├── api
+│   │   └── components
 │   ├── system-notification
 │   │   ├── api
 │   │   ├── components
@@ -90,22 +100,23 @@ app
     │   └── ui
     ├── diagnostics
     ├── feedback
+    ├── interaction（统一的反馈与 Overlay Provider）
     ├── lib
     ├── native-kit
     ├── navigation（菜单配置、路由元数据与认证要求）
     ├── overlay
-    ├── theme
     └── window
 ```
 
 约定：
 
 - `app` 负责应用壳、全局样式与顶层模块装配。
+- `AppProviders` 集中组合顶层依赖；外观同步归入 `SettingsProvider`，Toast、确认框和 Overlay 归入单个 `InteractionProvider`。账号、应用更新和路由因职责与依赖不同继续保持独立。
 - Vite 通过 `@vanilla-extract/vite-plugin` 在构建期提取静态 CSS；源码不保留普通 `.css` 文件。
 - 全局字体、重置和主题令牌集中在 `app/styles/*.css.ts`；组件和页面使用就近共置的同名 `.css.ts`。
 - 组件局部规则优先使用 `style`，仅全局根节点、第三方状态和必要的复杂关系使用 `globalStyle`；共享 UI 不使用集中式 `ui.css.ts`。
 - 桌面应用壳采用“顶部标题栏 + 左侧菜单 + 右侧视图区域”的固定布局，只有系统设置入口显示分组标题。
-- 左侧菜单由 `shared/navigation/menuConfig.ts` 统一维护唯一 key、可选分组、页面、图标和默认显隐；`routeConfig.ts` 统一维护页面标题、导航类型和 `requiresAuth`。侧栏渲染、偏好设置、启动页选择和应用壳路由守卫共同读取共享导航配置。快速笔记和站内消息默认显示，DNTools与 DevTools 默认隐藏，偏好设置始终可见；DevTools 的桌面实验室使用默认关闭且受父开关约束的子偏好。
+- 前端使用 React Router 8 的 `HashRouter` 管理页面地址，避免桌面 WebView 刷新时依赖服务端路径回退。左侧菜单由 `shared/navigation/menuConfig.ts` 统一维护唯一 key、可选分组、页面、图标和默认显隐；`routeConfig.ts` 统一维护路径、页面标题、导航类型和 `requiresAuth`。侧栏渲染、偏好设置、启动页选择和应用壳路由守卫共同读取共享导航配置。日历中心位于首位并作为默认入口；日历中心、快速笔记、任务清单和站内消息默认显示，DNTools 与 DevTools 默认隐藏，偏好设置始终可见；DevTools 的桌面实验室使用默认关闭且受父开关约束的子偏好。
 - `AccountProvider` 在应用根部恢复本地会话；需要登录的页面由 `App.tsx` 根据路由元数据统一保护，业务功能不自行实现登录状态管理。
 - 主要视图统一使用共享 `PageHeader`，保持紧凑渐变页头、标题基线、说明文字和操作区响应式行为一致。
 - 应用概览、常驻运行状态和所有人工验证入口统一放在“系统设置 → DevTools”；应用概览展示版本、更新通道和界面偏好，运行状态汇总生命周期、服务健康和日志诊断，手动检查更新位于偏好设置最底部，其余测试操作不进入业务页面。
@@ -136,6 +147,8 @@ app
 - [桌面应用壳](modules/desktop-shell.md)
 - [全局账号](modules/account.md)
 - [云端快速笔记](modules/quick-notes.md)
+- [日历](modules/calendar.md)
+- [云端任务](modules/tasks.md)
 - [DNTools](modules/dn-system.md)
 - [站内消息](modules/site-messages.md)
 - [应用生命周期](modules/app-lifecycle.md)

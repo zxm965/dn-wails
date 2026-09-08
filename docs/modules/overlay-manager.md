@@ -6,10 +6,11 @@
 
 ## 目录与职责
 
-- `frontend/src/shared/overlay/OverlayProvider.tsx`：维护 Overlay 栈和兼容 Context API，并组合通用 Dialog。
+- `frontend/src/shared/interaction/InteractionProvider.tsx`：统一维护 Overlay 栈与反馈状态，并组合通用 Dialog。
+- `frontend/src/shared/overlay/index.ts`：保留 `useOverlay` 及其类型的稳定导出入口。
 - `frontend/src/shared/components/ui/Dialog.tsx`：Base UI Dialog 的主题化实现。
-- `frontend/src/shared/overlay/OverlayProvider.css.ts`：Overlay 内容的局部 vanilla-extract 样式。
-- `frontend/src/main.tsx`：在应用根部注册 Provider。
+- `frontend/src/shared/interaction/InteractionProvider.css.ts`：Overlay 内容的局部 vanilla-extract 样式。
+- `frontend/src/app/AppProviders.tsx`：在应用根部注册统一的 Interaction Provider。
 
 ## API
 

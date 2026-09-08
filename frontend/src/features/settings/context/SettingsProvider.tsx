@@ -9,6 +9,7 @@ import {
 } from '../api/settingsApi'
 
 type SettingsUpdater = AppSettings | ((current: AppSettings) => AppSettings)
+type EffectiveTheme = 'light' | 'dark'
 
 interface SettingsContextValue {
   settings: AppSettings
@@ -21,6 +22,10 @@ interface SettingsContextValue {
 }
 
 const SettingsContext = createContext<SettingsContextValue | null>(null)
+
+function systemTheme(): EffectiveTheme {
+  return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'
+}
 
 function errorMessage(error: unknown): string {
   return error instanceof Error ? error.message : '读取应用设置失败。'
@@ -45,6 +50,7 @@ function cloneSettings(settings: AppSettings): AppSettings {
 
 export function SettingsProvider({ children }: { children: ReactNode }) {
   const [settings, setSettings] = useState<AppSettings>(() => cloneSettings(DEFAULT_SETTINGS))
+  const [systemMode, setSystemMode] = useState<EffectiveTheme>(systemTheme)
   const [isLoading, setIsLoading] = useState(true)
   const [isSaving, setIsSaving] = useState(false)
   const [error, setError] = useState('')
@@ -74,6 +80,27 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     void refreshSettings()
   }, [refreshSettings])
+
+  useEffect(() => {
+    const media = window.matchMedia('(prefers-color-scheme: dark)')
+    const handleChange = () => setSystemMode(media.matches ? 'dark' : 'light')
+    media.addEventListener('change', handleChange)
+    return () => media.removeEventListener('change', handleChange)
+  }, [])
+
+  const effectiveTheme = useMemo<EffectiveTheme>(
+    () => (settings.appearance.themeMode === 'system' ? systemMode : settings.appearance.themeMode),
+    [settings.appearance.themeMode, systemMode],
+  )
+
+  useEffect(() => {
+    const root = document.documentElement
+    root.dataset.theme = effectiveTheme
+    root.dataset.accent = settings.appearance.accent
+    root.dataset.density = settings.appearance.density
+    root.dataset.buttonSize = settings.appearance.buttonSize
+    root.style.setProperty('--font-scale', String(settings.appearance.fontScale))
+  }, [effectiveTheme, settings.appearance])
 
   const schedulePersist = useCallback(
     (next: AppSettings, persist: () => Promise<AppSettings>) => {
