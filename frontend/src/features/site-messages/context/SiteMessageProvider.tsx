@@ -22,6 +22,7 @@ interface SiteMessageContextValue {
   loading: boolean
   centerOpen: boolean
   activeMessage: SiteMessage | null
+  popupMessages: SiteMessage[]
   popupOpen: boolean
   actionLoading: boolean
   lastSyncedAt: string
@@ -31,7 +32,7 @@ interface SiteMessageContextValue {
   showAllMessages: () => void
   markAll: () => Promise<number>
   dismissPopup: () => void
-  followActiveMessage: () => Promise<void>
+  followPopupMessage: (message: SiteMessage) => Promise<void>
 }
 
 const SiteMessageContext = createContext<SiteMessageContextValue | null>(null)
@@ -57,7 +58,7 @@ export function SiteMessageProvider({
   const [unreadCount, setUnreadCount] = useState(0)
   const [loading, setLoading] = useState(false)
   const [centerOpen, setCenterOpen] = useState(false)
-  const [activeMessage, setActiveMessage] = useState<SiteMessage | null>(null)
+  const [popupMessages, setPopupMessages] = useState<SiteMessage[]>([])
   const [popupOpen, setPopupOpen] = useState(false)
   const [actionLoading, setActionLoading] = useState(false)
   const [lastSyncedAt, setLastSyncedAt] = useState('')
@@ -65,17 +66,21 @@ export function SiteMessageProvider({
   const popupOpenRef = useRef(false)
   const lastSyncError = useRef('')
   const notificationAcknowledgements = useRef(new Map<number, Promise<void>>())
+  const activeMessage = popupMessages.length === 1 ? popupMessages[0] : null
 
   useEffect(() => {
     popupOpenRef.current = popupOpen
   }, [popupOpen])
 
-  const showMessage = useCallback((message: SiteMessage) => {
+  const showMessages = useCallback((messages: SiteMessage[]) => {
+    if (!messages.length) return
     setCenterOpen(false)
-    setActiveMessage(message)
+    setPopupMessages(messages)
     popupOpenRef.current = true
     setPopupOpen(true)
   }, [])
+
+  const showMessage = useCallback((message: SiteMessage) => showMessages([message]), [showMessages])
 
   const acknowledgeMessage = useCallback((message: SiteMessage): Promise<void> => {
     if (!message.popup) return Promise.resolve()
@@ -92,19 +97,19 @@ export function SiteMessageProvider({
   const claimPopup = useCallback(async () => {
     if (!userId || popupOpenRef.current) return
     try {
-      const claimed = await claimMessageNotifications(1)
-      if (claimed.items[0]) showMessage(claimed.items[0])
+      const claimed = await claimMessageNotifications(20)
+      showMessages(claimed.items)
     } catch {
       // Inbox refresh remains available even when claiming a popup fails.
     }
-  }, [showMessage, userId])
+  }, [showMessages, userId])
 
   useEffect(() => {
-    if (!popupOpen || !activeMessage?.popup) return
-    void acknowledgeMessage(activeMessage).catch(() => {
-      // A failed acknowledgement intentionally leaves the message claimable on the next refresh or login.
-    })
-  }, [acknowledgeMessage, activeMessage, popupOpen])
+    if (!popupOpen) return
+    void Promise.allSettled(
+      popupMessages.filter((message) => message.popup).map((message) => acknowledgeMessage(message)),
+    )
+  }, [acknowledgeMessage, popupMessages, popupOpen])
 
   const refreshInbox = useCallback(async () => {
     if (!userId) return
@@ -136,7 +141,7 @@ export function SiteMessageProvider({
     setInboxItems([])
     setUnreadCount(0)
     setCenterOpen(false)
-    setActiveMessage(null)
+    setPopupMessages([])
     setPopupOpen(false)
     setLastSyncedAt('')
     lastSyncError.current = ''
@@ -205,39 +210,36 @@ export function SiteMessageProvider({
   )
 
   const dismissPopup = useCallback(() => {
-    const current = activeMessage
+    const current = popupMessages
     popupOpenRef.current = false
     setPopupOpen(false)
-    setActiveMessage(null)
-    if (!userId) return
-    if (!current) {
-      void claimPopup()
-      return
-    }
-    void acknowledgeMessage(current)
-      .then(claimPopup)
-      .catch(() => {
-        // Avoid immediately reopening the same message when acknowledgement is temporarily unavailable.
+    setPopupMessages([])
+    for (const message of current) {
+      void acknowledgeMessage(message).catch(() => {
+        // A failed acknowledgement intentionally leaves the message claimable on a later refresh or login.
       })
-  }, [acknowledgeMessage, activeMessage, claimPopup, userId])
+    }
+  }, [acknowledgeMessage, popupMessages])
 
   const showAllMessages = useCallback(() => {
     setCenterOpen(false)
     onNavigate('messages')
   }, [onNavigate])
 
-  const followActiveMessage = useCallback(async () => {
-    if (!activeMessage) return
-    setActionLoading(true)
-    try {
-      await followMessage(activeMessage)
-      dismissPopup()
-    } catch (error) {
-      notify({ title: '消息处理失败', message: getErrorMessage(error, '请稍后重试。'), tone: 'error' })
-    } finally {
-      setActionLoading(false)
-    }
-  }, [activeMessage, dismissPopup, followMessage, notify])
+  const followPopupMessage = useCallback(
+    async (message: SiteMessage) => {
+      setActionLoading(true)
+      try {
+        await followMessage(message)
+        dismissPopup()
+      } catch (error) {
+        notify({ title: '消息处理失败', message: getErrorMessage(error, '请稍后重试。'), tone: 'error' })
+      } finally {
+        setActionLoading(false)
+      }
+    },
+    [dismissPopup, followMessage, notify],
+  )
 
   const value = useMemo<SiteMessageContextValue>(
     () => ({
@@ -246,6 +248,7 @@ export function SiteMessageProvider({
       loading,
       centerOpen,
       activeMessage,
+      popupMessages,
       popupOpen,
       actionLoading,
       lastSyncedAt,
@@ -255,20 +258,21 @@ export function SiteMessageProvider({
       showAllMessages,
       markAll,
       dismissPopup,
-      followActiveMessage,
+      followPopupMessage,
     }),
     [
       actionLoading,
       activeMessage,
       centerOpen,
       dismissPopup,
-      followActiveMessage,
+      followPopupMessage,
       inboxItems,
       lastSyncedAt,
       loading,
       markAll,
       openInboxMessage,
       popupOpen,
+      popupMessages,
       refreshInbox,
       showAllMessages,
       unreadCount,

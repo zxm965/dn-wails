@@ -10,6 +10,7 @@
 - `frontend/src/features/site-messages/context/SiteMessageProvider.tsx`：登录后的官网同步判断、全局收件箱状态、轮询、已读处理、全屏提醒、展示回执和消息动作跳转。
 - `frontend/src/features/site-messages/components/SiteMessages.tsx`：独立的站内消息页面，支持筛选、分页、已读、详情，以及管理员创建、编辑、删除和官网同步。
 - `frontend/src/features/site-messages/components/SiteMessageCenter.tsx`：标题栏右上角消息盒子和消息弹窗。
+- `frontend/src/features/site-messages/components/SiteMessageCenter.css.ts`：消息盒子、单条全屏提醒和多条合并列表弹窗的局部样式。
 - `frontend/src/shared/navigation/menuConfig.ts`：独立菜单 key `site-messages`、默认显隐和偏好说明。
 
 ## 核心链路
@@ -39,8 +40,8 @@ App → SiteMessageProvider
 - 站内消息页向所有登录用户提供“主动同步”按钮，主动同步的最短间隔为 2 分钟；消息发布、编辑和删除仍只允许管理员操作。
 - 管理员可创建包含发送类型、标题、内容和发送时间的站内信；发送时间为空时立即生效，未来时间在用户之后登录或刷新且到期后生效，不依赖定时任务。
 - 管理员管理视图包含尚未发送和已过期的活动记录，可编辑或软删除；普通用户只能读取已生效且未过期的消息，不能调用管理接口。
-- 管理员创建的消息固定启用全屏提醒。前端在全屏内容实际渲染后写入 `notified_at`；确认失败时消息保持可领取，避免在展示前退出导致永久漏提醒。
-- 用户关闭一条全屏提醒后继续领取下一条未提醒消息；已提醒但未读的消息仍保留在收件箱，直到用户查看或执行全部已读。
+- 管理员创建的消息固定启用弹窗提醒。每次轮询最多领取 20 条：只有 1 条时沿用全屏提醒，有多条时改为一个可滚动的合并列表弹窗，不再关闭一条后立即连续弹出下一条。
+- 前端在弹窗内容实际渲染后为当前整批消息写入 `notified_at`；任一消息的回执失败时，该消息保持可领取。已提醒但未读的消息仍保留在收件箱，直到用户查看或执行全部已读。
 - 编辑消息不会清空既有用户回执；需要让已提醒用户再次收到提醒时，应创建一条新消息。
 - 删除使用 `status=0` 软删除，保留官网消息的来源去重键，防止下一次官网同步重新导入。
 

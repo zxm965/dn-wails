@@ -682,108 +682,6 @@ const siteMessageDialogCopy = style({
   whiteSpace: 'pre-wrap',
 })
 
-const siteMessageCenterTrigger = style({
-  position: 'relative',
-  minWidth: '30px',
-  padding: '0',
-})
-
-const siteMessageCenterIndicator = style({
-  position: 'absolute',
-  top: '5px',
-  right: '5px',
-  width: '6px',
-  height: '6px',
-  background: '#d84d45',
-  borderRadius: '50%',
-  boxShadow: '0 0 0 1.5px var(--titlebar-background)',
-})
-
-const siteMessageCenterHeader = style({
-  display: 'flex',
-  alignItems: 'flex-start',
-  justifyContent: 'space-between',
-  gap: '16px',
-  paddingRight: '34px',
-})
-
-const siteMessageCenterBody = style({
-  padding: '0',
-})
-
-const siteMessageCenterList = style({
-  maxHeight: 'min(52vh, 430px)',
-  display: 'grid',
-  gap: '3px',
-  overflow: 'auto',
-  padding: '8px',
-})
-
-const siteMessageCenterItem = style({
-  width: '100%',
-  display: 'grid',
-  gridTemplateColumns: 'auto minmax(0, 1fr) auto',
-  alignItems: 'center',
-  gap: '10px',
-  padding: '0 10px',
-  textAlign: 'left',
-})
-
-const siteMessageCenterFooter = style({
-  justifyContent: 'space-between',
-  color: 'var(--text-tertiary)',
-  fontSize: '10px',
-})
-
-const siteMessagePopupContent = style({
-  margin: '0',
-  maxWidth: '760px',
-  color: 'var(--text-primary)',
-  fontSize: 'clamp(18px, 2.4vw, 28px)',
-  lineHeight: '1.8',
-  textAlign: 'center',
-  whiteSpace: 'pre-wrap',
-})
-
-const siteMessagePopupHeader = style({
-  padding: 'clamp(24px, 5vh, 56px) clamp(24px, 6vw, 80px) 20px',
-  textAlign: 'center',
-  borderBottom: '0',
-})
-
-const siteMessagePopupTitle = style({
-  fontSize: 'clamp(28px, 4.5vw, 52px)',
-  letterSpacing: '-0.035em',
-})
-
-const siteMessagePopupBody = style({
-  display: 'grid',
-  placeItems: 'center',
-  alignContent: 'center',
-  gap: '28px',
-  padding: 'clamp(24px, 6vw, 88px)',
-  background:
-    'radial-gradient(circle at 50% 40%, color-mix(in srgb, var(--accent-muted) 88%, transparent), transparent 48%)',
-})
-
-const siteMessagePopupLevel = style({
-  display: 'inline-flex',
-  alignItems: 'center',
-  minHeight: '30px',
-  padding: '0 12px',
-  color: 'var(--accent)',
-  fontSize: '11px',
-  fontWeight: '800',
-  letterSpacing: '0.08em',
-  background: 'var(--accent-muted)',
-  borderRadius: '999px',
-})
-
-const siteMessagePopupFooter = style({
-  justifyContent: 'center',
-  padding: '20px clamp(24px, 6vw, 80px) clamp(24px, 5vh, 48px)',
-})
-
 export const styles = {
   'dn-page': dnPage,
   'dn-card-heading-row': dnCardHeadingRow,
@@ -856,19 +754,6 @@ export const styles = {
   'site-message-content': siteMessageContent,
   'site-message-actions': siteMessageActions,
   'site-message-dialog-copy': siteMessageDialogCopy,
-  'site-message-center-trigger': siteMessageCenterTrigger,
-  'site-message-center-indicator': siteMessageCenterIndicator,
-  'site-message-center-header': siteMessageCenterHeader,
-  'site-message-center-body': siteMessageCenterBody,
-  'site-message-center-list': siteMessageCenterList,
-  'site-message-center-item': siteMessageCenterItem,
-  'site-message-center-footer': siteMessageCenterFooter,
-  'site-message-popup-content': siteMessagePopupContent,
-  'site-message-popup-header': siteMessagePopupHeader,
-  'site-message-popup-title': siteMessagePopupTitle,
-  'site-message-popup-body': siteMessagePopupBody,
-  'site-message-popup-level': siteMessagePopupLevel,
-  'site-message-popup-footer': siteMessagePopupFooter,
 } as const
 
 globalStyle(`${dnPage} p`, {
@@ -985,47 +870,6 @@ globalStyle(`${siteMessageActions} ${buttonStyles.root}:first-child`, {
 globalStyle(`${siteMessageActions} ${buttonStyles.root}:not(:first-child)`, {
   width: 'var(--button-height-default)',
   padding: '0',
-})
-
-globalStyle(`${siteMessageCenterTrigger} > svg`, {
-  width: '16px',
-  height: '16px',
-})
-
-globalStyle(`${siteMessageCenterItem} > span:nth-child(2)`, {
-  minWidth: '0',
-  display: 'flex',
-  alignItems: 'center',
-  gap: '8px',
-})
-
-globalStyle(
-  `${siteMessageCenterItem} strong,
-${siteMessageCenterItem} time`,
-  {
-    overflow: 'hidden',
-    textOverflow: 'ellipsis',
-  },
-)
-
-globalStyle(`${siteMessageCenterItem} strong`, {
-  minWidth: '0',
-  flex: '1',
-  fontSize: '12px',
-  whiteSpace: 'nowrap',
-})
-
-globalStyle(`${siteMessageCenterItem} time`, {
-  flex: '0 0 auto',
-  color: 'var(--text-tertiary)',
-  fontSize: '9px',
-  whiteSpace: 'nowrap',
-})
-
-globalStyle(`${siteMessageCenterItem} > svg`, {
-  width: '14px',
-  height: '14px',
-  color: 'var(--text-tertiary)',
 })
 
 globalStyle(`${dnSwitchRow} > span`, {

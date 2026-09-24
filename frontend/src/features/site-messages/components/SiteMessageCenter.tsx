@@ -19,7 +19,7 @@ import { createScopedClassNames } from '@/shared/lib/classNames'
 import { getErrorMessage, type SiteMessage } from '../api/siteMessagesApi'
 import { useSiteMessages } from '../context/SiteMessageProvider'
 
-import { styles } from '../../dn-system/components/DnSystem.css'
+import { styles } from './SiteMessageCenter.css'
 
 const cx = createScopedClassNames(styles)
 
@@ -51,7 +51,7 @@ export function SiteMessageCenter() {
         title='消息盒子'
         onClick={() => messages.setCenterOpen(true)}
       >
-        <Bell aria-hidden='true' />
+        <Bell className={cx('site-message-center-trigger-icon')} aria-hidden='true' />
         {messages.unreadCount > 0 && <span className={cx('site-message-center-indicator')} aria-hidden='true' />}
       </Button>
 
@@ -84,11 +84,15 @@ export function SiteMessageCenter() {
                     onClick={() => messages.openInboxMessage(message)}
                   >
                     <MessageLevelBadge message={message} />
-                    <span>
-                      <strong>{message.title}</strong>
-                      <time>{formatMessageDate(message.publishedAt)}</time>
+                    <span className={cx('site-message-center-item-copy')}>
+                      <strong className={cx('site-message-center-item-title')}>{message.title}</strong>
+                      <time className={cx('site-message-center-item-time')}>
+                        {formatMessageDate(message.publishedAt)}
+                      </time>
                     </span>
-                    {message.actionTarget === '_blank' && <ExternalLink aria-hidden='true' />}
+                    {message.actionTarget === '_blank' && (
+                      <ExternalLink className={cx('site-message-center-item-external')} aria-hidden='true' />
+                    )}
                   </Button>
                 ))}
               </div>
@@ -119,34 +123,105 @@ export function SiteMessageCenter() {
           if (!open && !messages.actionLoading) messages.dismissPopup()
         }}
       >
-        <DialogContent size='full' showCloseButton={false}>
-          <DialogHeader className={cx('site-message-popup-header')}>
-            <DialogTitle className={cx('site-message-popup-title')}>
-              {messages.activeMessage?.title || '站内消息'}
-            </DialogTitle>
-            <DialogDescription>
-              {messages.activeMessage ? formatMessageDate(messages.activeMessage.publishedAt) : '站内消息'}
-            </DialogDescription>
-          </DialogHeader>
-          <DialogBody className={cx('site-message-popup-body')}>
-            <span className={cx('site-message-popup-level')}>
-              {messages.activeMessage ? messageLevelLabel(messages.activeMessage.level) : '站内消息'}
-            </span>
-            <p className={cx('site-message-popup-content')}>
-              {messages.activeMessage?.content || '你收到了一条新的站内消息。'}
-            </p>
-          </DialogBody>
-          <DialogFooter className={cx('site-message-popup-footer')}>
-            <Button variant='outline' disabled={messages.actionLoading} onClick={messages.dismissPopup}>
-              {messages.activeMessage?.actionUrl ? '稍后查看' : '关闭'}
-            </Button>
-            <Button disabled={messages.actionLoading} onClick={() => void messages.followActiveMessage()}>
-              {messages.activeMessage?.actionTarget === '_blank' && <ExternalLink aria-hidden='true' />}
-              {messages.actionLoading
-                ? '处理中…'
-                : messages.activeMessage?.actionLabel || (messages.activeMessage?.actionUrl ? '查看详情' : '我知道了')}
-            </Button>
-          </DialogFooter>
+        <DialogContent size={messages.popupMessages.length > 1 ? 'lg' : 'full'} showCloseButton={false}>
+          {messages.popupMessages.length > 1 ? (
+            <>
+              <DialogHeader className={cx('site-message-batch-header')}>
+                <DialogTitle>{messages.popupMessages.length} 条新消息</DialogTitle>
+                <DialogDescription>已为你合并展示，关闭后不会再逐条连续弹出。</DialogDescription>
+              </DialogHeader>
+              <DialogBody className={cx('site-message-batch-body')}>
+                <div className={cx('site-message-batch-list')} role='list'>
+                  {messages.popupMessages.map((message) => (
+                    <article key={message.id} className={cx('site-message-batch-item')} role='listitem'>
+                      <div className={cx('site-message-batch-item-header')}>
+                        <MessageLevelBadge message={message} />
+                        <time>{formatMessageDate(message.publishedAt)}</time>
+                      </div>
+                      <h3 className={cx('site-message-batch-item-title')}>{message.title}</h3>
+                      <p className={cx('site-message-batch-item-content')}>
+                        {message.content || '你收到了一条新的站内消息。'}
+                      </p>
+                      {message.actionUrl && (
+                        <div className={cx('site-message-batch-item-actions')}>
+                          <Button
+                            className={cx('site-message-batch-action-button')}
+                            variant='outline'
+                            disabled={messages.actionLoading}
+                            onClick={() => void messages.followPopupMessage(message)}
+                          >
+                            {message.actionTarget === '_blank' && <ExternalLink aria-hidden='true' />}
+                            {messages.actionLoading ? '处理中…' : message.actionLabel || '查看详情'}
+                          </Button>
+                        </div>
+                      )}
+                    </article>
+                  ))}
+                </div>
+              </DialogBody>
+              <DialogFooter className={cx('site-message-batch-footer')}>
+                <span>共 {messages.popupMessages.length} 条新消息</span>
+                <div className={cx('site-message-batch-footer-actions')}>
+                  <Button
+                    className={cx('site-message-batch-footer-button')}
+                    variant='outline'
+                    disabled={messages.actionLoading}
+                    onClick={messages.dismissPopup}
+                  >
+                    关闭
+                  </Button>
+                  <Button
+                    className={cx('site-message-batch-footer-button')}
+                    disabled={messages.actionLoading}
+                    onClick={() => {
+                      messages.dismissPopup()
+                      messages.showAllMessages()
+                    }}
+                  >
+                    查看全部消息
+                  </Button>
+                </div>
+              </DialogFooter>
+            </>
+          ) : (
+            <>
+              <DialogHeader className={cx('site-message-popup-header')}>
+                <DialogTitle className={cx('site-message-popup-title')}>
+                  {messages.activeMessage?.title || '站内消息'}
+                </DialogTitle>
+                <DialogDescription>
+                  {messages.activeMessage ? formatMessageDate(messages.activeMessage.publishedAt) : '站内消息'}
+                </DialogDescription>
+              </DialogHeader>
+              <DialogBody className={cx('site-message-popup-body')}>
+                <span className={cx('site-message-popup-level')}>
+                  {messages.activeMessage ? messageLevelLabel(messages.activeMessage.level) : '站内消息'}
+                </span>
+                <p className={cx('site-message-popup-content')}>
+                  {messages.activeMessage?.content || '你收到了一条新的站内消息。'}
+                </p>
+              </DialogBody>
+              <DialogFooter className={cx('site-message-popup-footer')}>
+                <Button variant='outline' disabled={messages.actionLoading} onClick={messages.dismissPopup}>
+                  {messages.activeMessage?.actionUrl ? '稍后查看' : '关闭'}
+                </Button>
+                {messages.activeMessage && (
+                  <Button
+                    disabled={messages.actionLoading}
+                    onClick={() => {
+                      if (messages.activeMessage) void messages.followPopupMessage(messages.activeMessage)
+                    }}
+                  >
+                    {messages.activeMessage.actionTarget === '_blank' && <ExternalLink aria-hidden='true' />}
+                    {messages.actionLoading
+                      ? '处理中…'
+                      : messages.activeMessage.actionLabel ||
+                        (messages.activeMessage.actionUrl ? '查看详情' : '我知道了')}
+                  </Button>
+                )}
+              </DialogFooter>
+            </>
+          )}
         </DialogContent>
       </Dialog>
     </>
