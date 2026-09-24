@@ -19,6 +19,7 @@ interface LunarDate {
   month: string
   monthNumber: number
   day: number
+  dayLabel: string
 }
 
 const lunarFormatter = new Intl.DateTimeFormat('zh-CN-u-ca-chinese', {
@@ -48,6 +49,8 @@ const chineseMonths: Readonly<Record<string, number>> = {
   九月: 9,
   十月: 10,
   十一月: 11,
+  冬月: 11,
+  十二月: 12,
   腊月: 12,
 }
 
@@ -100,13 +103,17 @@ function addDays(date: Date, amount: number): Date {
 function lunarDate(date: Date): LunarDate {
   const parts = lunarFormatter.formatToParts(date)
   const month = parts.find((part) => part.type === 'month')?.value ?? ''
-  const day = Number(parts.find((part) => part.type === 'day')?.value ?? 0)
+  const dayLabel = parts.find((part) => part.type === 'day')?.value.replace(/日$/, '') ?? ''
+  const numericDay = Number(dayLabel)
+  const namedDay = lunarDayLabels.findIndex((label) => label === dayLabel)
+  const day = Number.isInteger(numericDay) && numericDay >= 1 && numericDay <= 30 ? numericDay : Math.max(namedDay, 0)
   const normalizedMonth = month.replace(/^闰/, '')
 
   return {
     month,
     monthNumber: chineseMonths[normalizedMonth] ?? 0,
     day,
+    dayLabel,
   }
 }
 
@@ -123,7 +130,7 @@ function getTraditionalFestival(date: Date, lunar: LunarDate): string | undefine
 
 function getLunarLabel(lunar: LunarDate): string {
   if (lunar.day === 1) return lunar.month
-  return lunarDayLabels[lunar.day] ?? `${lunar.day}日`
+  return lunarDayLabels[lunar.day] || lunar.dayLabel
 }
 
 export function buildCalendarMonth(year: number, month: number, today = new Date()): CalendarDay[] {
