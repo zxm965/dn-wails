@@ -277,7 +277,7 @@ func (s *PostgresService) SaveTask(input TaskInput) (Task, error) {
 				list_id = $1, parent_id = nullif($2, 0), title = $3, details = $4,
 				scheduled_at = $5, deadline_at = $6, time_zone = $7, is_starred = $8,
 				starred_at = case when $8 and not is_starred then now() when $8 then starred_at else null end,
-				repeat_frequency = $9, repeat_interval = $10, repeat_end_mode = $11,
+				repeat_frequency = $9::varchar, repeat_interval = $10, repeat_end_mode = $11,
 				repeat_end_date = nullif($12, '')::date, repeat_count = $13,
 				repeat_series_id = case when $9 = 'none' then null else repeat_series_id end,
 				notification_sent_for = case
