@@ -5,6 +5,7 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"os"
 	"os/exec"
@@ -12,6 +13,7 @@ import (
 	"runtime"
 	"strconv"
 	"strings"
+	"syscall"
 	"testing"
 	"time"
 )
@@ -128,9 +130,13 @@ func runUpdateSimulation(t *testing.T, powershell, oldBinary, newBinary, scenari
 	data, _ := json.Marshal(struct{ Target, Payload, Scenario, Audit string }{target, newBinary, scenario, audit})
 	writeTestFile(t, fixtureConfig, data)
 	environment := append(os.Environ(), "CULL_PEAR_UPDATE_SIMULATION="+fixtureConfig)
-	parent := exec.Command(current)
-	parent.Env = environment
-	if err := parent.Start(); err != nil {
+	var parent *exec.Cmd
+	if err := startUpdateFixtureProcess(func() error {
+		// A failed Start still consumes a Cmd; create a fresh one on every attempt.
+		parent = exec.Command(current)
+		parent.Env = environment
+		return parent.Start()
+	}, 2*time.Second); err != nil {
 		t.Fatal(err)
 	}
 	t.Cleanup(func() {
@@ -299,6 +305,65 @@ func runUpdateSimulation(t *testing.T, powershell, oldBinary, newBinary, scenari
 		t.Fatal("user settings were modified")
 	}
 	t.Logf("%s: status=%s; target and launched process verified", scenario, result.Status)
+}
+
+// Linux can briefly reject a freshly copied fixture with ETXTBSY under parallel
+// process creation. Retry only that transient error, with a bounded deadline.
+func startUpdateFixtureProcess(start func() error, timeout time.Duration) error {
+	deadline := time.Now().Add(timeout)
+	for {
+		err := start()
+		if !errors.Is(err, syscall.ETXTBSY) {
+			return err
+		}
+		remaining := time.Until(deadline)
+		if remaining <= 0 {
+			return fmt.Errorf("start update fixture after text-file-busy retries: %w", err)
+		}
+		time.Sleep(min(10*time.Millisecond, remaining))
+	}
+}
+
+func TestStartUpdateFixtureProcess(t *testing.T) {
+	busy := &os.PathError{Op: "fork/exec", Path: "fixture.exe", Err: syscall.ETXTBSY}
+	for _, test := range []struct {
+		name       string
+		failures   int
+		startError error
+		wantError  error
+	}{
+		{name: "success"},
+		{name: "transient text file busy", failures: 2, startError: busy},
+		{name: "permission denied", failures: 1, startError: os.ErrPermission, wantError: os.ErrPermission},
+		{name: "deadline", failures: -1, startError: busy, wantError: syscall.ETXTBSY},
+	} {
+		t.Run(test.name, func(t *testing.T) {
+			attempts := 0
+			timeout := time.Second
+			if test.failures < 0 {
+				timeout = 20 * time.Millisecond
+			}
+			err := startUpdateFixtureProcess(func() error {
+				attempts++
+				if test.failures < 0 || attempts <= test.failures {
+					return test.startError
+				}
+				return nil
+			}, timeout)
+			if !errors.Is(err, test.wantError) {
+				t.Fatalf("expected error %v, got %v", test.wantError, err)
+			}
+			if test.failures >= 0 {
+				wantAttempts := test.failures + 1
+				if test.wantError != nil {
+					wantAttempts = 1
+				}
+				if attempts != wantAttempts {
+					t.Fatalf("expected %d attempts, got %d", wantAttempts, attempts)
+				}
+			}
+		})
+	}
 }
 
 func waitForAudit(t *testing.T, path, marker string, count int) {

@@ -17,6 +17,7 @@
 - `build/windows/nsis/project.nsi`：定义安装向导，将旧 EXE 改名后写入新版，并从既有卸载注册信息恢复自定义安装目录、持久化 `InstallLocation`，兼容尚未携带显式安装目录的旧版更新进程；完成页的启动选项由观察进程执行，以免重复启动或校验前启动。
 - `build/windows/nsis/compile.ps1`：在 Windows runner 上显式调用 `makensis` 编译 `project.nsi`，校验输入和非空安装器输出。
 - `internal/platform/appupdate/update_result.go`：读取持久更新结果，将失败或中断原因通过版本信息返回，供下次启动展示。
+- `internal/platform/appupdate/windows_update_integration_test.go`：通过隔离的临时程序验证更新交接；启动测试程序遇到 Linux 并发执行时的 `ETXTBSY` 会在两秒内重试，其他启动错误立即返回，不改变生产更新行为。
 - `internal/application/update.go`：向前端暴露版本信息、检查和安装三个 Wails 用例，并转发下载进度事件。
 - `frontend/src/features/app-update/`：根级更新状态、启动自动检查、确认弹窗、下载进度和错误反馈。
 - `frontend/src/features/devtools/components/DesktopOverview.tsx`：展示当前版本，不展示更新源地址等发布配置。
