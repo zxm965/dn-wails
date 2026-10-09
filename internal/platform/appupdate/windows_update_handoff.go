@@ -13,7 +13,8 @@ import (
 
 // windowsUpdateConfig is file-backed so paths are not interpolated into a
 // PowerShell command. The helper cannot install before the parent commits the
-// handoff AND exits. All deadlines are also applied in the helper.
+// handoff AND exits. Interactive installers wait for the user without a
+// deadline; parent handoff and headless installation remain bounded.
 type windowsUpdateConfig struct {
 	ProcessID             int    `json:"processId"`
 	InstallerPath         string `json:"installerPath"`
@@ -29,6 +30,7 @@ type windowsUpdateConfig struct {
 	WorkDirectory         string `json:"workDirectory"`
 	ParentTimeoutSeconds  int    `json:"parentTimeoutSeconds"`
 	InstallTimeoutSeconds int    `json:"installTimeoutSeconds"`
+	Interactive           bool   `json:"interactive"`
 }
 
 func launchWindowsUpdateHelper(ctx context.Context, command *exec.Cmd, config windowsUpdateConfig, timeout time.Duration) (completion <-chan error, resultErr error) {

@@ -213,9 +213,9 @@ const appSidebarStatusDot = style({
   width: '8px',
   height: '8px',
   flex: '0 0 auto',
-  background: '#18b768',
+  background: 'var(--accent)',
   borderRadius: '50%',
-  boxShadow: '0 0 0 4px rgba(24, 183, 104, 0.12)',
+  boxShadow: '0 0 0 4px var(--accent-muted)',
 })
 
 const appSidebarResizer = style({

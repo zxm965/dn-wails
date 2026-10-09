@@ -1,7 +1,7 @@
 import { CalendarDays, ChevronLeft, ChevronRight } from 'lucide-react'
 import { useMemo, useState, type MouseEvent } from 'react'
 
-import { Button, PageHeader, Select } from '@/shared/components/ui'
+import { Button, Select } from '@/shared/components/ui'
 import { useFeedback } from '@/shared/feedback'
 import { createScopedClassNames } from '@/shared/lib/classNames'
 import { openExternalURL } from '@/shared/native-kit'
@@ -15,6 +15,7 @@ import {
   toDateKey,
   type CalendarDay,
 } from '../model/calendar'
+import { CalendarSummary } from './CalendarSummary'
 
 import { styles } from './CalendarPanel.css'
 
@@ -90,6 +91,8 @@ export function CalendarPanel() {
   const [displayed, setDisplayed] = useState(() => ({ year: today.getFullYear(), month: today.getMonth() + 1 }))
   const [selectedDateKey, setSelectedDateKey] = useState(() => toDateKey(today))
   const days = useMemo(() => buildCalendarMonth(displayed.year, displayed.month, today), [displayed, today])
+  const monthDays = days.filter((day) => day.isCurrentMonth)
+  const selectedDay = days.find((day) => day.dateKey === selectedDateKey) ?? monthDays[0]
   const scheduleInfo = getHolidayScheduleInfo(displayed.year)
   const availableYears = `${OFFICIAL_HOLIDAY_YEARS[0]}–${OFFICIAL_HOLIDAY_YEARS.at(-1)}`
   const previous = shiftMonth(displayed.year, displayed.month, -1)
@@ -99,6 +102,7 @@ export function CalendarPanel() {
 
   function goToToday() {
     setDisplayed({ year: today.getFullYear(), month: today.getMonth() + 1 })
+    setSelectedDateKey(toDateKey(today))
   }
 
   async function openSource(event: MouseEvent<HTMLAnchorElement>, url: string) {
@@ -116,12 +120,7 @@ export function CalendarPanel() {
 
   return (
     <div className={cx('calendar-page')}>
-      <PageHeader
-        eyebrow='Calendar'
-        title='日历'
-        subtitle='查看公历、农历，以及国务院公布的法定节假日和调休补班安排。'
-      />
-
+      {selectedDay && <CalendarSummary day={selectedDay} monthDays={monthDays} onSelect={setSelectedDateKey} />}
       <section className={cx('calendar-panel')} aria-labelledby='calendar-heading'>
         <header className={cx('calendar-toolbar')}>
           <div className={cx('calendar-heading')}>
@@ -129,9 +128,9 @@ export function CalendarPanel() {
               <CalendarDays className={cx('calendar-heading-icon-svg')} />
             </span>
             <div>
-              <h2 id='calendar-heading' className={cx('calendar-heading-title')}>
+              <h1 id='calendar-heading' className={cx('calendar-heading-title')}>
                 {displayed.year} 年 {displayed.month} 月
-              </h2>
+              </h1>
               <p className={cx('calendar-heading-text')}>
                 {scheduleInfo.available
                   ? '已载入国务院节假日安排'
@@ -209,7 +208,7 @@ export function CalendarPanel() {
             <CalendarDayCell
               key={day.dateKey}
               day={day}
-              selected={day.dateKey === selectedDateKey}
+              selected={day.dateKey === selectedDay?.dateKey}
               onSelect={setSelectedDateKey}
             />
           ))}

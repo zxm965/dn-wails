@@ -76,6 +76,7 @@ func TestWindowsUpdateScriptIntegration(t *testing.T) {
 		"success", "renamed", "transient-lock", "installer-failure", "unchanged",
 		"wrong-hash", "restart-failure", "timeout", "persistent-lock", "parent-alive",
 		"installer-corrupt", "unwritable-directory", "script-startup-failure",
+		"wizard-success", "wizard-cancel", "wizard-no-launch", "wizard-long-wait",
 	} {
 		t.Run(scenario, func(t *testing.T) {
 			t.Parallel()
@@ -84,9 +85,9 @@ func TestWindowsUpdateScriptIntegration(t *testing.T) {
 	}
 }
 
-// On macOS/Linux only taskkill is replaced with the equivalent .NET process
-// tree termination. The actual production handoff, hashing, file operations,
-// deadlines, installer processes, restart and rollback execute unchanged.
+// macOS/Linux replace taskkill with .NET process tree termination and bypass
+// the Windows shell UI boundary for disposable console fixtures. The actual
+// handoff, arguments, hashing, file operations, waits and recovery still run.
 const unixProcessTreeSimulation = `
 function Stop-UpdateProcessTree {
   param($Process)
@@ -171,6 +172,12 @@ func runUpdateSimulation(t *testing.T, powershell, oldBinary, newBinary, scenari
 	if scenario == "timeout" {
 		config.InstallTimeoutSeconds = 1
 	}
+	if strings.HasPrefix(scenario, "wizard-") {
+		config.Interactive = true
+	}
+	if scenario == "wizard-long-wait" {
+		config.InstallTimeoutSeconds = 1
+	}
 	if scenario == "parent-alive" {
 		config.ParentTimeoutSeconds = 1
 	}
@@ -187,6 +194,7 @@ func runUpdateSimulation(t *testing.T, powershell, oldBinary, newBinary, scenari
 	script := windowsUpdateScript
 	if runtime.GOOS != "windows" {
 		script = strings.Replace(script, "$parentExited = $false", unixProcessTreeSimulation+"\n$parentExited = $false", 1)
+		script = strings.Replace(script, "$startInfo.UseShellExecute = $Visible", "$startInfo.UseShellExecute = $false", 1)
 	}
 	if scenario == "script-startup-failure" {
 		script = "throw 'simulated PowerShell startup failure'"
@@ -231,6 +239,15 @@ func runUpdateSimulation(t *testing.T, powershell, oldBinary, newBinary, scenari
 		}
 		_ = parent.Wait()
 	}
+	if scenario == "image-lock" {
+		release := lockUpdateImageForTest(t, target)
+		t.Cleanup(release)
+		file, err := os.OpenFile(target, os.O_WRONLY, 0)
+		if err == nil {
+			file.Close()
+			t.Fatal("fixture lock did not prevent overwriting the old executable")
+		}
+	}
 	select {
 	case <-completed:
 	case <-time.After(25 * time.Second):
@@ -242,7 +259,8 @@ func runUpdateSimulation(t *testing.T, powershell, oldBinary, newBinary, scenari
 	if err := json.Unmarshal(readTestFile(t, config.ResultPath), &result); err != nil {
 		t.Fatal(err)
 	}
-	success := scenario == "success" || scenario == "renamed" || scenario == "transient-lock"
+	success := scenario == "success" || scenario == "renamed" || scenario == "transient-lock" || scenario == "image-lock" ||
+		scenario == "wizard-success" || scenario == "wizard-no-launch" || scenario == "wizard-long-wait"
 	if success {
 		if _, err := os.Stat(stage); !os.IsNotExist(err) {
 			t.Fatal("successful helper did not clean its staging directory")
@@ -253,7 +271,13 @@ func runUpdateSimulation(t *testing.T, powershell, oldBinary, newBinary, scenari
 		if testHash(readTestFile(t, target)) != config.ExecutableSHA256 {
 			t.Fatal("wrong installed binary")
 		}
-		waitForAudit(t, audit, "app:new:cull-pear.exe:", 1)
+		if scenario == "wizard-no-launch" {
+			if strings.Contains(string(readTestFile(t, audit)), "app:new:") {
+				t.Fatal("unchecked launch checkbox must leave the updated application closed")
+			}
+		} else {
+			waitForAudit(t, audit, "app:new:cull-pear.exe:", 1)
+		}
 		if scenario == "renamed" && testHash(readTestFile(t, current)) != testHash(oldData) {
 			t.Fatal("renamed original was unexpectedly removed")
 		}

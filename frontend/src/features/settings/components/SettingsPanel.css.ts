@@ -200,9 +200,25 @@ const settingsToggles = style({
 })
 
 const settingsToggleGroup = style({
-  selectors: {
-    '& + &': {
-      borderTop: '1px solid var(--border-subtle)',
+  minWidth: '0',
+  background: 'color-mix(in srgb, var(--surface-muted) 45%, var(--surface-elevated))',
+  border: '1px solid var(--border-subtle)',
+  borderRadius: '10px',
+})
+
+const settingsMenuGrid = style({
+  minWidth: '0',
+  display: 'grid',
+  gridTemplateColumns: 'repeat(3, minmax(0, 1fr))',
+  alignItems: 'start',
+  gap: '10px',
+  '@container': {
+    'settings-panel (max-width: 1050px)': {
+      gridTemplateColumns: 'repeat(2, minmax(0, 1fr))',
+    },
+    'settings-panel (max-width: 660px)': {
+      gridTemplateColumns: 'minmax(0, 1fr)',
+      gap: '8px',
     },
   },
 })
@@ -250,6 +266,47 @@ const isNested = style({
   },
 })
 
+const settingsMenuRow = style({
+  minWidth: '0',
+  gap: '12px',
+  padding: '10px 12px',
+  selectors: {
+    [`&${isNested}`]: {
+      margin: '0 12px 10px',
+      padding: '8px 0 0 10px',
+    },
+  },
+})
+
+const settingsToggleText = style({
+  minWidth: '0',
+})
+
+const settingsToggleTitle = style({
+  display: 'block',
+  fontSize: '13px',
+  overflowWrap: 'anywhere',
+})
+
+const settingsToggleDescription = style({
+  display: 'block',
+  marginTop: '5px',
+  color: 'var(--text-tertiary)',
+  lineHeight: '1.45',
+  selectors: {
+    [`${settingsMenuRow} &`]: {
+      marginTop: '3px',
+      fontSize: '11px',
+      overflowWrap: 'anywhere',
+    },
+  },
+  '@container': {
+    'settings-panel (max-width: 440px)': {
+      overflowWrap: 'anywhere',
+    },
+  },
+})
+
 export const styles = {
   'settings-panel': settingsPanel,
   'settings-state': settingsState,
@@ -277,7 +334,12 @@ export const styles = {
   'is-orange': isOrange,
   'settings-toggles': settingsToggles,
   'settings-toggle-group': settingsToggleGroup,
+  'settings-menu-grid': settingsMenuGrid,
+  'settings-menu-row': settingsMenuRow,
   'settings-toggle-row': settingsToggleRow,
+  'settings-toggle-text': settingsToggleText,
+  'settings-toggle-title': settingsToggleTitle,
+  'settings-toggle-description': settingsToggleDescription,
   'is-disabled': isDisabled,
   'is-nested': isNested,
 } as const
@@ -331,33 +393,3 @@ ${settingsField} > span`,
     fontWeight: '700',
   },
 )
-
-globalStyle(`${settingsToggleRow} > span:first-child`, {
-  minWidth: '0',
-})
-
-globalStyle(
-  `${settingsToggleRow} strong,
-${settingsToggleRow} small`,
-  {
-    display: 'block',
-  },
-)
-
-globalStyle(`${settingsToggleRow} strong`, {
-  fontSize: '13px',
-})
-
-globalStyle(`${settingsToggleRow} small`, {
-  marginTop: '5px',
-  color: 'var(--text-tertiary)',
-  lineHeight: '1.45',
-})
-
-globalStyle(`${settingsToggleRow} small`, {
-  '@container': {
-    'settings-panel (max-width: 440px)': {
-      overflowWrap: 'anywhere',
-    },
-  },
-})

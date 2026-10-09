@@ -41,11 +41,33 @@ function Test-UpdateParentRunning {
 
 function Restore-UpdateExecutable {
   param([string]$Backup, [string]$Destination)
-  # A newly failed process can briefly retain its executable image lock too.
+  $expected = Get-UpdateHash $Backup
+  if ($expected -eq '') { throw 'rollback backup is missing' }
+  try { if ((Get-UpdateHash $Destination) -eq $expected) { return } }
+  catch { Write-UpdateLog "cannot read current image before rollback: $($_.Exception.Message)" }
+  # Stage on the destination volume, then move the failed image aside rather
+  # than truncating an executable Windows may still have mapped after exit.
+  $staged = "$Destination.restore-$([Guid]::NewGuid().ToString('N'))"
+  Copy-Item -LiteralPath $Backup -Destination $staged
+  if ((Get-UpdateHash $staged) -ne $expected) { throw 'staged rollback executable hash mismatch' }
+  $aside = "$Destination.failed-$([Guid]::NewGuid().ToString('N'))"
   for ($attempt = 1; $attempt -le 10; $attempt++) {
     try {
-      Copy-Item -LiteralPath $Backup -Destination $Destination -Force
-      if ((Get-UpdateHash $Backup) -ne (Get-UpdateHash $Destination)) { throw 'restored executable hash mismatch' }
+      # Once moved, retry only verification if a scanner temporarily prevents
+      # reading the restored image; never move the valid image away again.
+      if (Test-Path -LiteralPath $staged) {
+        if (Test-Path -LiteralPath $Destination) { [IO.File]::Move($Destination, $aside) }
+        try { [IO.File]::Move($staged, $Destination) }
+        catch {
+          if (Test-Path -LiteralPath $aside) { [IO.File]::Move($aside, $Destination) }
+          throw
+        }
+      }
+      if ((Get-UpdateHash $Destination) -ne $expected) { throw 'restored executable hash mismatch' }
+      if (Test-Path -LiteralPath $aside) {
+        try { Remove-Item -LiteralPath $aside -Force }
+        catch { Write-UpdateLog "restored executable; old image cleanup deferred: $($_.Exception.Message)" }
+      }
       return
     } catch {
       if ($attempt -eq 10) { throw }
@@ -55,13 +77,14 @@ function Restore-UpdateExecutable {
 }
 
 function Start-UpdateProcess {
-  param([string]$Path, [string]$Arguments, [string]$Directory)
+  param([string]$Path, [string]$Arguments, [string]$Directory, [bool]$Visible = $false)
   $startInfo = New-Object System.Diagnostics.ProcessStartInfo
   $startInfo.FileName = $Path
   $startInfo.Arguments = $Arguments
   $startInfo.WorkingDirectory = $Directory
-  $startInfo.UseShellExecute = $false
-  $startInfo.CreateNoWindow = $true
+  $startInfo.UseShellExecute = $Visible
+  $startInfo.CreateNoWindow = -not $Visible
+  if ($Visible) { $startInfo.WindowStyle = [Diagnostics.ProcessWindowStyle]::Normal }
   return [Diagnostics.Process]::Start($startInfo)
 }
 
@@ -126,13 +149,19 @@ try {
   $installed = $false
   for ($attempt = 1; $attempt -le 10; $attempt++) {
     $remaining = [int][Math]::Floor(($deadline - [DateTime]::UtcNow).TotalMilliseconds)
-    if ($remaining -le 0) { throw 'installer deadline exceeded' }
+    if (-not $config.interactive -and $remaining -le 0) { throw 'installer deadline exceeded' }
     Write-UpdateLog "starting installer attempt $attempt"
-    # NSIS /D is deliberately unquoted and last, including paths with spaces.
-    # /UPDATE avoids running the WebView2 bootstrapper for an existing app.
-    $installer = Start-UpdateProcess -Path $config.installerPath -Arguments "/S /UPDATE /D=$applicationDirectory" -Directory $config.workDirectory
+    # Production uses a visible Next/Install/Finish wizard. /S is retained
+    # solely for isolated headless NSIS tests and older-client compatibility.
+    # NSIS /D must remain unquoted and last, including paths with spaces.
+    $arguments = "/UPDATE /D=$applicationDirectory"
+    if (-not $config.interactive) { $arguments = "/S $arguments" }
+    $installer = Start-UpdateProcess -Path $config.installerPath -Arguments $arguments -Directory $config.workDirectory -Visible ([bool]$config.interactive)
     $installationStarted = $true
-    if (-not $installer.WaitForExit($remaining)) {
+    if ($config.interactive) {
+      Write-UpdateLog 'installation wizard opened; waiting for user completion without an interaction deadline'
+      $installer.WaitForExit()
+    } elseif (-not $installer.WaitForExit($remaining)) {
       $safeToRecover = $false
       Stop-UpdateProcessTree $installer
       $safeToRecover = $true
@@ -150,20 +179,26 @@ try {
       break
     }
     # Only retry the explicit NSIS file-write error; other failures need action.
-    if ($exitCode -ne 73) { throw "installer failed with exit code $exitCode" }
+    if ($exitCode -eq 1) { throw 'installation was cancelled; keeping the previous version' }
+    if ($config.interactive -or $exitCode -ne 73) { throw "installer failed with exit code $exitCode" }
     Start-Sleep -Milliseconds 750
   }
   if (-not $installed) { throw 'installer could not replace the executable after bounded retries' }
 
-  Write-UpdateLog 'verified installed executable; restarting application'
+  $launchRequested = -not $config.interactive -or (Test-Path -LiteralPath (Join-Path $config.workDirectory 'launch-requested'))
+  Write-UpdateLog "verified installed executable; launch requested=$launchRequested"
   # Persist before launch so the new application's first Info call never sees
   # a stale "installing" result. Launch failure replaces it with "failed".
   Write-UpdateResult 'succeeded'
-  $restarted = Start-UpdateProcess -Path $config.targetPath -Arguments '' -Directory $applicationDirectory
-  if ($restarted.WaitForExit(1500)) { throw "updated application exited early with code $($restarted.ExitCode)" }
-  $restarted.Dispose()
-  $restarted = $null
-  Write-UpdateLog 'update succeeded; application restarted'
+  if ($launchRequested) {
+    $restarted = Start-UpdateProcess -Path $config.targetPath -Arguments '' -Directory $applicationDirectory
+    if ($restarted.WaitForExit(1500)) { throw "updated application exited early with code $($restarted.ExitCode)" }
+    $restarted.Dispose()
+    $restarted = $null
+    Write-UpdateLog 'update succeeded; application restarted'
+  } else {
+    Write-UpdateLog 'update succeeded; user chose not to launch the application'
+  }
   try { Remove-Item -LiteralPath $config.workDirectory -Recurse -Force }
   catch { Write-UpdateLog "update completed, but staging cleanup failed: $($_.Exception.Message)" }
   exit 0

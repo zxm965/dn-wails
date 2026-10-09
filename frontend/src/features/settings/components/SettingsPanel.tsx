@@ -149,7 +149,7 @@ export function SettingsPanel() {
           <h2>左侧菜单</h2>
           <p>按需显示功能入口；关闭后仅隐藏菜单，不影响已有数据，偏好设置始终保留。</p>
         </div>
-        <div className={cx('settings-toggles')}>
+        <div className={cx('settings-menu-grid')}>
           {CONFIGURABLE_MENU_ENTRIES.map((entry) => {
             const parentVisible = resolveMenuVisibility(
               entry.key,
@@ -159,6 +159,7 @@ export function SettingsPanel() {
             return (
               <div key={entry.key} className={cx('settings-toggle-group')}>
                 <ToggleRow
+                  compact
                   title={entry.label}
                   description={entry.description}
                   checked={parentVisible}
@@ -167,6 +168,7 @@ export function SettingsPanel() {
                 {entry.children.map((child) => (
                   <ToggleRow
                     key={child.key}
+                    compact
                     title={child.label}
                     description={child.description}
                     checked={
@@ -353,7 +355,9 @@ export function SettingsPanel() {
                 <span>
                   {updateProgress.phase === 'downloading'
                     ? `正在下载更新 ${updateProgress.percent}%`
-                    : '下载完成，正在准备安装…'}
+                    : updateInfo?.platform === 'windows'
+                      ? '下载完成，正在准备安装向导…'
+                      : '下载完成，正在准备安装…'}
                 </span>
                 <progress
                   className={cx('settings-update-progress-bar')}
@@ -403,15 +407,28 @@ interface ToggleRowProps {
   checked: boolean
   disabled?: boolean
   nested?: boolean
+  compact?: boolean
   onChange: (checked: boolean) => void
 }
 
-function ToggleRow({ title, description, checked, disabled = false, nested = false, onChange }: ToggleRowProps) {
+function ToggleRow({
+  title,
+  description,
+  checked,
+  disabled = false,
+  nested = false,
+  compact = false,
+  onChange,
+}: ToggleRowProps) {
   return (
-    <label className={cx(`settings-toggle-row${nested ? ' is-nested' : ''}${disabled ? ' is-disabled' : ''}`)}>
-      <span>
-        <strong>{title}</strong>
-        <small>{description}</small>
+    <label
+      className={cx(
+        `settings-toggle-row${nested ? ' is-nested' : ''}${disabled ? ' is-disabled' : ''}${compact ? ' settings-menu-row' : ''}`,
+      )}
+    >
+      <span className={cx('settings-toggle-text')}>
+        <strong className={cx('settings-toggle-title')}>{title}</strong>
+        <small className={cx('settings-toggle-description')}>{description}</small>
       </span>
       <Switch aria-label={title} checked={checked} disabled={disabled} onCheckedChange={onChange} />
     </label>

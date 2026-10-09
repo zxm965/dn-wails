@@ -57,10 +57,18 @@ ManifestDPIAware true
 !define MUI_FINISHPAGE_NOAUTOCLOSE # Wait on the INSTFILES page so the user can take a look into the details of the installation steps
 !define MUI_ABORTWARNING # This will warn the user if they exit from the installer.
 
+Var UpdateMode
+Var PreviousExecutable
+Var DiscardedExecutable
+
 !insertmacro MUI_PAGE_WELCOME # Welcome to the installer page.
 # !insertmacro MUI_PAGE_LICENSE "resources\eula.txt" # Adds a EULA page to the installer
-!insertmacro MUI_PAGE_DIRECTORY # In which folder install page.
+!define MUI_PAGE_CUSTOMFUNCTION_PRE UpdateDirectoryPage
+!insertmacro MUI_PAGE_DIRECTORY # Initial installations can choose a folder.
 !insertmacro MUI_PAGE_INSTFILES # Installing page.
+!define MUI_FINISHPAGE_RUN "$INSTDIR\${PRODUCT_EXECUTABLE}"
+!define MUI_FINISHPAGE_RUN_TEXT "Launch ${INFO_PRODUCTNAME}"
+!define MUI_FINISHPAGE_RUN_FUNCTION LaunchInstalledApplication
 !insertmacro MUI_PAGE_FINISH # Finished installation page.
 
 !insertmacro MUI_UNPAGE_INSTFILES # Uninstalling page
@@ -89,7 +97,12 @@ Function .onInit
    ${GetParameters} $R0
    ClearErrors
    ${GetOptions} $R0 "/UPDATE" $R1
-   IfErrors 0 installDirectoryReady
+   IfErrors 0 updateModeDetected
+   Goto restoreInstallDirectory
+updateModeDetected:
+   StrCpy $UpdateMode 1
+   Goto installDirectoryReady
+restoreInstallDirectory:
 
    # Preserve an explicitly supplied /D path. Without /D, recover the existing
    # install directory so silent updates launched by older clients can replace
@@ -115,11 +128,62 @@ validatePreviousInstallDirectory:
 installDirectoryReady:
 FunctionEnd
 
+Function UpdateDirectoryPage
+    # In-app updates always use the running application's directory. Changing
+    # it here would make post-install verification and recovery target another
+    # copy, and could silently move custom installations back to C:.
+    StrCmp $UpdateMode 1 0 +2
+    Abort
+FunctionEnd
+
+Function LaunchInstalledApplication
+    StrCmp $UpdateMode 1 updateLaunchRequested
+    ClearErrors
+    Exec '"$INSTDIR\${PRODUCT_EXECUTABLE}"'
+    IfErrors 0 launchComplete
+    MessageBox MB_OK|MB_ICONSTOP "The application could not be started. Please open ${PRODUCT_EXECUTABLE} from the installation folder."
+    Goto launchComplete
+updateLaunchRequested:
+    # The observer verifies the release hash and owns the single restart.
+    # An unchecked finish-page checkbox leaves the updated app closed.
+    ClearErrors
+    FileOpen $0 "$EXEDIR\launch-requested" w
+    IfErrors launchRequestFailed
+    FileWrite $0 "launch"
+    FileClose $0
+    IfErrors launchRequestFailed launchComplete
+launchRequestFailed:
+    MessageBox MB_OK|MB_ICONSTOP "The update was installed, but automatic launch could not be requested. Please open ${PRODUCT_EXECUTABLE} from the installation folder."
+launchComplete:
+FunctionEnd
+
+Function RestorePreviousExecutable
+    StrCmp $PreviousExecutable "" restoreComplete
+    IfFileExists "$PreviousExecutable" 0 restoreComplete
+    # Avoid copying over a recently mapped failed image during rollback too.
+    IfFileExists "$INSTDIR\${PRODUCT_EXECUTABLE}" 0 restoreOldName
+    GetTempFileName $DiscardedExecutable "$INSTDIR"
+    Delete "$DiscardedExecutable"
+    ClearErrors
+    Rename "$INSTDIR\${PRODUCT_EXECUTABLE}" "$DiscardedExecutable"
+    IfErrors restoreFailed
+restoreOldName:
+    ClearErrors
+    Rename "$PreviousExecutable" "$INSTDIR\${PRODUCT_EXECUTABLE}"
+    IfErrors restoreFailed
+    Delete "$DiscardedExecutable"
+    Goto restoreComplete
+restoreFailed:
+    IfSilent restoreComplete
+    MessageBox MB_OK|MB_ICONSTOP "The previous executable could not be restored. Its backup is at:$\r$\n$PreviousExecutable"
+restoreComplete:
+FunctionEnd
+
 Section
     !insertmacro wails.setShellContext
 
     # An already running application has a working WebView2 runtime. Avoid
-    # creating a bootstrapper process tree during a bounded silent update.
+    # creating a bootstrapper process tree during an in-app update.
     ${GetParameters} $R0
     ClearErrors
     ${GetOptions} $R0 "/UPDATE" $R1
@@ -130,13 +194,24 @@ skipWebviewRuntime:
 
     SetOutPath $INSTDIR
 
-    SetOverwrite on
-    IfSilent 0 writeExecutable
+    # Windows may retain the old image lock after the parent has exited.
+    # Rename it to a unique name on the same volume before extracting the new
+    # file; both installation and rollback avoid truncating a mapped image.
+    IfFileExists "$INSTDIR\${PRODUCT_EXECUTABLE}" 0 targetVacant
+    GetTempFileName $PreviousExecutable "$INSTDIR"
+    Delete "$PreviousExecutable"
+    ClearErrors
+    Rename "$INSTDIR\${PRODUCT_EXECUTABLE}" "$PreviousExecutable"
+    IfErrors executableWriteFailed
+targetVacant:
+    # Handle locked files ourselves; do not offer an Ignore action that could
+    # leave a missing executable while completing the installation.
     SetOverwrite try
-writeExecutable:
     ClearErrors
     !insertmacro wails.files
     IfErrors executableWriteFailed
+
+    Delete "$PreviousExecutable"
 
     CreateShortcut "$SMPROGRAMS\${INFO_PRODUCTNAME}.lnk" "$INSTDIR\${PRODUCT_EXECUTABLE}"
     CreateShortCut "$DESKTOP\${INFO_PRODUCTNAME}.lnk" "$INSTDIR\${PRODUCT_EXECUTABLE}"
@@ -155,6 +230,10 @@ writeExecutable:
 executableWriteFailed:
     # The updater can retry transient locks. Never report success or overwrite
     # uninstall metadata when the application file could not be written.
+    Call RestorePreviousExecutable
+    IfSilent updateWriteFailureReported
+    MessageBox MB_OK|MB_ICONSTOP "The application could not be updated. Close any other running copies and retry. The previous executable has been retained."
+updateWriteFailureReported:
     SetErrorLevel 73
     Quit
 installationComplete:

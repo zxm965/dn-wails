@@ -13,8 +13,8 @@
 - `internal/installation/`：生成和持久化下载门禁使用的 UUID v4 安装 ID、首次安装版本与最近运行版本。
 - `internal/platform/appupdate/config.go`：从 PostgreSQL 读取当前应用、渠道、平台和架构对应的更新源配置。
 - `internal/platform/appupdate/installer_darwin.go`：挂载新版 DMG，退出当前进程后替换应用包、卸载镜像并重新打开。
-- `internal/platform/appupdate/installer_windows.go`、`windows_update_handoff.go` 与嵌入的 `windows_update.ps1`：通过 JSON 配置和就绪/提交文件完成双向交接；助手预检、备份后才允许退出，随后有限时运行用户级 NSIS 安装器，按发布摘要校验目标 EXE，失败时恢复旧文件并重启。`helper_process_windows.go` 隔离 Windows 进程创建标志。
-- `build/windows/nsis/project.nsi`：定义安装内容，并从既有卸载注册信息恢复自定义安装目录、持久化 `InstallLocation`，兼容尚未携带显式安装目录的旧版更新助手。
+- `internal/platform/appupdate/installer_windows.go`、`windows_update_handoff.go` 与嵌入的 `windows_update.ps1`：通过 JSON 配置和就绪/提交文件完成双向交接；PowerShell 观察进程预检、备份后才允许退出，随后打开用户级 NSIS 安装向导，按发布摘要校验目标 EXE，失败时恢复旧文件并重启。没有原生 Go 更新 helper。`helper_process_windows.go` 隔离 Windows 进程创建标志。
+- `build/windows/nsis/project.nsi`：定义安装向导，将旧 EXE 改名后写入新版，并从既有卸载注册信息恢复自定义安装目录、持久化 `InstallLocation`，兼容尚未携带显式安装目录的旧版更新进程；完成页的启动选项由观察进程执行，以免重复启动或校验前启动。
 - `build/windows/nsis/compile.ps1`：在 Windows runner 上显式调用 `makensis` 编译 `project.nsi`，校验输入和非空安装器输出。
 - `internal/platform/appupdate/update_result.go`：读取持久更新结果，将失败或中断原因通过版本信息返回，供下次启动展示。
 - `internal/application/update.go`：向前端暴露版本信息、检查和安装三个 Wails 用例，并转发下载进度事件。
@@ -75,12 +75,18 @@ React AppUpdateProvider
 8. 当前客户端按平台精确选择 DMG 或 NSIS 安装器，由 Go HTTP 客户端携带安装 ID、当前版本和平台 User-Agent 请求下载；下载后校验 Release 元数据声明的字节数和 SHA-256。Windows 还必须在下载前取得同一 Release 中纯应用 EXE 的 SHA-256，作为安装后校验依据，缺少该资源或摘要时保留应用并拒绝更新。
 9. 校验成功后启动平台更新助手；macOS 挂载 DMG 并在当前应用退出后替换 `.app`。Windows 将版本、原 EXE 路径、固定目标 `cull-pear.exe`、安装器及目标 EXE 摘要写入临时 JSON 配置，避免路径通过脚本文本插值。Go 同时捕获 PowerShell 的标准输出与标准错误，涵盖脚本加载前的失败。
 10. Windows 助手验证安装器摘要、原程序存在性、目标目录写入能力和备份创建，持久化 `prepared` 后发出 `ready`。Go 最多等待 20 秒；失败、提前退出或取消时终止助手并保留应用。收到就绪后才写入 `commit`，门面随后退出应用。助手必须同时看到提交和父进程退出才安装，最长等待 60 秒。
-11. 助手以 `/S /UPDATE /D=<原 EXE 目录>` 启动 NSIS。`/UPDATE` 防止陈旧注册信息覆盖显式目录，并跳过现有应用无需重新安装的 WebView2 bootstrapper；`/D` 保持末尾且不加引号。安装总期限为 120 秒，仅对明确的 EXE 写入失败退出码 `73` 最多重试 10 次。超时先终止安装进程树并确认停止，无法确认时停止自动恢复并留下错误，避免回滚与安装并发写入。
-12. NSIS 安装后必须验证目标 EXE 与同一 Release 的纯应用 EXE 摘要一致，不能仅凭退出码或哈希变化判定成功。直接运行或改名 EXE 会迁移到同目录的规范 `cull-pear.exe` 并启动它；旧文件保留供人工恢复，后续从新快捷方式运行安装版。
-13. 启动后的新进程至少存活 1.5 秒才完成此次助手流程。安装失败、校验失败或立即启动失败时，在确认安装进程停止后恢复备份 EXE 并重新打开旧程序；回滚也有限次处理文件锁并校验备份摘要。失败会保留临时安装器和备份以供人工恢复，不把 EXE 回滚宣称为整个 NSIS 注册信息的事务回滚。
+11. 观察进程以 `/UPDATE /D=<原 EXE 目录>` 启动可见 NSIS 向导，不携带 `/S`；用户点击“下一步”、安装及完成。`/UPDATE` 防止陈旧注册信息覆盖显式目录、跳过目录选择页和已就绪的 WebView2 bootstrapper；`/D` 保持末尾且不加引号。交互安装没有等待用户操作的超时，也不会自动反复打开向导；取消返回退出码 `1`，恢复并打开旧应用。`interactive=false` 仅保留给无界面回归与旧客户端兼容，具有 120 秒安装期限和退出码 `73` 的有限重试。
+12. NSIS 先把目标旧 EXE 改名到同卷唯一备份路径，再写入新版，避开应用退出后 Windows 仍持有映像写锁导致原地覆盖失败的问题；写入失败恢复旧名字并报告退出码 `73`。观察进程随后必须验证目标 EXE 与同一 Release 的纯应用 EXE 摘要一致，不能仅凭退出码或哈希变化判定成功。直接运行或改名 EXE 会迁移到同目录的规范 `cull-pear.exe`；旧文件保留供人工恢复，后续从新快捷方式运行安装版。
+13. 更新向导完成页勾选启动时，只写入暂存目录中的 `launch-requested`，观察进程校验完成后启动一次新应用；取消勾选则安装成功并保持关闭。新进程至少存活 1.5 秒才完成此次启动流程。安装失败、校验失败或立即启动失败时，在确认安装进程停止后恢复备份 EXE 并重新打开旧程序；回滚也使用同卷暂存、改名替换、有限重试和备份摘要校验。失败会保留临时安装器和备份以供人工恢复，不把 EXE 回滚宣称为整个 NSIS 注册信息的事务回滚。
 14. 日志保存在 `%APPDATA%\cull-pear\update-logs\`，最近结果保存在 `%APPDATA%\cull-pear\update-result.json`，包含 `status`、`version`、`message`、`logPath`。启动时 `Info.lastUpdateError` 返回失败或中断说明；前端保留设置页错误并提示，暂停本次启动的自动更新，用户仍可手动重试。成功结果不产生错误。
 
-安装开始后，下载器按实际读取字节数回调进度。`internal/appupdate.Service` 将进度归一化为版本、阶段、已下载字节、总字节和百分比，`internal/application.App` 通过 `app-update:progress` 事件转发给前端。`AppUpdateProvider` 负责订阅并清理事件，设置页的“应用更新”区域展示下载百分比、进度条和字节数；下载完成后显示“正在准备安装”，保留原有自动重启流程。
+安装开始后，下载器按实际读取字节数回调进度。`internal/appupdate.Service` 将进度归一化为版本、阶段、已下载字节、总字节和百分比，`internal/application.App` 通过 `app-update:progress` 事件转发给前端。`AppUpdateProvider` 负责订阅并清理事件，设置页展示下载进度；Windows 的确认弹窗和完成提示明确说明将打开安装向导，macOS 保留原有自动重启流程。
+
+### 开源实现参考
+
+采用 [nsmao-com/codex-app-desktop 的 Windows 安装更新实现](https://github.com/nsmao-com/codex-app-desktop/blob/9671359f1e95ba14d6abe238727164aab079d977/update_install.go) 中“等待原进程退出 → 启动不带 `/S` 的 EXE 安装器 → 等待安装结束”的流程；该项目使用 Wails v3。此参考证明实现路径，不代表已取得本项目 Windows 设备的现场成功日志。本项目保留就绪交接、发布摘要校验和失败恢复，并让完成页控制是否重启。
+
+Wails 自身 [Windows updater 的映像锁处理](https://github.com/wailsapp/wails/blob/v3.0.0-beta.25/v3/pkg/updater/helper_windows.go) 记录了退出后删除旧 EXE 仍可能失败的情况，并采用改名绕开旧映像锁；本项目将同卷改名方案落实在 NSIS 和 PowerShell 回滚中，不使用其 Go helper。
 
 ## 数据契约
 
@@ -160,7 +166,7 @@ interface GitHubReleaseEndpoint {
 - 下载只接受 HTTPS、声明大小不超过 1 GiB 且带 SHA-256 digest 的资源；大小或摘要不一致时删除临时文件并拒绝安装。
 - Gitee 普通项目单个 Release 附件不能超过 100 MB，仓库附件总量不能超过 1 GB；发布脚本会在上传前拒绝超过单附件限制的构建产物。
 - macOS 应用包所在目录必须允许当前用户写入；Windows 发布统一使用 Taskfile 的 `INSTALL_SCOPE=user`，避免自动更新请求管理员权限。
-- Windows 静默更新必须把 `/D=<当前 exe 所在目录>` 放在 NSIS 参数末尾；该值不加引号，因为 NSIS 会把 `/D=` 后的全部剩余命令行（包括空格）解释为安装目录。安装包没有 Authenticode 签名是独立风险：SmartScreen 可能提示，启用强制策略或 Smart App Control 的设备还可能直接阻止未知未签名程序；但签名状态不会改变用户级安装目录，不能用它解释跨盘静默安装落到默认目录的问题，也无法通过更新器代码保证绕过系统执行策略。
+- Windows 更新必须把 `/D=<当前 exe 所在目录>` 放在 NSIS 参数末尾；该值不加引号，因为 NSIS 会把 `/D=` 后的全部剩余命令行（包括空格）解释为安装目录。安装包没有 Authenticode 签名是独立风险：SmartScreen 可能提示，启用强制策略或 Smart App Control 的设备还可能直接阻止未知未签名程序；可见向导不能保证绕过系统执行策略。
 - 旧版本如果已经把一次失败更新安装到默认 C 盘，卸载注册信息可能已被改写为 C 盘路径；这类客户端需要先手动把修复版本安装回原目录一次，之后自动更新会持续沿用当前 exe 所在目录。
 - Windows NSIS 卸载时删除安装身份文件但保留其他应用配置；更新安装不会执行该卸载清理。macOS 删除 `.app` 没有对应卸载钩子。
 - 更新助手由当前运行的旧版本写出，下载到新版本安装包不会更新本次运行的助手。已经无法交接的旧客户端需要手动覆盖安装修复版本一次，不能依赖新助手自我修复首次升级。
@@ -208,12 +214,12 @@ CULL_PEAR_TEST_POWERSHELL=/path/to/pwsh go test ./internal/platform/appupdate -c
 CULL_PEAR_TEST_MAKENSIS=/path/to/makensis go test ./internal/platform/appupdate -run TestWindowsNSISUpdateEndToEnd -count=1 -v
 ```
 
-`testdata/updatefixture` 构建临时旧应用、新应用与故障注入安装器。集成测试执行实际 PowerShell 脚本及 Go 交接函数，验证中文/空格/方括号路径、规范及改名 EXE、就绪失败、取消、父进程未退出、瞬时/持续文件锁退出码、安装器卡死、摘要错误和新程序启动失败。macOS/Linux 仅将 Windows `taskkill` 边界替换为 .NET 进程树终止；模拟安装器的锁错误不能替代 Windows 内核文件锁测试。
+`testdata/updatefixture` 构建临时旧应用、新应用与故障注入安装器。集成测试执行实际 PowerShell 脚本及 Go 交接函数，验证中文/空格/方括号路径、规范及改名 EXE、就绪失败、取消、父进程未退出、瞬时/持续文件锁退出码、安装器卡死、摘要错误和新程序启动失败；交互回归额外验证不传 `/S`、取消安装恢复、用户等待超过静默期限仍成功、取消启动勾选后不启动。macOS/Linux 将 Windows `taskkill` 替换为 .NET 进程树终止，并将可见 shell 边界替换为直接启动临时测试进程；不替代人工向导验证。
 
 Windows 助手使用 `CREATE_NO_WINDOW | CREATE_NEW_PROCESS_GROUP`，为 Windows PowerShell 5.1 提供无可见窗口的控制台。不能使用 `DETACHED_PROCESS`：在该模式下 PowerShell 可能以退出码 0 提前结束，脚本和日志均未执行。专用 Windows 回归测试验证隐藏脚本确实执行、标准输出/错误被捕获且退出码正确。
 
 文件摘要通过 .NET `SHA256` 流式计算，不依赖 `Get-FileHash` 的模块自动加载，避免从 PowerShell 7 等宿主继承的 `PSModulePath` 使 Windows PowerShell 5.1 校验失败；输出日志统一采用 UTF-8，保留中文路径。
 
-`.github/workflows/windows-updater-tests.yml` 在 main 分支相关文件变动时先执行 Windows PowerShell 5.1 和真实 NSIS 集成测试，也支持手动触发，允许创建发布标签前取得原生平台验证结果。Windows 发布构建仍在打包前强制执行同组测试。真实 NSIS 测试使用唯一的测试产品注册信息、临时目标和测试应用，完成后精确清理测试快捷方式及卸载注册项，不执行会触及真实安装身份的生产卸载程序。任何测试失败均阻止后续构建和 Release 发布。
+`.github/workflows/windows-updater-tests.yml` 在 main 分支相关文件变动时先执行 Windows PowerShell 5.1 和真实 NSIS 集成测试，也支持手动触发，允许创建发布标签前取得原生平台验证结果。Windows 发布构建仍在打包前强制执行同组测试。真实 NSIS 测试额外持有拒绝原地写入但允许改名的 Windows 内核文件句柄，先断言旧 EXE 无法覆盖，再验证安装器仍能改名并成功安装。测试使用唯一的产品注册信息、临时目标和测试应用，完成后精确清理测试快捷方式及卸载注册项，不执行会触及真实安装身份的生产卸载程序。任何测试失败均阻止后续构建和 Release 发布。
 
-实际挂载 DMG 并替换 macOS `.app`、真实 Wails 窗口启动、Windows 系统执行策略和签名提示仍必须分别在对应桌面系统上人工验证。
+实际挂载 DMG 并替换 macOS `.app`、真实 Wails 窗口启动、Windows 安装向导点击及完成页启动选项、系统执行策略和签名提示仍必须分别在对应桌面系统上人工验证。

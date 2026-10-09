@@ -10,19 +10,24 @@ const isSelected = style({})
 
 const calendarPage = style([
   {
-    width: 'min(100%, calc(var(--page-content-max-width) + 96px))',
+    width: '100%',
     minWidth: '0',
+    height: '100%',
+    minHeight: '0',
     display: 'grid',
-    gap: '18px',
+    gridTemplateRows: 'minmax(min-content, 1fr) minmax(0, max-content)',
+    gap: '16px',
     margin: '0 auto',
-    padding: 'clamp(18px, 2.4vw, 24px) clamp(28px, 4.5vw, 52px) clamp(22px, 2.8vw, 30px)',
+    padding: 'clamp(18px, 2.4cqw, 24px) clamp(28px, 4.5cqw, 52px) clamp(22px, 2.8cqw, 30px)',
     containerName: 'calendar-page',
     containerType: 'inline-size',
+    WebkitUserSelect: 'none',
+    userSelect: 'none',
   },
   {
     '@container': {
       'app-content (max-width: 620px)': {
-        gap: '14px',
+        gap: '12px',
         padding: '14px 16px 20px',
       },
       'app-content (max-width: 390px)': {
@@ -36,6 +41,9 @@ const calendarPage = style([
 const calendarPanel = style([
   {
     minWidth: '0',
+    minHeight: '0',
+    display: 'grid',
+    gridTemplateRows: 'max-content max-content minmax(0, 1fr) max-content',
     padding: '10px',
     overflow: 'hidden',
     background:
@@ -82,6 +90,10 @@ const calendarToolbar = style([
         marginBottom: '8px',
         padding: '11px 12px',
       },
+      'calendar-page (max-width: 390px)': {
+        gap: '8px',
+        padding: '8px',
+      },
     },
   },
 ])
@@ -114,6 +126,11 @@ const calendarHeadingTitle = style({
   margin: '0',
   fontSize: '18px',
   letterSpacing: '-0.02em',
+  '@container': {
+    'calendar-page (max-width: 390px)': {
+      fontSize: '16px',
+    },
+  },
 })
 
 const calendarHeadingText = style({
@@ -121,12 +138,21 @@ const calendarHeadingText = style({
   color: 'var(--text-tertiary)',
   fontSize: '10px',
   lineHeight: '1.4',
+  '@container': {
+    'calendar-page (max-width: 390px)': {
+      marginTop: '2px',
+      fontSize: '9px',
+      lineHeight: '1.2',
+    },
+  },
 })
 
 const calendarControls = style([
   {
+    minWidth: '0',
     display: 'flex',
     alignItems: 'center',
+    flexWrap: 'wrap',
     justifyContent: 'flex-end',
     gap: '6px',
   },
@@ -137,7 +163,10 @@ const calendarControls = style([
       },
       'calendar-page (max-width: 390px)': {
         display: 'grid',
-        gridTemplateColumns: '32px minmax(94px, 1fr) minmax(76px, 1fr) 28px 32px',
+        gridTemplateColumns: '32px minmax(0, 1fr) minmax(0, 1fr) 28px 32px',
+      },
+      'calendar-page (max-width: 320px)': {
+        gridTemplateColumns: '32px minmax(0, 1fr) 32px',
       },
     },
   },
@@ -147,6 +176,16 @@ const calendarArrowButton = style({
   width: '32px',
   padding: '0',
   borderRadius: '10px',
+  '@container': {
+    'calendar-page (max-width: 320px)': {
+      selectors: {
+        '&:last-child': {
+          gridColumn: '3',
+          gridRow: '1',
+        },
+      },
+    },
+  },
 })
 
 const calendarYearSelect = style({
@@ -156,6 +195,10 @@ const calendarYearSelect = style({
     'calendar-page (max-width: 390px)': {
       width: '100%',
       minWidth: '0',
+    },
+    'calendar-page (max-width: 320px)': {
+      gridColumn: '2',
+      gridRow: '1',
     },
   },
 })
@@ -168,6 +211,10 @@ const calendarMonthSelect = style({
       width: '100%',
       minWidth: '0',
     },
+    'calendar-page (max-width: 320px)': {
+      gridColumn: '2',
+      gridRow: '2',
+    },
   },
 })
 
@@ -176,6 +223,13 @@ const calendarTodayButton = style({
   minWidth: '28px',
   padding: '0',
   borderRadius: '50%',
+  '@container': {
+    'calendar-page (max-width: 320px)': {
+      gridColumn: '1',
+      gridRow: '2',
+      justifySelf: 'center',
+    },
+  },
   selectors: {
     "&[data-button-variant='ghost']": {
       background: 'transparent',
@@ -219,8 +273,10 @@ const calendarWeekday = style({
 })
 
 const calendarGrid = style({
+  minHeight: '0',
   display: 'grid',
   gridTemplateColumns: 'repeat(7, minmax(0, 1fr))',
+  gridAutoRows: 'minmax(0, 1fr)',
   gap: '6px',
   '@container': {
     'calendar-page (max-width: 620px)': {
@@ -235,11 +291,13 @@ const calendarGrid = style({
 const calendarDay = style([
   {
     minWidth: '0',
-    minHeight: 'clamp(54px, 8vh, 72px)',
+    height: 'clamp(54px, 8vh, 72px)',
+    minHeight: '0',
+    maxHeight: '100%',
     display: 'flex',
     flexDirection: 'column',
-    gap: '4px',
-    padding: '7px 8px',
+    gap: '2px',
+    padding: '5px 8px',
     color: 'var(--text-primary)',
     background: 'color-mix(in srgb, var(--surface-elevated) 96%, var(--surface-muted) 4%)',
     border: '1px solid var(--border-subtle)',
@@ -298,16 +356,20 @@ const calendarDay = style([
   {
     '@container': {
       'calendar-page (max-width: 520px)': {
-        minHeight: '54px',
-        gap: '3px',
-        padding: '6px 5px',
+        height: '54px',
+        padding: '4px 5px',
         borderRadius: '9px',
         boxShadow: 'none',
       },
       'calendar-page (max-width: 390px)': {
-        minHeight: '50px',
-        padding: '5px 4px',
+        height: '50px',
+        padding: '4px',
         borderRadius: '7px',
+      },
+      'calendar-page (max-width: 320px)': {
+        height: '48px',
+        gap: '1px',
+        padding: '3px 2px',
       },
     },
   },
@@ -318,6 +380,16 @@ const calendarDayTopline = style({
   alignItems: 'center',
   justifyContent: 'space-between',
   gap: '4px',
+  '@container': {
+    'calendar-page (max-width: 390px)': {
+      gap: '2px',
+    },
+    'calendar-page (max-width: 320px)': {
+      alignItems: 'flex-start',
+      flexDirection: 'column',
+      gap: '1px',
+    },
+  },
 })
 
 const calendarDayNumber = style({
@@ -329,6 +401,19 @@ const calendarDayNumber = style({
   fontWeight: '800',
   lineHeight: '1',
   borderRadius: '8px',
+  '@container': {
+    'calendar-page (max-width: 390px)': {
+      width: '18px',
+      height: '18px',
+      fontSize: '12px',
+      borderRadius: '6px',
+    },
+    'calendar-page (max-width: 320px)': {
+      width: '16px',
+      height: '16px',
+      fontSize: '11px',
+    },
+  },
   selectors: {
     [`${calendarDay}${isToday} &`]: {
       color: 'var(--button-primary-text)',
@@ -350,6 +435,20 @@ const calendarStatus = style({
   fontWeight: '900',
   borderRadius: '7px',
   boxShadow: '0 4px 10px rgba(6, 12, 21, 0.12)',
+  '@container': {
+    'calendar-page (max-width: 390px)': {
+      width: '14px',
+      height: '14px',
+      fontSize: '9px',
+      borderRadius: '5px',
+    },
+    'calendar-page (max-width: 320px)': {
+      width: '10px',
+      height: '10px',
+      fontSize: '8px',
+      borderRadius: '3px',
+    },
+  },
 })
 
 const calendarStatusHoliday = style({
@@ -369,6 +468,12 @@ const calendarLunar = style({
   lineHeight: '1.3',
   textOverflow: 'ellipsis',
   whiteSpace: 'nowrap',
+  '@container': {
+    'calendar-page (max-width: 320px)': {
+      fontSize: '8px',
+      lineHeight: '1.2',
+    },
+  },
   selectors: {
     [`&${isHighlighted}`]: {
       color: 'var(--text-secondary)',
@@ -397,6 +502,9 @@ const calendarFooter = style([
       'calendar-page (max-width: 560px)': {
         alignItems: 'flex-start',
         flexDirection: 'column',
+        gap: '6px',
+        marginTop: '4px',
+        paddingTop: '4px',
       },
     },
   },
@@ -426,6 +534,8 @@ const calendarLegendToday = style({
 })
 
 const calendarFooterLink = style({
+  minWidth: '0',
+  overflowWrap: 'anywhere',
   color: 'var(--text-secondary)',
   textDecoration: 'none',
   selectors: {

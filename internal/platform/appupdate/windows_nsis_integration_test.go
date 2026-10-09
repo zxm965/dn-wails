@@ -90,5 +90,9 @@ if (Test-Path -LiteralPath $key) { Remove-Item -LiteralPath $key -Recurse -Force
 		t.Log("production NSIS project compiled; native execution is required by the Windows release job")
 		return
 	}
-	runUpdateSimulation(t, testPowerShell(t), oldBinary, newBinary, "success", installer)
+	for _, scenario := range []string{"success", "image-lock"} {
+		t.Run(scenario, func(t *testing.T) {
+			runUpdateSimulation(t, testPowerShell(t), oldBinary, newBinary, scenario, installer)
+		})
+	}
 }

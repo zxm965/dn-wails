@@ -48,10 +48,19 @@ func main() {
 	}
 	if filepath.Base(executable) == "installer.exe" {
 		audit("installer:" + strings.Join(os.Args[1:], " "))
-		if strings.Join(os.Args[1:], " ") != "/S /UPDATE /D="+filepath.Dir(config.Target) {
+		arguments := "/UPDATE /D=" + filepath.Dir(config.Target)
+		interactive := strings.HasPrefix(config.Scenario, "wizard-")
+		if !interactive {
+			arguments = "/S " + arguments
+		}
+		if strings.Join(os.Args[1:], " ") != arguments {
 			os.Exit(92)
 		}
 		switch config.Scenario {
+		case "wizard-cancel":
+			os.Exit(1)
+		case "wizard-long-wait":
+			time.Sleep(3 * time.Second)
 		case "timeout":
 			child := exec.Command(executable, "--child")
 			if err := child.Start(); err != nil {
@@ -81,6 +90,11 @@ func main() {
 		}
 		if err := os.WriteFile(config.Target, payload, 0o700); err != nil {
 			os.Exit(73)
+		}
+		if interactive && config.Scenario != "wizard-no-launch" {
+			if err := os.WriteFile(filepath.Join(filepath.Dir(executable), "launch-requested"), []byte("launch"), 0o600); err != nil {
+				panic(err)
+			}
 		}
 		os.Exit(0)
 	}
