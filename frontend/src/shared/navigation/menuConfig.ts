@@ -115,7 +115,7 @@ export const MENU_GROUPS = defineMenuGroups([
       {
         key: 'calendar',
         view: 'calendar',
-        label: '日历中心',
+        label: '日历',
         icon: CalendarDays,
         defaultVisible: true,
         preference: {
@@ -125,7 +125,7 @@ export const MENU_GROUPS = defineMenuGroups([
       {
         key: 'quick-notes',
         view: 'quick-notes',
-        label: '快速笔记',
+        label: '笔记',
         icon: NotebookPen,
         defaultVisible: true,
         preference: {
@@ -135,7 +135,7 @@ export const MENU_GROUPS = defineMenuGroups([
       {
         key: 'tasks',
         view: 'tasks',
-        label: '任务清单',
+        label: '任务',
         icon: ListChecks,
         defaultVisible: true,
         preference: {
@@ -145,7 +145,7 @@ export const MENU_GROUPS = defineMenuGroups([
       {
         key: 'site-messages',
         view: 'site-messages',
-        label: '站内消息',
+        label: '消息',
         icon: Mails,
         defaultVisible: true,
         preference: {
@@ -154,7 +154,7 @@ export const MENU_GROUPS = defineMenuGroups([
       },
       {
         key: 'dn-system',
-        label: 'DNTools',
+        label: '龙之谷',
         icon: Sparkles,
         defaultVisible: false,
         defaultView: 'dn-weekly',
@@ -176,18 +176,18 @@ export const MENU_GROUPS = defineMenuGroups([
       {
         key: 'settings',
         view: 'settings',
-        label: '偏好设置',
+        label: '设置',
         icon: Settings,
         defaultVisible: true,
       },
       {
         key: 'devtools',
         view: 'devtools',
-        label: 'DevTools',
+        label: '实验室',
         icon: Wrench,
         defaultVisible: false,
         preference: {
-          description: '显示应用概览、运行状态和文本工具入口。',
+          description: '显示文本工具与可选的桌面能力验证入口。',
           children: [DEVTOOLS_DESKTOP_LAB_PREFERENCE],
         },
       },

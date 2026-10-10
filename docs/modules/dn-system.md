@@ -1,4 +1,4 @@
-# DNTools模块
+# 龙之谷模块（dn-system）
 
 ## 模块目标
 
@@ -22,8 +22,9 @@ Go 服务通过 `pgxpool` 直连 PostgreSQL；本地构建从 `.env.local` 读�
 - `frontend/src/features/dn-system/components/`：周常、角色和进程三个业务页面及响应式样式；进程页同时承载 DN 全局快捷键配置。
 - `internal/dnprocess/`：龙之谷候选进程识别、目标校验和终止规则。
 - `internal/platform/dnprocess/`：Windows 进程快照、路径读取和进程终止适配；非 Windows 返回不可用状态。
+- `internal/platform/shortcut/`：原生热键与 Windows 后台按键状态检测适配，详见[全局快捷键模块](shortcut.md)。
 - `frontend/src/features/site-messages/`：独立站内消息页面、消息盒子、Provider 和 API 适配，详见[站内消息模块](site-messages.md)。
-- `frontend/src/shared/navigation/menuConfig.ts`：DNTools父入口、周常/角色/进程三个子菜单和独立站内消息菜单的显隐偏好配置。
+- `frontend/src/shared/navigation/menuConfig.ts`：龙之谷父入口、周常/角色/进程三个子菜单和独立站内消息菜单的显隐偏好配置。
 
 ## 依赖关系
 
@@ -113,7 +114,7 @@ DN 的两个业务路由在 `routeConfig.ts` 中统一声明 `requiresAuth: true
 - 页面打开时不自动扫描，用户点击“扫描进程”后才读取当前运行的龙之谷候选进程。
 - 仅扫描名称为 `DragonNest.exe` 或 `DragonNest_x64.exe` 的进程，进程名匹配不区分大小写，不再按路径关键字扩大候选范围；后端在结束前重新校验 PID、名称和完整路径，避免 PID 复用导致误杀。
 - 选择候选进程后可直接结束；首次成功结束后自动保存目标路径，供全局快捷键使用。
-- 快捷键默认关闭，只接受 `Ctrl+F1` 到 `Ctrl+F11` 的完整组合，默认为 `Ctrl+F4`；Windows 保留的 `F12` 不再提供。系统热键在 `WindowRuntimeReady` 后注册到 Wails 隐藏主线程窗口，在应用失焦、最小化或隐藏到托盘后仍保持有效，应用退出时注销；注册失败会写入应用日志，不自动提权。v7 升级到 v8 时不继承原有快捷键键位和开关，而是恢复默认关闭并要求用户重新开启；已记录的 DN 进程目标路径继续保留。
+- 快捷键默认关闭，只接受 `Ctrl+F1` 到 `Ctrl+F11` 的完整组合，默认为 `Ctrl+F4`；Windows 保留的 `F12` 不再提供。系统热键在 `WindowRuntimeReady` 后注册到 Wails 隐藏主线程窗口；Windows 同时每 20ms 读取当前组合的按键状态，为热键消息未送达提供兜底，在游戏或其他程序前台、应用最小化或隐藏到托盘时无需切回本窗口。两条链路去重、按住不重复、执行不重叠，成功关闭开关或应用退出时停止检测并注销；注册失败会写入应用日志，不绕过其他软件占用，也不自动提权。Windows 权限隔离、安全桌面与游戏保护机制仍可能限制按键检测或进程终止，须在实际游戏环境验证。v7 升级到 v8 时不继承原有快捷键键位和开关，而是恢复默认关闭并要求用户重新开启；已记录的 DN 进程目标路径继续保留。
 - 没有已记录路径且同时存在多个候选进程时，快捷键不会自动选择，用户需要打开“进程”页面手动选择。
 
 ## 错误与边界
@@ -140,7 +141,7 @@ DN 的两个业务路由在 `routeConfig.ts` 中统一声明 `requiresAuth: true
 
 ## 接入方式
 
-`main.tsx` 装配全局 `AccountProvider`，`App.tsx` 根据路由元数据执行认证保护，并在应用壳内装配 `SiteMessageProvider`。DNTools侧栏入口默认隐藏，用户在“偏好设置 → 左侧菜单”开启唯一 key `dn-system` 后，侧栏显示 DNTools父入口和周常、角色、进程三个子页面；站内消息使用不带分组标题、独立且默认显示的唯一 key `site-messages`，也可在同一处单独隐藏。登录后标题栏显示全局消息盒子和个人头像，消息盒子的“查看全部消息”跳转到独立站内消息页面。
+`main.tsx` 装配全局 `AccountProvider`，`App.tsx` 根据路由元数据执行认证保护，并在应用壳内装配 `SiteMessageProvider`。龙之谷侧栏入口默认隐藏，用户在“设置 → 菜单 → 左侧菜单”开启唯一 key `dn-system` 后，侧栏显示 龙之谷父入口和周常、角色、进程三个子页面；站内消息使用不带分组标题、独立且默认显示的唯一 key `site-messages`，也可在同一处单独隐藏。登录后标题栏显示全局消息盒子和个人头像，消息盒子的“查看全部消息”跳转到独立站内消息页面。
 
 本地配置：
 

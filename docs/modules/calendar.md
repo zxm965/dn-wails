@@ -14,7 +14,7 @@
 - `frontend/src/features/calendar/data/chinaHolidays.ts`：国务院年度放假通知、放假区间和调休补班日期。
 - `frontend/src/features/calendar/index.ts`：模块公共入口。
 - `frontend/src/shared/navigation/routeConfig.ts`：`/calendar` Hash 路由元数据。
-- `frontend/src/shared/navigation/menuConfig.ts`：默认显示的“日历中心”菜单和偏好说明。
+- `frontend/src/shared/navigation/menuConfig.ts`：默认显示的“日历”菜单和偏好说明。
 
 ## 依赖关系
 
@@ -83,7 +83,7 @@ interface CalendarDay {
 
 ## 接入方式
 
-`CalendarPanel` 通过功能模块 `index.ts` 暴露，由 `App.tsx` 的 `/calendar` 路由装配。日历中心位于路由和侧边菜单首位，是应用默认入口；菜单默认可见且无需登录，用户可在偏好设置中隐藏，隐藏当前日历入口时应用会回退到第一个可见路由。
+`CalendarPanel` 通过功能模块 `index.ts` 暴露，由 `App.tsx` 的 `/calendar` 路由装配。日历位于路由和侧边菜单首位，是应用默认入口；菜单默认可见且无需登录，用户可在“设置 → 菜单”中隐藏，隐藏当前日历入口时应用会回退到第一个可见路由。
 
 新增年度安排时，只在 `chinaHolidays.ts` 中加入该年度通知来源、放假区间和补班日期，并人工逐项对照国务院通知。
 

@@ -113,7 +113,7 @@ export function DnProcessKiller() {
   return (
     <div className={cx('dn-process-page')}>
       <PageHeader
-        eyebrow='DNTools'
+        eyebrow='龙之谷'
         title='进程'
         subtitle='扫描当前运行的龙之谷进程，选择后快速结束。'
         actions={

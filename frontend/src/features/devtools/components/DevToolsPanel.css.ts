@@ -10,90 +10,6 @@ const devToolsPanel = style({
   containerType: 'inline-size',
 })
 
-const devToolsBadge = style([
-  {
-    position: 'relative',
-    zIndex: '1',
-    minHeight: '30px',
-    display: 'inline-flex',
-    alignItems: 'center',
-    gap: '8px',
-    padding: '0 11px',
-    color: 'var(--text-secondary)',
-    fontSize: '9px',
-    fontWeight: '800',
-    letterSpacing: '0.08em',
-    textTransform: 'uppercase',
-    background: 'color-mix(in srgb, var(--surface-muted) 84%, transparent)',
-    border: '1px solid var(--border-strong)',
-    borderRadius: '999px',
-    backdropFilter: 'blur(12px)',
-  },
-  {
-    '@container': {
-      'devtools-panel (max-width: 600px)': {
-        alignSelf: 'flex-start',
-      },
-    },
-  },
-])
-
-const devToolsLayout = style({
-  display: 'grid',
-  gridTemplateColumns: 'minmax(0, 1fr)',
-  gap: '14px',
-})
-
-const devToolsCategories = style({
-  position: 'sticky',
-  top: '12px',
-  zIndex: '20',
-  display: 'grid',
-  gridTemplateColumns: 'repeat(3, minmax(0, 1fr))',
-  gap: '5px',
-  padding: '5px',
-  background: 'color-mix(in srgb, var(--surface-elevated) 90%, transparent)',
-  border: '1px solid var(--border-subtle)',
-  borderRadius: '12px',
-  boxShadow: '0 12px 30px rgba(6, 12, 21, 0.12)',
-  backdropFilter: 'blur(18px)',
-})
-
-const isActive = style({
-  selectors: {
-    [`${devToolsCategories} button&`]: {
-      color: 'var(--text-primary)',
-      background:
-        'linear-gradient(135deg, var(--accent-muted), color-mix(in srgb, var(--accent-muted) 35%, transparent))',
-      borderColor: 'color-mix(in srgb, var(--accent) 28%, var(--border-subtle))',
-      boxShadow: 'inset 0 0 0 1px color-mix(in srgb, var(--accent) 8%, transparent)',
-    },
-    [`${devToolsCategories} button&[data-button-variant='ghost']:hover`]: {
-      color: 'var(--text-primary)',
-      background:
-        'linear-gradient(135deg, var(--accent-muted), color-mix(in srgb, var(--accent-muted) 35%, transparent))',
-      borderColor: 'color-mix(in srgb, var(--accent) 28%, var(--border-subtle))',
-      boxShadow: 'inset 0 0 0 1px color-mix(in srgb, var(--accent) 8%, transparent)',
-    },
-  },
-})
-
-const devToolsCategoryIndex = style({
-  flex: '0 0 auto',
-  color: 'var(--accent)',
-  fontSize: '9px',
-  fontWeight: '800',
-  fontVariantNumeric: 'tabular-nums',
-  letterSpacing: '0.08em',
-})
-
-const devToolsCategoryCopy = style({
-  minWidth: '0',
-  display: 'flex',
-  alignItems: 'baseline',
-  gap: '8px',
-})
-
 const devToolsView = style({
   minWidth: '0',
   containerName: 'devtools-view',
@@ -330,12 +246,6 @@ const devToolsDropCopy = style({
 
 export const styles = {
   'devtools-panel': devToolsPanel,
-  'devtools-badge': devToolsBadge,
-  'devtools-layout': devToolsLayout,
-  'devtools-categories': devToolsCategories,
-  'is-active': isActive,
-  'devtools-category-index': devToolsCategoryIndex,
-  'devtools-category-copy': devToolsCategoryCopy,
   'devtools-view': devToolsView,
   'devtools-result': devToolsResult,
   'devtools-result-icon': devToolsResultIcon,
@@ -354,46 +264,6 @@ export const styles = {
   'devtools-drop-action': devToolsDropAction,
   'devtools-drop-copy': devToolsDropCopy,
 } as const
-
-globalStyle(`${devToolsBadge} > span`, {
-  width: '6px',
-  height: '6px',
-  background: 'var(--accent)',
-  borderRadius: '50%',
-  boxShadow: '0 0 0 4px var(--accent-muted)',
-})
-
-globalStyle(`${devToolsCategories} button`, {
-  minWidth: '0',
-  justifyContent: 'flex-start',
-  gap: '10px',
-  padding: '0 12px',
-  color: 'var(--text-secondary)',
-  textAlign: 'left',
-  background: 'transparent',
-  borderColor: 'transparent',
-  borderRadius: '8px',
-})
-
-globalStyle(`${devToolsCategories} button[data-button-variant='ghost']:hover`, {
-  color: 'var(--text-primary)',
-  background: 'var(--surface-hover)',
-})
-
-globalStyle(`${devToolsCategoryCopy} strong`, {
-  overflow: 'hidden',
-  fontSize: '11px',
-  textOverflow: 'ellipsis',
-  whiteSpace: 'nowrap',
-})
-
-globalStyle(`${devToolsCategoryCopy} small`, {
-  overflow: 'hidden',
-  color: 'var(--text-tertiary)',
-  fontSize: '9px',
-  textOverflow: 'ellipsis',
-  whiteSpace: 'nowrap',
-})
 
 globalStyle(`${devToolsResultIcon} svg`, {
   width: '17px',
@@ -519,12 +389,4 @@ globalStyle(`${devToolsDropCopy} small`, {
   fontSize: '8px',
   textOverflow: 'ellipsis',
   whiteSpace: 'nowrap',
-})
-
-globalStyle(`${devToolsCategoryCopy} small`, {
-  '@container': {
-    'devtools-panel (max-width: 520px)': {
-      display: 'none',
-    },
-  },
 })

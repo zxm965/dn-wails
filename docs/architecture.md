@@ -39,6 +39,7 @@ main
     ├── notification（Wails 原生通知适配）
     ├── appupdate（数据库更新源、Release 元数据校验与平台安装器）
     ├── singleinstance（单实例配置）
+    ├── shortcut（全局热键与 Windows 后台按键检测）
     └── window（平台窗口配置）
 ```
 
@@ -116,10 +117,10 @@ app
 - 全局字体、重置和主题令牌集中在 `app/styles/*.css.ts`；组件和页面使用就近共置的同名 `.css.ts`。
 - 组件局部规则优先使用 `style`，仅全局根节点、第三方状态和必要的复杂关系使用 `globalStyle`；共享 UI 不使用集中式 `ui.css.ts`。
 - 桌面应用壳采用“顶部标题栏 + 左侧菜单 + 右侧视图区域”的固定布局，只有系统设置入口显示分组标题。
-- 前端使用 React Router 8 的 `HashRouter` 管理页面地址，避免桌面 WebView 刷新时依赖服务端路径回退。左侧菜单由 `shared/navigation/menuConfig.ts` 统一维护唯一 key、可选分组、页面、图标和默认显隐；`routeConfig.ts` 统一维护路径、页面标题、导航类型和 `requiresAuth`。侧栏渲染、偏好设置、启动页选择和应用壳路由守卫共同读取共享导航配置。日历中心位于首位并作为默认入口；日历中心、快速笔记、任务清单和站内消息默认显示，DNTools 与 DevTools 默认隐藏，偏好设置始终可见；DevTools 的桌面实验室使用默认关闭且受父开关约束的子偏好。
+- 前端使用 React Router 8 的 `HashRouter` 管理页面地址，避免桌面 WebView 刷新时依赖服务端路径回退。左侧菜单由 `shared/navigation/menuConfig.ts` 统一维护唯一 key、可选分组、页面、图标和默认显隐；`routeConfig.ts` 统一维护路径、页面标题、导航类型和 `requiresAuth`。侧栏渲染、偏好设置、启动页选择和应用壳路由守卫共同读取共享导航配置。日历位于首位并作为默认入口；日历、笔记、任务和消息默认显示，龙之谷与实验室默认隐藏，设置始终可见；实验室的桌面验证使用默认关闭且受父开关约束的子偏好。菜单文字左对齐，名称变更不修改路由路径或持久化 key。
 - `AccountProvider` 在应用根部恢复本地会话；需要登录的页面由 `App.tsx` 根据路由元数据统一保护，业务功能不自行实现登录状态管理。
 - 主要视图统一使用共享 `PageHeader`，保持紧凑渐变页头、标题基线、说明文字和操作区响应式行为一致。
-- 应用概览、常驻运行状态和所有人工验证入口统一放在“系统设置 → DevTools”；应用概览展示版本、更新通道和界面偏好，运行状态汇总生命周期、服务健康和日志诊断，手动检查更新位于偏好设置最底部，其余测试操作不进入业务页面。
+- 设置使用“概览 / 外观 / 菜单 / 通知 / 窗口”顶部单行页签，默认进入概览；概览汇总应用快照、运行状态与版本更新，运行诊断沿用 shared/diagnostics 和原有 Wails 门面。实验室保留文本工具和可选桌面验证，两页共用 PageTabs。
 - 所有页面必须支持响应式布局；页面优先基于右侧内容区域使用 Container Queries，避免侧边栏宽度导致视口媒体查询失真。
 - 页面主体统一使用 `--page-content-max-width` 控制最大宽度，并复用全局间距变量，确保菜单切换时左右基线稳定；同时至少覆盖常规桌面宽度、`1024 × 768` 最小窗口和极窄内容宽度。
 - 应用内按钮统一使用 `Button`，尺寸限定为 `sm=28px`、`md=32px`、`lg=36px`；普通操作跟随偏好设置中的默认尺寸（默认 `md`），结构性或固定语义按钮显式指定尺寸，业务模块不得自行定义其他按钮高度。
@@ -149,7 +150,8 @@ app
 - [云端快速笔记](modules/quick-notes.md)
 - [日历](modules/calendar.md)
 - [云端任务](modules/tasks.md)
-- [DNTools](modules/dn-system.md)
+- [龙之谷](modules/dn-system.md)
+- [全局快捷键](modules/shortcut.md)
 - [站内消息](modules/site-messages.md)
 - [应用生命周期](modules/app-lifecycle.md)
 - [安装身份](modules/installation-identity.md)
@@ -165,4 +167,4 @@ app
 - [Native Kit](modules/native-kit.md)
 - [日志与诊断](modules/diagnostics.md)
 - [主题与外观](modules/theme-appearance.md)
-- [DevTools](modules/devtools.md)
+- [实验室](modules/devtools.md)

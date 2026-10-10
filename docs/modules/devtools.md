@@ -1,42 +1,20 @@
-# DevTools 模块
+# 实验室模块（devtools）
 
 ## 模块目标
 
-集中承载应用概览、运行诊断和通用桌面模块的人工验证入口，避免开发与验收信息混入正式业务页面。
+集中承载本地文本处理工具和通用桌面模块的人工验证入口；应用概览和运行状态已迁移到设置的“概览”页签。
 
 ## 目录与职责
 
 - `frontend/src/features/devtools/components/DevToolsPanel.tsx`：测试分类、操作执行和结果展示。
 - `frontend/src/features/devtools/components/DevToolsPanel.css.ts`：分类菜单、桌面实验室、操作分组和拖放区域的局部样式。
-- `frontend/src/features/devtools/components/DesktopOverview.tsx`、`DesktopOverview.css.ts`：嵌入式应用概览、产品构建档案、应用策略与功能启用地图。
-- `frontend/src/features/devtools/components/RuntimeStatusPanel.tsx`、`RuntimeStatusPanel.css.ts`：常驻运行状态、服务健康矩阵和诊断操作。
 - `frontend/src/features/devtools/components/DeveloperTextToolbox.tsx`、`DeveloperTextToolbox.css.ts`：左侧工具菜单与右侧本地文本处理工作区。
 - `frontend/src/features/devtools/lib/textTools.ts`：JSON、Base64、URL、MD5 与 SHA 的纯前端转换逻辑。
-- `frontend/src/features/app-update/`：为应用概览提供正式版本、自动检查和手动检查能力。
 - `frontend/src/features/system-notification/components/SystemNotificationPanel.tsx`：以 embedded 模式嵌入通知测试。
-- `frontend/src/shared/navigation/menuConfig.ts`：配置默认隐藏的 DevTools 入口及默认关闭的“桌面实验室”子偏好。
-- `frontend/src/app/App.tsx`：按共享菜单配置装配 DevTools 视图。
+- `frontend/src/shared/navigation/menuConfig.ts`：配置默认隐藏的实验室入口及默认关闭的“桌面实验室”子偏好。
+- `frontend/src/app/App.tsx`：按共享菜单配置装配实验室视图。
 
 ## 功能分类
-
-### 应用概览
-
-- 产品名称、作者、应用版本、构建通道、目标平台与架构
-- 正式更新通道、最新版本与自动安装能力摘要
-- 主题、强调色、界面密度、按钮尺寸和字体缩放快照
-- 关闭行为、窗口置顶与窗口状态记忆策略
-- 业务通知、免打扰与消息预览策略
-- 快速笔记、任务清单、站内消息、DNTools、DevTools 和桌面实验室的启用地图
-- 不显示生命周期、数据库、通知权限等动态健康信息
-- 产品档案跨两列、更新通道占第三列，与下方三列策略卡片使用同一网格轨道，保持上下分隔线对齐。
-
-### 运行状态
-
-- 常驻显示，不受桌面实验室子开关影响。
-- 展示生命周期、启动时间、运行时长、第二实例次数、平台、架构、Go 版本和应用版本。
-- 并发检查账号、快速笔记和 DN 服务的数据库连接与必要表。
-- 展示系统通知、应用更新和日志诊断的能力状态。
-- 支持手动刷新、复制不含敏感连接信息的诊断摘要和打开日志目录。
 
 ### 桌面实验室
 
@@ -75,10 +53,10 @@
 
 ## 行为约定
 
-- 测试操作的结果统一显示在 DevTools 页，不影响正式业务状态。
-- DevTools 侧栏入口默认关闭；用户在“偏好设置 → 左侧菜单”开启后才显示，显隐设置使用唯一 key `devtools` 持久化。
-- “桌面实验室”页签默认关闭，继续使用兼容 key `devtools-desktop` 持久化；父级 DevTools 关闭时子开关禁用且页签不可见，父级开启后可单独配置。
-- 打开 DevTools 时默认展示应用概览；除正式的“检查最新版”外，概览不提供测试操作入口。
+- 测试操作的结果统一显示在实验室页，不影响正式业务状态。
+- 实验室侧栏入口默认关闭；用户在“设置 → 菜单 → 左侧菜单”开启后才显示，显隐设置使用唯一 key `devtools` 持久化。
+- “桌面实验室”页签默认关闭，继续使用兼容 key `devtools-desktop` 持久化；父级实验室关闭时子开关禁用且页签不可见，父级开启后可单独配置。
+- 打开实验室默认展示文本工具；应用概览、运行诊断和更新操作位于“设置 → 概览”，不受实验室显隐开关影响。
 - 运行状态只在进入页面或用户点击刷新时执行健康检查，不轮询数据库；底层错误仅写入内部诊断语义，不向前端返回连接串或原始数据库错误。
 - 需要用户主动触发的系统操作不得在页面加载时自动执行。
 - 文件、剪贴板、窗口和通知等真实原生能力需要在 Wails 桌面运行环境中验证。
@@ -89,14 +67,13 @@
 
 ## 响应式处理
 
-- 分类导航默认使用“应用概览 / 运行状态 / 文本工具”三段布局；开启桌面实验室后自动变为四段布局，并在页面滚动时吸顶。
-- 页面顶部复用共享 `PageHeader`，与偏好设置和 DN 业务页保持相同的紧凑渐变页头。
+- 分类导航默认只显示“文本工具”，开启桌面实验室后显示“文本工具 / 桌面实验室”；关闭桌面实验室会回退到文本工具。与设置共用 `PageTabs`，页签单行吸顶，在极窄宽度下允许局部横向滚动。
+- 页面顶部复用共享 `PageHeader`，与设置和龙之谷业务页保持相同的紧凑渐变页头。
 - 极窄宽度下隐藏分类描述但保留序号、分类名称和完整可访问名称。
 - “桌面实验室”内的应用/窗口与系统/文件分组由双列降为单列，两组各四项操作根据可用宽度自动换行。
 - 分类按钮固定使用 `md`，测试动作跟随用户配置的默认按钮尺寸；布局变化不会自行覆盖按钮高度。
 - 结果文本、文件路径和原生能力输出允许换行或在局部区域滚动，不产生整页横向滚动。
 - embedded 通知面板使用紧凑实时预览、发送者横向工具栏、全宽消息编辑器和底部操作区；宽度不足时发送者与操作区依次降为单列。
-- embedded 应用概览移除页面级外边距和内边距，在 DevTools 内容区内继续使用自身 Container Query。
 - 文本工具统一使用顶部工具栏，并在页面滚动后吸附在分类导航下方；窄宽度下工具入口允许横向滚动，输入与结果改为单列。
 
 ## 验证

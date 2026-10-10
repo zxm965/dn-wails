@@ -1,5 +1,4 @@
 import {
-  BellRing,
   CalendarCheck,
   FlaskConical,
   GitBranch,
@@ -8,52 +7,22 @@ import {
   MonitorCog,
   NotebookPen,
   Package,
-  Palette,
   Rocket,
-  Settings2,
   Wrench,
   type LucideIcon,
 } from 'lucide-react'
 
 import { appConfig } from '@/app/appConfig'
 import { useAppUpdate } from '@/features/app-update'
-import { useSettings } from '@/features/settings'
 import { BrandIcon } from '@/shared/components/brand-icon'
 import { createScopedClassNames } from '@/shared/lib/classNames'
 import { DEVTOOLS_DESKTOP_LAB_PREFERENCE, isAppViewVisible, resolveMenuVisibility } from '@/shared/navigation'
 
+import { useSettings } from '../context/SettingsProvider'
+
 import { styles } from './DesktopOverview.css'
 
 const cx = createScopedClassNames(styles)
-
-const THEME_LABELS = {
-  system: '跟随系统',
-  light: '浅色',
-  dark: '深色',
-} as const
-
-const ACCENT_LABELS = {
-  green: '绿色',
-  blue: '蓝色',
-  purple: '紫色',
-  orange: '橙色',
-} as const
-
-const DENSITY_LABELS = {
-  comfortable: '舒适',
-  compact: '紧凑',
-} as const
-
-const BUTTON_SIZE_LABELS = {
-  sm: '小型按钮',
-  md: '标准按钮',
-  lg: '大型按钮',
-} as const
-
-const CLOSE_BEHAVIOR_LABELS = {
-  quit: '关闭时退出',
-  hide: '隐藏到后台',
-} as const
 
 interface FeatureSnapshot {
   label: string
@@ -104,26 +73,26 @@ export function DesktopOverview({ embedded = false }: { embedded?: boolean }) {
     )
   const featureSnapshots: FeatureSnapshot[] = [
     {
-      label: '快速笔记',
+      label: '笔记',
       description: '云端笔记',
       icon: NotebookPen,
       enabled: isAppViewVisible('quick-notes', settings.navigation.menuVisibility),
     },
     {
-      label: '站内消息',
+      label: '消息',
       description: '消息收件箱',
       icon: Mails,
       enabled: isAppViewVisible('site-messages', settings.navigation.menuVisibility),
     },
     {
-      label: 'DN 周常',
+      label: '龙之谷',
       description: '周计划与角色',
       icon: CalendarCheck,
       enabled: isAppViewVisible('dn-weekly', settings.navigation.menuVisibility),
     },
     {
-      label: 'DevTools',
-      description: '开发工具',
+      label: '实验室',
+      description: '文本与桌面工具',
       icon: Wrench,
       enabled: devToolsVisible,
     },
@@ -141,12 +110,8 @@ export function DesktopOverview({ embedded = false }: { embedded?: boolean }) {
       <header className={cx('overview-heading')}>
         <div>
           <p className={cx('overview-eyebrow')}>Application profile</p>
-          {embedded ? (
-            <h2 className={cx('overview-title')}>应用概览</h2>
-          ) : (
-            <h1 className={cx('overview-title')}>应用概览</h1>
-          )}
-          <span className={cx('overview-description')}>快速了解当前构建、应用策略与功能启用情况。</span>
+          {embedded ? <h2 className={cx('overview-title')}>概览</h2> : <h1 className={cx('overview-title')}>概览</h1>}
+          <span className={cx('overview-description')}>快速了解当前构建与功能启用情况。</span>
         </div>
         <span className={cx('overview-tag')}>Configuration snapshot</span>
       </header>
@@ -189,46 +154,6 @@ export function DesktopOverview({ embedded = false }: { embedded?: boolean }) {
         </article>
       </div>
 
-      <div className={cx('overview-policy-grid')}>
-        <PolicyCard
-          icon={Palette}
-          eyebrow='Appearance'
-          title='外观方案'
-          value={`${THEME_LABELS[settings.appearance.themeMode]} · ${ACCENT_LABELS[settings.appearance.accent]}`}
-          details={[
-            `${DENSITY_LABELS[settings.appearance.density]}密度`,
-            `字号 ${Math.round(settings.appearance.fontScale * 100)}%`,
-            BUTTON_SIZE_LABELS[settings.appearance.buttonSize],
-          ]}
-        />
-        <PolicyCard
-          icon={Settings2}
-          eyebrow='Window policy'
-          title='窗口策略'
-          value={CLOSE_BEHAVIOR_LABELS[settings.window.closeBehavior]}
-          details={[
-            settings.window.alwaysOnTop ? '窗口始终置顶' : '普通窗口层级',
-            settings.window.rememberBounds ? '记住窗口位置和大小' : '每次使用默认窗口状态',
-          ]}
-        />
-        <PolicyCard
-          icon={BellRing}
-          eyebrow='Notification policy'
-          title='通知策略'
-          value={
-            !settings.notifications.enabled
-              ? '业务通知已关闭'
-              : settings.notifications.doNotDisturb
-                ? '免打扰已开启'
-                : '业务通知已开启'
-          }
-          details={[
-            settings.notifications.showPreview ? '显示消息正文预览' : '隐藏消息正文预览',
-            settings.notifications.enabled ? '通知偏好已生效' : '所有业务通知暂停',
-          ]}
-        />
-      </div>
-
       <section className={cx('overview-feature-section')}>
         <header className={cx('overview-feature-heading')}>
           <div className={cx('overview-feature-title')}>
@@ -260,40 +185,6 @@ function MetaItem({ icon: Icon, label }: { icon: LucideIcon; label: string }) {
       <Icon aria-hidden='true' />
       {label}
     </span>
-  )
-}
-
-function PolicyCard({
-  icon: Icon,
-  eyebrow,
-  title,
-  value,
-  details,
-}: {
-  icon: LucideIcon
-  eyebrow: string
-  title: string
-  value: string
-  details: string[]
-}) {
-  return (
-    <article className={cx('overview-policy-card')}>
-      <div className={cx('overview-policy-heading')}>
-        <span className={cx('overview-policy-icon')} aria-hidden='true'>
-          <Icon />
-        </span>
-        <div>
-          <span className={cx('overview-card-eyebrow')}>{eyebrow}</span>
-          <h3>{title}</h3>
-        </div>
-      </div>
-      <strong className={cx('overview-policy-value')}>{value}</strong>
-      <div className={cx('overview-policy-details')}>
-        {details.map((detail) => (
-          <span key={detail}>{detail}</span>
-        ))}
-      </div>
-    </article>
   )
 }
 

@@ -20,8 +20,8 @@
 - `internal/platform/appupdate/windows_update_integration_test.go`：通过隔离的临时程序验证更新交接；启动测试程序遇到 Linux 并发执行时的 `ETXTBSY` 会在两秒内重试，其他启动错误立即返回，不改变生产更新行为。
 - `internal/application/update.go`：向前端暴露版本信息、检查和安装三个 Wails 用例，并转发下载进度事件。
 - `frontend/src/features/app-update/`：根级更新状态、启动自动检查、确认弹窗、下载进度和错误反馈。
-- `frontend/src/features/devtools/components/DesktopOverview.tsx`：展示当前版本，不展示更新源地址等发布配置。
-- `frontend/src/features/settings/components/SettingsPanel.tsx`：在偏好设置最底部展示更新状态和手动检查按钮。
+- `frontend/src/features/settings/components/DesktopOverview.tsx`：展示当前版本，不展示更新源地址等发布配置。
+- `frontend/src/features/settings/components/SettingsPanel.tsx`：在设置“概览”页签展示更新状态和手动检查按钮。
 - `.github/workflows/release.yml`：标签触发的双平台质量检查、构建以及 GitHub、Gitee Release 发布。
 - `.github/workflows/republish-gitee-release.yml`：从已有 GitHub Release 下载安装包并补发指定标签的 Gitee Release，不重建桌面应用或移动标签。
 - `Taskfile.yml` 与 `build/*/Taskfile.yml`：Wails v3 前端、bindings、平台构建和打包任务。

@@ -14,6 +14,7 @@
 - `frontend/src/shared/components/ui/RadioGroup.tsx`、`RadioGroup.css.ts`：基于 Base UI 的类型化单选组，提供 segmented 和 chips 两种共享视觉形态。
 - `frontend/src/shared/components/ui/Slider.tsx`、`Slider.css.ts`：基于 Base UI 的单值滑块，统一轨道、进度、拖拽点、键盘操作和焦点状态。
 - `frontend/src/shared/components/ui/Card.tsx`、`Card.css.ts`：页面容器；Badge、Avatar、Progress、Tabs 也分别维护同名 `.css.ts`。
+- `frontend/src/shared/components/ui/PageTabs.tsx`、`PageTabs.css.ts`：设置与实验室共用的单行吸顶页签，基于 Base UI Tabs 管理选中、焦点、方向键和面板关联，触发器通过 `render` 使用共享 `Button`；空间不足时局部滚动。
 - `frontend/src/shared/components/ui/Layout.tsx`、`Layout.css.ts`：统一渐变页头 PageHeader、Pagination、ListState 和 Skeleton。
 - `frontend/src/shared/components/ui/Spinner.tsx`、`Spinner.css.ts`：可复用的图标旋转状态和 reduced-motion 降级。
 - `frontend/src/shared/components/ui/Toaster.tsx`：Sonner Toast 主题适配，无独立样式时不创建空样式文件。

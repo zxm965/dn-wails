@@ -251,64 +251,6 @@ const overviewUpdateMeta = style({
   gap: '6px',
 })
 
-const overviewPolicyGrid = style([
-  {
-    display: 'grid',
-    gridTemplateColumns: 'repeat(3, minmax(0, 1fr))',
-    gap: '12px',
-  },
-  {
-    '@container': {
-      'desktop-overview (max-width: 790px)': {
-        gridTemplateColumns: '1fr',
-      },
-    },
-  },
-])
-
-const overviewPolicyCard = style({
-  minWidth: '0',
-  display: 'grid',
-  gap: '15px',
-  padding: '17px',
-  background:
-    'linear-gradient(145deg, color-mix(in srgb, var(--surface-elevated) 97%, var(--accent) 3%), var(--surface-elevated))',
-  border: '1px solid var(--border-subtle)',
-  borderRadius: '14px',
-  boxShadow: 'var(--surface-shadow)',
-})
-
-const overviewPolicyHeading = style({
-  display: 'grid',
-  gridTemplateColumns: '36px minmax(0, 1fr)',
-  alignItems: 'center',
-  gap: '10px',
-})
-
-const overviewPolicyIcon = style({
-  width: '36px',
-  height: '36px',
-  display: 'grid',
-  placeItems: 'center',
-  color: 'var(--accent)',
-  background: 'color-mix(in srgb, var(--accent-muted) 76%, transparent)',
-  borderRadius: '10px',
-})
-
-const overviewPolicyValue = style({
-  overflow: 'hidden',
-  fontSize: '14px',
-  letterSpacing: '-0.01em',
-  textOverflow: 'ellipsis',
-  whiteSpace: 'nowrap',
-})
-
-const overviewPolicyDetails = style({
-  display: 'flex',
-  flexWrap: 'wrap',
-  gap: '6px',
-})
-
 const overviewFeatureSection = style({
   minWidth: '0',
   display: 'grid',
@@ -455,12 +397,6 @@ export const styles = {
   'overview-update-title': overviewUpdateTitle,
   'overview-update-description': overviewUpdateDescription,
   'overview-update-meta': overviewUpdateMeta,
-  'overview-policy-grid': overviewPolicyGrid,
-  'overview-policy-card': overviewPolicyCard,
-  'overview-policy-heading': overviewPolicyHeading,
-  'overview-policy-icon': overviewPolicyIcon,
-  'overview-policy-value': overviewPolicyValue,
-  'overview-policy-details': overviewPolicyDetails,
   'overview-feature-section': overviewFeatureSection,
   'overview-feature-heading': overviewFeatureHeading,
   'overview-feature-title': overviewFeatureTitle,
@@ -494,27 +430,6 @@ globalStyle(`${overviewUpdateMeta} span`, {
   fontSize: '8px',
   fontWeight: '700',
   background: 'color-mix(in srgb, var(--surface-muted) 78%, transparent)',
-  borderRadius: '7px',
-})
-
-globalStyle(`${overviewPolicyIcon} svg`, {
-  width: '17px',
-  height: '17px',
-})
-
-globalStyle(`${overviewPolicyHeading} h3`, {
-  margin: '4px 0 0',
-  fontSize: '12px',
-})
-
-globalStyle(`${overviewPolicyDetails} span`, {
-  display: 'inline-flex',
-  alignItems: 'center',
-  minHeight: '24px',
-  padding: '0 8px',
-  color: 'var(--text-secondary)',
-  fontSize: '8px',
-  background: 'color-mix(in srgb, var(--surface-muted) 72%, transparent)',
   borderRadius: '7px',
 })
 

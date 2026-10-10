@@ -1,11 +1,15 @@
+import { useRef, useState } from 'react'
+
 import { useAppUpdate } from '@/features/app-update'
-import { Button, PageHeader, RadioGroup, Select, Slider, Switch } from '@/shared/components/ui'
+import { Button, PageHeader, PageTabs, RadioGroup, Select, Slider, Switch, type PageTab } from '@/shared/components/ui'
 import { useFeedback } from '@/shared/feedback'
 import { createScopedClassNames } from '@/shared/lib/classNames'
 import { CONFIGURABLE_MENU_ENTRIES, resolveMenuVisibility, type MenuPreferenceKey } from '@/shared/navigation'
 
 import { type AccentColor, type AppSettings, type ButtonSize, type ThemeMode } from '../api/settingsApi'
 import { useSettings } from '../context/SettingsProvider'
+import { DesktopOverview } from './DesktopOverview'
+import { RuntimeStatusPanel, type SettingsPreferenceCategory } from './RuntimeStatusPanel'
 
 import { styles } from './SettingsPanel.css'
 
@@ -30,7 +34,11 @@ const BUTTON_SIZE_OPTIONS: Array<{ value: ButtonSize; label: string }> = [
   { value: 'lg', label: '大型' },
 ]
 
+type SettingsCategory = 'overview' | SettingsPreferenceCategory
+
 export function SettingsPanel() {
+  const panelRef = useRef<HTMLDivElement>(null)
+  const [activeCategory, setActiveCategory] = useState<SettingsCategory>('overview')
   const { settings, isLoading, isSaving, error: settingsError, updateSettings, resetSettings } = useSettings()
   const {
     info: updateInfo,
@@ -53,6 +61,14 @@ export function SettingsPanel() {
         : updateInfo?.configured
           ? '启动时自动检查更新'
           : '开发构建未启用更新'
+
+  function openPreferences(category: SettingsPreferenceCategory) {
+    setActiveCategory(category)
+    window.requestAnimationFrame(() => {
+      panelRef.current?.scrollIntoView({ block: 'start' })
+      panelRef.current?.querySelector<HTMLElement>('[role="tab"][aria-selected="true"]')?.focus({ preventScroll: true })
+    })
+  }
 
   function updateAppearance<Key extends keyof AppSettings['appearance']>(
     key: Key,
@@ -114,27 +130,308 @@ export function SettingsPanel() {
     return <div className={cx('settings-panel settings-state')}>正在读取应用设置…</div>
   }
 
+  const tabs: PageTab<SettingsCategory>[] = [
+    {
+      value: 'overview',
+      label: '概览',
+      description: '版本、运行与更新',
+      content: (
+        <>
+          <DesktopOverview embedded />
+          <RuntimeStatusPanel onOpenSettings={openPreferences} />
+          <section className={cx('settings-section')}>
+            <div className={cx('settings-section-title')}>
+              <h2>应用更新</h2>
+              <p>启动时会自动检查正式版本，也可以在这里手动检查最新版本。</p>
+            </div>
+            <div className={cx('settings-update-content')}>
+              <div>
+                <strong>{updateSummary}</strong>
+                <small>
+                  {updateInfo?.currentVersion ? `当前版本 ${updateInfo.currentVersion}` : '正在读取当前版本'}
+                </small>
+                {updateError && (
+                  <p className={cx('settings-update-error')} role='alert'>
+                    {updateError}
+                  </p>
+                )}
+                {updateProgress && (
+                  <div className={cx('settings-update-progress')} aria-live='polite'>
+                    <span>
+                      {updateProgress.phase === 'downloading'
+                        ? `正在下载更新 ${updateProgress.percent}%`
+                        : updateInfo?.platform === 'windows'
+                          ? '下载完成，正在准备安装向导…'
+                          : '下载完成，正在准备安装…'}
+                    </span>
+                    <progress
+                      className={cx('settings-update-progress-bar')}
+                      max={100}
+                      value={updateProgress.percent}
+                      aria-label='应用更新下载进度'
+                    />
+                    <small>
+                      {formatBytes(updateProgress.downloadedBytes)} / {formatBytes(updateProgress.totalBytes)}
+                    </small>
+                  </div>
+                )}
+              </div>
+              <Button
+                type='button'
+                variant={updateStatus?.updateAvailable ? 'primary' : 'outline'}
+                disabled={
+                  isUpdateLoading || isChecking || isInstalling || !updateInfo?.configured || !updateInfo.canInstall
+                }
+                onClick={() => void checkForUpdates(true)}
+              >
+                {isInstalling ? '正在安装…' : isChecking ? '正在检查…' : '检查最新版'}
+              </Button>
+            </div>
+          </section>
+        </>
+      ),
+    },
+    {
+      value: 'appearance',
+      label: '外观',
+      description: '主题、配色与文字',
+      content: (
+        <section className={cx('settings-section')}>
+          <div className={cx('settings-section-title')}>
+            <h2>主题与外观</h2>
+            <p>控制应用配色、强调色、界面密度、默认按钮尺寸和文字缩放。</p>
+          </div>
+
+          <div className={cx('settings-grid')}>
+            <fieldset className={cx('settings-fieldset')}>
+              <legend>主题模式</legend>
+              <RadioGroup
+                aria-label='主题模式'
+                name='theme-mode'
+                value={settings.appearance.themeMode}
+                options={THEME_OPTIONS}
+                onValueChange={(themeMode) => updateAppearance('themeMode', themeMode)}
+              />
+            </fieldset>
+
+            <fieldset className={cx('settings-fieldset')}>
+              <legend>强调色</legend>
+              <RadioGroup
+                aria-label='强调色'
+                name='accent-color'
+                variant='chips'
+                value={settings.appearance.accent}
+                options={ACCENT_OPTIONS.map((option) => ({
+                  ...option,
+                  title: option.label,
+                  leading: <span className={cx(`settings-accent is-${option.value}`)} />,
+                }))}
+                onValueChange={(accent) => updateAppearance('accent', accent)}
+              />
+            </fieldset>
+
+            <label className={cx('settings-field')}>
+              <span>界面密度</span>
+              <Select
+                aria-label='界面密度'
+                value={settings.appearance.density}
+                options={[
+                  { value: 'comfortable', label: '舒适' },
+                  { value: 'compact', label: '紧凑' },
+                ]}
+                onValueChange={(density) => updateAppearance('density', density)}
+              />
+            </label>
+
+            <fieldset className={cx('settings-fieldset')}>
+              <legend>默认按钮尺寸</legend>
+              <div className={cx('settings-button-size-options')} role='group' aria-label='默认按钮尺寸'>
+                {BUTTON_SIZE_OPTIONS.map((option) => (
+                  <Button
+                    key={option.value}
+                    type='button'
+                    size={option.value}
+                    variant={settings.appearance.buttonSize === option.value ? 'secondary' : 'outline'}
+                    ripple={false}
+                    className={cx(
+                      'settings-button-size-button',
+                      settings.appearance.buttonSize === option.value
+                        ? 'settings-button-size-button-selected'
+                        : undefined,
+                    )}
+                    aria-pressed={settings.appearance.buttonSize === option.value}
+                    onClick={() => updateAppearance('buttonSize', option.value)}
+                  >
+                    {option.label}
+                  </Button>
+                ))}
+              </div>
+            </fieldset>
+
+            <label className={cx('settings-field')}>
+              <span>文字缩放：{Math.round(settings.appearance.fontScale * 100)}%</span>
+              <Slider
+                aria-label='文字缩放'
+                min={0.85}
+                max={1.25}
+                step={0.05}
+                value={settings.appearance.fontScale}
+                onValueChange={(fontScale) => updateAppearance('fontScale', fontScale)}
+              />
+            </label>
+          </div>
+        </section>
+      ),
+    },
+    {
+      value: 'menus',
+      label: '菜单',
+      description: '功能入口与显隐',
+      content: (
+        <section className={cx('settings-section')}>
+          <div className={cx('settings-section-title')}>
+            <h2>左侧菜单</h2>
+            <p>按需显示功能入口；关闭后仅隐藏菜单，不影响已有数据，设置始终保留。</p>
+          </div>
+          <div className={cx('settings-menu-grid')}>
+            {CONFIGURABLE_MENU_ENTRIES.map((entry) => {
+              const parentVisible = resolveMenuVisibility(
+                entry.key,
+                entry.defaultVisible,
+                settings.navigation.menuVisibility,
+              )
+              return (
+                <div key={entry.key} className={cx('settings-toggle-group')}>
+                  <ToggleRow
+                    compact
+                    title={entry.label}
+                    description={entry.description}
+                    checked={parentVisible}
+                    onChange={(checked) => updateMenuVisibility(entry.key, checked)}
+                  />
+                  {entry.children.map((child) => (
+                    <ToggleRow
+                      key={child.key}
+                      compact
+                      title={child.label}
+                      description={child.description}
+                      checked={
+                        parentVisible &&
+                        resolveMenuVisibility(child.key, child.defaultVisible, settings.navigation.menuVisibility)
+                      }
+                      disabled={!parentVisible}
+                      nested
+                      onChange={(checked) => updateMenuVisibility(child.key, checked)}
+                    />
+                  ))}
+                </div>
+              )
+            })}
+          </div>
+        </section>
+      ),
+    },
+    {
+      value: 'notifications',
+      label: '通知',
+      description: '消息预览与免打扰',
+      content: (
+        <section className={cx('settings-section')}>
+          <div className={cx('settings-section-title')}>
+            <h2>系统通知</h2>
+            <p>控制应用是否发送通知以及是否展示消息正文。</p>
+          </div>
+          <div className={cx('settings-toggles')}>
+            <ToggleRow
+              title='启用系统通知'
+              description='关闭后，业务消息不会发送到系统通知中心。'
+              checked={settings.notifications.enabled}
+              onChange={(checked) => updateNotifications('enabled', checked)}
+            />
+            <ToggleRow
+              title='显示消息预览'
+              description='关闭后，通知正文统一显示“您收到一条消息”。'
+              checked={settings.notifications.showPreview}
+              disabled={!settings.notifications.enabled}
+              onChange={(checked) => updateNotifications('showPreview', checked)}
+            />
+            <ToggleRow
+              title='免打扰'
+              description='临时暂停所有应用消息通知。'
+              checked={settings.notifications.doNotDisturb}
+              disabled={!settings.notifications.enabled}
+              onChange={(checked) => updateNotifications('doNotDisturb', checked)}
+            />
+          </div>
+        </section>
+      ),
+    },
+    {
+      value: 'window',
+      label: '窗口',
+      description: '关闭行为与状态记忆',
+      content: (
+        <section className={cx('settings-section')}>
+          <div className={cx('settings-section-title')}>
+            <h2>窗口行为</h2>
+            <p>窗口位置和大小会在正常关闭时保存。</p>
+          </div>
+          <div className={cx('settings-grid')}>
+            <label className={cx('settings-field')}>
+              <span>关闭窗口时</span>
+              <Select
+                aria-label='关闭窗口时'
+                value={settings.window.closeBehavior}
+                options={[
+                  { value: 'quit', label: '退出应用' },
+                  { value: 'hide', label: '隐藏到后台' },
+                ]}
+                onValueChange={(closeBehavior) => updateWindow('closeBehavior', closeBehavior)}
+              />
+            </label>
+          </div>
+          <div className={cx('settings-toggles')}>
+            <ToggleRow
+              title='窗口始终置顶'
+              description='切换后立即应用到主窗口。'
+              checked={settings.window.alwaysOnTop}
+              onChange={(checked) => updateWindow('alwaysOnTop', checked)}
+            />
+            <ToggleRow
+              title='记住窗口位置和大小'
+              description='下次启动时恢复上次关闭前的窗口状态。'
+              checked={settings.window.rememberBounds}
+              onChange={(checked) => updateWindow('rememberBounds', checked)}
+            />
+          </div>
+        </section>
+      ),
+    },
+  ]
+
   return (
-    <div className={cx('settings-panel')}>
+    <div ref={panelRef} className={cx('settings-panel')}>
       <PageHeader
-        eyebrow='Preferences'
-        title='设置与外观'
-        subtitle='设置会保存到当前用户的应用配置目录。'
+        eyebrow='Settings'
+        title='设置'
+        subtitle='查看应用信息、运行状态并管理使用偏好。'
         actions={
-          <>
-            <span className={cx('settings-save-status')} aria-live='polite'>
-              {isSaving ? '正在同步…' : '修改后自动保存'}
-            </span>
-            <Button
-              className={cx('settings-button settings-button-secondary')}
-              variant='outline'
-              type='button'
-              onClick={handleReset}
-              disabled={isSaving}
-            >
-              恢复默认
-            </Button>
-          </>
+          activeCategory !== 'overview' ? (
+            <>
+              <span className={cx('settings-save-status')} aria-live='polite'>
+                {isSaving ? '正在同步…' : '修改后自动保存'}
+              </span>
+              <Button
+                className={cx('settings-button settings-button-secondary')}
+                variant='outline'
+                type='button'
+                onClick={handleReset}
+                disabled={isSaving}
+              >
+                恢复默认
+              </Button>
+            </>
+          ) : undefined
         }
       />
 
@@ -144,245 +441,7 @@ export function SettingsPanel() {
         </p>
       )}
 
-      <section className={cx('settings-section')}>
-        <div className={cx('settings-section-title')}>
-          <h2>左侧菜单</h2>
-          <p>按需显示功能入口；关闭后仅隐藏菜单，不影响已有数据，偏好设置始终保留。</p>
-        </div>
-        <div className={cx('settings-menu-grid')}>
-          {CONFIGURABLE_MENU_ENTRIES.map((entry) => {
-            const parentVisible = resolveMenuVisibility(
-              entry.key,
-              entry.defaultVisible,
-              settings.navigation.menuVisibility,
-            )
-            return (
-              <div key={entry.key} className={cx('settings-toggle-group')}>
-                <ToggleRow
-                  compact
-                  title={entry.label}
-                  description={entry.description}
-                  checked={parentVisible}
-                  onChange={(checked) => updateMenuVisibility(entry.key, checked)}
-                />
-                {entry.children.map((child) => (
-                  <ToggleRow
-                    key={child.key}
-                    compact
-                    title={child.label}
-                    description={child.description}
-                    checked={
-                      parentVisible &&
-                      resolveMenuVisibility(child.key, child.defaultVisible, settings.navigation.menuVisibility)
-                    }
-                    disabled={!parentVisible}
-                    nested
-                    onChange={(checked) => updateMenuVisibility(child.key, checked)}
-                  />
-                ))}
-              </div>
-            )
-          })}
-        </div>
-      </section>
-
-      <section className={cx('settings-section')}>
-        <div className={cx('settings-section-title')}>
-          <h2>主题与外观</h2>
-          <p>控制应用配色、强调色、界面密度、默认按钮尺寸和文字缩放。</p>
-        </div>
-
-        <div className={cx('settings-grid')}>
-          <fieldset className={cx('settings-fieldset')}>
-            <legend>主题模式</legend>
-            <RadioGroup
-              aria-label='主题模式'
-              name='theme-mode'
-              value={settings.appearance.themeMode}
-              options={THEME_OPTIONS}
-              onValueChange={(themeMode) => updateAppearance('themeMode', themeMode)}
-            />
-          </fieldset>
-
-          <fieldset className={cx('settings-fieldset')}>
-            <legend>强调色</legend>
-            <RadioGroup
-              aria-label='强调色'
-              name='accent-color'
-              variant='chips'
-              value={settings.appearance.accent}
-              options={ACCENT_OPTIONS.map((option) => ({
-                ...option,
-                title: option.label,
-                leading: <span className={cx(`settings-accent is-${option.value}`)} />,
-              }))}
-              onValueChange={(accent) => updateAppearance('accent', accent)}
-            />
-          </fieldset>
-
-          <label className={cx('settings-field')}>
-            <span>界面密度</span>
-            <Select
-              aria-label='界面密度'
-              value={settings.appearance.density}
-              options={[
-                { value: 'comfortable', label: '舒适' },
-                { value: 'compact', label: '紧凑' },
-              ]}
-              onValueChange={(density) => updateAppearance('density', density)}
-            />
-          </label>
-
-          <fieldset className={cx('settings-fieldset')}>
-            <legend>默认按钮尺寸</legend>
-            <div className={cx('settings-button-size-options')} role='group' aria-label='默认按钮尺寸'>
-              {BUTTON_SIZE_OPTIONS.map((option) => (
-                <Button
-                  key={option.value}
-                  type='button'
-                  size={option.value}
-                  variant={settings.appearance.buttonSize === option.value ? 'secondary' : 'outline'}
-                  ripple={false}
-                  className={cx(
-                    'settings-button-size-button',
-                    settings.appearance.buttonSize === option.value
-                      ? 'settings-button-size-button-selected'
-                      : undefined,
-                  )}
-                  aria-pressed={settings.appearance.buttonSize === option.value}
-                  onClick={() => updateAppearance('buttonSize', option.value)}
-                >
-                  {option.label}
-                </Button>
-              ))}
-            </div>
-          </fieldset>
-
-          <label className={cx('settings-field')}>
-            <span>文字缩放：{Math.round(settings.appearance.fontScale * 100)}%</span>
-            <Slider
-              aria-label='文字缩放'
-              min={0.85}
-              max={1.25}
-              step={0.05}
-              value={settings.appearance.fontScale}
-              onValueChange={(fontScale) => updateAppearance('fontScale', fontScale)}
-            />
-          </label>
-        </div>
-      </section>
-
-      <section className={cx('settings-section')}>
-        <div className={cx('settings-section-title')}>
-          <h2>系统通知</h2>
-          <p>控制应用是否发送通知以及是否展示消息正文。</p>
-        </div>
-        <div className={cx('settings-toggles')}>
-          <ToggleRow
-            title='启用系统通知'
-            description='关闭后，业务消息不会发送到系统通知中心。'
-            checked={settings.notifications.enabled}
-            onChange={(checked) => updateNotifications('enabled', checked)}
-          />
-          <ToggleRow
-            title='显示消息预览'
-            description='关闭后，通知正文统一显示“您收到一条消息”。'
-            checked={settings.notifications.showPreview}
-            disabled={!settings.notifications.enabled}
-            onChange={(checked) => updateNotifications('showPreview', checked)}
-          />
-          <ToggleRow
-            title='免打扰'
-            description='临时暂停所有应用消息通知。'
-            checked={settings.notifications.doNotDisturb}
-            disabled={!settings.notifications.enabled}
-            onChange={(checked) => updateNotifications('doNotDisturb', checked)}
-          />
-        </div>
-      </section>
-
-      <section className={cx('settings-section')}>
-        <div className={cx('settings-section-title')}>
-          <h2>窗口行为</h2>
-          <p>窗口位置和大小会在正常关闭时保存。</p>
-        </div>
-        <div className={cx('settings-grid')}>
-          <label className={cx('settings-field')}>
-            <span>关闭窗口时</span>
-            <Select
-              aria-label='关闭窗口时'
-              value={settings.window.closeBehavior}
-              options={[
-                { value: 'quit', label: '退出应用' },
-                { value: 'hide', label: '隐藏到后台' },
-              ]}
-              onValueChange={(closeBehavior) => updateWindow('closeBehavior', closeBehavior)}
-            />
-          </label>
-        </div>
-        <div className={cx('settings-toggles')}>
-          <ToggleRow
-            title='窗口始终置顶'
-            description='切换后立即应用到主窗口。'
-            checked={settings.window.alwaysOnTop}
-            onChange={(checked) => updateWindow('alwaysOnTop', checked)}
-          />
-          <ToggleRow
-            title='记住窗口位置和大小'
-            description='下次启动时恢复上次关闭前的窗口状态。'
-            checked={settings.window.rememberBounds}
-            onChange={(checked) => updateWindow('rememberBounds', checked)}
-          />
-        </div>
-      </section>
-
-      <section className={cx('settings-section')}>
-        <div className={cx('settings-section-title')}>
-          <h2>应用更新</h2>
-          <p>启动时会自动检查正式版本，也可以在这里手动检查最新版本。</p>
-        </div>
-        <div className={cx('settings-update-content')}>
-          <div>
-            <strong>{updateSummary}</strong>
-            <small>{updateInfo?.currentVersion ? `当前版本 ${updateInfo.currentVersion}` : '正在读取当前版本'}</small>
-            {updateError && (
-              <p className={cx('settings-update-error')} role='alert'>
-                {updateError}
-              </p>
-            )}
-            {updateProgress && (
-              <div className={cx('settings-update-progress')} aria-live='polite'>
-                <span>
-                  {updateProgress.phase === 'downloading'
-                    ? `正在下载更新 ${updateProgress.percent}%`
-                    : updateInfo?.platform === 'windows'
-                      ? '下载完成，正在准备安装向导…'
-                      : '下载完成，正在准备安装…'}
-                </span>
-                <progress
-                  className={cx('settings-update-progress-bar')}
-                  max={100}
-                  value={updateProgress.percent}
-                  aria-label='应用更新下载进度'
-                />
-                <small>
-                  {formatBytes(updateProgress.downloadedBytes)} / {formatBytes(updateProgress.totalBytes)}
-                </small>
-              </div>
-            )}
-          </div>
-          <Button
-            type='button'
-            variant={updateStatus?.updateAvailable ? 'primary' : 'outline'}
-            disabled={
-              isUpdateLoading || isChecking || isInstalling || !updateInfo?.configured || !updateInfo.canInstall
-            }
-            onClick={() => void checkForUpdates(true)}
-          >
-            {isInstalling ? '正在安装…' : isChecking ? '正在检查…' : '检查最新版'}
-          </Button>
-        </div>
-      </section>
+      <PageTabs label='设置分类' tabs={tabs} value={activeCategory} onValueChange={setActiveCategory} />
     </div>
   )
 }

@@ -1,5 +1,6 @@
 import {
   Activity,
+  BellRing,
   CircleAlert,
   CircleCheckBig,
   CircleOff,
@@ -10,9 +11,13 @@ import {
   FileText,
   FolderOpen,
   RefreshCw,
+  Palette,
+  Settings2,
+  type LucideIcon,
   ServerCog,
 } from 'lucide-react'
-import { useCallback, useEffect, useState } from 'react'
+import { Fragment, useCallback, useEffect, useState, type ReactNode } from 'react'
+import { useNavigate } from 'react-router'
 
 import { Badge, Button, SpinnerIcon, type BadgeTone } from '@/shared/components/ui'
 import {
@@ -25,6 +30,9 @@ import {
 import { useFeedback } from '@/shared/feedback'
 import { createScopedClassNames } from '@/shared/lib/classNames'
 import { writeClipboard } from '@/shared/native-kit'
+import { getAppViewPath, isAppViewVisible } from '@/shared/navigation'
+
+import { useSettings } from '../context/SettingsProvider'
 
 import { styles } from './RuntimeStatusPanel.css'
 
@@ -36,6 +44,35 @@ const SERVICE_META: Record<RuntimeServiceState, { label: string; tone: BadgeTone
   unavailable: { label: '未启用', tone: 'outline', icon: CircleOff },
   error: { label: '异常', tone: 'danger', icon: CircleX },
 }
+
+const THEME_LABELS = {
+  system: '跟随系统',
+  light: '浅色',
+  dark: '深色',
+} as const
+
+const ACCENT_LABELS = {
+  green: '绿色',
+  blue: '蓝色',
+  purple: '紫色',
+  orange: '橙色',
+} as const
+
+const DENSITY_LABELS = {
+  comfortable: '舒适',
+  compact: '紧凑',
+} as const
+
+const BUTTON_SIZE_LABELS = {
+  sm: '小型按钮',
+  md: '标准按钮',
+  lg: '大型按钮',
+} as const
+
+const CLOSE_BEHAVIOR_LABELS = {
+  quit: '关闭时退出',
+  hide: '隐藏到后台',
+} as const
 
 function formatDate(value: string): string {
   if (!value) return '—'
@@ -72,7 +109,43 @@ function createSummary(status: RuntimeStatus): string {
   ].join('\n')
 }
 
-export function RuntimeStatusPanel() {
+export type SettingsPreferenceCategory = 'appearance' | 'menus' | 'notifications' | 'window'
+
+interface RuntimeStatusPanelProps {
+  onOpenSettings: (category: SettingsPreferenceCategory) => void
+}
+
+interface CardAction {
+  label: string
+  onClick: () => void
+}
+
+interface CapabilityItem {
+  key: string
+  priority: number
+  attention: number
+  content: ReactNode
+}
+
+const SERVICE_PRIORITY: Readonly<Record<string, number>> = {
+  account: 10,
+  notifications: 30,
+  tasks: 60,
+  'quick-notes': 70,
+  'dn-system': 80,
+  diagnostics: 90,
+}
+
+const ATTENTION_PRIORITY: Record<RuntimeServiceState, number> = {
+  error: 0,
+  warning: 1,
+  ready: 2,
+  unavailable: 2,
+}
+
+export function RuntimeStatusPanel({ onOpenSettings }: RuntimeStatusPanelProps) {
+  const navigate = useNavigate()
+  const { settings } = useSettings()
   const { notify } = useFeedback()
   const [status, setStatus] = useState<RuntimeStatus | null>(null)
   const [loading, setLoading] = useState(true)
@@ -119,6 +192,91 @@ export function RuntimeStatusPanel() {
       })
     }
   }
+
+  function getServiceAction(service: RuntimeServiceStatus): CardAction | undefined {
+    switch (service.key) {
+      case 'account':
+        return { label: '管理账号', onClick: () => navigate(getAppViewPath('account')) }
+      case 'notifications':
+        return { label: '通知设置', onClick: () => onOpenSettings('notifications') }
+      case 'dn-system':
+        return isAppViewVisible('dn-kill-process', settings.navigation.menuVisibility)
+          ? { label: '快捷键设置', onClick: () => navigate(getAppViewPath('dn-kill-process')) }
+          : { label: '菜单设置', onClick: () => onOpenSettings('menus') }
+      default:
+        return undefined
+    }
+  }
+
+  const visibleServices = status?.services.filter((service) => service.key !== 'updates') ?? []
+  const capabilityItems: CapabilityItem[] = visibleServices.map((service) => ({
+    key: service.key,
+    priority: SERVICE_PRIORITY[service.key] ?? 85,
+    attention: ATTENTION_PRIORITY[service.status],
+    content: <ServiceCard service={service} action={getServiceAction(service)} />,
+  }))
+
+  capabilityItems.push(
+    {
+      key: 'appearance',
+      priority: 0,
+      attention: 2,
+      content: (
+        <ConfigurationCard
+          icon={Palette}
+          label='外观方案'
+          value={`${THEME_LABELS[settings.appearance.themeMode]} · ${ACCENT_LABELS[settings.appearance.accent]}`}
+          details={[
+            `${DENSITY_LABELS[settings.appearance.density]}密度`,
+            `字号 ${Math.round(settings.appearance.fontScale * 100)}%`,
+            BUTTON_SIZE_LABELS[settings.appearance.buttonSize],
+          ]}
+          onConfigure={() => onOpenSettings('appearance')}
+        />
+      ),
+    },
+    {
+      key: 'window',
+      priority: 40,
+      attention: 2,
+      content: (
+        <ConfigurationCard
+          icon={Settings2}
+          label='窗口策略'
+          value={CLOSE_BEHAVIOR_LABELS[settings.window.closeBehavior]}
+          details={[
+            settings.window.alwaysOnTop ? '窗口始终置顶' : '普通窗口层级',
+            settings.window.rememberBounds ? '记住窗口位置和大小' : '每次使用默认窗口状态',
+          ]}
+          onConfigure={() => onOpenSettings('window')}
+        />
+      ),
+    },
+    {
+      key: 'notification-policy',
+      priority: 31,
+      attention: 2,
+      content: (
+        <ConfigurationCard
+          icon={BellRing}
+          label='通知策略'
+          value={
+            !settings.notifications.enabled
+              ? '业务通知已关闭'
+              : settings.notifications.doNotDisturb
+                ? '免打扰已开启'
+                : '业务通知已开启'
+          }
+          details={[
+            settings.notifications.showPreview ? '显示消息正文预览' : '隐藏消息正文预览',
+            settings.notifications.enabled ? '通知偏好已生效' : '所有业务通知暂停',
+          ]}
+          onConfigure={() => onOpenSettings('notifications')}
+        />
+      ),
+    },
+  )
+  capabilityItems.sort((left, right) => left.attention - right.attention || left.priority - right.priority)
 
   return (
     <section className={cx('runtime-status-panel')}>
@@ -202,23 +360,23 @@ export function RuntimeStatusPanel() {
               }
             />
           </div>
-
-          <section className={cx('runtime-service-section')}>
-            <header>
-              <div>
-                <p>Service matrix</p>
-                <h3>服务与平台能力</h3>
-              </div>
-              <span>{status.services.length} 项检查</span>
-            </header>
-            <div className={cx('runtime-service-grid')}>
-              {status.services.map((service) => (
-                <ServiceCard key={service.key} service={service} />
-              ))}
-            </div>
-          </section>
         </>
       )}
+
+      <section className={cx('runtime-service-section')}>
+        <header>
+          <div>
+            <p>Service matrix</p>
+            <h3>能力状态</h3>
+          </div>
+          <span>{status ? `${visibleServices.length} 项检查 · ` : ''}3 项配置</span>
+        </header>
+        <div className={cx('runtime-service-grid')}>
+          {capabilityItems.map((item) => (
+            <Fragment key={item.key}>{item.content}</Fragment>
+          ))}
+        </div>
+      </section>
     </section>
   )
 }
@@ -253,7 +411,7 @@ function SummaryCard({
   )
 }
 
-function ServiceCard({ service }: { service: RuntimeServiceStatus }) {
+function ServiceCard({ service, action }: { service: RuntimeServiceStatus; action?: CardAction }) {
   const meta = SERVICE_META[service.status]
   const Icon = meta.icon
   return (
@@ -265,7 +423,56 @@ function ServiceCard({ service }: { service: RuntimeServiceStatus }) {
         <strong>{service.label}</strong>
         <p>{service.detail}</p>
       </div>
-      <Badge tone={meta.tone}>{meta.label}</Badge>
+      <CapabilityStatus tone={meta.tone} label={meta.label} action={action} />
     </article>
+  )
+}
+
+interface ConfigurationCardProps {
+  icon: LucideIcon
+  label: string
+  value: string
+  details: readonly string[]
+  onConfigure: () => void
+}
+
+function ConfigurationCard({ icon: Icon, label, value, details, onConfigure }: ConfigurationCardProps) {
+  return (
+    <article className={cx('runtime-service-card')}>
+      <span className={cx('runtime-service-icon')} aria-hidden='true'>
+        <Icon />
+      </span>
+      <div>
+        <strong>{label}</strong>
+        <p className={styles['runtime-configuration-description']}>{value}</p>
+        <p className={styles['runtime-configuration-description']}>{details.join(' · ')}</p>
+      </div>
+      <CapabilityStatus tone='outline' label='配置' action={{ label: `${label}设置`, onClick: onConfigure }} />
+    </article>
+  )
+}
+
+interface CapabilityStatusProps {
+  tone: BadgeTone
+  label: string
+  action?: CardAction
+}
+
+function CapabilityStatus({ tone, label, action }: CapabilityStatusProps) {
+  const badge = <Badge tone={tone}>{label}</Badge>
+  if (!action) return badge
+
+  return (
+    <Button
+      className={styles['runtime-status-link']}
+      size='sm'
+      variant='ghost'
+      ripple={false}
+      title={action.label}
+      aria-label={`${label}，${action.label}`}
+      onClick={action.onClick}
+    >
+      {badge}
+    </Button>
   )
 }

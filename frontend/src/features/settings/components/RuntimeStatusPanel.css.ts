@@ -195,6 +195,24 @@ const runtimeServiceGrid = style([
   },
 ])
 
+const runtimeStatusLink = style({
+  justifySelf: 'end',
+  maxWidth: '100%',
+  padding: '0',
+  background: 'transparent',
+  border: '0',
+  borderRadius: '999px',
+  selectors: {
+    '&[data-button-variant="ghost"]:hover': { background: 'transparent' },
+  },
+  '@container': {
+    'runtime-status (max-width: 420px)': {
+      gridColumn: '1 / -1',
+      justifySelf: 'start',
+    },
+  },
+})
+
 const runtimeServiceCard = style([
   {
     minWidth: '0',
@@ -257,6 +275,18 @@ const runtimeServiceIcon = style({
   },
 })
 
+const runtimeConfigurationDescription = style({
+  selectors: {
+    [`${runtimeServiceCard} &`]: {
+      overflow: 'visible',
+      textOverflow: 'clip',
+      whiteSpace: 'normal',
+      overflowWrap: 'anywhere',
+      lineHeight: '1.5',
+    },
+  },
+})
+
 export const styles = {
   'runtime-status-panel': runtimeStatusPanel,
   'runtime-status-heading': runtimeStatusHeading,
@@ -272,8 +302,10 @@ export const styles = {
   'runtime-summary-icon': runtimeSummaryIcon,
   'runtime-service-section': runtimeServiceSection,
   'runtime-service-grid': runtimeServiceGrid,
+  'runtime-status-link': runtimeStatusLink,
   'runtime-service-card': runtimeServiceCard,
   'runtime-service-icon': runtimeServiceIcon,
+  'runtime-configuration-description': runtimeConfigurationDescription,
   'is-ready': isReady,
   'is-warning': isWarning,
   'is-unavailable': isUnavailable,
