@@ -54,7 +54,6 @@ export function AppUpdateProvider({ children }: { children: ReactNode }) {
   const [progress, setProgress] = useState<ApplicationUpdateProgress | null>(null)
   const autoCheckStartedRef = useRef(false)
   const operationRef = useRef<Promise<ApplicationUpdateStatus | null> | null>(null)
-  const infoRef = useRef<ApplicationUpdateInfo | null>(null)
 
   const checkForUpdates = useCallback(
     (manual = true) => {
@@ -77,10 +76,9 @@ export function AppUpdateProvider({ children }: { children: ReactNode }) {
             return nextStatus
           }
 
-          const isWindows = infoRef.current?.platform === 'windows'
           const accepted = await confirm({
             title: `发现新版本 ${nextStatus.latestVersion}`,
-            message: `当前版本为 ${nextStatus.currentVersion}。是否立即下载并安装新版本？${isWindows ? '下载完成后应用将关闭并打开安装向导，请按“下一步”完成更新。' : '应用将在准备完成后自动重启。'}`,
+            message: `当前版本为 ${nextStatus.currentVersion}。是否立即下载并安装新版本？下载完成后应用将自动安装更新并重启。`,
             confirmLabel: '立即更新',
             cancelLabel: '稍后再说',
           })
@@ -103,7 +101,7 @@ export function AppUpdateProvider({ children }: { children: ReactNode }) {
             await installApplicationUpdate(nextStatus.latestVersion)
             notify({
               title: '更新已准备完成',
-              message: isWindows ? '即将打开安装向导，请按“下一步”完成更新。' : '应用即将重启。',
+              message: '应用即将自动安装更新并重启。',
               tone: 'success',
               duration: 10000,
             })
@@ -141,7 +139,6 @@ export function AppUpdateProvider({ children }: { children: ReactNode }) {
     void getApplicationUpdateInfo()
       .then((nextInfo) => {
         if (!active) return
-        infoRef.current = nextInfo
         setInfo(nextInfo)
         if (nextInfo.lastUpdateError) {
           setError(nextInfo.lastUpdateError)

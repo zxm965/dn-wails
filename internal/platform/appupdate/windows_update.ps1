@@ -151,8 +151,8 @@ try {
     $remaining = [int][Math]::Floor(($deadline - [DateTime]::UtcNow).TotalMilliseconds)
     if (-not $config.interactive -and $remaining -le 0) { throw 'installer deadline exceeded' }
     Write-UpdateLog "starting installer attempt $attempt"
-    # Production uses a visible Next/Install/Finish wizard. /S is retained
-    # solely for isolated headless NSIS tests and older-client compatibility.
+    # In-app updates run silently; retain the interactive branch for older
+    # installer compatibility and isolated regression scenarios.
     # NSIS /D must remain unquoted and last, including paths with spaces.
     $arguments = "/UPDATE /D=$applicationDirectory"
     if (-not $config.interactive) { $arguments = "/S $arguments" }

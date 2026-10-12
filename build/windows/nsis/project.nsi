@@ -101,6 +101,8 @@ Function .onInit
    Goto restoreInstallDirectory
 updateModeDetected:
    StrCpy $UpdateMode 1
+   # Older clients omit /S. Make their first upgrade silent as well.
+   SetSilent silent
    Goto installDirectoryReady
 restoreInstallDirectory:
 
@@ -128,6 +130,14 @@ validatePreviousInstallDirectory:
 installDirectoryReady:
 FunctionEnd
 
+Function .onInstSuccess
+    StrCmp $UpdateMode 1 0 updateSuccessComplete
+    # Older interactive observers need this marker to restart after verifying
+    # the installed executable. The installer never starts an in-app update.
+    Call LaunchInstalledApplication
+updateSuccessComplete:
+FunctionEnd
+
 Function UpdateDirectoryPage
     # In-app updates always use the running application's directory. Changing
     # it here would make post-install verification and recovery target another
@@ -145,7 +155,7 @@ Function LaunchInstalledApplication
     Goto launchComplete
 updateLaunchRequested:
     # The observer verifies the release hash and owns the single restart.
-    # An unchecked finish-page checkbox leaves the updated app closed.
+    # Silent updates request launch here without a finish-page checkbox.
     ClearErrors
     FileOpen $0 "$EXEDIR\launch-requested" w
     IfErrors launchRequestFailed
@@ -153,7 +163,11 @@ updateLaunchRequested:
     FileClose $0
     IfErrors launchRequestFailed launchComplete
 launchRequestFailed:
+    IfSilent launchRequestFailureReported
     MessageBox MB_OK|MB_ICONSTOP "The update was installed, but automatic launch could not be requested. Please open ${PRODUCT_EXECUTABLE} from the installation folder."
+launchRequestFailureReported:
+    SetErrorLevel 74
+    Quit
 launchComplete:
 FunctionEnd
 

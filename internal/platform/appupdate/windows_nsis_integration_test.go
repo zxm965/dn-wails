@@ -90,7 +90,9 @@ if (Test-Path -LiteralPath $key) { Remove-Item -LiteralPath $key -Recurse -Force
 		t.Log("production NSIS project compiled; native execution is required by the Windows release job")
 		return
 	}
-	for _, scenario := range []string{"success", "image-lock"} {
+	// The legacy observer omits /S and waits for launch-requested. The new
+	// installer must still finish without wizard interaction and restart once.
+	for _, scenario := range []string{"success", "image-lock", "legacy-interactive", "launch-marker-failure"} {
 		t.Run(scenario, func(t *testing.T) {
 			runUpdateSimulation(t, testPowerShell(t), oldBinary, newBinary, scenario, installer)
 		})

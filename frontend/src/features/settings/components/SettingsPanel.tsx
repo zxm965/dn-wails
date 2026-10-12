@@ -160,9 +160,7 @@ export function SettingsPanel() {
                     <span>
                       {updateProgress.phase === 'downloading'
                         ? `正在下载更新 ${updateProgress.percent}%`
-                        : updateInfo?.platform === 'windows'
-                          ? '下载完成，正在准备安装向导…'
-                          : '下载完成，正在准备安装…'}
+                        : '下载完成，正在准备自动安装并重启…'}
                     </span>
                     <progress
                       className={cx('settings-update-progress-bar')}
