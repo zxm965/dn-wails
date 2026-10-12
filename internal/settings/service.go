@@ -42,7 +42,8 @@ func (s *Service) Initialize() error {
 	if err := json.Unmarshal(data, &loaded); err != nil {
 		return fmt.Errorf("decode application settings: %w", err)
 	}
-	if loaded.Version == CurrentVersion-1 {
+	if loaded.Version == 7 || loaded.Version == 8 {
+		// Single keys can fire during normal gameplay; require opting in again.
 		loaded.Version = CurrentVersion
 		loaded.DragonNest.ShortcutEnabled = false
 		loaded.DragonNest.ShortcutKey = DefaultDragonNestShortcutKey
@@ -172,8 +173,8 @@ func validate(value AppSettings) error {
 
 func dragonNestShortcutKeys() []string {
 	return []string{
-		"Ctrl+F1", "Ctrl+F2", "Ctrl+F3", "Ctrl+F4", "Ctrl+F5", "Ctrl+F6",
-		"Ctrl+F7", "Ctrl+F8", "Ctrl+F9", "Ctrl+F10", "Ctrl+F11",
+		"F1", "F2", "F3", "F4", "F5", "F6",
+		"F7", "F8", "F9", "F10", "F11", "F12",
 	}
 }
 

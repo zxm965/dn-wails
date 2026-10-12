@@ -3,17 +3,20 @@ package dnprocess
 import "errors"
 
 var (
-	ErrUnavailable   = errors.New("Dragon Nest process control is unavailable")
-	ErrInvalidTarget = errors.New("invalid Dragon Nest process target")
-	ErrNotFound      = errors.New("Dragon Nest process not found")
-	ErrMultiple      = errors.New("multiple Dragon Nest processes found")
-	ErrAccessDenied  = errors.New("Dragon Nest process access denied")
-	ErrTargetChanged = errors.New("Dragon Nest process target changed")
+	ErrUnavailable        = errors.New("Dragon Nest process control is unavailable")
+	ErrInvalidTarget      = errors.New("invalid Dragon Nest process target")
+	ErrNotFound           = errors.New("Dragon Nest process not found")
+	ErrMultiple           = errors.New("multiple Dragon Nest processes found")
+	ErrAccessDenied       = errors.New("Dragon Nest process access denied")
+	ErrTargetChanged      = errors.New("Dragon Nest process target changed")
+	ErrTerminationTimeout = errors.New("Dragon Nest process termination timed out")
 )
 
 type Info struct {
 	PID  uint32 `json:"pid"`
 	Name string `json:"name"`
+	// Platform.List leaves Path empty when inspection is denied; Service.List
+	// rejects inaccessible game candidates before they reach the application.
 	Path string `json:"path"`
 }
 

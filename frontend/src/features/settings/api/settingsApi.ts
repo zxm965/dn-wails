@@ -56,23 +56,24 @@ export interface AppSettings {
 }
 
 export const DRAGON_NEST_SHORTCUT_OPTIONS = [
-  'Ctrl+F1',
-  'Ctrl+F2',
-  'Ctrl+F3',
-  'Ctrl+F4',
-  'Ctrl+F5',
-  'Ctrl+F6',
-  'Ctrl+F7',
-  'Ctrl+F8',
-  'Ctrl+F9',
-  'Ctrl+F10',
-  'Ctrl+F11',
+  'F1',
+  'F2',
+  'F3',
+  'F4',
+  'F5',
+  'F6',
+  'F7',
+  'F8',
+  'F9',
+  'F10',
+  'F11',
+  'F12',
 ] as const
 
 export type DragonNestShortcutKey = (typeof DRAGON_NEST_SHORTCUT_OPTIONS)[number]
 
 export const DEFAULT_SETTINGS: AppSettings = {
-  version: 8,
+  version: 9,
   appearance: {
     themeMode: 'system',
     accent: 'green',
@@ -95,7 +96,7 @@ export const DEFAULT_SETTINGS: AppSettings = {
   },
   dragonNest: {
     shortcutEnabled: false,
-    shortcutKey: 'Ctrl+F4',
+    shortcutKey: 'F4',
     targetPath: '',
   },
 }

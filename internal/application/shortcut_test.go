@@ -85,10 +85,10 @@ func TestRuntimeReadyRegistersConfiguredDragonNestGlobalShortcut(t *testing.T) {
 
 	app.RuntimeReady()
 
-	if len(shortcutService.registered) != 1 || shortcutService.registered[0] != "Ctrl+F4" {
-		t.Fatalf("expected Ctrl+F4 to be registered after runtime ready, got %v", shortcutService.registered)
+	if len(shortcutService.registered) != 1 || shortcutService.registered[0] != "F4" {
+		t.Fatalf("expected F4 to be registered after runtime ready, got %v", shortcutService.registered)
 	}
-	callback := shortcutService.callbacks["Ctrl+F4"]
+	callback := shortcutService.callbacks["F4"]
 	if callback == nil {
 		t.Fatal("expected the registered shortcut callback")
 	}
@@ -98,28 +98,28 @@ func TestRuntimeReadyRegistersConfiguredDragonNestGlobalShortcut(t *testing.T) {
 	}
 }
 
-func TestSyncDragonNestShortcutReplacesCompleteAccelerator(t *testing.T) {
+func TestSyncDragonNestShortcutReplacesFunctionKey(t *testing.T) {
 	t.Parallel()
 
 	shortcutService := &globalShortcutStub{}
 	app := New(Dependencies{GlobalShortcut: shortcutService})
 	if err := app.syncDragonNestShortcut(settings.DragonNest{
 		ShortcutEnabled: true,
-		ShortcutKey:     "Ctrl+F4",
+		ShortcutKey:     "F4",
 	}); err != nil {
 		t.Fatalf("register initial shortcut: %v", err)
 	}
 	if err := app.syncDragonNestShortcut(settings.DragonNest{
 		ShortcutEnabled: true,
-		ShortcutKey:     "Ctrl+F5",
+		ShortcutKey:     "F12",
 	}); err != nil {
 		t.Fatalf("replace shortcut: %v", err)
 	}
 
-	if len(shortcutService.unregistered) != 1 || shortcutService.unregistered[0] != "Ctrl+F4" {
-		t.Fatalf("expected Ctrl+F4 to be unregistered, got %v", shortcutService.unregistered)
+	if len(shortcutService.unregistered) != 1 || shortcutService.unregistered[0] != "F4" {
+		t.Fatalf("expected F4 to be unregistered, got %v", shortcutService.unregistered)
 	}
-	if len(shortcutService.registered) != 2 || shortcutService.registered[1] != "Ctrl+F5" {
-		t.Fatalf("expected Ctrl+F5 to be registered, got %v", shortcutService.registered)
+	if len(shortcutService.registered) != 2 || shortcutService.registered[1] != "F12" {
+		t.Fatalf("expected F12 to be registered, got %v", shortcutService.registered)
 	}
 }

@@ -30,19 +30,23 @@ type fallbackService struct {
 	mu            sync.Mutex
 	native        Native
 	readKeys      func(uintptr) keyState
+	watchKeys     func(uintptr, func(keyState)) (func() error, error)
 	registrations map[string]*registration
 }
 
 type registration struct {
-	mu          sync.Mutex
-	active      bool
-	down        bool
-	fired       bool
-	running     bool
-	lastTrigger time.Time
-	callback    func()
-	stop        chan struct{}
-	done        chan struct{}
+	nativeRegistered bool
+	mu               sync.Mutex
+	active           bool
+	down             bool
+	eventDown        bool
+	fired            bool
+	running          bool
+	lastTrigger      time.Time
+	callback         func()
+	stop             chan struct{}
+	done             chan struct{}
+	stopWatching     func() error
 }
 
 func newFallback(native Native, readKeys func(uintptr) keyState) Native {
@@ -51,11 +55,20 @@ func newFallback(native Native, readKeys func(uintptr) keyState) Native {
 
 func functionKey(accelerator string) (uintptr, error) {
 	key := strings.ToLower(strings.TrimSpace(accelerator))
-	number, err := strconv.Atoi(strings.TrimPrefix(key, "ctrl+f"))
-	if err != nil || number < 1 || number > 11 || key != fmt.Sprintf("ctrl+f%d", number) {
-		return 0, fmt.Errorf("unsupported Dragon Nest shortcut %q: expected Ctrl+F1 through Ctrl+F11", accelerator)
+	number, err := strconv.Atoi(strings.TrimPrefix(key, "f"))
+	if err != nil || number < 1 || number > 12 || key != fmt.Sprintf("f%d", number) {
+		return 0, fmt.Errorf("unsupported Dragon Nest shortcut %q: expected F1 through F12", accelerator)
 	}
 	return uintptr(0x70 + number - 1), nil
+}
+
+func readFunctionKeyState(key uintptr, isDown func(uintptr) bool) keyState {
+	down := isDown(key)
+	return keyState{
+		down: down,
+		matches: down && !isDown(0x11) && !isDown(0x10) && !isDown(0x12) &&
+			!isDown(0x5B) && !isDown(0x5C),
+	}
 }
 
 func (s *fallbackService) Register(accelerator string, callback func()) error {
@@ -76,9 +89,25 @@ func (s *fallbackService) Register(accelerator string, callback func()) error {
 		down: initial.down, fired: initial.down, callback: callback,
 		stop: make(chan struct{}), done: make(chan struct{}),
 	}
-	// Keep system registration authoritative: conflicts must remain visible.
-	if err := s.native.Register(accelerator, func() { r.trigger(time.Now()) }); err != nil {
-		return err
+	// Windows reserves F12 for debuggers; observe it without RegisterHotKey.
+	// For other keys, keep registration conflicts visible to the caller.
+	if key != 0x7B {
+		if err := s.native.Register(accelerator, func() { r.trigger(time.Now()) }); err != nil {
+			return err
+		}
+		r.nativeRegistered = true
+	}
+	if s.watchKeys != nil {
+		stopWatching, err := s.watchKeys(key, func(state keyState) { r.observeEvent(state, time.Now()) })
+		if err != nil {
+			if r.nativeRegistered {
+				if rollbackErr := s.native.Unregister(accelerator); rollbackErr != nil {
+					return fmt.Errorf("start keyboard listener: %w; unregister hotkey: %v", err, rollbackErr)
+				}
+			}
+			return fmt.Errorf("start keyboard listener: %w", err)
+		}
+		r.stopWatching = stopWatching
 	}
 	r.mu.Lock()
 	r.active = true
@@ -110,11 +139,30 @@ func (s *fallbackService) Unregister(accelerator string) error {
 	r.mu.Lock()
 	r.active = false
 	r.mu.Unlock()
-	if err := s.native.Unregister(accelerator); err != nil {
-		r.mu.Lock()
-		r.active = true
-		r.mu.Unlock()
-		return err
+	if r.nativeRegistered {
+		if err := s.native.Unregister(accelerator); err != nil {
+			r.mu.Lock()
+			r.active = true
+			r.mu.Unlock()
+			return err
+		}
+		r.nativeRegistered = false
+	}
+	if r.stopWatching != nil {
+		if err := r.stopWatching(); err != nil {
+			var restoreErr error
+			if key, _ := functionKey(accelerator); key != 0x7B {
+				restoreErr = s.native.Register(accelerator, func() { r.trigger(time.Now()) })
+				r.nativeRegistered = restoreErr == nil
+			}
+			r.mu.Lock()
+			r.active = true
+			r.mu.Unlock()
+			if restoreErr != nil {
+				return fmt.Errorf("stop keyboard listener: %w; restore hotkey: %v", err, restoreErr)
+			}
+			return fmt.Errorf("stop keyboard listener: %w", err)
+		}
 	}
 	close(r.stop)
 	<-r.done
@@ -124,6 +172,22 @@ func (s *fallbackService) Unregister(accelerator string) error {
 
 func (r *registration) observe(state keyState, now time.Time) {
 	r.mu.Lock()
+	defer r.mu.Unlock()
+	// A zero GetAsyncKeyState result in a game must not release a hooked key.
+	if r.eventDown {
+		return
+	}
+	r.observeLocked(state, now)
+}
+
+func (r *registration) observeEvent(state keyState, now time.Time) {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	r.eventDown = state.down
+	r.observeLocked(state, now)
+}
+
+func (r *registration) observeLocked(state keyState, now time.Time) {
 	rising := state.down && !r.down
 	r.down = state.down
 	if !state.down {
@@ -133,7 +197,6 @@ func (r *registration) observe(state keyState, now time.Time) {
 	if trigger {
 		r.triggerLocked(now)
 	}
-	r.mu.Unlock()
 }
 
 func (r *registration) trigger(now time.Time) {

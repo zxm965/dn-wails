@@ -431,9 +431,12 @@ func (a *App) syncDragonNestShortcut(config settings.DragonNest) error {
 	}
 	if err := a.globalShortcutService.Register(desired, func() {
 		log.Printf("Dragon Nest shortcut triggered: %s", desired)
-		if _, err := a.KillDragonNestProcess(); err != nil {
+		info, err := a.KillDragonNestProcess()
+		if err != nil {
 			log.Printf("kill Dragon Nest process from shortcut: %v", err)
+			return
 		}
+		log.Printf("Dragon Nest process exited from shortcut: pid=%d name=%s", info.PID, info.Name)
 	}); err != nil {
 		return fmt.Errorf("register %q: %w", desired, err)
 	}

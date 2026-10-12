@@ -6,19 +6,15 @@ import "golang.org/x/sys/windows"
 
 var getAsyncKeyState = windows.NewLazySystemDLL("user32.dll").NewProc("GetAsyncKeyState")
 
-// New retains the native hotkey and observes only its configured combination
-// independently of the WebView and foreground window's message handling.
+// New combines system registration with a dedicated low-level keyboard listener.
 func New(native Native) Native {
-	return newFallback(native, readKeyState)
+	service := newFallback(native, readKeyState).(*fallbackService)
+	service.watchKeys = watchKeyboard
+	return service
 }
 
 func readKeyState(key uintptr) keyState {
-	down := isDown(key)
-	return keyState{
-		down: down,
-		matches: down && isDown(0x11) && !isDown(0x10) && !isDown(0x12) &&
-			!isDown(0x5B) && !isDown(0x5C),
-	}
+	return readFunctionKeyState(key, isDown)
 }
 
 func isDown(key uintptr) bool {

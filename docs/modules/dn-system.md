@@ -112,10 +112,27 @@ DN 的两个业务路由在 `routeConfig.ts` 中统一声明 `requiresAuth: true
 ### 进程工具
 
 - 页面打开时不自动扫描，用户点击“扫描进程”后才读取当前运行的龙之谷候选进程。
-- 仅扫描名称为 `DragonNest.exe` 或 `DragonNest_x64.exe` 的进程，进程名匹配不区分大小写，不再按路径关键字扩大候选范围；后端在结束前重新校验 PID、名称和完整路径，避免 PID 复用导致误杀。
+- 仅扫描名称为 `DragonNest.exe` 或 `DragonNest_x64.exe` 的进程，进程名匹配不区分大小写，不再按路径关键字扩大候选范围；后端使用同一个进程句柄完成名称和完整路径校验、终止和退出等待，避免检查后重新打开 PID 时误杀复用该 PID 的进程。
+- Windows 使用 `OpenProcess(PROCESS_TERMINATE | PROCESS_QUERY_LIMITED_INFORMATION | SYNCHRONIZE)` 和 `TerminateProcess`，然后通过 `WaitForSingleObject` 最多等待 3 秒；只有确认进程退出才返回成功。等待超时返回 `ErrTerminationTimeout`，UI 提示重新扫描，不把已发送请求当作已结束。
+- 平台扫描遇到访问被拒绝时保留 PID、名称和空路径；业务服务仅对已识别的龙之谷候选将其转为 `ErrAccessDenied`，不会误报为未找到，也不会阻断与龙之谷无关的受限系统进程；有任一龙之谷候选无法读取路径时，本次扫描整体失败，以免快捷键自动选择不完整候选列表。
 - 选择候选进程后可直接结束；首次成功结束后自动保存目标路径，供全局快捷键使用。
-- 快捷键默认关闭，只接受 `Ctrl+F1` 到 `Ctrl+F11` 的完整组合，默认为 `Ctrl+F4`；Windows 保留的 `F12` 不再提供。系统热键在 `WindowRuntimeReady` 后注册到 Wails 隐藏主线程窗口；Windows 同时每 20ms 读取当前组合的按键状态，为热键消息未送达提供兜底，在游戏或其他程序前台、应用最小化或隐藏到托盘时无需切回本窗口。两条链路去重、按住不重复、执行不重叠，成功关闭开关或应用退出时停止检测并注销；注册失败会写入应用日志，不绕过其他软件占用，也不自动提权。Windows 权限隔离、安全桌面与游戏保护机制仍可能限制按键检测或进程终止，须在实际游戏环境验证。v7 升级到 v8 时不继承原有快捷键键位和开关，而是恢复默认关闭并要求用户重新开启；已记录的 DN 进程目标路径继续保留。
+- 快捷键默认关闭，只接受单键 `F1` 到 `F12`，默认为 `F4`；按下 Ctrl/Shift/Alt/Win 时不触发。快捷键在 `WindowRuntimeReady` 后启用，F1–F11 注册到 Wails 隐藏主线程窗口，并每 20ms 后台检测按键状态；F1–F12 还通过独立 OS 线程上的 `WH_KEYBOARD_LL` 监听按下与释放事件；F12 因 Windows 系统热键保留限制不调用原生注册，由监听和后台检测触发。在游戏或其他程序前台、应用最小化或隐藏到托盘时无需切回本窗口。输入链路共享去重、按住不重复、执行不重叠，成功关闭开关或应用退出时停止检测并注销；F1–F11 注册失败会返回错误并写入应用日志，不绕过其他软件占用，也不自动提权。Windows 权限隔离、安全桌面与游戏保护机制仍可能限制按键检测或进程终止，须在实际游戏环境验证。v7、v8 升级到 v9 时不继承原有快捷键键位和开关，恢复默认关闭与 `F4`，要求用户重新开启；已记录的 DN 进程目标路径与其他偏好继续保留。
 - 没有已记录路径且同时存在多个候选进程时，快捷键不会自动选择，用户需要打开“进程”页面手动选择。
+
+### 社区方式对照与实机验收
+
+2026-10-12 检索的社区资料中，[2025 年龙之谷 F4 秒退视频](https://www.bilibili.com/video/BV1Pwsoz1E7k/)说明存在这种操作习惯，但未提供可审查的实现；[2012 年用户报告](https://zhidao.baidu.com/question/502459680.html)提到 `taskkill` / `ntsd` 对 `DragonNest.exe` 返回拒绝访问，不能用来证明当前客户端一定有效。没有找到足以保证当前国服版本兼容的公开实现或可复现实测。
+
+可审查的通用方案是 [AutoHotkey ProcessClose](https://github.com/AutoHotkey/AutoHotkeyDocs/blob/v2/docs/lib/ProcessClose.htm) 这种按 PID/进程名强制关闭方式；本工具直接调用 Windows 进程 API，并保留路径校验。[微软文档](https://learn.microsoft.com/en-us/windows/win32/api/processthreadsapi/nf-processthreadsapi-terminateprocess)明确外部进程的 `TerminateProcess` 为异步操作，因此本实现增加退出等待。改用命令行 `taskkill` 不能被视为权限或游戏保护限制的通用解决方案。
+
+按键触发与进程终止分开验收：
+
+1. 在 Windows 的“进程”页扫描并手动结束一次龙之谷，确认客户端退出且目标路径记录成功；若提示拒绝访问，先比较游戏与本工具的权限。[AutoHotkey 官方 FAQ](https://github.com/AutoHotkey/AutoHotkeyDocs/blob/v2/docs/FAQ.htm#L87)说明提升权限的前台程序可能阻止未提升权限程序的热键。
+2. 开启选定的 F 键，重新启动游戏，在游戏前台按下该键；依次覆盖窗口模式、全屏模式、应用最小化和托盘隐藏。单键可能与游戏原有按键冲突，选用未使用的键位。
+3. 在“设置 → 概览 → 日志”查看 `Dragon Nest shortcut triggered: F4`（示例键位）和 `Dragon Nest process exited from shortcut: pid=... name=...`；前者证明触发链路到达门面，后者证明本地进程已退出。只出现前者时检查紧随其后的终止错误；两者都没有时先检查 `global shortcut keyboard listener ready: key=F4 thread=...`，确认选定键位的监听已安装，再检查启用状态、注册错误和前台权限。
+4. 覆盖按住不重复、切换键位、关闭开关、退出应用与多个候选进程；服务端断线判定时间不属于本地进程退出保证。
+
+测试覆盖拒绝访问、目标变化、系统目标拒绝、等待超时、等待失败和句柄释放；Windows 专用 stub 测试需要在 Windows 执行，其他系统只能交叉编译，不能替代上述游戏实机验证。
 
 ## 错误与边界
 

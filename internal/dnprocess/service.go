@@ -30,6 +30,9 @@ func (s *service) List() ([]Info, error) {
 	result := make([]Info, 0, len(items))
 	for _, item := range items {
 		if isDragonNestProcess(item) {
+			if item.Path == "" {
+				return nil, fmt.Errorf("%w: cannot inspect %s (pid %d)", ErrAccessDenied, item.Name, item.PID)
+			}
 			result = append(result, item)
 		}
 	}

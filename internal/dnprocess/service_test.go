@@ -6,8 +6,9 @@ import (
 )
 
 type platformStub struct {
-	items      []Info
-	terminated Target
+	items        []Info
+	terminated   Target
+	terminateErr error
 }
 
 func (p *platformStub) List() ([]Info, error) {
@@ -16,7 +17,42 @@ func (p *platformStub) List() ([]Info, error) {
 
 func (p *platformStub) Terminate(target Target) error {
 	p.terminated = target
-	return nil
+	return p.terminateErr
+}
+
+func TestServiceDoesNotReportSuccessBeforeConfirmedExit(t *testing.T) {
+	t.Parallel()
+	for _, failure := range []error{ErrAccessDenied, ErrTerminationTimeout} {
+		t.Run(failure.Error(), func(t *testing.T) {
+			platform := &platformStub{
+				items:        []Info{{PID: 42, Name: "DragonNest.exe", Path: `C:\Games\DragonNest.exe`}},
+				terminateErr: failure,
+			}
+			service := NewService(platform)
+			info, err := service.TerminateConfigured(`C:\Games\DragonNest.exe`)
+			if !errors.Is(err, failure) || info != (Info{}) {
+				t.Fatalf("unconfirmed exit was reported as success: info=%+v err=%v", info, err)
+			}
+		})
+	}
+}
+
+func TestServiceReportsInaccessibleGameInsteadOfNotFound(t *testing.T) {
+	t.Parallel()
+	service := NewService(&platformStub{items: []Info{
+		{PID: 11, Name: "Other.exe"},
+		{PID: 42, Name: "DragonNest_x64.exe"},
+	}})
+	if _, err := service.List(); !errors.Is(err, ErrAccessDenied) {
+		t.Fatalf("inaccessible game scan lost permission error: %v", err)
+	}
+	if _, err := service.TerminateConfigured(""); !errors.Is(err, ErrAccessDenied) {
+		t.Fatalf("inaccessible game kill lost permission error: %v", err)
+	}
+	service = NewService(&platformStub{items: []Info{{PID: 11, Name: "Other.exe"}}})
+	if items, err := service.List(); err != nil || len(items) != 0 {
+		t.Fatalf("unrelated inaccessible process blocked game scan: %v %v", items, err)
+	}
 }
 
 func TestServiceListFiltersDragonNestCandidates(t *testing.T) {

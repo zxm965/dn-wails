@@ -1,11 +1,71 @@
 package settings
 
 import (
+	"encoding/json"
 	"errors"
+	"fmt"
 	"testing"
 
 	"cull-pear/internal/storage"
 )
+
+func TestServiceAllowsOnlySingleFunctionKeys(t *testing.T) {
+	t.Parallel()
+	service := NewService(newMemoryStore())
+	for number := 1; number <= 12; number++ {
+		value := Default()
+		value.DragonNest.ShortcutEnabled = true
+		value.DragonNest.ShortcutKey = fmt.Sprintf("F%d", number)
+		if _, err := service.Update(value); err != nil {
+			t.Fatalf("rejects %s: %v", value.DragonNest.ShortcutKey, err)
+		}
+	}
+	for _, key := range []string{"Ctrl+F4", "Shift+F1", "F0", "F13", "F04", ""} {
+		value := Default()
+		value.DragonNest.ShortcutKey = key
+		if _, err := service.Update(value); !errors.Is(err, ErrInvalidSettings) {
+			t.Fatalf("expected invalid shortcut %q, got %v", key, err)
+		}
+	}
+}
+
+func TestServiceMigratesVersionEightSettingsAndPersistsResetShortcut(t *testing.T) {
+	t.Parallel()
+	store := newMemoryStore()
+	legacy := Default()
+	legacy.Version = 8
+	legacy.DragonNest = DragonNest{ShortcutEnabled: true, ShortcutKey: "Ctrl+F12", TargetPath: `C:\Games\DragonNest.exe`}
+	legacy.Appearance.ThemeMode = ThemeDark
+	data, err := json.Marshal(legacy)
+	if err != nil {
+		t.Fatal(err)
+	}
+	store.data[storageKey] = data
+	service := NewService(store)
+	if err := service.Initialize(); err != nil {
+		t.Fatalf("migrate v8: %v", err)
+	}
+	expected := legacy
+	expected.Version = CurrentVersion
+	expected.DragonNest.ShortcutEnabled = false
+	expected.DragonNest.ShortcutKey = "F4"
+	for _, candidate := range []*Service{service, NewService(store)} {
+		if err := candidate.Initialize(); err != nil {
+			t.Fatalf("reload migrated settings: %v", err)
+		}
+		got, err := json.Marshal(candidate.Get())
+		if err != nil {
+			t.Fatal(err)
+		}
+		want, err := json.Marshal(expected)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if string(got) != string(want) {
+			t.Fatalf("migration changed other preferences: got %s want %s", got, want)
+		}
+	}
+}
 
 type memoryStore struct {
 	data map[string][]byte
@@ -111,7 +171,7 @@ func TestServiceRejectsInvalidSettings(t *testing.T) {
 	}
 
 	value.Appearance.ButtonSize = ButtonSizeMD
-	value.DragonNest.ShortcutKey = "F4"
+	value.DragonNest.ShortcutKey = "Ctrl+F4"
 	if _, err := service.Update(value); !errors.Is(err, ErrInvalidSettings) {
 		t.Fatalf("expected invalid Dragon Nest shortcut error, got %v", err)
 	}

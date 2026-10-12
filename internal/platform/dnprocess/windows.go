@@ -18,6 +18,10 @@ const (
 	th32csSnapProcess              = 0x00000002
 	processQueryLimitedInformation = 0x1000
 	processTerminate               = 0x0001
+	processSynchronize             = 0x00100000
+	terminationTimeoutMS           = 3000
+	waitObject0                    = 0
+	waitTimeout                    = 258
 	maxProcessPath                 = 32768
 	maxProcessName                 = 260
 	errorInvalidParameter          = syscall.Errno(87)
@@ -31,6 +35,7 @@ var (
 	openProcess                = kernel32.NewProc("OpenProcess")
 	queryFullProcessImageNameW = kernel32.NewProc("QueryFullProcessImageNameW")
 	terminateProcess           = kernel32.NewProc("TerminateProcess")
+	waitForSingleObject        = kernel32.NewProc("WaitForSingleObject")
 	closeHandle                = kernel32.NewProc("CloseHandle")
 )
 
@@ -74,6 +79,9 @@ func (windowsPlatform) List() ([]core.Info, error) {
 		path, err := processPath(entry.ProcessID)
 		if err == nil && !isSystemProcess(name, path) {
 			items = append(items, core.Info{PID: entry.ProcessID, Name: name, Path: path})
+		} else if errors.Is(err, core.ErrAccessDenied) && !isSystemProcess(name, "") {
+			// Let the domain report an inaccessible game instead of claiming it is absent.
+			items = append(items, core.Info{PID: entry.ProcessID, Name: name})
 		}
 
 		if ok, _, err := process32NextW.Call(handle, uintptr(unsafe.Pointer(&entry))); ok == 0 {
@@ -87,10 +95,56 @@ func (windowsPlatform) List() ([]core.Info, error) {
 }
 
 func (windowsPlatform) Terminate(target core.Target) error {
-	name, path, err := inspectProcess(target.PID)
+	return terminateTarget(target, terminationAPI{
+		open: func(pid uint32) (syscall.Handle, error) {
+			handle, _, err := openProcess.Call(processTerminate|processQueryLimitedInformation|processSynchronize, 0, uintptr(pid))
+			if handle == 0 {
+				return 0, mapProcessError("open process for termination", err)
+			}
+			return syscall.Handle(handle), nil
+		},
+		path: processPathFromHandle,
+		terminate: func(handle syscall.Handle) error {
+			if result, _, err := terminateProcess.Call(uintptr(handle), 1); result == 0 {
+				return mapProcessError("terminate process", err)
+			}
+			return nil
+		},
+		wait: func(handle syscall.Handle) error {
+			result, _, err := waitForSingleObject.Call(uintptr(handle), terminationTimeoutMS)
+			switch result {
+			case waitObject0:
+				return nil
+			case waitTimeout:
+				return fmt.Errorf("%w: process did not exit within %dms", core.ErrTerminationTimeout, terminationTimeoutMS)
+			default:
+				return fmt.Errorf("wait for process termination: result %#x: %w", result, err)
+			}
+		},
+		close: closeProcessHandle,
+	})
+}
+
+// All operations use one handle so PID reuse cannot change the process being killed.
+type terminationAPI struct {
+	open      func(uint32) (syscall.Handle, error)
+	path      func(syscall.Handle) (string, error)
+	terminate func(syscall.Handle) error
+	wait      func(syscall.Handle) error
+	close     func(syscall.Handle)
+}
+
+func terminateTarget(target core.Target, api terminationAPI) error {
+	handle, err := api.open(target.PID)
 	if err != nil {
 		return err
 	}
+	defer api.close(handle)
+	path, err := api.path(handle)
+	if err != nil {
+		return err
+	}
+	name := filepath.Base(path)
 	if !strings.EqualFold(name, target.Name) || !sameWindowsPath(path, target.Path) {
 		return fmt.Errorf("%w: pid %d no longer matches the scanned target", core.ErrTargetChanged, target.PID)
 	}
@@ -98,15 +152,10 @@ func (windowsPlatform) Terminate(target core.Target) error {
 		return fmt.Errorf("%w: system process %q cannot be terminated by this tool", core.ErrInvalidTarget, name)
 	}
 
-	handle, _, callErr := openProcess.Call(processTerminate, 0, uintptr(target.PID))
-	if handle == 0 {
-		return mapProcessError("open process for termination", callErr)
+	if err := api.terminate(handle); err != nil {
+		return err
 	}
-	defer closeProcessHandle(syscall.Handle(handle))
-	if result, _, callErr := terminateProcess.Call(handle, 1); result == 0 {
-		return mapProcessError("terminate process", callErr)
-	}
-	return nil
+	return api.wait(handle)
 }
 
 func processPath(pid uint32) (string, error) {
@@ -115,11 +164,14 @@ func processPath(pid uint32) (string, error) {
 		return "", mapProcessError("open process for inspection", callErr)
 	}
 	defer closeProcessHandle(syscall.Handle(handle))
+	return processPathFromHandle(syscall.Handle(handle))
+}
 
+func processPathFromHandle(handle syscall.Handle) (string, error) {
 	buffer := make([]uint16, maxProcessPath)
 	length := uint32(len(buffer))
 	if result, _, callErr := queryFullProcessImageNameW.Call(
-		handle,
+		uintptr(handle),
 		0,
 		uintptr(unsafe.Pointer(&buffer[0])),
 		uintptr(unsafe.Pointer(&length)),
@@ -127,17 +179,6 @@ func processPath(pid uint32) (string, error) {
 		return "", mapProcessError("query process path", callErr)
 	}
 	return syscall.UTF16ToString(buffer[:length]), nil
-}
-
-func inspectProcess(pid uint32) (string, string, error) {
-	path, err := processPath(pid)
-	if err != nil {
-		if errors.Is(err, core.ErrAccessDenied) {
-			return "", "", err
-		}
-		return "", "", fmt.Errorf("%w: pid %d", core.ErrNotFound, pid)
-	}
-	return filepath.Base(path), path, nil
 }
 
 func closeProcessHandle(handle syscall.Handle) {
