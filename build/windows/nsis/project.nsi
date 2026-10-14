@@ -92,7 +92,7 @@ ShowInstDetails show # This will always show the installation details.
 Function .onInit
    !insertmacro wails.checkArchitecture
 
-   # A new updater always supplies the exact target after /D, even when that
+   # The updater always supplies the exact target after /D, even when that
    # directory happens to equal the default and stale registry data differs.
    ${GetParameters} $R0
    ClearErrors
@@ -101,41 +101,26 @@ Function .onInit
    Goto restoreInstallDirectory
 updateModeDetected:
    StrCpy $UpdateMode 1
-   # Older clients omit /S. Make their first upgrade silent as well.
+   # Enforce silent mode for in-app updates.
    SetSilent silent
    Goto installDirectoryReady
 restoreInstallDirectory:
 
    # Preserve an explicitly supplied /D path. Without /D, recover the existing
-   # install directory so silent updates launched by older clients can replace
-   # custom and non-system-drive installations instead of using the C: default.
+   # install directory when the user runs the installer again.
    StrCmp $INSTDIR "${DEFAULT_INSTALL_DIR}" 0 installDirectoryReady
 
    SetRegView 64
    !if "${WAILS_INSTALL_SCOPE}" == "user"
        ReadRegStr $0 HKCU "${UNINST_KEY}" "InstallLocation"
-       ReadRegStr $1 HKCU "${UNINST_KEY}" "DisplayIcon"
    !else
        ReadRegStr $0 HKLM "${UNINST_KEY}" "InstallLocation"
-       ReadRegStr $1 HKLM "${UNINST_KEY}" "DisplayIcon"
    !endif
-   StrCmp $0 "" 0 validatePreviousInstallDirectory
-   StrCmp $1 "" installDirectoryReady
-   ${GetParent} "$1" $0
-
-validatePreviousInstallDirectory:
+   StrCmp $0 "" installDirectoryReady
    IfFileExists "$0\${PRODUCT_EXECUTABLE}" 0 installDirectoryReady
    StrCpy $INSTDIR "$0"
 
 installDirectoryReady:
-FunctionEnd
-
-Function .onInstSuccess
-    StrCmp $UpdateMode 1 0 updateSuccessComplete
-    # Older interactive observers need this marker to restart after verifying
-    # the installed executable. The installer never starts an in-app update.
-    Call LaunchInstalledApplication
-updateSuccessComplete:
 FunctionEnd
 
 Function UpdateDirectoryPage
@@ -147,27 +132,11 @@ Function UpdateDirectoryPage
 FunctionEnd
 
 Function LaunchInstalledApplication
-    StrCmp $UpdateMode 1 updateLaunchRequested
+    StrCmp $UpdateMode 1 launchComplete
     ClearErrors
     Exec '"$INSTDIR\${PRODUCT_EXECUTABLE}"'
     IfErrors 0 launchComplete
     MessageBox MB_OK|MB_ICONSTOP "The application could not be started. Please open ${PRODUCT_EXECUTABLE} from the installation folder."
-    Goto launchComplete
-updateLaunchRequested:
-    # The observer verifies the release hash and owns the single restart.
-    # Silent updates request launch here without a finish-page checkbox.
-    ClearErrors
-    FileOpen $0 "$EXEDIR\launch-requested" w
-    IfErrors launchRequestFailed
-    FileWrite $0 "launch"
-    FileClose $0
-    IfErrors launchRequestFailed launchComplete
-launchRequestFailed:
-    IfSilent launchRequestFailureReported
-    MessageBox MB_OK|MB_ICONSTOP "The update was installed, but automatic launch could not be requested. Please open ${PRODUCT_EXECUTABLE} from the installation folder."
-launchRequestFailureReported:
-    SetErrorLevel 74
-    Quit
 launchComplete:
 FunctionEnd
 

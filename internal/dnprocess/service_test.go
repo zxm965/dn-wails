@@ -2,13 +2,18 @@ package dnprocess
 
 import (
 	"errors"
+	"strings"
 	"testing"
 )
 
 type platformStub struct {
-	items        []Info
-	terminated   Target
-	terminateErr error
+	items         []Info
+	terminated    Target
+	terminateErr  error
+	launchPaths   []string
+	launchErr     error
+	validatedPath string
+	validateErr   error
 }
 
 func (p *platformStub) List() ([]Info, error) {
@@ -18,6 +23,68 @@ func (p *platformStub) List() ([]Info, error) {
 func (p *platformStub) Terminate(target Target) error {
 	p.terminated = target
 	return p.terminateErr
+}
+
+func (p *platformStub) Launch(path string) error {
+	p.launchPaths = append(p.launchPaths, path)
+	return p.launchErr
+}
+
+func (p *platformStub) ValidateLauncherPath(path string) (string, error) {
+	p.validatedPath = path
+	return path, p.validateErr
+}
+
+func TestValidateLauncherConfiguration(t *testing.T) {
+	for _, input := range []string{"", " \t", "bad\x00path", "bad\npath", strings.Repeat("x", 4097)} {
+		platform := &platformStub{}
+		if _, err := NewService(platform).ValidateLauncherPath(input); !errors.Is(err, ErrInvalidTarget) || platform.validatedPath != "" {
+			t.Fatalf("invalid input reached native validation: %q %v", input, err)
+		}
+	}
+	platform := &platformStub{validateErr: ErrLaunchNotFound}
+	if _, err := NewService(platform).ValidateLauncherPath(` C:\Games\DNLauncher.exe `); !errors.Is(err, ErrLaunchNotFound) || platform.validatedPath != `C:\Games\DNLauncher.exe` {
+		t.Fatalf("native validation/trim failure: %+v %v", platform, err)
+	}
+}
+
+func TestLaunchConfigured(t *testing.T) {
+	for _, test := range []struct {
+		name       string
+		path       string
+		items      []Info
+		launchErr  error
+		wantErr    error
+		wantLaunch bool
+	}{
+		{name: "saved path", path: ` C:\Games\DragonNest.exe `, wantLaunch: true},
+		{name: "platform default", wantLaunch: true},
+		{name: "running target", path: `c:\games\dragonnest.exe`, items: []Info{{PID: 42, Name: "DragonNest.exe", Path: `C:\Games\DragonNest.exe`}}},
+		{name: "single running default", items: []Info{{PID: 42, Name: "DragonNest.exe", Path: `C:\Games\DragonNest.exe`}}},
+		{name: "different running target", path: `D:\Games\DragonNest.exe`, items: []Info{{PID: 42, Name: "DragonNest.exe", Path: `C:\Games\DragonNest.exe`}}, wantLaunch: true},
+		{name: "ambiguous default", items: []Info{{PID: 42, Name: "DragonNest.exe", Path: `C:\Games\DragonNest.exe`}, {PID: 43, Name: "DragonNest.exe", Path: `D:\Games\DragonNest.exe`}}, wantErr: ErrMultiple},
+		{name: "unreadable candidate", items: []Info{{PID: 42, Name: "DragonNest.exe"}}, wantErr: ErrAccessDenied},
+		{name: "native error", launchErr: ErrLaunchNotFound, wantErr: ErrLaunchNotFound, wantLaunch: true},
+		{name: "null path", path: "bad\x00path", wantErr: ErrInvalidTarget},
+		{name: "oversize path", path: strings.Repeat("x", 32769), wantErr: ErrInvalidTarget},
+	} {
+		t.Run(test.name, func(t *testing.T) {
+			platform := &platformStub{items: test.items, launchErr: test.launchErr}
+			err := NewService(platform).LaunchConfigured(test.path)
+			if !errors.Is(err, test.wantErr) {
+				t.Fatalf("launch error = %v, want %v", err, test.wantErr)
+			}
+			if (len(platform.launchPaths) == 1) != test.wantLaunch {
+				t.Fatalf("unexpected launch calls: %v", platform.launchPaths)
+			}
+			if test.wantLaunch && platform.launchPaths[0] != strings.TrimSpace(test.path) {
+				t.Fatalf("wrong launch path: %q", platform.launchPaths[0])
+			}
+		})
+	}
+	if err := NewService(nil).LaunchConfigured(""); !errors.Is(err, ErrUnavailable) {
+		t.Fatalf("unavailable platform: %v", err)
+	}
 }
 
 func TestServiceDoesNotReportSuccessBeforeConfirmedExit(t *testing.T) {
@@ -70,6 +137,32 @@ func TestServiceListFiltersDragonNestCandidates(t *testing.T) {
 	}
 	if len(items) != 2 || items[0].PID != 10 || items[1].PID != 11 {
 		t.Fatalf("unexpected candidates: %+v", items)
+	}
+}
+
+func TestLauncherDetectionAndIsolation(t *testing.T) {
+	launcher := Info{PID: 30, Name: "DNLauncher.EXE", Path: `C:\Games\DNLauncher.exe`}
+	game := Info{PID: 31, Name: "DragonNest.exe", Path: `C:\Games\DragonNest.exe`}
+	platform := &platformStub{items: []Info{launcher, game}}
+	items, err := NewService(platform).List()
+	if err != nil || len(items) != 2 || DetectedLauncherPath(items) != launcher.Path {
+		t.Fatalf("launcher not detected: %v %v", items, err)
+	}
+	items, err = NewFirefoxTestService(platform).List()
+	if err != nil || len(items) != 0 {
+		t.Fatalf("Windows launcher leaked into Firefox candidates: %v %v", items, err)
+	}
+	if DetectedLauncherPath([]Info{game}) != "" {
+		t.Fatal("game executable was treated as launcher")
+	}
+	other := launcher
+	other.PID = 32
+	if DetectedLauncherPath([]Info{launcher, other}) != launcher.Path {
+		t.Fatal("multiple processes at same launcher path should be unambiguous")
+	}
+	other.Path = `D:\Other\DNLauncher.exe`
+	if DetectedLauncherPath([]Info{launcher, other}) != "" {
+		t.Fatal("multiple installations must not choose an arbitrary launcher")
 	}
 }
 

@@ -106,6 +106,7 @@ export class Appearance {
 export class DragonNest {
     "localShortcutKey": string;
     "targetPath": string;
+    "launcherPath"?: string;
 
     /** Creates a new DragonNest instance. */
     constructor($$source: Partial<DragonNest> = {}) {

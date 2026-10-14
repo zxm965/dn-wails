@@ -11,6 +11,8 @@ var (
 	ErrAccessDenied       = errors.New("Dragon Nest process access denied")
 	ErrTargetChanged      = errors.New("Dragon Nest process target changed")
 	ErrTerminationTimeout = errors.New("Dragon Nest process termination timed out")
+	ErrLaunchPathRequired = errors.New("process launch path is required")
+	ErrLaunchNotFound     = errors.New("process launch application not found")
 )
 
 type Info struct {
@@ -30,11 +32,15 @@ type Target struct {
 type Platform interface {
 	List() ([]Info, error)
 	Terminate(target Target) error
+	Launch(path string) error
+	ValidateLauncherPath(path string) (string, error)
 }
 
 type Service interface {
 	List() ([]Info, error)
 	Terminate(target Target) (Info, error)
 	TerminateConfigured(path string) (Info, error)
+	LaunchConfigured(path string) error
+	ValidateLauncherPath(path string) (string, error)
 	Health() error
 }

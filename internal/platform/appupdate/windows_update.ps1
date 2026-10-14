@@ -149,19 +149,13 @@ try {
   $installed = $false
   for ($attempt = 1; $attempt -le 10; $attempt++) {
     $remaining = [int][Math]::Floor(($deadline - [DateTime]::UtcNow).TotalMilliseconds)
-    if (-not $config.interactive -and $remaining -le 0) { throw 'installer deadline exceeded' }
+    if ($remaining -le 0) { throw 'installer deadline exceeded' }
     Write-UpdateLog "starting installer attempt $attempt"
-    # In-app updates run silently; retain the interactive branch for older
-    # installer compatibility and isolated regression scenarios.
     # NSIS /D must remain unquoted and last, including paths with spaces.
-    $arguments = "/UPDATE /D=$applicationDirectory"
-    if (-not $config.interactive) { $arguments = "/S $arguments" }
-    $installer = Start-UpdateProcess -Path $config.installerPath -Arguments $arguments -Directory $config.workDirectory -Visible ([bool]$config.interactive)
+    $arguments = "/S /UPDATE /D=$applicationDirectory"
+    $installer = Start-UpdateProcess -Path $config.installerPath -Arguments $arguments -Directory $config.workDirectory -Visible $false
     $installationStarted = $true
-    if ($config.interactive) {
-      Write-UpdateLog 'installation wizard opened; waiting for user completion without an interaction deadline'
-      $installer.WaitForExit()
-    } elseif (-not $installer.WaitForExit($remaining)) {
+    if (-not $installer.WaitForExit($remaining)) {
       $safeToRecover = $false
       Stop-UpdateProcessTree $installer
       $safeToRecover = $true
@@ -180,25 +174,19 @@ try {
     }
     # Only retry the explicit NSIS file-write error; other failures need action.
     if ($exitCode -eq 1) { throw 'installation was cancelled; keeping the previous version' }
-    if ($config.interactive -or $exitCode -ne 73) { throw "installer failed with exit code $exitCode" }
+    if ($exitCode -ne 73) { throw "installer failed with exit code $exitCode" }
     Start-Sleep -Milliseconds 750
   }
   if (-not $installed) { throw 'installer could not replace the executable after bounded retries' }
 
-  $launchRequested = -not $config.interactive -or (Test-Path -LiteralPath (Join-Path $config.workDirectory 'launch-requested'))
-  Write-UpdateLog "verified installed executable; launch requested=$launchRequested"
   # Persist before launch so the new application's first Info call never sees
   # a stale "installing" result. Launch failure replaces it with "failed".
   Write-UpdateResult 'succeeded'
-  if ($launchRequested) {
-    $restarted = Start-UpdateProcess -Path $config.targetPath -Arguments '' -Directory $applicationDirectory
-    if ($restarted.WaitForExit(1500)) { throw "updated application exited early with code $($restarted.ExitCode)" }
-    $restarted.Dispose()
-    $restarted = $null
-    Write-UpdateLog 'update succeeded; application restarted'
-  } else {
-    Write-UpdateLog 'update succeeded; user chose not to launch the application'
-  }
+  $restarted = Start-UpdateProcess -Path $config.targetPath -Arguments '' -Directory $applicationDirectory
+  if ($restarted.WaitForExit(1500)) { throw "updated application exited early with code $($restarted.ExitCode)" }
+  $restarted.Dispose()
+  $restarted = $null
+  Write-UpdateLog 'update succeeded; application restarted'
   try { Remove-Item -LiteralPath $config.workDirectory -Recurse -Force }
   catch { Write-UpdateLog "update completed, but staging cleanup failed: $($_.Exception.Message)" }
   exit 0

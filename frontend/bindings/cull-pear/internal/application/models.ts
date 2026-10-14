@@ -54,6 +54,51 @@ export class DiagnosticsInfo {
     }
 }
 
+export class DnLauncherConfiguration {
+    "path": string;
+
+    /** Creates a new DnLauncherConfiguration instance. */
+    constructor($$source: Partial<DnLauncherConfiguration> = {}) {
+        if (!("path" in $$source)) {
+            this["path"] = "";
+        }
+
+        Object.assign(this, $$source);
+    }
+
+    /**
+     * Creates a new DnLauncherConfiguration instance from a string or object.
+     */
+    static createFrom($$source: any = {}): DnLauncherConfiguration {
+        let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
+        return new DnLauncherConfiguration($$parsedSource as Partial<DnLauncherConfiguration>);
+    }
+}
+
+/**
+ * DnProcessChange invalidates process snapshots in every open window.
+ */
+export class DnProcessChange {
+    "action": string;
+
+    /** Creates a new DnProcessChange instance. */
+    constructor($$source: Partial<DnProcessChange> = {}) {
+        if (!("action" in $$source)) {
+            this["action"] = "";
+        }
+
+        Object.assign(this, $$source);
+    }
+
+    /**
+     * Creates a new DnProcessChange instance from a string or object.
+     */
+    static createFrom($$source: any = {}): DnProcessChange {
+        let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
+        return new DnProcessChange($$parsedSource as Partial<DnProcessChange>);
+    }
+}
+
 export class FileDrop {
     "x": number;
     "y": number;

@@ -242,12 +242,12 @@ func TestEndpointSourceDownloadsAndVerifiesAsset(t *testing.T) {
 
 	source := NewEndpointSource(server.Client(), validClientIdentity())
 	destination := filepath.Join(t.TempDir(), "update.zip")
-	err := source.Download(context.Background(), coreupdate.Asset{
+	err := source.DownloadWithProgress(context.Background(), coreupdate.Asset{
 		Name:        "update.zip",
 		DownloadURL: server.URL,
 		Digest:      "sha256:" + hex.EncodeToString(digest[:]),
 		Size:        int64(len(payload)),
-	}, destination)
+	}, destination, nil)
 	if err != nil {
 		t.Fatalf("download update: %v", err)
 	}
@@ -270,12 +270,12 @@ func TestEndpointSourceRejectsDigestMismatch(t *testing.T) {
 	defer server.Close()
 
 	destination := filepath.Join(t.TempDir(), "update.zip")
-	err := NewEndpointSource(server.Client(), validClientIdentity()).Download(context.Background(), coreupdate.Asset{
+	err := NewEndpointSource(server.Client(), validClientIdentity()).DownloadWithProgress(context.Background(), coreupdate.Asset{
 		Name:        "update.zip",
 		DownloadURL: server.URL,
 		Digest:      "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
 		Size:        int64(len(payload)),
-	}, destination)
+	}, destination, nil)
 	if err == nil {
 		t.Fatal("expected digest mismatch")
 	}
@@ -296,12 +296,12 @@ func TestEndpointSourceRejectsDownloadWithoutInitializedInstallationIdentity(t *
 	err := NewEndpointSource(server.Client(), clientIdentityStub{
 		version: "1.0.0",
 		err:     errors.New("identity unavailable"),
-	}).Download(context.Background(), coreupdate.Asset{
+	}).DownloadWithProgress(context.Background(), coreupdate.Asset{
 		Name:        "update.zip",
 		DownloadURL: server.URL,
 		Digest:      "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
 		Size:        1,
-	}, filepath.Join(t.TempDir(), "update.zip"))
+	}, filepath.Join(t.TempDir(), "update.zip"), nil)
 	if err == nil || !strings.Contains(err.Error(), "identity unavailable") {
 		t.Fatalf("expected installation identity error, got %v", err)
 	}

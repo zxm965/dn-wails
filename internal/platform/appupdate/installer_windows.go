@@ -74,7 +74,6 @@ func (i *Installer) Install(ctx context.Context, archivePath string, target core
 		WorkDirectory:         workDirectory,
 		ParentTimeoutSeconds:  60,
 		InstallTimeoutSeconds: 120,
-		Interactive:           false,
 	}
 	data, err := json.Marshal(config)
 	if err != nil {

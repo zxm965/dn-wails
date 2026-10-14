@@ -19,7 +19,6 @@ func TestWindowsNSISInstallerRecoversPreviousInstallDirectory(t *testing.T) {
 	for _, fragment := range []string{
 		`!define DEFAULT_INSTALL_DIR`,
 		`ReadRegStr $0 HKCU "${UNINST_KEY}" "InstallLocation"`,
-		`ReadRegStr $1 HKCU "${UNINST_KEY}" "DisplayIcon"`,
 		`IfFileExists "$0\${PRODUCT_EXECUTABLE}"`,
 		`WriteRegStr HKCU "${UNINST_KEY}" "InstallLocation" "$INSTDIR"`,
 	} {

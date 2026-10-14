@@ -23,9 +23,8 @@ import (
 )
 
 const (
-	accountSessionStorageKey       = "account-session"
-	legacyDesktopSessionStorageKey = "dn-desktop-session"
-	maximumAvatarSize              = 5 * 1024 * 1024
+	accountSessionStorageKey = "account-session"
+	maximumAvatarSize        = 5 * 1024 * 1024
 )
 
 var (
@@ -85,11 +84,6 @@ func (s *PostgresService) Initialize() error {
 	}
 
 	data, err := s.store.Load(accountSessionStorageKey)
-	loadedLegacySession := false
-	if errors.Is(err, storage.ErrNotFound) {
-		data, err = s.store.Load(legacyDesktopSessionStorageKey)
-		loadedLegacySession = err == nil
-	}
 	if errors.Is(err, storage.ErrNotFound) {
 		return nil
 	}
@@ -102,9 +96,6 @@ func (s *PostgresService) Initialize() error {
 	}
 	if err := s.setSessionToken(strings.TrimSpace(session.Token)); err != nil {
 		return err
-	}
-	if loadedLegacySession {
-		_ = s.store.Delete(legacyDesktopSessionStorageKey)
 	}
 	return nil
 }
@@ -421,7 +412,6 @@ func (s *PostgresService) clearSessionToken() error {
 	if err := s.store.Delete(accountSessionStorageKey); err != nil {
 		return fmt.Errorf("delete account session: %w", err)
 	}
-	_ = s.store.Delete(legacyDesktopSessionStorageKey)
 	s.sessionMu.Lock()
 	s.token = ""
 	s.sessionMu.Unlock()

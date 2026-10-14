@@ -11,12 +11,13 @@ import {
   PROCESS_TEST_MODE,
   PROCESS_CONTROL_SUPPORTED,
   getProcessErrorMessage,
-  listDragonNestProcesses,
   openDragonNestProcessWindow,
   terminateDragonNestProcess,
   type DragonNestProcess,
 } from '../api/dnProcessApi'
+import { useDnProcessList } from '../hooks/useDnProcessList'
 import { useDnProcessShortcut } from '../hooks/useDnProcessShortcut'
+import { DnLauncherSettings } from './DnLauncherSettings'
 
 import { styles } from './DnProcessKiller.css'
 
@@ -42,24 +43,20 @@ export function DnProcessKiller() {
     updateSettings,
     refreshSettings,
   } = useSettings()
-  const [items, setItems] = useState<DragonNestProcess[]>([])
+  const { items, scanning, scanned, scannedAt, error, refresh: scan, onTerminated } = useDnProcessList()
   const [selectedPID, setSelectedPID] = useState<number | null>(null)
-  const [scanning, setScanning] = useState(false)
   const [terminating, setTerminating] = useState(false)
-  const [scanned, setScanned] = useState(false)
-  const [error, setError] = useState('')
-  const [scannedAt, setScannedAt] = useState<Date | null>(null)
 
-  const selected = items.find((item) => item.pid === selectedPID) ?? null
+  const selected = items.find((item) => item.pid === selectedPID) ?? (items.length === 1 ? items[0] : null)
 
   const [openingWindow, setOpeningWindow] = useState(false)
   const handleShortcutSuccess = useCallback(
     (process: DragonNestProcess) => {
-      setItems((current) => current.filter((item) => item.pid !== process.pid))
+      onTerminated(process)
       setSelectedPID((current) => (current === process.pid ? null : current))
       void refreshSettings()
     },
-    [refreshSettings],
+    [onTerminated, refreshSettings],
   )
   const shortcut = useDnProcessShortcut(handleShortcutSuccess)
 
@@ -75,31 +72,12 @@ export function DnProcessKiller() {
     }
   }
 
-  const scan = useCallback(async () => {
-    setScanning(true)
-    setError('')
-    try {
-      const next = await listDragonNestProcesses()
-      setItems(next)
-      setSelectedPID(next.length === 1 ? next[0].pid : null)
-      setScanned(true)
-      setScannedAt(new Date())
-    } catch (scanError) {
-      setItems([])
-      setSelectedPID(null)
-      setScanned(true)
-      setError(getProcessErrorMessage(scanError, '当前系统暂不支持此进程操作。'))
-    } finally {
-      setScanning(false)
-    }
-  }, [])
-
   async function terminateSelected() {
-    if (!selected || terminating || shortcut.busy) return
+    if (!selected || scanning || terminating || shortcut.busy) return
     setTerminating(true)
     try {
       const terminated = await terminateDragonNestProcess(selected)
-      setItems((current) => current.filter((item) => item.pid !== terminated.pid))
+      onTerminated(terminated)
       setSelectedPID(null)
       notify({ title: `已结束 ${terminated.name}`, tone: 'success' })
       await refreshSettings()
@@ -122,7 +100,7 @@ export function DnProcessKiller() {
         subtitle={
           PROCESS_TEST_MODE
             ? '扫描 Firefox 主进程，测试一键关闭、快捷键与置顶小窗。'
-            : '扫描当前运行的龙之谷进程，选择后快速结束。'
+            : '扫描龙之谷及 DNLauncher.exe，选择后快速结束；扫描会记住启动器路径。'
         }
         actions={
           <Button variant='outline' disabled={scanning || terminating || shortcut.busy} onClick={() => void scan()}>
@@ -148,6 +126,7 @@ export function DnProcessKiller() {
                 {formatScannedAt(scannedAt)}
               </span>
               {settings.dragonNest.targetPath && <span title={settings.dragonNest.targetPath}>已记录目标路径</span>}
+              {settings.dragonNest.launcherPath && <span title={settings.dragonNest.launcherPath}>已记录启动器</span>}
             </div>
           )}
 
@@ -172,7 +151,7 @@ export function DnProcessKiller() {
                   key={`${item.pid}-${item.path}`}
                   className={cx('dn-process-row')}
                   variant='ghost'
-                  aria-pressed={selectedPID === item.pid}
+                  aria-pressed={selected?.pid === item.pid}
                   onClick={() => setSelectedPID(item.pid)}
                 >
                   <span className={cx('dn-process-row-main')}>
@@ -205,7 +184,7 @@ export function DnProcessKiller() {
               <div className={cx('dn-process-actions')}>
                 <Button
                   variant='danger'
-                  disabled={terminating || shortcut.busy}
+                  disabled={scanning || terminating || shortcut.busy}
                   onClick={() => void terminateSelected()}
                 >
                   <Skull aria-hidden='true' />
@@ -216,6 +195,13 @@ export function DnProcessKiller() {
           )}
         </CardContent>
       </Card>
+
+      {!PROCESS_TEST_MODE && PROCESS_CONTROL_SUPPORTED && (
+        <DnLauncherSettings
+          scanned={scanned}
+          launcherDetected={items.some((item) => item.name.toLowerCase() === 'dnlauncher.exe')}
+        />
+      )}
 
       <Card className={cx('dn-process-shortcut-card')}>
         <CardContent>

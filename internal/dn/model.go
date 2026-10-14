@@ -1,9 +1,5 @@
 package dn
 
-import "cull-pear/internal/account"
-
-const CurrentVersion = 3
-
 const (
 	WeeklyCommissionTotal       = 6
 	LinkedWeeklyCommissionTotal = 2
@@ -33,12 +29,6 @@ func normalizeWeeklyCommissionCount(count int, hasArk bool, hasNightmare bool) (
 }
 
 const (
-	UserRoleMember = account.UserRoleMember
-	UserRoleAdmin  = account.UserRoleAdmin
-
-	UserStatusDisabled = account.UserStatusDisabled
-	UserStatusEnabled  = account.UserStatusEnabled
-
 	MessageLevelInfo    = "info"
 	MessageLevelSuccess = "success"
 	MessageLevelWarning = "warning"
@@ -47,13 +37,6 @@ const (
 	MessageTargetSelf  = "_self"
 	MessageTargetBlank = "_blank"
 )
-
-type Profile = account.Profile
-type AuthState = account.AuthState
-type RegistrationInput = account.RegistrationInput
-type LoginInput = account.LoginInput
-type PasswordInput = account.PasswordInput
-type ProfileInput = account.ProfileInput
 
 type RoleProfession struct {
 	ID              int    `json:"id"`
@@ -220,109 +203,4 @@ type WeeklyPlanInitializationResult struct {
 type WeeklyPlanSyncResult struct {
 	Created int `json:"created"`
 	Total   int `json:"total"`
-}
-
-type user struct {
-	ID           int    `json:"id"`
-	Account      string `json:"account"`
-	Name         string `json:"name"`
-	Email        string `json:"email"`
-	PasswordHash string `json:"passwordHash"`
-	Role         int    `json:"role"`
-	Status       int    `json:"status"`
-	Avatar       string `json:"avatar"`
-	CreatedAt    string `json:"createdAt"`
-	UpdatedAt    string `json:"updatedAt"`
-}
-
-type session struct {
-	UserID     int    `json:"userId"`
-	ExpiresAt  string `json:"expiresAt"`
-	LastUsedAt string `json:"lastUsedAt"`
-}
-
-type messageReceipt struct {
-	UserID     int    `json:"userId"`
-	MessageID  int    `json:"messageId"`
-	NotifiedAt string `json:"notifiedAt"`
-	ReadAt     string `json:"readAt"`
-}
-
-type legacyMessageReceipt struct {
-	MessageID int    `json:"messageId"`
-	ReadAt    string `json:"readAt"`
-}
-
-type officialSyncState struct {
-	LatestPublishedAt string            `json:"latestPublishedAt"`
-	LastSyncedAt      string            `json:"lastSyncedAt"`
-	LastLoginAtByUser map[string]string `json:"lastLoginAtByUser,omitempty"`
-}
-
-type state struct {
-	Version               int                    `json:"version"`
-	NextUserID            int                    `json:"nextUserId"`
-	NextRoleID            int                    `json:"nextRoleId"`
-	NextPlanID            int                    `json:"nextPlanId"`
-	NextMessageID         int                    `json:"nextMessageId"`
-	Users                 []user                 `json:"users"`
-	Session               session                `json:"session"`
-	Roles                 []RoleProfession       `json:"roles"`
-	Plans                 []WeeklyPlan           `json:"plans"`
-	Messages              []SiteMessage          `json:"messages"`
-	MessageReceipts       []messageReceipt       `json:"messageReceipts"`
-	OfficialSync          officialSyncState      `json:"officialSync"`
-	LegacyProfile         *Profile               `json:"legacyProfile,omitempty"`
-	LegacyMessageReceipts []legacyMessageReceipt `json:"legacyMessageReceipts,omitempty"`
-}
-
-type legacyState struct {
-	Version       int                `json:"version"`
-	NextRoleID    int                `json:"nextRoleId"`
-	NextPlanID    int                `json:"nextPlanId"`
-	NextMessageID int                `json:"nextMessageId"`
-	Profile       Profile            `json:"profile"`
-	Roles         []RoleProfession   `json:"roles"`
-	Plans         []legacyWeeklyPlan `json:"plans"`
-	Messages      []SiteMessage      `json:"messages"`
-}
-
-type legacyStateV2 struct {
-	Version               int                    `json:"version"`
-	NextUserID            int                    `json:"nextUserId"`
-	NextRoleID            int                    `json:"nextRoleId"`
-	NextPlanID            int                    `json:"nextPlanId"`
-	NextMessageID         int                    `json:"nextMessageId"`
-	Users                 []user                 `json:"users"`
-	Session               session                `json:"session"`
-	Roles                 []RoleProfession       `json:"roles"`
-	Plans                 []legacyWeeklyPlan     `json:"plans"`
-	Messages              []SiteMessage          `json:"messages"`
-	MessageReceipts       []messageReceipt       `json:"messageReceipts"`
-	OfficialSync          officialSyncState      `json:"officialSync"`
-	LegacyProfile         *Profile               `json:"legacyProfile,omitempty"`
-	LegacyMessageReceipts []legacyMessageReceipt `json:"legacyMessageReceipts,omitempty"`
-}
-
-type legacyWeeklyPlanCommission struct {
-	ID        int  `json:"id"`
-	Completed bool `json:"completed"`
-}
-
-type legacyWeeklyPlan struct {
-	ID                   int                          `json:"id"`
-	OwnerID              int                          `json:"ownerId"`
-	RoleName             string                       `json:"roleName"`
-	Profession           string                       `json:"profession"`
-	Priority             int                          `json:"priority"`
-	NestCommissions      []legacyWeeklyPlanCommission `json:"nestCommissions"`
-	LevelCommissionCount int                          `json:"levelCommissionCount"`
-	HasInvasion          bool                         `json:"hasInvasion"`
-	HasArk               bool                         `json:"hasArk"`
-	HasNightmare         bool                         `json:"hasNightmare"`
-	Remark               string                       `json:"remark"`
-	SortOrder            int                          `json:"sortOrder"`
-	RoleProfessionID     int                          `json:"roleProfessionId"`
-	CreatedAt            string                       `json:"createdAt"`
-	UpdatedAt            string                       `json:"updatedAt"`
 }

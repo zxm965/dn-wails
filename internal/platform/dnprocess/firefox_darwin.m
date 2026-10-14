@@ -4,6 +4,27 @@
 #include <stdlib.h>
 #include <string.h>
 
+char *firefox_application_path(const char *executable) {
+    @autoreleasepool {
+        NSString *path = [NSString stringWithUTF8String:executable];
+        NSURL *url;
+        if (path.length == 0) {
+            url = [[NSWorkspace sharedWorkspace] URLForApplicationWithBundleIdentifier:@"org.mozilla.firefox"];
+        } else {
+            if (![path isAbsolutePath]) return NULL;
+            url = [NSURL fileURLWithPath:[[[path stringByDeletingLastPathComponent]
+                stringByDeletingLastPathComponent] stringByDeletingLastPathComponent]];
+        }
+        if (!url) return NULL;
+        NSBundle *bundle = [NSBundle bundleWithURL:url];
+        if (![bundle.bundleIdentifier isEqualToString:@"org.mozilla.firefox"] ||
+            ![bundle.executablePath.lastPathComponent isEqualToString:@"firefox"] ||
+            (path.length > 0 && ![bundle.executablePath isEqualToString:path]) ||
+            ![[NSFileManager defaultManager] isExecutableFileAtPath:bundle.executablePath]) return NULL;
+        return strdup(url.path.UTF8String);
+    }
+}
+
 char *firefox_processes(void) {
     @autoreleasepool {
         NSMutableArray *items = [NSMutableArray array];

@@ -176,13 +176,7 @@ func (s *Service) InstallWithProgress(ctx context.Context, expectedVersion strin
 		onProgress(progress)
 	}
 	emitProgress(Progress{Phase: "downloading", TotalBytes: asset.Size})
-	if progressSource, ok := s.source.(interface {
-		DownloadWithProgress(context.Context, Asset, string, ProgressCallback) error
-	}); ok {
-		if err := progressSource.DownloadWithProgress(ctx, asset, archivePath, emitProgress); err != nil {
-			return err
-		}
-	} else if err := s.source.Download(ctx, asset, archivePath); err != nil {
+	if err := s.source.DownloadWithProgress(ctx, asset, archivePath, emitProgress); err != nil {
 		return err
 	}
 	emitProgress(Progress{Phase: "installing", DownloadedBytes: asset.Size, TotalBytes: asset.Size, Percent: 100})

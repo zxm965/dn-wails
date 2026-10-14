@@ -181,6 +181,10 @@ export function KillDragonNestProcess(): $CancellablePromise<dnprocess$0.Info> {
     });
 }
 
+export function LaunchDragonNestProcess(): $CancellablePromise<void> {
+    return $Call.ByID(2771422325);
+}
+
 export function ListAllDnWeeklyPlans(): $CancellablePromise<dn$0.WeeklyPlan[]> {
     return $Call.ByID(3833714304).then(($result: any) => {
         return $$createType21($result);
@@ -323,6 +327,12 @@ export function SaveDnWeeklyPlan(input: dn$0.WeeklyPlanInput): $CancellablePromi
     });
 }
 
+export function SaveDragonNestLauncherPath(input: $models.DnLauncherConfiguration): $CancellablePromise<$models.DnLauncherConfiguration> {
+    return $Call.ByID(2423964149, input).then(($result: any) => {
+        return $$createType30($result);
+    });
+}
+
 export function SaveFile(options: nativekit$0.SaveFileOptions): $CancellablePromise<string> {
     return $Call.ByID(960788009, options);
 }
@@ -341,7 +351,7 @@ export function SaveTask(input: tasks$0.TaskInput): $CancellablePromise<tasks$0.
 
 export function SaveTaskList(input: tasks$0.ListInput): $CancellablePromise<tasks$0.List> {
     return $Call.ByID(1421202346, input).then(($result: any) => {
-        return $$createType30($result);
+        return $$createType31($result);
     });
 }
 
@@ -351,7 +361,7 @@ export function SendMessageNotification(request: $models.MessageNotificationRequ
 
 export function SetTaskCompleted(id: number, completed: boolean): $CancellablePromise<tasks$0.Workspace> {
     return $Call.ByID(2424155808, id, completed).then(($result: any) => {
-        return $$createType31($result);
+        return $$createType32($result);
     });
 }
 
@@ -361,7 +371,7 @@ export function ShowMessageDialog(options: nativekit$0.MessageDialogOptions): $C
 
 export function SyncDnWeeklyPlans(): $CancellablePromise<dn$0.WeeklyPlanSyncResult> {
     return $Call.ByID(3398052580).then(($result: any) => {
-        return $$createType32($result);
+        return $$createType33($result);
     });
 }
 
@@ -373,7 +383,7 @@ export function SyncOfficialSiteMessages(): $CancellablePromise<dn$0.OfficialMes
 
 export function TaskWorkspace(): $CancellablePromise<tasks$0.Workspace> {
     return $Call.ByID(3988080412).then(($result: any) => {
-        return $$createType31($result);
+        return $$createType32($result);
     });
 }
 
@@ -436,6 +446,7 @@ const $$createType26 = quicknotes$0.Note.createFrom;
 const $$createType27 = $Create.Array($$createType26);
 const $$createType28 = dn$0.SiteMessageList.createFrom;
 const $$createType29 = $Create.Array($Create.Any);
-const $$createType30 = tasks$0.List.createFrom;
-const $$createType31 = tasks$0.Workspace.createFrom;
-const $$createType32 = dn$0.WeeklyPlanSyncResult.createFrom;
+const $$createType30 = $models.DnLauncherConfiguration.createFrom;
+const $$createType31 = tasks$0.List.createFrom;
+const $$createType32 = tasks$0.Workspace.createFrom;
+const $$createType33 = dn$0.WeeklyPlanSyncResult.createFrom;

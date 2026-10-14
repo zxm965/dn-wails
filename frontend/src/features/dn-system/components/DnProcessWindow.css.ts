@@ -23,7 +23,7 @@ export const styles = {
     containerType: 'inline-size',
   }),
   header: style({ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }),
-  heading: style({ ...singleLine, display: 'flex', alignItems: 'center', gap: 8, fontSize: 14, fontWeight: 700 }),
+  actions: style({ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) minmax(0, 1.5fr)', gap: 8 }),
   hint: style({ ...singleLine, margin: 0, fontSize: 13, color: 'var(--text-secondary)' }),
   status: style({ ...singleLine, margin: 0, fontSize: 12, lineHeight: 1.5, color: 'var(--text-secondary)' }),
   processes: style({

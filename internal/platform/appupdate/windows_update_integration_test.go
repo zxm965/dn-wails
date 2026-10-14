@@ -78,7 +78,6 @@ func TestWindowsUpdateScriptIntegration(t *testing.T) {
 		"success", "renamed", "transient-lock", "installer-failure", "unchanged",
 		"wrong-hash", "restart-failure", "timeout", "persistent-lock", "parent-alive",
 		"installer-corrupt", "unwritable-directory", "script-startup-failure",
-		"wizard-success", "wizard-cancel", "wizard-no-launch", "wizard-long-wait",
 	} {
 		t.Run(scenario, func(t *testing.T) {
 			t.Parallel()
@@ -178,22 +177,11 @@ func runUpdateSimulation(t *testing.T, powershell, oldBinary, newBinary, scenari
 	if scenario == "timeout" {
 		config.InstallTimeoutSeconds = 1
 	}
-	if strings.HasPrefix(scenario, "wizard-") || scenario == "legacy-interactive" {
-		config.Interactive = true
-	}
-	if scenario == "wizard-long-wait" {
-		config.InstallTimeoutSeconds = 1
-	}
 	if scenario == "parent-alive" {
 		config.ParentTimeoutSeconds = 1
 	}
 	if scenario == "installer-corrupt" {
 		config.InstallerSHA256 = strings.Repeat("0", 64)
-	}
-	if scenario == "launch-marker-failure" {
-		if err := os.Mkdir(filepath.Join(stage, "launch-requested"), 0o700); err != nil {
-			t.Fatal(err)
-		}
 	}
 	if scenario == "unwritable-directory" {
 		// A file cannot be used as a directory on any of the supported systems.
@@ -270,8 +258,7 @@ func runUpdateSimulation(t *testing.T, powershell, oldBinary, newBinary, scenari
 	if err := json.Unmarshal(readTestFile(t, config.ResultPath), &result); err != nil {
 		t.Fatal(err)
 	}
-	success := scenario == "success" || scenario == "renamed" || scenario == "transient-lock" || scenario == "image-lock" ||
-		scenario == "wizard-success" || scenario == "wizard-no-launch" || scenario == "wizard-long-wait" || scenario == "legacy-interactive"
+	success := scenario == "success" || scenario == "renamed" || scenario == "transient-lock" || scenario == "image-lock"
 	if success {
 		if _, err := os.Stat(stage); !os.IsNotExist(err) {
 			t.Fatal("successful helper did not clean its staging directory")
@@ -282,15 +269,9 @@ func runUpdateSimulation(t *testing.T, powershell, oldBinary, newBinary, scenari
 		if testHash(readTestFile(t, target)) != config.ExecutableSHA256 {
 			t.Fatal("wrong installed binary")
 		}
-		if scenario == "wizard-no-launch" {
-			if strings.Contains(string(readTestFile(t, audit)), "app:new:") {
-				t.Fatal("unchecked launch checkbox must leave the updated application closed")
-			}
-		} else {
-			waitForAudit(t, audit, "app:new:cull-pear.exe:", 1)
-			if count := strings.Count(string(readTestFile(t, audit)), "app:new:cull-pear.exe:"); count != 1 {
-				t.Fatalf("updated application started %d times; want exactly once", count)
-			}
+		waitForAudit(t, audit, "app:new:cull-pear.exe:", 1)
+		if count := strings.Count(string(readTestFile(t, audit)), "app:new:cull-pear.exe:"); count != 1 {
+			t.Fatalf("updated application started %d times; want exactly once", count)
 		}
 		if scenario == "renamed" && testHash(readTestFile(t, current)) != testHash(oldData) {
 			t.Fatal("renamed original was unexpectedly removed")
@@ -298,9 +279,6 @@ func runUpdateSimulation(t *testing.T, powershell, oldBinary, newBinary, scenari
 	} else {
 		if result.Status != "failed" {
 			t.Fatalf("unexpected result: %+v", result)
-		}
-		if scenario == "launch-marker-failure" && !strings.Contains(result.Message, "installer failed with exit code 74") {
-			t.Fatalf("launch marker failure did not report the NSIS error: %+v", result)
 		}
 		if testHash(readTestFile(t, current)) != testHash(oldData) {
 			t.Fatal("old executable was not restored")

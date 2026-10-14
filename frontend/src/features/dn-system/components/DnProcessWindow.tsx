@@ -1,4 +1,4 @@
-import { Pin, RefreshCw, Skull } from 'lucide-react'
+import { Play, RefreshCw, Skull } from 'lucide-react'
 import { useCallback, useEffect, useState } from 'react'
 
 import { Button, SpinnerIcon } from '@/shared/components/ui'
@@ -11,7 +11,10 @@ import { styles } from './DnProcessWindow.css'
 
 export function DnProcessWindow() {
   const processes = useDnProcessList()
-  const { shortcutKey, busy, status, clearStatus, run } = useDnProcessShortcut(processes.onTerminated)
+  const { shortcutKey, busy, launching, status, clearStatus, run, launch } = useDnProcessShortcut(
+    processes.onTerminated,
+    processes.refreshAfterLaunch,
+  )
   const [focused, setFocused] = useState(() => document.hasFocus())
   const statusText = !PROCESS_CONTROL_SUPPORTED ? '当前系统暂不支持' : processes.error || status
   const refresh = useCallback(() => {
@@ -37,10 +40,9 @@ export function DnProcessWindow() {
   return (
     <main className={styles.window}>
       <div className={styles.header}>
-        <div className={styles.heading}>
-          <Pin size={16} aria-hidden='true' />
-          {PROCESS_NAME}进程关闭
-        </div>
+        <p className={styles.hint} title={`部分键盘需按 Fn + ${shortcutKey}`}>
+          {focused ? '快捷键' : '激活后按'} {shortcutKey} / Fn+{shortcutKey}
+        </p>
         <Button
           size='sm'
           variant='ghost'
@@ -52,9 +54,6 @@ export function DnProcessWindow() {
           <SpinnerIcon icon={RefreshCw} spinning={processes.scanning} aria-hidden='true' />
         </Button>
       </div>
-      <p className={styles.hint} title={`部分键盘需按 Fn + ${shortcutKey}`}>
-        {focused ? '快捷键' : '激活后按'} {shortcutKey} / Fn+{shortcutKey}
-      </p>
       <div className={styles.processes} aria-label='当前进程' aria-busy={processes.scanning}>
         {processes.scanning ? (
           <p className={styles.status}>正在刷新…</p>
@@ -73,10 +72,16 @@ export function DnProcessWindow() {
           <p className={styles.status}>{PROCESS_CONTROL_SUPPORTED ? '未运行 · 启动后刷新' : '当前系统暂不支持'}</p>
         )}
       </div>
-      <Button variant='danger' disabled={busy || !PROCESS_CONTROL_SUPPORTED} onClick={() => void run()}>
-        <Skull aria-hidden='true' />
-        {busy ? '正在终结…' : `终结 ${PROCESS_NAME}`}
-      </Button>
+      <div className={styles.actions}>
+        <Button variant='secondary' disabled={busy || !PROCESS_CONTROL_SUPPORTED} onClick={() => void launch()}>
+          <SpinnerIcon icon={Play} spinning={launching} aria-hidden='true' />
+          {launching ? '启动中…' : '启动'}
+        </Button>
+        <Button variant='danger' disabled={busy || !PROCESS_CONTROL_SUPPORTED} onClick={() => void run()}>
+          <Skull aria-hidden='true' />
+          {busy && !launching ? '终结中…' : `终结 ${PROCESS_NAME}`}
+        </Button>
+      </div>
       {statusText && (
         <p className={styles.status} role='status' title={statusText}>
           {statusText}

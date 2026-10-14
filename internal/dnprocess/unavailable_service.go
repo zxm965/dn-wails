@@ -21,3 +21,11 @@ func (unavailableService) TerminateConfigured(string) (Info, error) {
 func (unavailableService) Health() error {
 	return ErrUnavailable
 }
+
+func (unavailableService) LaunchConfigured(string) error {
+	return ErrUnavailable
+}
+
+func (unavailableService) ValidateLauncherPath(string) (string, error) {
+	return "", ErrUnavailable
+}

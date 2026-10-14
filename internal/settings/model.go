@@ -61,6 +61,7 @@ type Window struct {
 type DragonNest struct {
 	LocalShortcutKey string `json:"localShortcutKey"`
 	TargetPath       string `json:"targetPath"`
+	LauncherPath     string `json:"launcherPath,omitempty"`
 }
 
 type AppSettings struct {

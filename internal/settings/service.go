@@ -42,14 +42,6 @@ func (s *Service) Initialize() error {
 	if err := json.Unmarshal(data, &loaded); err != nil {
 		return fmt.Errorf("decode application settings: %w", err)
 	}
-	if loaded.Version >= 7 && loaded.Version < CurrentVersion {
-		// Decoding drops obsolete global shortcut fields while retaining other preferences.
-		loaded.Version = CurrentVersion
-		loaded.DragonNest.LocalShortcutKey = DefaultLocalShortcutKey
-		if err := s.persist(loaded); err != nil {
-			return fmt.Errorf("persist migrated application settings: %w", err)
-		}
-	}
 	if err := validate(loaded); err != nil {
 		return err
 	}
@@ -165,6 +157,9 @@ func validate(value AppSettings) error {
 	}
 	if len(value.DragonNest.TargetPath) > 4096 || strings.ContainsAny(value.DragonNest.TargetPath, "\r\n") {
 		return fmt.Errorf("%w: invalid Dragon Nest target path", ErrInvalidSettings)
+	}
+	if len(value.DragonNest.LauncherPath) > 4096 || strings.ContainsAny(value.DragonNest.LauncherPath, "\r\n\x00") {
+		return fmt.Errorf("%w: invalid Dragon Nest launcher path", ErrInvalidSettings)
 	}
 
 	return nil

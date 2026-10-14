@@ -70,7 +70,7 @@ type Release struct {
 
 type ReleaseSource interface {
 	Latest(ctx context.Context, updateEndpoint string, repository string) (Release, error)
-	Download(ctx context.Context, asset Asset, destination string) error
+	DownloadWithProgress(ctx context.Context, asset Asset, destination string, onProgress ProgressCallback) error
 }
 
 type Installer interface {

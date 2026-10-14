@@ -9,12 +9,15 @@ char *firefox_processes(void);
 int firefox_terminate(int pid, const char *path, void **handle);
 int firefox_exited(void *handle);
 void firefox_release(void *handle);
+char *firefox_application_path(const char *executable);
 */
 import "C"
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
+	"os/exec"
 	"time"
 	"unsafe"
 
@@ -23,8 +26,36 @@ import (
 
 type firefoxPlatform struct{}
 
+func (firefoxPlatform) ValidateLauncherPath(string) (string, error) {
+	return "", core.ErrUnavailable
+}
+
 func New() core.Service {
 	return core.NewFirefoxTestService(firefoxPlatform{})
+}
+
+func (firefoxPlatform) Launch(path string) error {
+	executable := C.CString(path)
+	defer C.free(unsafe.Pointer(executable))
+	application := C.firefox_application_path(executable)
+	if application == nil {
+		return core.ErrLaunchNotFound
+	}
+	defer C.free(unsafe.Pointer(application))
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+	// Launch through Launch Services without stealing the process window's focus.
+	if output, err := firefoxLaunchCommand(ctx, C.GoString(application)).CombinedOutput(); err != nil {
+		return fmt.Errorf("launch Firefox: %w: %s", err, output)
+	}
+	return nil
+}
+
+func firefoxLaunchCommand(ctx context.Context, application string) *exec.Cmd {
+	// Pass this only to the launched Firefox, not the user's profile or global environment.
+	// Firefox otherwise offers Troubleshoot Mode after repeated forced exits during startup.
+	return exec.CommandContext(ctx, "/usr/bin/open", "-g", "-a", application,
+		"--env", "MOZ_DISABLE_AUTO_SAFE_MODE=1")
 }
 
 func (firefoxPlatform) List() ([]core.Info, error) {

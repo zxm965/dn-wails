@@ -8,6 +8,8 @@ export {
 
 export {
     DiagnosticsInfo,
+    DnLauncherConfiguration,
+    DnProcessChange,
     FileDrop,
     LifecycleStatus,
     MessageNotificationRequest,

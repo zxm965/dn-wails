@@ -8,6 +8,22 @@ import (
 var knownProcessNames = map[string]struct{}{
 	"dragonnest.exe":     {},
 	"dragonnest_x64.exe": {},
+	"dnlauncher.exe":     {},
+}
+
+// DetectedLauncherPath returns only an unambiguous Windows launcher installation.
+func DetectedLauncherPath(items []Info) string {
+	path := ""
+	for _, item := range items {
+		if !strings.EqualFold(item.Name, "DNLauncher.exe") || item.Path == "" {
+			continue
+		}
+		if path != "" && !strings.EqualFold(path, item.Path) {
+			return ""
+		}
+		path = item.Path
+	}
+	return path
 }
 
 type service struct {
@@ -92,7 +108,39 @@ func (s *service) Health() error {
 	return nil
 }
 
+// LaunchConfigured avoids duplicating a running target and leaves native path validation to the platform.
+func (s *service) LaunchConfigured(path string) error {
+	path = strings.TrimSpace(path)
+	if len(path) > 32768 || strings.ContainsRune(path, '\x00') {
+		return ErrInvalidTarget
+	}
+	items, err := s.List()
+	if err != nil {
+		return err
+	}
+	if path == "" && len(items) > 1 {
+		return ErrMultiple
+	}
+	for _, item := range items {
+		if path == "" || s.matchPath(item.Path, path) {
+			return nil
+		}
+	}
+	return s.platform.Launch(path)
+}
+
 func (s *service) acceptsName(name string) bool {
 	_, ok := s.names[strings.ToLower(strings.TrimSpace(name))]
 	return ok
+}
+
+func (s *service) ValidateLauncherPath(path string) (string, error) {
+	if s.platform == nil {
+		return "", ErrUnavailable
+	}
+	path = strings.TrimSpace(path)
+	if path == "" || len(path) > 4096 || strings.ContainsAny(path, "\r\n\x00") {
+		return "", ErrInvalidTarget
+	}
+	return s.platform.ValidateLauncherPath(path)
 }

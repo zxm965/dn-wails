@@ -26,6 +26,7 @@ declare module "@wailsio/runtime" {
         interface CustomEvents {
             "app-update:progress": appupdate$0.Progress;
             "app:second-instance": singleinstance$0.LaunchData;
+            "dn-process:changed": application$0.DnProcessChange;
             "native-kit:file-drop": application$0.FileDrop;
             "settings:changed": settings$0.AppSettings;
             "system-notification:activated": notification$0.Activation;

@@ -7,11 +7,13 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"runtime"
 	"strings"
 	"syscall"
 	"unsafe"
 
 	core "cull-pear/internal/dnprocess"
+	"golang.org/x/sys/windows"
 )
 
 const (
@@ -56,6 +58,72 @@ type windowsPlatform struct{}
 
 func New() core.Service {
 	return core.NewService(windowsPlatform{})
+}
+
+func (windowsPlatform) Launch(path string) error {
+	launcher, err := resolveLauncherPath(path)
+	if err != nil {
+		return err
+	}
+	items, err := (windowsPlatform{}).List()
+	if err != nil {
+		return err
+	}
+	for _, item := range items {
+		if sameWindowsPath(item.Path, launcher) {
+			return nil
+		}
+	}
+	file, err := windows.UTF16PtrFromString(launcher)
+	if err != nil {
+		return core.ErrInvalidTarget
+	}
+	directory, err := windows.UTF16PtrFromString(filepath.Dir(launcher))
+	if err != nil {
+		return core.ErrInvalidTarget
+	}
+	// Use the normal Windows open action so launchers with an elevation manifest can show UAC.
+	runtime.LockOSThread()
+	defer runtime.UnlockOSThread()
+	if err := windows.CoInitializeEx(0, windows.COINIT_APARTMENTTHREADED|windows.COINIT_DISABLE_OLE1DDE); err == nil || errors.Is(err, syscall.Errno(1)) {
+		// S_FALSE also increments COM's initialization count and requires a matching uninitialize.
+		defer windows.CoUninitialize()
+	} else if !errors.Is(err, syscall.Errno(windows.RPC_E_CHANGED_MODE)) {
+		return fmt.Errorf("initialize launcher COM: %w", err)
+	}
+	if err := windows.ShellExecute(0, nil, file, nil, directory, windows.SW_SHOWNORMAL); err != nil {
+		return fmt.Errorf("open Dragon Nest launcher: %w", err)
+	}
+	return nil
+}
+
+func resolveLauncherPath(path string) (string, error) {
+	if path == "" {
+		return "", core.ErrLaunchPathRequired
+	}
+	name := strings.ToLower(filepath.Base(path))
+	if !filepath.IsAbs(path) || name != "dnlauncher.exe" || isSystemProcess(name, path) {
+		return "", core.ErrInvalidTarget
+	}
+
+	info, err := os.Stat(path)
+	if errors.Is(err, os.ErrNotExist) {
+		return "", core.ErrLaunchNotFound
+	}
+	if err != nil {
+		return "", fmt.Errorf("inspect launch application: %w", err)
+	}
+	if !info.Mode().IsRegular() {
+		return "", core.ErrInvalidTarget
+	}
+	return path, nil
+}
+
+func (windowsPlatform) ValidateLauncherPath(path string) (string, error) {
+	if !strings.EqualFold(filepath.Base(path), "DNLauncher.exe") {
+		return "", core.ErrInvalidTarget
+	}
+	return resolveLauncherPath(filepath.Clean(path))
 }
 
 func (windowsPlatform) List() ([]core.Info, error) {

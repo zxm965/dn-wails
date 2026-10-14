@@ -5,52 +5,24 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"strings"
 	"testing"
 
 	"cull-pear/internal/storage"
 )
 
-func TestServiceMigratesGlobalShortcutSettings(t *testing.T) {
-	t.Parallel()
-	for _, version := range []int{7, 8, 9, 10} {
-		t.Run(fmt.Sprint(version), func(t *testing.T) {
-			store := newMemoryStore()
-			legacy := Default()
-			legacy.Version = version
-			legacy.DragonNest.LocalShortcutKey = ""
-			legacy.Appearance.ThemeMode = ThemeDark
-			legacy.DragonNest.TargetPath = `C:\Games\DragonNest.exe`
-			data, err := json.Marshal(legacy)
-			if err != nil {
-				t.Fatal(err)
-			}
-			// Include removed fields exactly as existing installations stored them.
-			store.data[storageKey] = []byte(strings.Replace(string(data), `"dragonNest":{`, `"dragonNest":{"shortcutEnabled":true,"shortcutKey":"F8",`, 1))
-			service := NewService(store)
-			if err := service.Initialize(); err != nil {
-				t.Fatal(err)
-			}
-			expected := legacy
-			expected.Version = CurrentVersion
-			expected.DragonNest.LocalShortcutKey = DefaultLocalShortcutKey
-			want, _ := json.Marshal(expected)
-			var compact bytes.Buffer
-			if err := json.Compact(&compact, store.data[storageKey]); err != nil {
-				t.Fatal(err)
-			}
-			if compact.String() != string(want) {
-				t.Fatalf("migration did not preserve preferences and remove shortcut fields: %s", store.data[storageKey])
-			}
-			reloaded := NewService(store)
-			if err := reloaded.Initialize(); err != nil {
-				t.Fatal(err)
-			}
-			got, _ := json.Marshal(reloaded.Get())
-			if string(got) != string(want) {
-				t.Fatalf("reload mismatch: %s", got)
-			}
-		})
+func TestServiceRejectsPreviousSettingsWithoutRewriting(t *testing.T) {
+	for _, version := range []int{0, 7, 8, 9, 10, CurrentVersion + 1} {
+		store := newMemoryStore()
+		previous := Default()
+		previous.Version = version
+		data, _ := json.Marshal(previous)
+		store.data[storageKey] = data
+		if err := NewService(store).Initialize(); !errors.Is(err, ErrInvalidSettings) {
+			t.Fatalf("version %d: %v", version, err)
+		}
+		if !bytes.Equal(data, store.data[storageKey]) {
+			t.Fatalf("version %d was overwritten", version)
+		}
 	}
 }
 
@@ -107,6 +79,7 @@ func TestServiceInitializesDefaultsAndPersistsUpdates(t *testing.T) {
 	current.Appearance.ThemeMode = ThemeDark
 	current.Appearance.Accent = AccentPurple
 	current.Navigation.MenuVisibility["dn-system"] = true
+	current.DragonNest.LauncherPath = `C:\Games\DNLauncher.exe`
 	updated, err := service.Update(current)
 	if err != nil {
 		t.Fatalf("update settings: %v", err)
@@ -131,6 +104,9 @@ func TestServiceInitializesDefaultsAndPersistsUpdates(t *testing.T) {
 	}
 	if !reloaded.Get().Navigation.MenuVisibility["dn-system"] {
 		t.Fatal("expected persisted menu visibility")
+	}
+	if reloaded.Get().DragonNest.LauncherPath != current.DragonNest.LauncherPath {
+		t.Fatal("launcher path was not persisted")
 	}
 }
 

@@ -47,6 +47,7 @@ export type LocalShortcutKey = (typeof LOCAL_SHORTCUT_KEYS)[number]
 export interface DragonNestSettings {
   localShortcutKey: LocalShortcutKey
   targetPath: string
+  launcherPath: string
 }
 
 export interface AppSettings {
@@ -83,6 +84,7 @@ export const DEFAULT_SETTINGS: AppSettings = {
   dragonNest: {
     localShortcutKey: 'F4',
     targetPath: '',
+    launcherPath: '',
   },
 }
 
@@ -127,6 +129,7 @@ function normalizeSettings(value: WailsAppSettings): AppSettings {
     dragonNest: {
       localShortcutKey: value.dragonNest.localShortcutKey as LocalShortcutKey,
       targetPath: value.dragonNest.targetPath,
+      launcherPath: value.dragonNest.launcherPath ?? '',
     },
   }
 }

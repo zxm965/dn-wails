@@ -11,6 +11,7 @@ func (a *App) UpdateSettings(next settings.AppSettings) (settings.AppSettings, e
 	defer a.dnProcessMu.Unlock()
 	// The process service owns the remembered target; other windows may hold stale snapshots.
 	next.DragonNest.TargetPath = a.settingsService.Get().DragonNest.TargetPath
+	next.DragonNest.LauncherPath = a.settingsService.Get().DragonNest.LauncherPath
 	updated, err := a.settingsService.Update(next)
 	if err != nil {
 		return settings.AppSettings{}, err

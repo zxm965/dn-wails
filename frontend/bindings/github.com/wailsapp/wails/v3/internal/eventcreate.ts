@@ -26,17 +26,19 @@ function configure() {
     Object.freeze(Object.assign($Create.Events, {
         "app-update:progress": $$createType0,
         "app:second-instance": $$createType1,
-        "native-kit:file-drop": $$createType2,
-        "settings:changed": $$createType3,
-        "system-notification:activated": $$createType4,
+        "dn-process:changed": $$createType2,
+        "native-kit:file-drop": $$createType3,
+        "settings:changed": $$createType4,
+        "system-notification:activated": $$createType5,
     }));
 }
 
 // Private type creation functions
 const $$createType0 = appupdate$0.Progress.createFrom;
 const $$createType1 = singleinstance$0.LaunchData.createFrom;
-const $$createType2 = application$0.FileDrop.createFrom;
-const $$createType3 = settings$0.AppSettings.createFrom;
-const $$createType4 = notification$0.Activation.createFrom;
+const $$createType2 = application$0.DnProcessChange.createFrom;
+const $$createType3 = application$0.FileDrop.createFrom;
+const $$createType4 = settings$0.AppSettings.createFrom;
+const $$createType5 = notification$0.Activation.createFrom;
 
 configure();

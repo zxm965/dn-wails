@@ -208,10 +208,6 @@ func releaseFromGitHubRelease(updateEndpoint string, repository string, release 
 	}, nil
 }
 
-func (s *EndpointSource) Download(ctx context.Context, asset coreupdate.Asset, destination string) error {
-	return s.DownloadWithProgress(ctx, asset, destination, nil)
-}
-
 func (s *EndpointSource) DownloadWithProgress(ctx context.Context, asset coreupdate.Asset, destination string, onProgress coreupdate.ProgressCallback) error {
 	downloadURL, err := parseHTTPSURL(asset.DownloadURL, "download")
 	if err != nil {

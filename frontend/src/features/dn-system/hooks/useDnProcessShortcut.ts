@@ -7,22 +7,29 @@ import {
   PROCESS_CONTROL_SUPPORTED,
   getProcessErrorMessage,
   killDragonNestProcess,
+  launchDragonNestProcess,
   type DragonNestProcess,
 } from '../api/dnProcessApi'
 
 export interface DnProcessShortcut {
   shortcutKey: string
   busy: boolean
+  launching: boolean
   status: string
   clearStatus: () => void
   run: () => Promise<void>
+  launch: () => Promise<void>
 }
 
-export function useDnProcessShortcut(onSuccess?: (process: DragonNestProcess) => void): DnProcessShortcut {
+export function useDnProcessShortcut(
+  onSuccess?: (process: DragonNestProcess) => void,
+  onLaunched?: () => Promise<boolean>,
+): DnProcessShortcut {
   const { settings, isLoading, error } = useSettings()
   const shortcutKey = settings.dragonNest.localShortcutKey
   const running = useRef(false)
   const [busy, setBusy] = useState(false)
+  const [launching, setLaunching] = useState(false)
   const [status, setStatus] = useState('')
   const clearStatus = useCallback(() => {
     if (!running.current) setStatus('')
@@ -44,6 +51,25 @@ export function useDnProcessShortcut(onSuccess?: (process: DragonNestProcess) =>
       setBusy(false)
     }
   }, [onSuccess])
+
+  const launch = useCallback(async () => {
+    if (running.current || !PROCESS_CONTROL_SUPPORTED) return
+    running.current = true
+    setBusy(true)
+    setLaunching(true)
+    setStatus(`正在启动 ${PROCESS_NAME}…`)
+    try {
+      await launchDragonNestProcess()
+      const found = await onLaunched?.()
+      setStatus(found ? `${PROCESS_NAME} 已运行` : '已发送启动请求，请稍后刷新')
+    } catch (error) {
+      setStatus(getProcessErrorMessage(error, '启动失败，请重试。'))
+    } finally {
+      running.current = false
+      setBusy(false)
+      setLaunching(false)
+    }
+  }, [onLaunched])
 
   useEffect(() => {
     function handleKeyDown(event: KeyboardEvent) {
@@ -75,5 +101,5 @@ export function useDnProcessShortcut(onSuccess?: (process: DragonNestProcess) =>
     return () => window.removeEventListener('keydown', handleKeyDown)
   }, [run, shortcutKey, isLoading, error])
 
-  return { shortcutKey, busy, status, clearStatus, run }
+  return { shortcutKey, busy, launching, status, clearStatus, run, launch }
 }

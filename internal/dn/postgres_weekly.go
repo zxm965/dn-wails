@@ -1,7 +1,6 @@
 package dn
 
 import (
-	"context"
 	"errors"
 	"fmt"
 	"strings"
@@ -15,9 +14,6 @@ func (s *PostgresService) ListWeeklyPlans(query WeeklyPlanQuery) (WeeklyPlanList
 	defer cancel()
 	ownerID, err := databaseUserID(ctx, s)
 	if err != nil {
-		return WeeklyPlanList{}, err
-	}
-	if err := s.migrateLegacyWeeklyPlans(ctx, ownerID); err != nil {
 		return WeeklyPlanList{}, err
 	}
 	rows, err := s.pool.Query(ctx, weeklyPlanSelect+`
@@ -52,9 +48,6 @@ func (s *PostgresService) AllWeeklyPlans() ([]WeeklyPlan, error) {
 	defer cancel()
 	ownerID, err := databaseUserID(ctx, s)
 	if err != nil {
-		return nil, err
-	}
-	if err := s.migrateLegacyWeeklyPlans(ctx, ownerID); err != nil {
 		return nil, err
 	}
 	rows, err := s.pool.Query(ctx, weeklyPlanSelect+` where p.owner_id = $1 order by p.sort_order asc, p.id asc`, ownerID)
@@ -159,30 +152,6 @@ func (s *PostgresService) InitializeWeeklyPlans() (WeeklyPlanInitializationResul
 func (s *PostgresService) SyncWeeklyPlans() (WeeklyPlanSyncResult, error) {
 	result, err := s.syncDatabaseWeeklyPlans(false)
 	return WeeklyPlanSyncResult{Created: result.Created, Total: result.Count}, err
-}
-
-// JSON null in the retired ticket column marks rows migrated to the count-only model.
-// Older clients decode it as an empty slice, so rollback remains readable.
-func (s *PostgresService) migrateLegacyWeeklyPlans(ctx context.Context, ownerID int) error {
-	if _, err := s.pool.Exec(ctx, `
-		update dn_weekly_plan
-		set level_commission_count = case
-				when jsonb_array_length(coalesce(nest_commissions, '[]'::jsonb)) = 0 then 6
-				else least(6, (
-					select count(*)::int
-					from jsonb_array_elements(coalesce(nest_commissions, '[]'::jsonb)) as commission
-					where not coalesce((commission->>'completed')::boolean, false)
-				))
-			end,
-			nest_commissions = '[]'::jsonb,
-			nest_tickets = 'null'::jsonb,
-			updated_at = now()
-		where owner_id = $1
-			and jsonb_typeof(nest_tickets) is distinct from 'null'
-	`, ownerID); err != nil {
-		return fmt.Errorf("migrate DN weekly plan counters: %w", err)
-	}
-	return nil
 }
 
 func (s *PostgresService) syncDatabaseWeeklyPlans(reset bool) (WeeklyPlanInitializationResult, error) {

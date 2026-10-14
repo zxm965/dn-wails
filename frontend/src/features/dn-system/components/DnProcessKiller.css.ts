@@ -25,6 +25,7 @@ const processIntro = style({
 
 const processMeta = style({
   display: 'flex',
+  flexWrap: 'wrap',
   alignItems: 'center',
   justifyContent: 'space-between',
   gap: '12px',

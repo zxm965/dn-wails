@@ -13,9 +13,9 @@ Go 服务通过 `pgxpool` 直连 PostgreSQL；本地构建从 `.env.local` 读�
 - `internal/dn/postgres_roles.go`：`dn_role_profession` 角色职业查询和维护。
 - `internal/dn/postgres_weekly.go`：`dn_weekly_plan` 周计划查询、维护、同步和重置；复用历史计数列保存剩余委托数量。
 - `internal/dn/postgres_messages.go`：`sys_site_message`、回执、官网消息同步和集成状态。
-- `internal/dn/model.go`：角色、周计划和消息 DTO；账号常量与历史本地数据 DTO 通过类型别名兼容 `internal/account`。
+- `internal/dn/model.go`：角色、周计划和消息 DTO，以及当前周委托计数规则。
 - `internal/dn/unavailable_service.go`：未配置安全连接时维持应用生命周期，并让 DN 用例返回明确的不可用错误。
-- `internal/dn/service.go`、`internal/dn/auth.go`：保留用于历史本地数据迁移和规则测试的兼容实现，不注册为生产 Wails 账号服务。
+- `internal/dn/rules.go`：消息输入校验、时间规范化及分页规则；DN 业务仅使用 PostgreSQL 服务，不再提供本地状态或账号实现。
 - `internal/application/dn.go`：只暴露 DN 角色、周计划和消息 Wails 门面方法。
 - `frontend/src/features/dn-system/api/`：生成绑定适配和 DN 角色/周计划业务类型。
 - `frontend/src/features/dn-system/model/`：职业/巢穴常量、优先级和日期校验。
@@ -91,7 +91,7 @@ DN 的两个业务路由在 `routeConfig.ts` 中统一声明 `requiresAuth: true
 
 所有角色和周计划读写都在 Go 层验证账号归属，不能通过传入其他账号的 ID 越权访问。
 
-新版本不再暴露巢穴类型明细、巢穴票或每日疲劳。为避免新增线上数据库列，`remainingCommissionCount` 复用历史 `level_commission_count` 列；保存、同步和重置时会清空历史 `nest_commissions`、`nest_tickets` 数据。首次读取当前用户周计划时，历史票券列尚未写入迁移标记的记录会按旧委托中未完成项数量折算为剩余数量，没有旧委托明细时按 6 处理，并且只更新该用户的数据；旧本地 v1/v2 状态文件执行相同迁移。
+新版本不再暴露巢穴类型明细、巢穴票或每日疲劳。为避免新增线上数据库列，`remainingCommissionCount` 复用历史 `level_commission_count` 列；保存、同步和重置时会清空历史 `nest_commissions`、`nest_tickets` 数据。读取只使用当前计数字段，不再按历史票券或本地 v1/v2 状态自动迁移。
 
 ### 消息与官网同步
 
@@ -112,11 +112,13 @@ DN 的两个业务路由在 `routeConfig.ts` 中统一声明 `requiresAuth: true
 ### 进程工具
 
 - 主窗口进程页打开时不自动扫描，用户点击“扫描进程”后读取候选；置顶小窗首次打开、获得焦点、手动刷新和终结成功后自动读取候选，紧凑展示名称与 PID。重新启动同一路径的进程后可在小窗刷新并再次终结，实际终结每次重新解析当前 PID。
-- Windows 仅扫描名称为 `DragonNest.exe` 或 `DragonNest_x64.exe` 的进程，进程名匹配不区分大小写，不再按路径关键字扩大候选范围；后端使用同一个进程句柄完成名称和完整路径校验、终止和退出等待，避免检查后重新打开 PID 时误杀复用该 PID 的进程。
+- Windows 扫描名称为 `DragonNest.exe`、`DragonNest_x64.exe` 或 `DNLauncher.exe` 的进程，进程名匹配不区分大小写，不按路径关键字扩大候选范围；唯一启动器安装路径自动记录到独立的 `dragonNest.launcherPath`，小窗优先使用它启动。后端使用同一个进程句柄完成名称和完整路径校验、终止和退出等待，避免检查后重新打开 PID 时误杀复用该 PID 的进程。
 - Windows 使用 `OpenProcess(PROCESS_TERMINATE | PROCESS_QUERY_LIMITED_INFORMATION | SYNCHRONIZE)` 和 `TerminateProcess`，然后通过 `WaitForSingleObject` 最多等待 3 秒；只有确认进程退出才返回成功。等待超时返回 `ErrTerminationTimeout`，UI 提示重新扫描，不把已发送请求当作已结束。
 - 平台扫描遇到访问被拒绝时保留 PID、名称和空路径；业务服务仅对已识别的龙之谷候选将其转为 `ErrAccessDenied`，不会误报为未找到，也不会阻断与龙之谷无关的受限系统进程；有任一龙之谷候选无法读取路径时，本次扫描整体失败，以免快捷键自动选择不完整候选列表。
 - 选择候选进程后可直接结束；首次成功结束后自动保存目标路径，供窗口内快捷键使用。
-- 可配置 F1–F12（默认 F4）仅在进程页或独立置顶小窗获得焦点时响应，不再注册系统全局快捷键；小窗提供结束按钮、焦点和结果提示，关闭后隐藏，重复打开复用。修饰键与长按重复不触发，跨窗口操作共享并发防护；设置 v7/v8/v9/v10 迁移至 v11 时删除旧全局键位和启用字段，并新增本地键位 `localShortcutKey`，默认 F4，保留目标路径与其他偏好。完整链路见[窗口内快捷键](shortcut.md)。
+- 主窗口与小窗通过 `dn-process:changed` typed event 同步：启动/终结后两个已打开的列表都会重新扫描；启动请求成功时有限重试，较旧扫描结果不得覆盖新状态。记住启动器/终结目标后同步广播设置，避免主窗口保存旧偏好时覆盖路径。
+- Windows 主窗口支持配置、保存和修改 `DNLauncher.exe` 完整路径，提供原生文件选择；未扫描到启动器时主动展开配置提醒。保存需通过后端路径/文件校验，失败保留原配置；自动扫描不覆盖已保存的路径，终结目标和启动路径分别保存。
+- 可配置 F1–F12（默认 F4）仅在进程页或独立置顶小窗获得焦点时响应，不再注册系统全局快捷键；小窗提供结束按钮、焦点和结果提示，关闭后隐藏，重复打开复用。修饰键与长按重复不触发，跨窗口操作共享并发防护；设置使用 v11 的 `localShortcutKey`，默认 F4，不再迁移旧版全局快捷键配置。完整链路见[窗口内快捷键](shortcut.md)。
 - 没有已记录路径且同时存在多个候选进程时，快捷键不会自动选择，用户需要打开“进程”页面手动选择。
 
 ### macOS Firefox 测试模式
@@ -127,7 +129,7 @@ macOS 的进程页自动显示“Firefox 进程”，复用扫描、单击结束
 - `dnprocess.NewFirefoxTestService` 使用独立名称白名单和区分大小写的路径匹配；Windows 继续使用原有规则。绑定方法名沿用 `ListDragonNestProcesses` / `TerminateDragonNestProcess` / `KillDragonNestProcess`，前端 API 按系统提供目标文案，同一 `dragonNest.targetPath` 保存当前平台最近成功结束的目标。
 - AppKit 按 bundle ID 枚举主应用；关闭前在同一个 `NSRunningApplication` 上校验 PID 对应应用、bundle ID 和完整可执行路径，然后调用 `forceTerminate`，不使用按名称批量关闭。保留该应用对象，并在 Go 工作线程最多等待 3 秒确认 `terminated`，不阻塞主线程更新状态，避免将已发送请求直接当作成功。
 - [Apple NSRunningApplication 文档](https://developer.apple.com/documentation/appkit/nsrunningapplication)说明其属性线程安全，但动态状态由主 run loop 更新；因此真实关闭验证必须在正在运行的 Wails 应用中完成，单元测试不关闭实际浏览器。
-- 小窗标题和按钮显示 Firefox；小窗系统关闭按钮只隐藏小窗，“终结 Firefox”按钮才关闭浏览器。macOS 部分键盘需使用 Fn + F4；切到 Firefox 后小窗失焦，F4 不响应。
+- 小窗系统标题仅显示 Firefox（Windows 为“龙之谷”），内容区不再重复标题；“启动”按钮按已记住路径或已安装的 Firefox 启动应用，启动后有限重试刷新进程；启动/终结共享并发防护，完整平台规则与正常启动模式见[窗口内快捷键](shortcut.md)。小窗系统关闭按钮只隐藏小窗，“终结 Firefox”按钮才关闭浏览器。macOS 部分键盘需使用 Fn + F4；切到 Firefox 后小窗失焦，F4 不响应。
 
 ### 社区方式对照与实机验收
 
@@ -196,3 +198,5 @@ pnpm build
 ```
 
 未启动 `wails3 dev`；侧栏展开、Dialog 焦点、消息轮询、官网真实网络和原生外链仍需人工桌面验证。
+
+当前规则的隔离回归测试位于 `internal/dn/rules_test.go` 与 `official_sync_test.go`，覆盖委托计数联动、消息输入校验、分页边界及官网响应解析；不依赖已移除的本地存储服务或真实官网请求。

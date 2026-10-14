@@ -12,21 +12,27 @@ import (
 const testDigest = "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
 
 type sourceStub struct {
-	release       Release
-	latestErr     error
-	downloadErr   error
-	downloaded    bool
-	downloadValue string
+	release          Release
+	latestErr        error
+	downloadErr      error
+	downloaded       bool
+	downloadValue    string
+	downloadProgress []Progress
 }
 
 func (s *sourceStub) Latest(context.Context, string, string) (Release, error) {
 	return s.release, s.latestErr
 }
 
-func (s *sourceStub) Download(_ context.Context, _ Asset, destination string) error {
+func (s *sourceStub) DownloadWithProgress(_ context.Context, _ Asset, destination string, onProgress ProgressCallback) error {
 	s.downloaded = true
 	if s.downloadErr != nil {
 		return s.downloadErr
+	}
+	for _, progress := range s.downloadProgress {
+		if onProgress != nil {
+			onProgress(progress)
+		}
 	}
 	return os.WriteFile(destination, []byte(s.downloadValue), 0o600)
 }
@@ -186,7 +192,8 @@ func TestServiceReportsDownloadAndInstallProgress(t *testing.T) {
 				Size:        7,
 			}, {Name: "cull-pear-windows-amd64.exe", Digest: testDigest}},
 		},
-		downloadValue: "payload",
+		downloadValue:    "payload",
+		downloadProgress: []Progress{{Phase: "downloading", DownloadedBytes: 3, Percent: 42}},
 	}
 	service := NewService(Config{
 		AppName:        "cull-pear",
@@ -203,8 +210,11 @@ func TestServiceReportsDownloadAndInstallProgress(t *testing.T) {
 	}); err != nil {
 		t.Fatalf("install update: %v", err)
 	}
-	if len(progress) < 2 || progress[0].Phase != "downloading" || progress[len(progress)-1].Phase != "installing" {
+	if len(progress) != 3 || progress[0].Phase != "downloading" || progress[len(progress)-1].Phase != "installing" {
 		t.Fatalf("unexpected progress events: %+v", progress)
+	}
+	if got := progress[1]; got.Version != "1.4.0" || got.DownloadedBytes != 3 || got.TotalBytes != 7 || got.Percent != 42 {
+		t.Fatalf("source progress was not forwarded: %+v", got)
 	}
 	last := progress[len(progress)-1]
 	if last.Percent != 100 || last.DownloadedBytes != 7 || last.TotalBytes != 7 {

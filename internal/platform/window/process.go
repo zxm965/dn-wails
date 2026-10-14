@@ -23,9 +23,9 @@ func (p *ProcessWindow) Open() error {
 	p.mu.Lock()
 	defer p.mu.Unlock()
 	if p.window == nil {
-		title := "DN进程关闭"
+		title := "龙之谷"
 		if runtime.GOOS == "darwin" {
-			title = "Firefox进程关闭"
+			title = "Firefox"
 		}
 		p.window = p.app.Window.NewWithOptions(application.WebviewWindowOptions{
 			Name: "dn-process", Title: title,

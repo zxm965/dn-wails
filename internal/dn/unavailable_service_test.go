@@ -21,12 +21,6 @@ func TestUnavailableServiceRejectsDnOperations(t *testing.T) {
 	t.Parallel()
 
 	service := NewUnavailableService()
-	if _, err := service.AuthState(); !errors.Is(err, ErrUnavailable) {
-		t.Fatalf("expected auth state to report unavailable, got %v", err)
-	}
-	if _, err := service.Login(LoginInput{}); !errors.Is(err, ErrUnavailable) {
-		t.Fatalf("expected login to report unavailable, got %v", err)
-	}
 	if _, err := service.ListWeeklyPlans(WeeklyPlanQuery{}); !errors.Is(err, ErrUnavailable) {
 		t.Fatalf("expected weekly plans to report unavailable, got %v", err)
 	}

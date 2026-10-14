@@ -26,6 +26,7 @@ import (
 
 const (
 	SettingsChangedEvent             = "settings:changed"
+	DnProcessChangedEvent            = "dn-process:changed"
 	SystemNotificationActivatedEvent = "system-notification:activated"
 	SecondInstanceLaunchedEvent      = "app:second-instance"
 	FileDropEvent                    = "native-kit:file-drop"
@@ -36,6 +37,7 @@ var ErrAppNotReady = errors.New("application is not ready")
 
 func init() {
 	wailsapplication.RegisterEvent[settings.AppSettings](SettingsChangedEvent)
+	wailsapplication.RegisterEvent[DnProcessChange](DnProcessChangedEvent)
 	wailsapplication.RegisterEvent[notification.Activation](SystemNotificationActivatedEvent)
 	wailsapplication.RegisterEvent[singleinstance.LaunchData](SecondInstanceLaunchedEvent)
 	wailsapplication.RegisterEvent[FileDrop](FileDropEvent)
@@ -184,6 +186,8 @@ type DnProcessService interface {
 	List() ([]dnprocess.Info, error)
 	Terminate(target dnprocess.Target) (dnprocess.Info, error)
 	TerminateConfigured(path string) (dnprocess.Info, error)
+	LaunchConfigured(path string) error
+	ValidateLauncherPath(path string) (string, error)
 	Health() error
 }
 

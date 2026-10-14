@@ -7,7 +7,6 @@ import (
 	"io"
 	"net/http"
 	"net/url"
-	"sort"
 	"strconv"
 	"strings"
 	"time"
@@ -43,150 +42,6 @@ type officialNewsItem struct {
 	PublishedAt  time.Time
 	IsTop        bool
 	IsHot        bool
-}
-
-func (s *Service) SyncOfficialMessages() (OfficialMessageSyncResult, error) {
-	return s.syncOfficialMessages(true)
-}
-
-func (s *Service) CheckOfficialMessagesOnLogin() (OfficialMessageSyncResult, error) {
-	return s.syncOfficialMessages(false)
-}
-
-func (s *Service) syncOfficialMessages(manual bool) (OfficialMessageSyncResult, error) {
-	s.syncMu.Lock()
-	defer s.syncMu.Unlock()
-
-	s.mu.RLock()
-	current, err := s.authenticatedUserLocked(time.Now())
-	if err != nil {
-		s.mu.RUnlock()
-		return OfficialMessageSyncResult{}, err
-	}
-	userID := current.ID
-	lastSyncedAt := s.state.OfficialSync.LastSyncedAt
-	lastLoginAt := s.state.OfficialSync.LastLoginAtByUser[strconv.Itoa(userID)]
-	s.mu.RUnlock()
-	now := time.Now().UTC()
-	if manual {
-		if lastSync, parseErr := time.Parse(time.RFC3339Nano, lastSyncedAt); parseErr == nil && now.Sub(lastSync) < officialForceMinInterval {
-			return OfficialMessageSyncResult{Skipped: true, SyncedAt: lastSyncedAt}, nil
-		}
-	} else {
-		previousLogin, parseErr := time.Parse(time.RFC3339Nano, lastLoginAt)
-		loginIsRecent := parseErr == nil && now.Sub(previousLogin) < officialLoginSyncInterval
-		s.mu.Lock()
-		current, authErr := s.authenticatedUserLocked(time.Now())
-		if authErr != nil || current.ID != userID {
-			s.mu.Unlock()
-			return OfficialMessageSyncResult{}, ErrUnauthenticated
-		}
-		next := cloneState(s.state)
-		next.OfficialSync.LastLoginAtByUser[strconv.Itoa(userID)] = now.Format(time.RFC3339Nano)
-		if err := s.commit(next); err != nil {
-			s.mu.Unlock()
-			return OfficialMessageSyncResult{}, err
-		}
-		s.mu.Unlock()
-		if loginIsRecent {
-			return OfficialMessageSyncResult{Skipped: true, SyncedAt: lastSyncedAt}, nil
-		}
-	}
-
-	items, err := s.fetchOfficialNews()
-	if err != nil {
-		return OfficialMessageSyncResult{}, err
-	}
-	if len(items) == 0 {
-		return OfficialMessageSyncResult{}, fmt.Errorf("官网没有返回可用消息")
-	}
-
-	s.mu.Lock()
-	defer s.mu.Unlock()
-	current, err = s.authenticatedUserLocked(time.Now())
-	if err != nil || current.ID != userID {
-		return OfficialMessageSyncResult{}, ErrUnauthenticated
-	}
-
-	next := cloneState(s.state)
-	cursor, _ := time.Parse(time.RFC3339Nano, next.OfficialSync.LatestPublishedAt)
-	cutoff := time.Now().Add(-officialInitialLookback)
-	candidates := make([]officialNewsItem, 0, len(items))
-	for _, item := range items {
-		if !cursor.IsZero() {
-			if item.PublishedAt.After(cursor) {
-				candidates = append(candidates, item)
-			}
-			continue
-		}
-		if !item.PublishedAt.Before(cutoff) {
-			candidates = append(candidates, item)
-		}
-	}
-	sort.Slice(candidates, func(i, j int) bool { return candidates[i].PublishedAt.Before(candidates[j].PublishedAt) })
-	if len(candidates) > 20 {
-		candidates = candidates[len(candidates)-20:]
-	}
-
-	published := 0
-	for _, item := range candidates {
-		sourceKey := strconv.Itoa(item.SourceID)
-		if hasMessageSourceKey(next.Messages, "dragon-nest-official", sourceKey) {
-			continue
-		}
-		label, level := officialMessageMeta(item.CategoryCode)
-		content := item.Summary
-		if content == "" {
-			content = fmt.Sprintf("《龙之谷》官网发布了新的%s，点击查看详情。", label)
-		}
-		next.Messages = append(next.Messages, SiteMessage{
-			ID:           next.NextMessageID,
-			Source:       "dragon-nest-official",
-			SourceKey:    sourceKey,
-			Level:        level,
-			Title:        item.Title,
-			Content:      content,
-			ActionLabel:  "查看官网",
-			ActionURL:    item.URL,
-			ActionTarget: MessageTargetBlank,
-			Popup:        true,
-			Status:       1,
-			PublishedAt:  item.PublishedAt.UTC().Format(time.RFC3339Nano),
-			Metadata: &SiteMessageMetadata{
-				CategoryCode: item.CategoryCode,
-				IsTop:        item.IsTop,
-				IsHot:        item.IsHot,
-				SourceID:     item.SourceID,
-			},
-		})
-		next.NextMessageID++
-		published++
-	}
-
-	latest := items[0].PublishedAt
-	for _, item := range items[1:] {
-		if item.PublishedAt.After(latest) {
-			latest = item.PublishedAt
-		}
-	}
-	syncedAt := now.Format(time.RFC3339Nano)
-	next.OfficialSync = officialSyncState{
-		LatestPublishedAt: latest.UTC().Format(time.RFC3339Nano),
-		LastSyncedAt:      syncedAt,
-		LastLoginAtByUser: next.OfficialSync.LastLoginAtByUser,
-	}
-	if err := s.commit(next); err != nil {
-		return OfficialMessageSyncResult{}, err
-	}
-	return OfficialMessageSyncResult{
-		Fetched:   len(items),
-		Published: published,
-		SyncedAt:  syncedAt,
-	}, nil
-}
-
-func (s *Service) fetchOfficialNews() ([]officialNewsItem, error) {
-	return fetchOfficialNews(s.httpClient)
 }
 
 func fetchOfficialNews(client *http.Client) ([]officialNewsItem, error) {
@@ -317,15 +172,6 @@ func officialMessageMeta(categoryCode string) (string, string) {
 	default:
 		return "资讯", MessageLevelInfo
 	}
-}
-
-func hasMessageSourceKey(items []SiteMessage, source string, sourceKey string) bool {
-	for _, item := range items {
-		if item.Source == source && item.SourceKey == sourceKey {
-			return true
-		}
-	}
-	return false
 }
 
 func asString(value any) string {
