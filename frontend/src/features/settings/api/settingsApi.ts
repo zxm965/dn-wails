@@ -1,5 +1,6 @@
 import { GetSettings, ResetSettings, UpdateSettings } from '@bindings/cull-pear/internal/application/app'
 import { AppSettings as WailsAppSettings } from '@bindings/cull-pear/internal/settings/models'
+import { Events } from '@wailsio/runtime'
 
 export type ThemeMode = 'system' | 'light' | 'dark'
 export type AccentColor = 'green' | 'blue' | 'purple' | 'orange'
@@ -40,9 +41,11 @@ export interface WindowSettings {
   bounds?: WindowBounds
 }
 
+export const LOCAL_SHORTCUT_KEYS = ['F1', 'F2', 'F3', 'F4', 'F5', 'F6', 'F7', 'F8', 'F9', 'F10', 'F11', 'F12'] as const
+export type LocalShortcutKey = (typeof LOCAL_SHORTCUT_KEYS)[number]
+
 export interface DragonNestSettings {
-  shortcutEnabled: boolean
-  shortcutKey: string
+  localShortcutKey: LocalShortcutKey
   targetPath: string
 }
 
@@ -55,25 +58,8 @@ export interface AppSettings {
   dragonNest: DragonNestSettings
 }
 
-export const DRAGON_NEST_SHORTCUT_OPTIONS = [
-  'F1',
-  'F2',
-  'F3',
-  'F4',
-  'F5',
-  'F6',
-  'F7',
-  'F8',
-  'F9',
-  'F10',
-  'F11',
-  'F12',
-] as const
-
-export type DragonNestShortcutKey = (typeof DRAGON_NEST_SHORTCUT_OPTIONS)[number]
-
 export const DEFAULT_SETTINGS: AppSettings = {
-  version: 9,
+  version: 11,
   appearance: {
     themeMode: 'system',
     accent: 'green',
@@ -95,8 +81,7 @@ export const DEFAULT_SETTINGS: AppSettings = {
     rememberBounds: true,
   },
   dragonNest: {
-    shortcutEnabled: false,
-    shortcutKey: 'F4',
+    localShortcutKey: 'F4',
     targetPath: '',
   },
 }
@@ -140,8 +125,7 @@ function normalizeSettings(value: WailsAppSettings): AppSettings {
         : undefined,
     },
     dragonNest: {
-      shortcutEnabled: value.dragonNest.shortcutEnabled,
-      shortcutKey: value.dragonNest.shortcutKey as DragonNestShortcutKey,
+      localShortcutKey: value.dragonNest.localShortcutKey as LocalShortcutKey,
       targetPath: value.dragonNest.targetPath,
     },
   }
@@ -161,4 +145,10 @@ export async function saveSettings(value: AppSettings): Promise<AppSettings> {
 
 export async function restoreDefaultSettings(): Promise<AppSettings> {
   return normalizeSettings(await ResetSettings())
+}
+
+export function onSettingsChanged(callback: (settings: AppSettings) => void): () => void {
+  return Events.On('settings:changed', (event) => {
+    callback(normalizeSettings(WailsAppSettings.createFrom(event.data)))
+  })
 }

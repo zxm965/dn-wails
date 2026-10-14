@@ -1,29 +1,22 @@
-import { RefreshCw, Skull, TriangleAlert } from 'lucide-react'
+import { PanelTop, RefreshCw, Skull, TriangleAlert } from 'lucide-react'
 import { useCallback, useState } from 'react'
 
-import { DRAGON_NEST_SHORTCUT_OPTIONS, useSettings, type AppSettings } from '@/features/settings'
-import {
-  Button,
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  ListState,
-  PageHeader,
-  Select,
-  SpinnerIcon,
-  Switch,
-} from '@/shared/components/ui'
+import { LOCAL_SHORTCUT_KEYS, useSettings, type LocalShortcutKey } from '@/features/settings'
+import { Button, Card, CardContent, ListState, PageHeader, SpinnerIcon, Select } from '@/shared/components/ui'
 import { useFeedback } from '@/shared/feedback'
 import { createScopedClassNames } from '@/shared/lib/classNames'
-import { isWindows } from '@/shared/lib/platform'
 
 import {
+  PROCESS_NAME,
+  PROCESS_TEST_MODE,
+  PROCESS_CONTROL_SUPPORTED,
   getProcessErrorMessage,
   listDragonNestProcesses,
+  openDragonNestProcessWindow,
   terminateDragonNestProcess,
   type DragonNestProcess,
 } from '../api/dnProcessApi'
+import { useDnProcessShortcut } from '../hooks/useDnProcessShortcut'
 
 import { styles } from './DnProcessKiller.css'
 
@@ -41,7 +34,14 @@ function formatScannedAt(value: Date | null): string {
 
 export function DnProcessKiller() {
   const { notify } = useFeedback()
-  const { settings, isSaving: isSettingsSaving, error: settingsError, updateSettings } = useSettings()
+  const {
+    settings,
+    isLoading: settingsLoading,
+    isSaving: settingsSaving,
+    error: settingsError,
+    updateSettings,
+    refreshSettings,
+  } = useSettings()
   const [items, setItems] = useState<DragonNestProcess[]>([])
   const [selectedPID, setSelectedPID] = useState<number | null>(null)
   const [scanning, setScanning] = useState(false)
@@ -52,14 +52,27 @@ export function DnProcessKiller() {
 
   const selected = items.find((item) => item.pid === selectedPID) ?? null
 
-  function updateDragonNest<Key extends keyof AppSettings['dragonNest']>(
-    key: Key,
-    value: AppSettings['dragonNest'][Key],
-  ) {
-    void updateSettings((current) => ({
-      ...current,
-      dragonNest: { ...current.dragonNest, [key]: value },
-    })).catch(() => undefined)
+  const [openingWindow, setOpeningWindow] = useState(false)
+  const handleShortcutSuccess = useCallback(
+    (process: DragonNestProcess) => {
+      setItems((current) => current.filter((item) => item.pid !== process.pid))
+      setSelectedPID((current) => (current === process.pid ? null : current))
+      void refreshSettings()
+    },
+    [refreshSettings],
+  )
+  const shortcut = useDnProcessShortcut(handleShortcutSuccess)
+
+  async function openWindow() {
+    if (openingWindow) return
+    setOpeningWindow(true)
+    try {
+      await openDragonNestProcessWindow()
+    } catch (openError) {
+      notify({ title: '打开小窗失败', message: getProcessErrorMessage(openError, '请稍后重试。'), tone: 'error' })
+    } finally {
+      setOpeningWindow(false)
+    }
   }
 
   const scan = useCallback(async () => {
@@ -75,29 +88,24 @@ export function DnProcessKiller() {
       setItems([])
       setSelectedPID(null)
       setScanned(true)
-      setError(getProcessErrorMessage(scanError, '当前系统暂不支持结束 DN 进程。'))
+      setError(getProcessErrorMessage(scanError, '当前系统暂不支持此进程操作。'))
     } finally {
       setScanning(false)
     }
   }, [])
 
   async function terminateSelected() {
-    if (!selected || terminating) return
+    if (!selected || terminating || shortcut.busy) return
     setTerminating(true)
     try {
       const terminated = await terminateDragonNestProcess(selected)
       setItems((current) => current.filter((item) => item.pid !== terminated.pid))
       setSelectedPID(null)
       notify({ title: `已结束 ${terminated.name}`, tone: 'success' })
-      if (settings.dragonNest.targetPath !== terminated.path) {
-        void updateSettings((current) => ({
-          ...current,
-          dragonNest: { ...current.dragonNest, targetPath: terminated.path },
-        })).catch(() => undefined)
-      }
+      await refreshSettings()
     } catch (terminateError) {
       notify({
-        title: '结束 DN 失败',
+        title: `结束 ${PROCESS_NAME} 失败`,
         message: getProcessErrorMessage(terminateError, '请重新扫描后重试。'),
         tone: 'error',
       })
@@ -109,11 +117,15 @@ export function DnProcessKiller() {
   return (
     <div className={cx('dn-process-page')}>
       <PageHeader
-        eyebrow='龙之谷'
-        title='进程'
-        subtitle='扫描当前运行的龙之谷进程，选择后快速结束。'
+        eyebrow={PROCESS_TEST_MODE ? 'macOS 测试' : '龙之谷'}
+        title={PROCESS_TEST_MODE ? 'Firefox 进程' : '进程'}
+        subtitle={
+          PROCESS_TEST_MODE
+            ? '扫描 Firefox 主进程，测试一键关闭、快捷键与置顶小窗。'
+            : '扫描当前运行的龙之谷进程，选择后快速结束。'
+        }
         actions={
-          <Button variant='outline' disabled={scanning || terminating} onClick={() => void scan()}>
+          <Button variant='outline' disabled={scanning || terminating || shortcut.busy} onClick={() => void scan()}>
             <SpinnerIcon icon={RefreshCw} spinning={scanning} aria-hidden='true' />
             {scanning ? '正在扫描…' : '扫描进程'}
           </Button>
@@ -123,12 +135,10 @@ export function DnProcessKiller() {
       <Card className={cx('dn-process-card')}>
         <CardContent>
           <div className={cx('dn-process-intro')}>
-            <span>首次结束成功后会记住该进程路径，启用快捷键时优先结束同一路径的进程。</span>
-            {settings.dragonNest.shortcutEnabled && (
-              <span className={cx('dn-process-shortcut-hint')}>
-                快捷键已启用 <kbd className={cx('dn-process-shortcut-key')}>{settings.dragonNest.shortcutKey}</kbd>
-              </span>
-            )}
+            <span>首次结束成功后会记住该进程路径，按 {shortcut.shortcutKey} 时优先结束同一路径的进程。</span>
+            <span className={cx('dn-process-shortcut-hint')}>
+              本页获得焦点时按 <kbd className={cx('dn-process-shortcut-key')}>{shortcut.shortcutKey}</kbd> 结束进程
+            </span>
           </div>
 
           {scanned && !error && (
@@ -152,11 +162,11 @@ export function DnProcessKiller() {
             <ListState
               className={cx('dn-process-empty')}
               loading={false}
-              emptyText='点击“扫描进程”获取当前运行的龙之谷进程。'
+              emptyText={`点击“扫描进程”获取当前运行的 ${PROCESS_NAME} 进程。`}
               icon={<Skull aria-hidden='true' />}
             />
           ) : items.length ? (
-            <div className={cx('dn-process-list')} role='listbox' aria-label='龙之谷候选进程'>
+            <div className={cx('dn-process-list')} role='listbox' aria-label={`${PROCESS_NAME} 候选进程`}>
               {items.map((item) => (
                 <Button
                   key={`${item.pid}-${item.path}`}
@@ -179,7 +189,7 @@ export function DnProcessKiller() {
             <ListState
               className={cx('dn-process-empty')}
               loading={false}
-              emptyText='未发现龙之谷进程。'
+              emptyText={`未发现 ${PROCESS_NAME} 进程。`}
               icon={<Skull aria-hidden='true' />}
             />
           )}
@@ -193,9 +203,13 @@ export function DnProcessKiller() {
                 </span>
               </div>
               <div className={cx('dn-process-actions')}>
-                <Button variant='danger' disabled={terminating} onClick={() => void terminateSelected()}>
+                <Button
+                  variant='danger'
+                  disabled={terminating || shortcut.busy}
+                  onClick={() => void terminateSelected()}
+                >
                   <Skull aria-hidden='true' />
-                  {terminating ? '正在结束…' : '秒掉进程'}
+                  {terminating ? '正在结束…' : `结束 ${PROCESS_NAME}`}
                 </Button>
               </div>
             </div>
@@ -203,60 +217,48 @@ export function DnProcessKiller() {
         </CardContent>
       </Card>
 
-      <Card className={cx('dn-process-settings-card')}>
-        <CardHeader className={cx('dn-process-settings-header')}>
-          <div>
-            <CardDescription>
-              可选的全局快捷键，仅 Windows 支持。单按 F1–F12 中选定的按键触发，默认为 F4。
-              游戏以管理员身份运行时，本应用也需以相同权限运行。
-            </CardDescription>
-          </div>
-          <span className={cx('dn-process-settings-status')} aria-live='polite'>
-            {isSettingsSaving ? '正在同步…' : '修改后自动保存'}
-          </span>
-        </CardHeader>
+      <Card className={cx('dn-process-shortcut-card')}>
         <CardContent>
+          <div className={cx('dn-process-shortcut-toolbar')}>
+            <div className={cx('dn-process-shortcut-settings')}>
+              <span id='process-shortcut-label'>快捷键</span>
+              <Select<LocalShortcutKey>
+                className={cx('dn-process-shortcut-select')}
+                aria-labelledby='process-shortcut-label'
+                value={settings.dragonNest.localShortcutKey}
+                options={LOCAL_SHORTCUT_KEYS.map((key) => ({ value: key, label: key }))}
+                disabled={settingsLoading || settingsSaving || !PROCESS_CONTROL_SUPPORTED}
+                onValueChange={(localShortcutKey) => {
+                  void updateSettings((current) => ({
+                    ...current,
+                    dragonNest: { ...current.dragonNest, localShortcutKey },
+                  })).catch(() => undefined)
+                }}
+              />
+              <span role='status'>{settingsSaving ? '保存中…' : '默认 F4 · 自动保存'}</span>
+            </div>
+            <Button
+              variant='outline'
+              disabled={openingWindow || !PROCESS_CONTROL_SUPPORTED}
+              onClick={() => void openWindow()}
+            >
+              <PanelTop aria-hidden='true' />
+              {openingWindow ? '正在打开…' : '打开置顶小窗'}
+            </Button>
+          </div>
+          <p className={cx('dn-process-shortcut-note')}>
+            聚焦后生效，部分键盘需 Fn+{shortcut.shortcutKey}。{PROCESS_TEST_MODE && '关闭 Firefox 前请保存工作。'}
+          </p>
           {settingsError && (
-            <p className={cx('dn-process-settings-error')} role='alert'>
+            <p className={cx('dn-process-shortcut-note')} role='alert'>
               {settingsError}
             </p>
           )}
-          <div className={cx('dn-process-settings-grid')}>
-            <label className={cx('dn-process-settings-field')}>
-              <span className={cx('dn-process-settings-field-label')}>快捷键</span>
-              <Select
-                aria-label='DN 结束进程快捷键'
-                value={settings.dragonNest.shortcutKey}
-                disabled={!isWindows() || !settings.dragonNest.shortcutEnabled}
-                options={DRAGON_NEST_SHORTCUT_OPTIONS.map((key) => ({ value: key, label: key }))}
-                onValueChange={(shortcutKey) => updateDragonNest('shortcutKey', shortcutKey)}
-              />
-            </label>
-            <div className={cx('dn-process-settings-field', 'dn-process-settings-inline-note')}>
-              <span className={cx('dn-process-settings-field-label')}>快捷目标</span>
-              <small className={cx('dn-process-settings-note-copy')}>
-                {settings.dragonNest.targetPath
-                  ? `已记录：${settings.dragonNest.targetPath.split(/[\\/]/).pop() ?? settings.dragonNest.targetPath}`
-                  : '尚未记录，成功结束一次进程后自动记录'}
-              </small>
-            </div>
-          </div>
-          <label className={cx('dn-process-settings-toggle')}>
-            <span className={cx('dn-process-settings-toggle-copy')}>
-              <strong className={cx('dn-process-settings-toggle-title')}>启用全局快捷键</strong>
-              <small className={cx('dn-process-settings-toggle-description')}>
-                {isWindows()
-                  ? `窗口失焦、最小化或隐藏到托盘后，单按 ${settings.dragonNest.shortcutKey} 快速结束已记录的 DN 进程。`
-                  : '当前系统不是 Windows，暂不支持全局结束进程快捷键。'}
-              </small>
-            </span>
-            <Switch
-              aria-label='启用全局快捷键'
-              checked={settings.dragonNest.shortcutEnabled}
-              disabled={!isWindows()}
-              onCheckedChange={(checked) => updateDragonNest('shortcutEnabled', checked)}
-            />
-          </label>
+          {(!PROCESS_CONTROL_SUPPORTED || shortcut.status) && (
+            <p className={cx('dn-process-shortcut-note')} role='status'>
+              {!PROCESS_CONTROL_SUPPORTED ? '当前系统暂不支持此进程操作。' : shortcut.status}
+            </p>
+          )}
         </CardContent>
       </Card>
     </div>

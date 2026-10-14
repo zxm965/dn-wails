@@ -99,3 +99,29 @@ func TestServiceTerminateConfiguredUsesExactPath(t *testing.T) {
 		t.Fatalf("unexpected terminated process: item=%+v target=%+v", item, platform.terminated)
 	}
 }
+
+func TestFirefoxTestServiceIsolatesMainProcessAndTargetPath(t *testing.T) {
+	platform := &platformStub{items: []Info{
+		{PID: 20, Name: "firefox", Path: "/Applications/Firefox.app/Contents/MacOS/firefox"},
+		{PID: 21, Name: "plugin-container", Path: "/Applications/Firefox.app/Contents/MacOS/plugin-container"},
+		{PID: 22, Name: "DragonNest.exe", Path: `C:\Games\DragonNest.exe`},
+	}}
+	service := NewFirefoxTestService(platform)
+	items, err := service.List()
+	if err != nil || len(items) != 1 || items[0].PID != 20 {
+		t.Fatalf("unexpected Firefox candidates: %v %v", items, err)
+	}
+	if _, err := service.TerminateConfigured("/applications/Firefox.app/Contents/MacOS/firefox"); !errors.Is(err, ErrNotFound) {
+		t.Fatalf("macOS paths must match exactly: %v", err)
+	}
+	if _, err := service.Terminate(Target{PID: 22, Name: "DragonNest.exe", Path: `C:\Games\DragonNest.exe`}); !errors.Is(err, ErrInvalidTarget) {
+		t.Fatalf("test mode accepted a non-Firefox target: %v", err)
+	}
+	if _, err := service.TerminateConfigured(""); err != nil || platform.terminated.PID != 20 {
+		t.Fatalf("single Firefox termination: %+v %v", platform.terminated, err)
+	}
+	platform.items = append(platform.items, Info{PID: 23, Name: "firefox", Path: "/Users/test/Firefox.app/Contents/MacOS/firefox"})
+	if _, err := service.TerminateConfigured(""); !errors.Is(err, ErrMultiple) {
+		t.Fatalf("multiple Firefox instances were not rejected: %v", err)
+	}
+}

@@ -104,17 +104,13 @@ export class Appearance {
 }
 
 export class DragonNest {
-    "shortcutEnabled": boolean;
-    "shortcutKey": string;
+    "localShortcutKey": string;
     "targetPath": string;
 
     /** Creates a new DragonNest instance. */
     constructor($$source: Partial<DragonNest> = {}) {
-        if (!("shortcutEnabled" in $$source)) {
-            this["shortcutEnabled"] = false;
-        }
-        if (!("shortcutKey" in $$source)) {
-            this["shortcutKey"] = "";
+        if (!("localShortcutKey" in $$source)) {
+            this["localShortcutKey"] = "";
         }
         if (!("targetPath" in $$source)) {
             this["targetPath"] = "";

@@ -3,6 +3,7 @@ package dnprocess
 import "errors"
 
 var (
+	ErrBusy               = errors.New("Dragon Nest process operation is already running")
 	ErrUnavailable        = errors.New("Dragon Nest process control is unavailable")
 	ErrInvalidTarget      = errors.New("invalid Dragon Nest process target")
 	ErrNotFound           = errors.New("Dragon Nest process not found")

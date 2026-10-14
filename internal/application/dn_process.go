@@ -12,6 +12,11 @@ func (a *App) ListDragonNestProcesses() ([]dnprocess.Info, error) {
 }
 
 func (a *App) TerminateDragonNestProcess(target dnprocess.Target) (dnprocess.Info, error) {
+	if !a.dnProcessMu.TryLock() {
+		return dnprocess.Info{}, dnprocess.ErrBusy
+	}
+	defer a.dnProcessMu.Unlock()
+
 	info, err := a.dnProcessService.Terminate(target)
 	if err != nil {
 		return dnprocess.Info{}, err
@@ -21,6 +26,11 @@ func (a *App) TerminateDragonNestProcess(target dnprocess.Target) (dnprocess.Inf
 }
 
 func (a *App) KillDragonNestProcess() (dnprocess.Info, error) {
+	if !a.dnProcessMu.TryLock() {
+		return dnprocess.Info{}, dnprocess.ErrBusy
+	}
+	defer a.dnProcessMu.Unlock()
+
 	settingsSnapshot := a.settingsService.Get()
 	info, err := a.dnProcessService.TerminateConfigured(settingsSnapshot.DragonNest.TargetPath)
 	if err != nil {
@@ -46,4 +56,11 @@ func (a *App) rememberDragonNestTarget(path string) {
 		log.Printf("remember Dragon Nest target path: %v", err)
 		return
 	}
+}
+
+func (a *App) OpenDragonNestProcessWindow() error {
+	if a.processWindow == nil {
+		return dnprocess.ErrUnavailable
+	}
+	return a.processWindow.Open()
 }

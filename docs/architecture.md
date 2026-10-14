@@ -39,7 +39,6 @@ main
     ├── notification（Wails 原生通知适配）
     ├── appupdate（数据库更新源、Release 元数据校验与平台安装器）
     ├── singleinstance（单实例配置）
-    ├── shortcut（全局热键与 Windows 后台按键检测）
     └── window（平台窗口配置）
 ```
 
@@ -151,7 +150,7 @@ app
 - [日历](modules/calendar.md)
 - [云端任务](modules/tasks.md)
 - [龙之谷](modules/dn-system.md)
-- [全局快捷键](modules/shortcut.md)
+- [窗口内快捷键与置顶小窗](modules/shortcut.md)
 - [站内消息](modules/site-messages.md)
 - [应用生命周期](modules/app-lifecycle.md)
 - [安装身份](modules/installation-identity.md)

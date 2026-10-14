@@ -15,101 +15,6 @@ const processCard = style({
   minWidth: '0',
 })
 
-const processSettingsCard = style({
-  minWidth: '0',
-})
-
-const processSettingsHeader = style({
-  display: 'flex',
-  alignItems: 'flex-start',
-  justifyContent: 'space-between',
-  gap: '18px',
-})
-
-const processSettingsStatus = style({
-  flex: '0 0 auto',
-  color: 'var(--text-tertiary)',
-  fontSize: '11px',
-  whiteSpace: 'nowrap',
-})
-
-const processSettingsGrid = style({
-  display: 'grid',
-  gridTemplateColumns: 'repeat(2, minmax(0, 1fr))',
-  gap: '20px',
-  '@container': {
-    'dn-process-page (max-width: 700px)': {
-      gridTemplateColumns: '1fr',
-    },
-  },
-})
-
-const processSettingsField = style({
-  minWidth: '0',
-})
-
-const processSettingsFieldLabel = style({
-  display: 'block',
-  marginBottom: '9px',
-  color: 'var(--text-secondary)',
-  fontSize: '12px',
-  fontWeight: '700',
-})
-
-const processSettingsInlineNote = style({
-  display: 'grid',
-  alignContent: 'start',
-  gap: '8px',
-  color: 'var(--text-secondary)',
-})
-
-const processSettingsNoteCopy = style({
-  overflow: 'hidden',
-  color: 'var(--text-tertiary)',
-  fontSize: '11px',
-  lineHeight: '1.55',
-  textOverflow: 'ellipsis',
-  whiteSpace: 'nowrap',
-})
-
-const processSettingsToggle = style({
-  position: 'relative',
-  display: 'flex',
-  alignItems: 'center',
-  justifyContent: 'space-between',
-  gap: '18px',
-  marginTop: '20px',
-  paddingTop: '14px',
-  borderTop: '1px solid var(--border-subtle)',
-  cursor: 'pointer',
-})
-
-const processSettingsToggleCopy = style({
-  minWidth: '0',
-  display: 'grid',
-  gap: '5px',
-})
-
-const processSettingsToggleTitle = style({
-  display: 'block',
-  color: 'var(--text-primary)',
-  fontSize: '13px',
-})
-
-const processSettingsToggleDescription = style({
-  display: 'block',
-  color: 'var(--text-tertiary)',
-  fontSize: '11px',
-  lineHeight: '1.45',
-})
-
-const processSettingsError = style({
-  margin: '0 0 14px',
-  color: 'var(--danger-text)',
-  fontSize: '12px',
-  lineHeight: '1.5',
-})
-
 const processIntro = style({
   display: 'grid',
   gap: '8px',
@@ -200,6 +105,7 @@ const processActions = style({
   display: 'flex',
   alignItems: 'center',
   justifyContent: 'flex-end',
+  flexWrap: 'wrap',
   gap: '8px',
 })
 
@@ -210,6 +116,9 @@ const processSelectedTarget = style({
   gap: '14px',
   marginTop: '16px',
   padding: '12px 14px',
+  '@container': {
+    'dn-process-page (max-width: 500px)': { flexDirection: 'column', alignItems: 'stretch' },
+  },
   background: 'var(--danger-background)',
   border: '1px solid var(--danger-border)',
   borderRadius: '10px',
@@ -258,22 +167,40 @@ const processEmpty = style({
   minHeight: '200px',
 })
 
+const processShortcutCard = style({ vars: { '--panel-padding': '14px 16px' } })
+const processShortcutToolbar = style({
+  display: 'flex',
+  flexWrap: 'wrap',
+  alignItems: 'center',
+  justifyContent: 'space-between',
+  gap: 12,
+})
+const processShortcutSettings = style({
+  display: 'flex',
+  flexWrap: 'wrap',
+  alignItems: 'center',
+  gap: 10,
+  minWidth: 0,
+  fontSize: 12,
+  color: 'var(--text-secondary)',
+})
+const processShortcutSelect = style({ width: 88, minWidth: 0 })
+const processShortcutNote = style({
+  margin: '8px 0 0',
+  fontSize: 11,
+  lineHeight: 1.5,
+  color: 'var(--text-tertiary)',
+  overflowWrap: 'anywhere',
+})
+
 export const styles = {
+  'dn-process-shortcut-card': processShortcutCard,
+  'dn-process-shortcut-toolbar': processShortcutToolbar,
+  'dn-process-shortcut-select': processShortcutSelect,
+  'dn-process-shortcut-note': processShortcutNote,
+  'dn-process-shortcut-settings': processShortcutSettings,
   'dn-process-page': processPage,
   'dn-process-card': processCard,
-  'dn-process-settings-card': processSettingsCard,
-  'dn-process-settings-header': processSettingsHeader,
-  'dn-process-settings-status': processSettingsStatus,
-  'dn-process-settings-grid': processSettingsGrid,
-  'dn-process-settings-field': processSettingsField,
-  'dn-process-settings-field-label': processSettingsFieldLabel,
-  'dn-process-settings-inline-note': processSettingsInlineNote,
-  'dn-process-settings-note-copy': processSettingsNoteCopy,
-  'dn-process-settings-toggle': processSettingsToggle,
-  'dn-process-settings-toggle-copy': processSettingsToggleCopy,
-  'dn-process-settings-toggle-title': processSettingsToggleTitle,
-  'dn-process-settings-toggle-description': processSettingsToggleDescription,
-  'dn-process-settings-error': processSettingsError,
   'dn-process-intro': processIntro,
   'dn-process-meta': processMeta,
   'dn-process-meta-text': processMetaText,

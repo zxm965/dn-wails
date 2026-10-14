@@ -1,10 +1,10 @@
 package application
 
 import (
+	"errors"
 	"testing"
 
 	"cull-pear/internal/dnprocess"
-	"cull-pear/internal/lifecycle"
 	"cull-pear/internal/settings"
 )
 
@@ -26,27 +26,6 @@ func (s *shortcutSettingsStub) Reset() (settings.AppSettings, error) {
 }
 func (*shortcutSettingsStub) UpdateWindowBounds(settings.WindowBounds) error { return nil }
 
-type globalShortcutStub struct {
-	registered   []string
-	unregistered []string
-	callbacks    map[string]func()
-}
-
-func (s *globalShortcutStub) Register(accelerator string, callback func()) error {
-	s.registered = append(s.registered, accelerator)
-	if s.callbacks == nil {
-		s.callbacks = make(map[string]func())
-	}
-	s.callbacks[accelerator] = callback
-	return nil
-}
-
-func (s *globalShortcutStub) Unregister(accelerator string) error {
-	s.unregistered = append(s.unregistered, accelerator)
-	delete(s.callbacks, accelerator)
-	return nil
-}
-
 type shortcutDnProcessStub struct {
 	configuredPath string
 	terminated     bool
@@ -63,63 +42,67 @@ func (s *shortcutDnProcessStub) TerminateConfigured(path string) (dnprocess.Info
 }
 func (*shortcutDnProcessStub) Health() error { return nil }
 
-func TestRuntimeReadyRegistersConfiguredDragonNestGlobalShortcut(t *testing.T) {
-	t.Parallel()
-
+func TestKillDragonNestUsesRememberedTarget(t *testing.T) {
 	current := settings.Default()
-	current.DragonNest.ShortcutEnabled = true
 	current.DragonNest.TargetPath = `C:\Games\DragonNest.exe`
-	settingsService := &shortcutSettingsStub{current: current}
-	shortcutService := &globalShortcutStub{}
-	processService := &shortcutDnProcessStub{}
-	lifecycleService := lifecycle.NewService()
-	notificationService := &runtimeReadyNotificationStub{lifecycle: lifecycleService}
-	app := New(Dependencies{
-		GlobalShortcut:     shortcutService,
-		SystemNotification: notificationService,
-		Settings:           settingsService,
-		Lifecycle:          lifecycleService,
-		Window:             runtimeReadyWindowStub{},
-		DnProcess:          processService,
-	})
-
-	app.RuntimeReady()
-
-	if len(shortcutService.registered) != 1 || shortcutService.registered[0] != "F4" {
-		t.Fatalf("expected F4 to be registered after runtime ready, got %v", shortcutService.registered)
+	process := &shortcutDnProcessStub{}
+	app := New(Dependencies{Settings: &shortcutSettingsStub{current: current}, DnProcess: process})
+	if _, err := app.KillDragonNestProcess(); err != nil {
+		t.Fatal(err)
 	}
-	callback := shortcutService.callbacks["F4"]
-	if callback == nil {
-		t.Fatal("expected the registered shortcut callback")
-	}
-	callback()
-	if !processService.terminated || processService.configuredPath != current.DragonNest.TargetPath {
-		t.Fatalf("shortcut did not terminate the configured process: %+v", processService)
+	if !process.terminated || process.configuredPath != current.DragonNest.TargetPath {
+		t.Fatalf("wrong target: %+v", process)
 	}
 }
 
-func TestSyncDragonNestShortcutReplacesFunctionKey(t *testing.T) {
-	t.Parallel()
+func TestProcessOperationsRejectOverlapAcrossWindows(t *testing.T) {
+	app := New(Dependencies{})
+	app.dnProcessMu.Lock()
+	defer app.dnProcessMu.Unlock()
+	if _, err := app.KillDragonNestProcess(); !errors.Is(err, dnprocess.ErrBusy) {
+		t.Fatalf("shortcut overlap: %v", err)
+	}
+	if _, err := app.TerminateDragonNestProcess(dnprocess.Target{}); !errors.Is(err, dnprocess.ErrBusy) {
+		t.Fatalf("manual overlap: %v", err)
+	}
+}
 
-	shortcutService := &globalShortcutStub{}
-	app := New(Dependencies{GlobalShortcut: shortcutService})
-	if err := app.syncDragonNestShortcut(settings.DragonNest{
-		ShortcutEnabled: true,
-		ShortcutKey:     "F4",
-	}); err != nil {
-		t.Fatalf("register initial shortcut: %v", err)
-	}
-	if err := app.syncDragonNestShortcut(settings.DragonNest{
-		ShortcutEnabled: true,
-		ShortcutKey:     "F12",
-	}); err != nil {
-		t.Fatalf("replace shortcut: %v", err)
-	}
+type processWindowStub struct {
+	calls int
+	err   error
+}
 
-	if len(shortcutService.unregistered) != 1 || shortcutService.unregistered[0] != "F4" {
-		t.Fatalf("expected F4 to be unregistered, got %v", shortcutService.unregistered)
+func (w *processWindowStub) Open() error { w.calls++; return w.err }
+
+func TestOpenProcessWindow(t *testing.T) {
+	app := New(Dependencies{})
+	if err := app.OpenDragonNestProcessWindow(); !errors.Is(err, dnprocess.ErrUnavailable) {
+		t.Fatalf("unavailable: %v", err)
 	}
-	if len(shortcutService.registered) != 2 || shortcutService.registered[1] != "F12" {
-		t.Fatalf("expected F12 to be registered, got %v", shortcutService.registered)
+	failure := errors.New("cannot open window")
+	window := &processWindowStub{err: failure}
+	app = New(Dependencies{ProcessWindow: window})
+	if err := app.OpenDragonNestProcessWindow(); !errors.Is(err, failure) || window.calls != 1 {
+		t.Fatalf("open error not preserved: %v", err)
+	}
+	window.err = nil
+	if err := app.OpenDragonNestProcessWindow(); err != nil || window.calls != 2 {
+		t.Fatalf("open: %v", err)
+	}
+}
+
+func TestPreferenceUpdatePreservesTargetFromOtherWindow(t *testing.T) {
+	current := settings.Default()
+	current.DragonNest.TargetPath = `C:\Games\DragonNest.exe`
+	app := New(Dependencies{Settings: &shortcutSettingsStub{current: current}, Window: runtimeReadyWindowStub{}})
+	stale := settings.Default()
+	stale.Appearance.ThemeMode = settings.ThemeDark
+	stale.DragonNest.LocalShortcutKey = "F12"
+	updated, err := app.UpdateSettings(stale)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if updated.DragonNest.TargetPath != current.DragonNest.TargetPath || updated.Appearance.ThemeMode != settings.ThemeDark || updated.DragonNest.LocalShortcutKey != "F12" {
+		t.Fatalf("stale window lost target or preference: %+v", updated)
 	}
 }

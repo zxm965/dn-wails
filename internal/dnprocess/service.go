@@ -11,11 +11,18 @@ var knownProcessNames = map[string]struct{}{
 }
 
 type service struct {
-	platform Platform
+	platform  Platform
+	names     map[string]struct{}
+	matchPath func(string, string) bool
 }
 
 func NewService(platform Platform) Service {
-	return &service{platform: platform}
+	return &service{platform: platform, names: knownProcessNames, matchPath: strings.EqualFold}
+}
+
+// NewFirefoxTestService reuses the process workflow with an isolated macOS test target.
+func NewFirefoxTestService(platform Platform) Service {
+	return &service{platform: platform, names: map[string]struct{}{"firefox": {}}, matchPath: func(a, b string) bool { return a == b }}
 }
 
 func (s *service) List() ([]Info, error) {
@@ -29,7 +36,7 @@ func (s *service) List() ([]Info, error) {
 
 	result := make([]Info, 0, len(items))
 	for _, item := range items {
-		if isDragonNestProcess(item) {
+		if s.acceptsName(item.Name) {
 			if item.Path == "" {
 				return nil, fmt.Errorf("%w: cannot inspect %s (pid %d)", ErrAccessDenied, item.Name, item.PID)
 			}
@@ -45,7 +52,7 @@ func (s *service) Terminate(target Target) (Info, error) {
 	}
 	target.Name = strings.TrimSpace(target.Name)
 	target.Path = strings.TrimSpace(target.Path)
-	if target.PID == 0 || target.Name == "" || target.Path == "" {
+	if target.PID == 0 || !s.acceptsName(target.Name) || target.Path == "" {
 		return Info{}, fmt.Errorf("%w: pid, name and path are required", ErrInvalidTarget)
 	}
 	if err := s.platform.Terminate(target); err != nil {
@@ -62,7 +69,7 @@ func (s *service) TerminateConfigured(path string) (Info, error) {
 	path = strings.TrimSpace(path)
 	if path != "" {
 		for _, item := range items {
-			if strings.EqualFold(item.Path, path) {
+			if s.matchPath(item.Path, path) {
 				return s.Terminate(Target{PID: item.PID, Name: item.Name, Path: item.Path})
 			}
 		}
@@ -85,10 +92,7 @@ func (s *service) Health() error {
 	return nil
 }
 
-func isDragonNestProcess(item Info) bool {
-	name := strings.ToLower(strings.TrimSpace(item.Name))
-	if _, ok := knownProcessNames[name]; ok {
-		return true
-	}
-	return false
+func (s *service) acceptsName(name string) bool {
+	_, ok := s.names[strings.ToLower(strings.TrimSpace(name))]
+	return ok
 }

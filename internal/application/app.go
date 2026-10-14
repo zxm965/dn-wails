@@ -3,9 +3,7 @@ package application
 import (
 	"context"
 	"errors"
-	"fmt"
 	"log"
-	"strings"
 	"sync"
 	"time"
 
@@ -27,6 +25,7 @@ import (
 )
 
 const (
+	SettingsChangedEvent             = "settings:changed"
 	SystemNotificationActivatedEvent = "system-notification:activated"
 	SecondInstanceLaunchedEvent      = "app:second-instance"
 	FileDropEvent                    = "native-kit:file-drop"
@@ -36,6 +35,7 @@ const (
 var ErrAppNotReady = errors.New("application is not ready")
 
 func init() {
+	wailsapplication.RegisterEvent[settings.AppSettings](SettingsChangedEvent)
 	wailsapplication.RegisterEvent[notification.Activation](SystemNotificationActivatedEvent)
 	wailsapplication.RegisterEvent[singleinstance.LaunchData](SecondInstanceLaunchedEvent)
 	wailsapplication.RegisterEvent[FileDrop](FileDropEvent)
@@ -187,14 +187,13 @@ type DnProcessService interface {
 	Health() error
 }
 
-type GlobalShortcutService interface {
-	Register(accelerator string, callback func()) error
-	Unregister(accelerator string) error
+type ProcessWindow interface {
+	Open() error
 }
 
 type Dependencies struct {
 	Runtime            *wailsapplication.App
-	GlobalShortcut     GlobalShortcutService
+	ProcessWindow      ProcessWindow
 	SystemNotification SystemNotificationService
 	Settings           SettingsService
 	Lifecycle          LifecycleService
@@ -214,7 +213,7 @@ type Dependencies struct {
 // App is the Wails v3 service exposed to the frontend.
 type App struct {
 	runtime                   *wailsapplication.App
-	globalShortcutService     GlobalShortcutService
+	processWindow             ProcessWindow
 	systemNotificationService SystemNotificationService
 	settingsService           SettingsService
 	lifecycleService          LifecycleService
@@ -230,8 +229,7 @@ type App struct {
 	tasksService              TasksService
 	dnProcessService          DnProcessService
 
-	shortcutMu                   sync.Mutex
-	registeredDragonNestShortcut string
+	dnProcessMu sync.Mutex
 
 	mu                    sync.RWMutex
 	ctx                   context.Context
@@ -243,7 +241,7 @@ type App struct {
 func New(dependencies Dependencies) *App {
 	return &App{
 		runtime:                   dependencies.Runtime,
-		globalShortcutService:     dependencies.GlobalShortcut,
+		processWindow:             dependencies.ProcessWindow,
 		systemNotificationService: dependencies.SystemNotification,
 		settingsService:           dependencies.Settings,
 		lifecycleService:          dependencies.Lifecycle,
@@ -301,9 +299,6 @@ func (a *App) RuntimeReady() {
 
 	a.windowService.Restore(windowPreferences(a.settingsService.Get().Window))
 	a.lifecycleService.MarkReady()
-	if err := a.syncDragonNestShortcut(a.settingsService.Get().DragonNest); err != nil {
-		log.Printf("register Dragon Nest shortcut: %v", err)
-	}
 	for _, launch := range pendingLaunches {
 		a.emitSecondInstance(launch)
 	}
@@ -379,9 +374,6 @@ func (a *App) QuitApplication() error {
 }
 
 func (a *App) ServiceShutdown() error {
-	if err := a.syncDragonNestShortcut(settings.DragonNest{}); err != nil {
-		log.Printf("unregister Dragon Nest shortcut: %v", err)
-	}
 	a.lifecycleService.Stop()
 	if err := a.tasksService.Close(); err != nil {
 		log.Printf("close tasks database: %v", err)
@@ -403,44 +395,6 @@ func (a *App) ServiceShutdown() error {
 	a.ctx = nil
 	a.runtimeReady = false
 	a.mu.Unlock()
-	return nil
-}
-
-func (a *App) syncDragonNestShortcut(config settings.DragonNest) error {
-	a.shortcutMu.Lock()
-	defer a.shortcutMu.Unlock()
-
-	if a.globalShortcutService == nil {
-		return nil
-	}
-	desired := ""
-	if config.ShortcutEnabled {
-		desired = strings.TrimSpace(config.ShortcutKey)
-	}
-	if desired == a.registeredDragonNestShortcut {
-		return nil
-	}
-	if a.registeredDragonNestShortcut != "" {
-		if err := a.globalShortcutService.Unregister(a.registeredDragonNestShortcut); err != nil {
-			return fmt.Errorf("unregister %q: %w", a.registeredDragonNestShortcut, err)
-		}
-		a.registeredDragonNestShortcut = ""
-	}
-	if desired == "" {
-		return nil
-	}
-	if err := a.globalShortcutService.Register(desired, func() {
-		log.Printf("Dragon Nest shortcut triggered: %s", desired)
-		info, err := a.KillDragonNestProcess()
-		if err != nil {
-			log.Printf("kill Dragon Nest process from shortcut: %v", err)
-			return
-		}
-		log.Printf("Dragon Nest process exited from shortcut: pid=%d name=%s", info.PID, info.Name)
-	}); err != nil {
-		return fmt.Errorf("register %q: %w", desired, err)
-	}
-	a.registeredDragonNestShortcut = desired
 	return nil
 }
 

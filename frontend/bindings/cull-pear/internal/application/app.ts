@@ -255,6 +255,10 @@ export function OpenDirectory(title: string, defaultDirectory: string): $Cancell
     return $Call.ByID(1732963953, title, defaultDirectory);
 }
 
+export function OpenDragonNestProcessWindow(): $CancellablePromise<void> {
+    return $Call.ByID(3581001516);
+}
+
 export function OpenExternalURL(rawURL: string): $CancellablePromise<void> {
     return $Call.ByID(1508594666, rawURL);
 }

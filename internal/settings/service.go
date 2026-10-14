@@ -42,11 +42,10 @@ func (s *Service) Initialize() error {
 	if err := json.Unmarshal(data, &loaded); err != nil {
 		return fmt.Errorf("decode application settings: %w", err)
 	}
-	if loaded.Version == 7 || loaded.Version == 8 {
-		// Single keys can fire during normal gameplay; require opting in again.
+	if loaded.Version >= 7 && loaded.Version < CurrentVersion {
+		// Decoding drops obsolete global shortcut fields while retaining other preferences.
 		loaded.Version = CurrentVersion
-		loaded.DragonNest.ShortcutEnabled = false
-		loaded.DragonNest.ShortcutKey = DefaultDragonNestShortcutKey
+		loaded.DragonNest.LocalShortcutKey = DefaultLocalShortcutKey
 		if err := s.persist(loaded); err != nil {
 			return fmt.Errorf("persist migrated application settings: %w", err)
 		}
@@ -161,21 +160,14 @@ func validate(value AppSettings) error {
 	if !contains([]string{CloseBehaviorQuit, CloseBehaviorHide}, value.Window.CloseBehavior) {
 		return fmt.Errorf("%w: unsupported close behavior %q", ErrInvalidSettings, value.Window.CloseBehavior)
 	}
-	if !contains(dragonNestShortcutKeys(), value.DragonNest.ShortcutKey) {
-		return fmt.Errorf("%w: unsupported Dragon Nest shortcut %q", ErrInvalidSettings, value.DragonNest.ShortcutKey)
+	if !contains([]string{"F1", "F2", "F3", "F4", "F5", "F6", "F7", "F8", "F9", "F10", "F11", "F12"}, value.DragonNest.LocalShortcutKey) {
+		return fmt.Errorf("%w: unsupported local shortcut %q", ErrInvalidSettings, value.DragonNest.LocalShortcutKey)
 	}
 	if len(value.DragonNest.TargetPath) > 4096 || strings.ContainsAny(value.DragonNest.TargetPath, "\r\n") {
 		return fmt.Errorf("%w: invalid Dragon Nest target path", ErrInvalidSettings)
 	}
 
 	return nil
-}
-
-func dragonNestShortcutKeys() []string {
-	return []string{
-		"F1", "F2", "F3", "F4", "F5", "F6",
-		"F7", "F8", "F9", "F10", "F11", "F12",
-	}
 }
 
 func contains(values []string, target string) bool {

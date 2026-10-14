@@ -19,10 +19,10 @@ Go 服务通过 `pgxpool` 直连 PostgreSQL；本地构建从 `.env.local` 读�
 - `internal/application/dn.go`：只暴露 DN 角色、周计划和消息 Wails 门面方法。
 - `frontend/src/features/dn-system/api/`：生成绑定适配和 DN 角色/周计划业务类型。
 - `frontend/src/features/dn-system/model/`：职业/巢穴常量、优先级和日期校验。
-- `frontend/src/features/dn-system/components/`：周常、角色和进程三个业务页面及响应式样式；进程页同时承载 DN 全局快捷键配置。
+- `frontend/src/features/dn-system/components/`：周常、角色和进程三个业务页面及响应式样式；进程页同时提供可配置 F1–F12（默认 F4）和置顶小窗入口。
 - `internal/dnprocess/`：龙之谷候选进程识别、目标校验和终止规则。
 - `internal/platform/dnprocess/`：Windows 进程快照、路径读取和进程终止适配；非 Windows 返回不可用状态。
-- `internal/platform/shortcut/`：原生热键与 Windows 后台按键状态检测适配，详见[全局快捷键模块](shortcut.md)。
+- `internal/platform/window/process.go`：原生置顶小窗管理，详见[窗口内快捷键模块](shortcut.md)。
 - `frontend/src/features/site-messages/`：独立站内消息页面、消息盒子、Provider 和 API 适配，详见[站内消息模块](site-messages.md)。
 - `frontend/src/shared/navigation/menuConfig.ts`：龙之谷父入口、周常/角色/进程三个子菜单和独立站内消息菜单的显隐偏好配置。
 
@@ -111,13 +111,23 @@ DN 的两个业务路由在 `routeConfig.ts` 中统一声明 `requiresAuth: true
 
 ### 进程工具
 
-- 页面打开时不自动扫描，用户点击“扫描进程”后才读取当前运行的龙之谷候选进程。
-- 仅扫描名称为 `DragonNest.exe` 或 `DragonNest_x64.exe` 的进程，进程名匹配不区分大小写，不再按路径关键字扩大候选范围；后端使用同一个进程句柄完成名称和完整路径校验、终止和退出等待，避免检查后重新打开 PID 时误杀复用该 PID 的进程。
+- 主窗口进程页打开时不自动扫描，用户点击“扫描进程”后读取候选；置顶小窗首次打开、获得焦点、手动刷新和终结成功后自动读取候选，紧凑展示名称与 PID。重新启动同一路径的进程后可在小窗刷新并再次终结，实际终结每次重新解析当前 PID。
+- Windows 仅扫描名称为 `DragonNest.exe` 或 `DragonNest_x64.exe` 的进程，进程名匹配不区分大小写，不再按路径关键字扩大候选范围；后端使用同一个进程句柄完成名称和完整路径校验、终止和退出等待，避免检查后重新打开 PID 时误杀复用该 PID 的进程。
 - Windows 使用 `OpenProcess(PROCESS_TERMINATE | PROCESS_QUERY_LIMITED_INFORMATION | SYNCHRONIZE)` 和 `TerminateProcess`，然后通过 `WaitForSingleObject` 最多等待 3 秒；只有确认进程退出才返回成功。等待超时返回 `ErrTerminationTimeout`，UI 提示重新扫描，不把已发送请求当作已结束。
 - 平台扫描遇到访问被拒绝时保留 PID、名称和空路径；业务服务仅对已识别的龙之谷候选将其转为 `ErrAccessDenied`，不会误报为未找到，也不会阻断与龙之谷无关的受限系统进程；有任一龙之谷候选无法读取路径时，本次扫描整体失败，以免快捷键自动选择不完整候选列表。
-- 选择候选进程后可直接结束；首次成功结束后自动保存目标路径，供全局快捷键使用。
-- 快捷键默认关闭，只接受单键 `F1` 到 `F12`，默认为 `F4`；按下 Ctrl/Shift/Alt/Win 时不触发。快捷键在 `WindowRuntimeReady` 后启用，F1–F11 注册到 Wails 隐藏主线程窗口，并每 20ms 后台检测按键状态；F1–F12 还通过独立 OS 线程上的 `WH_KEYBOARD_LL` 监听按下与释放事件；F12 因 Windows 系统热键保留限制不调用原生注册，由监听和后台检测触发。在游戏或其他程序前台、应用最小化或隐藏到托盘时无需切回本窗口。输入链路共享去重、按住不重复、执行不重叠，成功关闭开关或应用退出时停止检测并注销；F1–F11 注册失败会返回错误并写入应用日志，不绕过其他软件占用，也不自动提权。Windows 权限隔离、安全桌面与游戏保护机制仍可能限制按键检测或进程终止，须在实际游戏环境验证。v7、v8 升级到 v9 时不继承原有快捷键键位和开关，恢复默认关闭与 `F4`，要求用户重新开启；已记录的 DN 进程目标路径与其他偏好继续保留。
+- 选择候选进程后可直接结束；首次成功结束后自动保存目标路径，供窗口内快捷键使用。
+- 可配置 F1–F12（默认 F4）仅在进程页或独立置顶小窗获得焦点时响应，不再注册系统全局快捷键；小窗提供结束按钮、焦点和结果提示，关闭后隐藏，重复打开复用。修饰键与长按重复不触发，跨窗口操作共享并发防护；设置 v7/v8/v9/v10 迁移至 v11 时删除旧全局键位和启用字段，并新增本地键位 `localShortcutKey`，默认 F4，保留目标路径与其他偏好。完整链路见[窗口内快捷键](shortcut.md)。
 - 没有已记录路径且同时存在多个候选进程时，快捷键不会自动选择，用户需要打开“进程”页面手动选择。
+
+### macOS Firefox 测试模式
+
+macOS 的进程页自动显示“Firefox 进程”，复用扫描、单击结束、可配置 F1–F12（默认 F4）和置顶小窗完整链路，不需要安装龙之谷。仅支持正式版 Firefox（`org.mozilla.firefox`），不纳入其他浏览器、Firefox Nightly 或内容进程。测试使用强制结束，操作前应保存浏览器中的工作。
+
+- `internal/platform/dnprocess/firefox_darwin.go` 与 `firefox_darwin.m` 用 build tags 隔离 AppKit 实现；无 cgo 或 Linux 仍返回不可用。
+- `dnprocess.NewFirefoxTestService` 使用独立名称白名单和区分大小写的路径匹配；Windows 继续使用原有规则。绑定方法名沿用 `ListDragonNestProcesses` / `TerminateDragonNestProcess` / `KillDragonNestProcess`，前端 API 按系统提供目标文案，同一 `dragonNest.targetPath` 保存当前平台最近成功结束的目标。
+- AppKit 按 bundle ID 枚举主应用；关闭前在同一个 `NSRunningApplication` 上校验 PID 对应应用、bundle ID 和完整可执行路径，然后调用 `forceTerminate`，不使用按名称批量关闭。保留该应用对象，并在 Go 工作线程最多等待 3 秒确认 `terminated`，不阻塞主线程更新状态，避免将已发送请求直接当作成功。
+- [Apple NSRunningApplication 文档](https://developer.apple.com/documentation/appkit/nsrunningapplication)说明其属性线程安全，但动态状态由主 run loop 更新；因此真实关闭验证必须在正在运行的 Wails 应用中完成，单元测试不关闭实际浏览器。
+- 小窗标题和按钮显示 Firefox；小窗系统关闭按钮只隐藏小窗，“终结 Firefox”按钮才关闭浏览器。macOS 部分键盘需使用 Fn + F4；切到 Firefox 后小窗失焦，F4 不响应。
 
 ### 社区方式对照与实机验收
 
@@ -128,9 +138,9 @@ DN 的两个业务路由在 `routeConfig.ts` 中统一声明 `requiresAuth: true
 按键触发与进程终止分开验收：
 
 1. 在 Windows 的“进程”页扫描并手动结束一次龙之谷，确认客户端退出且目标路径记录成功；若提示拒绝访问，先比较游戏与本工具的权限。[AutoHotkey 官方 FAQ](https://github.com/AutoHotkey/AutoHotkeyDocs/blob/v2/docs/FAQ.htm#L87)说明提升权限的前台程序可能阻止未提升权限程序的热键。
-2. 开启选定的 F 键，重新启动游戏，在游戏前台按下该键；依次覆盖窗口模式、全屏模式、应用最小化和托盘隐藏。单键可能与游戏原有按键冲突，选用未使用的键位。
-3. 在“设置 → 概览 → 日志”查看 `Dragon Nest shortcut triggered: F4`（示例键位）和 `Dragon Nest process exited from shortcut: pid=... name=...`；前者证明触发链路到达门面，后者证明本地进程已退出。只出现前者时检查紧随其后的终止错误；两者都没有时先检查 `global shortcut keyboard listener ready: key=F4 thread=...`，确认选定键位的监听已安装，再检查启用状态、注册错误和前台权限。
-4. 覆盖按住不重复、切换键位、关闭开关、退出应用与多个候选进程；服务端断线判定时间不属于本地进程退出保证。
+2. 打开置顶小窗，点击获得焦点后按 F4；切回游戏确认 F4 不触发，再点击小窗的“终结 DN”验证鼠标操作。
+3. 检查小窗内成功或失败提示；确认成功仅在本地进程退出后出现，拒绝访问与超时须展示相应错误。
+4. 覆盖重复打开、长按不重复、修饰键过滤、主窗口与小窗同时操作、关闭重开和退出应用；独占全屏游戏是否允许覆盖须实机验证，服务端断线判定时间不属于本地进程退出保证。
 
 测试覆盖拒绝访问、目标变化、系统目标拒绝、等待超时、等待失败和句柄释放；Windows 专用 stub 测试需要在 Windows 执行，其他系统只能交叉编译，不能替代上述游戏实机验证。
 
@@ -153,7 +163,7 @@ DN 的两个业务路由在 `routeConfig.ts` 中统一声明 `requiresAuth: true
 - 页面基于 `dn-page` Container Query 适配常规桌面、`1024 × 768` 最小窗口和极窄内容宽度。
 - 周计划卡片网格将常规列宽限制在 `320–360px` 并保持左对齐，只有一条计划时不拉伸占满整行；窄内容宽度下仍自动使用完整可用宽度。
 - 周常卡片以剩余委托数量和完成进度为主信息，通过左加右减按钮快速更新另外 4 个普通委托；方舟和噩梦使用紧凑状态面板，切换完成状态时自动同步剩余委托数量。侵蚀不计入这 6 个委托，备注与编辑/删除操作保持次级层级。
-- 进程页面保持空状态优先：进入后显示扫描按钮，扫描结果只展示疑似龙之谷的非系统进程；全局快捷键配置与进程操作位于同一工具页，窄宽度下候选进程卡片、危险操作区和配置网格逐级降为单列。
+- 进程页面保持空状态优先：进入后显示扫描按钮，扫描结果只展示疑似龙之谷的非系统进程；窗口内快捷键和置顶小窗入口与进程操作位于同一工具页，窄宽度下候选进程卡片、危险操作区逐级降为单列。
 - 表格只在卡片内部横向滚动，不造成整页横向滚动；卡片、过滤器、消息行和弹窗逐级降为单列。
 
 ## 接入方式

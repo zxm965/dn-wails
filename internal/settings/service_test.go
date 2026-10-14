@@ -1,69 +1,56 @@
 package settings
 
 import (
+	"bytes"
 	"encoding/json"
 	"errors"
 	"fmt"
+	"strings"
 	"testing"
 
 	"cull-pear/internal/storage"
 )
 
-func TestServiceAllowsOnlySingleFunctionKeys(t *testing.T) {
+func TestServiceMigratesGlobalShortcutSettings(t *testing.T) {
 	t.Parallel()
-	service := NewService(newMemoryStore())
-	for number := 1; number <= 12; number++ {
-		value := Default()
-		value.DragonNest.ShortcutEnabled = true
-		value.DragonNest.ShortcutKey = fmt.Sprintf("F%d", number)
-		if _, err := service.Update(value); err != nil {
-			t.Fatalf("rejects %s: %v", value.DragonNest.ShortcutKey, err)
-		}
-	}
-	for _, key := range []string{"Ctrl+F4", "Shift+F1", "F0", "F13", "F04", ""} {
-		value := Default()
-		value.DragonNest.ShortcutKey = key
-		if _, err := service.Update(value); !errors.Is(err, ErrInvalidSettings) {
-			t.Fatalf("expected invalid shortcut %q, got %v", key, err)
-		}
-	}
-}
-
-func TestServiceMigratesVersionEightSettingsAndPersistsResetShortcut(t *testing.T) {
-	t.Parallel()
-	store := newMemoryStore()
-	legacy := Default()
-	legacy.Version = 8
-	legacy.DragonNest = DragonNest{ShortcutEnabled: true, ShortcutKey: "Ctrl+F12", TargetPath: `C:\Games\DragonNest.exe`}
-	legacy.Appearance.ThemeMode = ThemeDark
-	data, err := json.Marshal(legacy)
-	if err != nil {
-		t.Fatal(err)
-	}
-	store.data[storageKey] = data
-	service := NewService(store)
-	if err := service.Initialize(); err != nil {
-		t.Fatalf("migrate v8: %v", err)
-	}
-	expected := legacy
-	expected.Version = CurrentVersion
-	expected.DragonNest.ShortcutEnabled = false
-	expected.DragonNest.ShortcutKey = "F4"
-	for _, candidate := range []*Service{service, NewService(store)} {
-		if err := candidate.Initialize(); err != nil {
-			t.Fatalf("reload migrated settings: %v", err)
-		}
-		got, err := json.Marshal(candidate.Get())
-		if err != nil {
-			t.Fatal(err)
-		}
-		want, err := json.Marshal(expected)
-		if err != nil {
-			t.Fatal(err)
-		}
-		if string(got) != string(want) {
-			t.Fatalf("migration changed other preferences: got %s want %s", got, want)
-		}
+	for _, version := range []int{7, 8, 9, 10} {
+		t.Run(fmt.Sprint(version), func(t *testing.T) {
+			store := newMemoryStore()
+			legacy := Default()
+			legacy.Version = version
+			legacy.DragonNest.LocalShortcutKey = ""
+			legacy.Appearance.ThemeMode = ThemeDark
+			legacy.DragonNest.TargetPath = `C:\Games\DragonNest.exe`
+			data, err := json.Marshal(legacy)
+			if err != nil {
+				t.Fatal(err)
+			}
+			// Include removed fields exactly as existing installations stored them.
+			store.data[storageKey] = []byte(strings.Replace(string(data), `"dragonNest":{`, `"dragonNest":{"shortcutEnabled":true,"shortcutKey":"F8",`, 1))
+			service := NewService(store)
+			if err := service.Initialize(); err != nil {
+				t.Fatal(err)
+			}
+			expected := legacy
+			expected.Version = CurrentVersion
+			expected.DragonNest.LocalShortcutKey = DefaultLocalShortcutKey
+			want, _ := json.Marshal(expected)
+			var compact bytes.Buffer
+			if err := json.Compact(&compact, store.data[storageKey]); err != nil {
+				t.Fatal(err)
+			}
+			if compact.String() != string(want) {
+				t.Fatalf("migration did not preserve preferences and remove shortcut fields: %s", store.data[storageKey])
+			}
+			reloaded := NewService(store)
+			if err := reloaded.Initialize(); err != nil {
+				t.Fatal(err)
+			}
+			got, _ := json.Marshal(reloaded.Get())
+			if string(got) != string(want) {
+				t.Fatalf("reload mismatch: %s", got)
+			}
+		})
 	}
 }
 
@@ -112,9 +99,6 @@ func TestServiceInitializesDefaultsAndPersistsUpdates(t *testing.T) {
 	}
 	if current.Appearance.ButtonSize != ButtonSizeMD {
 		t.Fatalf("expected default button size %q, got %q", ButtonSizeMD, current.Appearance.ButtonSize)
-	}
-	if current.DragonNest.ShortcutEnabled || current.DragonNest.ShortcutKey != DefaultDragonNestShortcutKey {
-		t.Fatalf("unexpected Dragon Nest shortcut defaults: %+v", current.DragonNest)
 	}
 	if current.Navigation.MenuVisibility == nil || len(current.Navigation.MenuVisibility) != 0 {
 		t.Fatalf("expected empty default menu visibility overrides, got %+v", current.Navigation.MenuVisibility)
@@ -171,11 +155,6 @@ func TestServiceRejectsInvalidSettings(t *testing.T) {
 	}
 
 	value.Appearance.ButtonSize = ButtonSizeMD
-	value.DragonNest.ShortcutKey = "Ctrl+F4"
-	if _, err := service.Update(value); !errors.Is(err, ErrInvalidSettings) {
-		t.Fatalf("expected invalid Dragon Nest shortcut error, got %v", err)
-	}
-	value.DragonNest.ShortcutKey = DefaultDragonNestShortcutKey
 	value.Navigation.MenuVisibility[" invalid-key"] = true
 	if _, err := service.Update(value); !errors.Is(err, ErrInvalidSettings) {
 		t.Fatalf("expected invalid menu key error, got %v", err)
@@ -224,24 +203,38 @@ func TestServiceRejectsOutdatedSettingsVersion(t *testing.T) {
 	}
 }
 
-func TestServiceMigratesVersionSevenSettingsAndResetsShortcut(t *testing.T) {
-	t.Parallel()
-
+func TestLocalShortcutConfiguration(t *testing.T) {
 	store := newMemoryStore()
-	store.data[storageKey] = []byte(`{"version":7,"appearance":{"themeMode":"dark","accent":"purple","density":"comfortable","buttonSize":"md","fontScale":1},"notifications":{"enabled":true,"showPreview":true,"doNotDisturb":false},"navigation":{"menuVisibility":{"dn-system":true}},"window":{"closeBehavior":"hide","alwaysOnTop":false,"rememberBounds":true},"dragonNest":{"shortcutEnabled":true,"shortcutKey":"F8","targetPath":"C:\\Games\\DragonNest.exe"}}`)
-
 	service := NewService(store)
 	if err := service.Initialize(); err != nil {
-		t.Fatalf("migrate settings: %v", err)
+		t.Fatal(err)
 	}
-	value := service.Get()
-	if value.Version != CurrentVersion || value.Appearance.ThemeMode != ThemeDark || !value.Navigation.MenuVisibility["dn-system"] {
-		t.Fatalf("legacy settings were not preserved: %+v", value)
+	if service.Get().DragonNest.LocalShortcutKey != "F4" {
+		t.Fatal("default shortcut must be F4")
 	}
-	if value.DragonNest.ShortcutKey != DefaultDragonNestShortcutKey || value.DragonNest.ShortcutEnabled {
-		t.Fatalf("unexpected migrated Dragon Nest settings: %+v", value.DragonNest)
+	for i := 1; i <= 12; i++ {
+		value := service.Get()
+		value.DragonNest.LocalShortcutKey = fmt.Sprintf("F%d", i)
+		if _, err := service.Update(value); err != nil {
+			t.Fatalf("%s rejected: %v", value.DragonNest.LocalShortcutKey, err)
+		}
 	}
-	if value.DragonNest.TargetPath != `C:\Games\DragonNest.exe` {
-		t.Fatalf("expected the configured process target to be preserved: %+v", value.DragonNest)
+	reloaded := NewService(store)
+	if err := reloaded.Initialize(); err != nil {
+		t.Fatal(err)
+	}
+	if reloaded.Get().DragonNest.LocalShortcutKey != "F12" {
+		t.Fatal("configured key was not persisted")
+	}
+	for _, key := range []string{"", "F0", "F13", "F04", "f4", "Ctrl+F4", "Fn+F4"} {
+		value := service.Get()
+		value.DragonNest.LocalShortcutKey = key
+		if _, err := service.Update(value); !errors.Is(err, ErrInvalidSettings) {
+			t.Fatalf("invalid key %q accepted: %v", key, err)
+		}
+	}
+	reset, err := service.Reset()
+	if err != nil || reset.DragonNest.LocalShortcutKey != "F4" {
+		t.Fatalf("reset: %+v %v", reset, err)
 	}
 }

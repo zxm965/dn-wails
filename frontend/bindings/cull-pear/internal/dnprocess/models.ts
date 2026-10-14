@@ -8,6 +8,11 @@ import { Create as $Create } from "@wailsio/runtime";
 export class Info {
     "pid": number;
     "name": string;
+
+    /**
+     * Platform.List leaves Path empty when inspection is denied; Service.List
+     * rejects inaccessible game candidates before they reach the application.
+     */
     "path": string;
 
     /** Creates a new Info instance. */

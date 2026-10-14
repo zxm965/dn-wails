@@ -1,6 +1,6 @@
 export { SettingsProvider, useSettings } from './context/SettingsProvider'
 export { SettingsPanel } from './components/SettingsPanel'
-export { DEFAULT_SETTINGS, DRAGON_NEST_SHORTCUT_OPTIONS } from './api/settingsApi'
+export { DEFAULT_SETTINGS, LOCAL_SHORTCUT_KEYS } from './api/settingsApi'
 export type {
   AccentColor,
   AppSettings,
@@ -9,7 +9,7 @@ export type {
   CloseBehavior,
   Density,
   DragonNestSettings,
-  DragonNestShortcutKey,
+  LocalShortcutKey,
   NavigationSettings,
   NotificationSettings,
   ThemeMode,

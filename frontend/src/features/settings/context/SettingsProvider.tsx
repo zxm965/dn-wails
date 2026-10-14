@@ -3,6 +3,7 @@ import { createContext, type ReactNode, useCallback, useContext, useEffect, useM
 import {
   DEFAULT_SETTINGS,
   loadSettings,
+  onSettingsChanged,
   restoreDefaultSettings,
   saveSettings,
   type AppSettings,
@@ -66,16 +67,28 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
   }, [])
 
   const refreshSettings = useCallback(async () => {
+    const revision = revisionRef.current
     setIsLoading(true)
     setError('')
     try {
-      applyLocalSettings(await loadSettings())
+      const loaded = await loadSettings()
+      if (revision === revisionRef.current) applyLocalSettings(loaded)
     } catch (loadError: unknown) {
       setError(errorMessage(loadError))
     } finally {
       setIsLoading(false)
     }
   }, [applyLocalSettings])
+
+  useEffect(
+    () =>
+      onSettingsChanged((next) => {
+        if (pendingWritesRef.current > 0) return
+        revisionRef.current++
+        applyLocalSettings(next)
+      }),
+    [applyLocalSettings],
+  )
 
   useEffect(() => {
     void refreshSettings()

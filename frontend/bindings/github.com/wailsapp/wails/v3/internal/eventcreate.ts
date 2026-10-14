@@ -17,6 +17,9 @@ import * as appupdate$0 from "../../../../../cull-pear/internal/appupdate/models
 import * as notification$0 from "../../../../../cull-pear/internal/notification/models.js";
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore: Unused imports
+import * as settings$0 from "../../../../../cull-pear/internal/settings/models.js";
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment
+// @ts-ignore: Unused imports
 import * as singleinstance$0 from "../../../../../cull-pear/internal/singleinstance/models.js";
 
 function configure() {
@@ -24,7 +27,8 @@ function configure() {
         "app-update:progress": $$createType0,
         "app:second-instance": $$createType1,
         "native-kit:file-drop": $$createType2,
-        "system-notification:activated": $$createType3,
+        "settings:changed": $$createType3,
+        "system-notification:activated": $$createType4,
     }));
 }
 
@@ -32,6 +36,7 @@ function configure() {
 const $$createType0 = appupdate$0.Progress.createFrom;
 const $$createType1 = singleinstance$0.LaunchData.createFrom;
 const $$createType2 = application$0.FileDrop.createFrom;
-const $$createType3 = notification$0.Activation.createFrom;
+const $$createType3 = settings$0.AppSettings.createFrom;
+const $$createType4 = notification$0.Activation.createFrom;
 
 configure();
