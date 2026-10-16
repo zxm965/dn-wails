@@ -62,7 +62,7 @@ func (s *PostgresService) Health() error {
 		return fmt.Errorf("check tasks database health: %w", err)
 	}
 	if !schemaReady {
-		return fmt.Errorf("%w: task database migrations have not been applied", ErrUnavailable)
+		return fmt.Errorf("%w: task database schema is not initialized", ErrUnavailable)
 	}
 	return nil
 }

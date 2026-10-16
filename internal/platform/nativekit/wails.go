@@ -48,7 +48,8 @@ func (w *Wails) OpenFiles(options nativekit.OpenFilesOptions) ([]string, error) 
 		SetTitle(options.Title).
 		SetDirectory(options.DefaultDirectory).
 		CanChooseFiles(true).
-		CanChooseDirectories(false)
+		CanChooseDirectories(false).
+		TreatsFilePackagesAsDirectories(false)
 	for _, filter := range options.Filters {
 		dialog.AddFilter(filter.DisplayName, filter.Pattern)
 	}

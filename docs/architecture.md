@@ -8,6 +8,10 @@
 - 平台隔离：macOS 与其他系统的窗口差异集中在 `internal/platform/window`。
 - 可测试：业务规则放在不依赖 Wails runtime 的 Go 包中，可直接运行单元测试。
 
+发布仅维护 macOS（universal）与 Windows（amd64）桌面端；构建入口固定使用 pnpm。macOS 在 macOS 主机构建，Windows 使用纯 Go 构建并可交叉编译；不维护 Linux、移动端、服务端或 Docker 构建模板。非目标平台的 Go 不可用适配仍用于明确降级与包级检查。
+
+依赖基线（2026-10-16）：Wails Go 模块、前端 runtime 和 CI CLI 统一为 `v3.0.0-beta.30`；pnpm 使用 `frontend/package.json` 的 `packageManager` 版本，CI 从同一文件读取。前后端已声明依赖更新至本次核对的最新发布版本，TypeScript 按要求保留 `7.0.2`；依赖解析结果分别由 `pnpm-lock.yaml` 与 `go.sum` 记录。
+
 ## 后端依赖方向
 
 ```text
@@ -100,18 +104,17 @@ app
     │   └── ui
     ├── diagnostics
     ├── feedback
-    ├── interaction（统一的反馈与 Overlay Provider）
+    ├── interaction（统一的 Toast 与确认框 Provider）
     ├── lib
     ├── native-kit
     ├── navigation（菜单配置、路由元数据与认证要求）
-    ├── overlay
     └── window
 ```
 
 约定：
 
 - `app` 负责应用壳、全局样式与顶层模块装配。
-- `AppProviders` 集中组合顶层依赖；外观同步归入 `SettingsProvider`，Toast、确认框和 Overlay 归入单个 `InteractionProvider`。账号、应用更新和路由因职责与依赖不同继续保持独立。
+- `AppProviders` 集中组合顶层依赖；外观同步归入 `SettingsProvider`，Toast 和确认框归入单个 `InteractionProvider`；表单与详情弹窗由业务组件直接组合受控 `Dialog`。账号、应用更新和路由因职责与依赖不同继续保持独立。
 - Vite 通过 `@vanilla-extract/vite-plugin` 在构建期提取静态 CSS；源码不保留普通 `.css` 文件。
 - 全局字体、重置和主题令牌集中在 `app/styles/*.css.ts`；组件和页面使用就近共置的同名 `.css.ts`。
 - 组件局部规则优先使用 `style`，仅全局根节点、第三方状态和必要的复杂关系使用 `globalStyle`；共享 UI 不使用集中式 `ui.css.ts`。
@@ -158,7 +161,6 @@ app
 - [单实例](modules/single-instance.md)
 - [窗口管理](modules/window-manager.md)
 - [系统托盘](modules/system-tray.md)
-- [Overlay Manager](modules/overlay-manager.md)
 - [系统通知](modules/system-notification.md)
 - [设置中心](modules/settings.md)
 - [本地存储](modules/storage.md)

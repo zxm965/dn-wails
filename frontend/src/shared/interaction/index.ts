@@ -1,9 +1,2 @@
-export { InteractionProvider, useFeedback, useOverlay } from './InteractionProvider'
-export type {
-  ConfirmOptions,
-  FeedbackTone,
-  OverlayController,
-  OverlayOptions,
-  OverlaySize,
-  ToastOptions,
-} from './InteractionProvider'
+export { InteractionProvider, useFeedback } from './InteractionProvider'
+export type { ConfirmOptions, FeedbackTone, ToastOptions } from './InteractionProvider'

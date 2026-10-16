@@ -111,9 +111,9 @@ func TestPostgresSaveTaskEdit(t *testing.T) {
 
 func newTaskTestService(t *testing.T, databaseURL string) *PostgresService {
 	t.Helper()
-	migration, err := os.ReadFile("../../database/migrations/20260908_create_tasks.sql")
+	schema, err := os.ReadFile("../../database/schema/tasks.sql")
 	if err != nil {
-		t.Fatalf("read task migration: %v", err)
+		t.Fatalf("read task schema: %v", err)
 	}
 	config, err := pgxpool.ParseConfig(databaseURL)
 	if err != nil {
@@ -126,7 +126,7 @@ func newTaskTestService(t *testing.T, databaseURL string) *PostgresService {
 		if _, err := conn.Exec(ctx, `create temporary table sys_user (id integer primary key); insert into sys_user (id) values (1)`); err != nil {
 			return err
 		}
-		_, err := conn.Exec(ctx, strings.ReplaceAll(string(migration), "create table if not exists", "create temporary table"))
+		_, err := conn.Exec(ctx, strings.ReplaceAll(string(schema), "create table if not exists", "create temporary table"))
 		return err
 	}
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)

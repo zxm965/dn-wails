@@ -67,7 +67,9 @@ func (s *PostgresService) Health() error {
 	var schemaReady bool
 	if err := s.pool.QueryRow(ctx, `
 		select to_regclass('public.dn_role_profession') is not null
-			and to_regclass('public.dn_weekly_plan') is not null
+			and exists (select 1 from information_schema.columns
+				where table_schema = 'public' and table_name = 'dn_weekly_plan'
+				and column_name = 'remaining_commission_count')
 			and to_regclass('public.sys_site_message') is not null
 	`).Scan(&schemaReady); err != nil {
 		return fmt.Errorf("check DN database health: %w", err)

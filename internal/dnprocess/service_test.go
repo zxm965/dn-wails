@@ -218,3 +218,25 @@ func TestFirefoxTestServiceIsolatesMainProcessAndTargetPath(t *testing.T) {
 		t.Fatalf("multiple Firefox instances were not rejected: %v", err)
 	}
 }
+
+func TestDetectFirefoxLaunchPath(t *testing.T) {
+	path := "/Applications/Firefox.app/Contents/MacOS/firefox"
+	for _, tc := range []struct {
+		name  string
+		items []Info
+		want  string
+	}{
+		{"unique", []Info{{Name: "firefox", Path: path}}, path},
+		{"same installation", []Info{{Name: "firefox", Path: path}, {Name: "firefox", Path: path}}, path},
+		{"unreadable", []Info{{Name: "firefox"}}, ""},
+		{"helper", []Info{{Name: "plugin-container", Path: path}}, ""},
+		{"multiple installations", []Info{{Name: "firefox", Path: path}, {Name: "firefox", Path: "/Other/Firefox.app/Contents/MacOS/firefox"}}, ""},
+		{"case sensitive paths", []Info{{Name: "firefox", Path: path}, {Name: "firefox", Path: strings.ToLower(path)}}, ""},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			if got := DetectedLauncherPath(tc.items); got != tc.want {
+				t.Fatalf("path=%q want %q", got, tc.want)
+			}
+		})
+	}
+}

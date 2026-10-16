@@ -7,12 +7,7 @@ import { DevToolsPanel } from '@/features/devtools'
 import { DnRoles, DnProcessKiller, DnWeeklyPlans } from '@/features/dn-system'
 import { QuickNotesPanel } from '@/features/quick-notes'
 import { SettingsPanel, useSettings } from '@/features/settings'
-import {
-  SiteMessageCenter,
-  SiteMessageProvider,
-  SiteMessages,
-  type SiteMessageNavigationTarget,
-} from '@/features/site-messages'
+import { SiteMessageCenter, SiteMessageProvider, SiteMessages } from '@/features/site-messages'
 import { TaskReminderMonitor, TasksPanel } from '@/features/tasks'
 import { AppSidebar } from '@/shared/components/app-sidebar'
 import { TitleBar } from '@/shared/components/titlebar'
@@ -39,13 +34,6 @@ import { styles } from './App.css'
 
 const cx = createScopedClassNames(styles)
 
-const dnNavigationViews: Record<SiteMessageNavigationTarget, AppView> = {
-  weekly: 'dn-weekly',
-  roles: 'dn-roles',
-  messages: 'site-messages',
-  account: 'account',
-}
-
 export default function App() {
   const { settings, isLoading: isSettingsLoading } = useSettings()
   const account = useAccount()
@@ -68,10 +56,6 @@ export default function App() {
     navigate(getAppViewPath(view), { replace })
   }
 
-  function navigateDn(target: SiteMessageNavigationTarget) {
-    navigateToView(dnNavigationViews[target])
-  }
-
   function renderView(view: AppView): ReactNode {
     if (appViewRequiresAuth(view)) {
       if (account.loading) {
@@ -89,7 +73,7 @@ export default function App() {
     if (view === 'dn-weekly') return <DnWeeklyPlans onNavigateRoles={() => navigateToView('dn-roles')} />
     if (view === 'dn-roles') return <DnRoles />
     if (view === 'dn-kill-process') return <DnProcessKiller />
-    if (view === 'site-messages') return <SiteMessages onNavigate={navigateDn} />
+    if (view === 'site-messages') return <SiteMessages onNavigate={navigateToView} />
     if (view === 'settings') return <SettingsPanel />
     if (view === 'devtools') return <DevToolsPanel showDesktopLab={showDevToolsDesktopLab} />
     return null
@@ -108,7 +92,7 @@ export default function App() {
   }, [isSettingsLoading, routeView, settings.navigation.menuVisibility])
 
   return (
-    <SiteMessageProvider onNavigate={navigateDn}>
+    <SiteMessageProvider onNavigate={navigateToView}>
       <div className={cx('app-shell')}>
         <TaskReminderMonitor enabled={Boolean(account.user)} onOpenTasks={() => navigateToView('tasks')} />
         <TitleBar

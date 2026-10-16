@@ -12,9 +12,8 @@
 ├── build/
 │   ├── config.yml                 # Wails v3 开发与平台元数据配置
 │   ├── darwin/                    # macOS 打包资源与任务
-│   ├── linux/                     # Linux 打包资源与任务
 │   └── windows/                   # Windows NSIS 资源与任务
-├── database/migrations/           # PostgreSQL 结构迁移脚本
+├── database/schema/               # PostgreSQL 当前结构初始化
 ├── main.go                        # 组合根：App、Window、Service 与 SystemTray
 ├── internal/
 │   ├── application/               # 暴露给前端的 Wails v3 Service 门面
@@ -86,3 +85,5 @@ git push origin v1.0.0
 GitHub 仓库需要配置具有 Gitee Release 写权限的 `GITEE_TOKEN` Actions Secret，Gitee 仓库需要允许未登录用户读取 Release。Gitee 普通项目单个 Release 附件上限为 100 MB，构建产物超过限制时发布工作流会失败并给出明确错误。
 
 当前 Wails v3 仍是 beta，桌面原生行为和平台打包需要在目标系统上充分验证。默认发布尚未配置正式 Apple/Windows 代码签名。
+
+发布平台仅维护 macOS universal 和 Windows amd64；双端构建说明见 [build/README.md](build/README.md)。

@@ -13,8 +13,38 @@ import { Events } from '@wailsio/runtime'
 import { isMacOS, isWindows } from '@/shared/lib/platform'
 import { pickFiles } from '@/shared/native-kit'
 
-export const PROCESS_NAME = isMacOS() ? 'Firefox' : 'DN'
-export const PROCESS_TEST_MODE = isMacOS()
+interface ProcessTarget {
+  name: string
+  displayName: string
+  launcherName: string
+  pathLabel: string
+  placeholder: string
+  filePattern: string
+  defaultDirectory: string
+}
+
+export const PROCESS_TARGET: ProcessTarget = isMacOS()
+  ? {
+      name: 'Firefox',
+      displayName: 'Firefox',
+      launcherName: 'firefox',
+      pathLabel: 'Firefox.app 或 firefox 可执行文件',
+      placeholder: '/Applications/Firefox.app',
+      // Application bundles must remain selectable in the native macOS panel.
+      // Validate the selected bundle through SaveDragonNestLauncherPath instead.
+      filePattern: '',
+      defaultDirectory: '/Applications',
+    }
+  : {
+      name: 'DN',
+      displayName: '龙之谷',
+      launcherName: 'DNLauncher.exe',
+      pathLabel: 'DNLauncher.exe',
+      placeholder: 'D:\\DragonNest\\DNLauncher.exe',
+      filePattern: 'DNLauncher.exe',
+      defaultDirectory: '',
+    }
+export const PROCESS_NAME = PROCESS_TARGET.name
 export const PROCESS_CONTROL_SUPPORTED = isMacOS() || isWindows()
 
 export interface DragonNestProcess {
@@ -49,21 +79,16 @@ export async function terminateDragonNestProcess(process: DragonNestProcess): Pr
 export function getProcessErrorMessage(error: unknown, fallback: string): string {
   const message = error instanceof Error ? error.message : ''
   if (message.includes('already running')) return '正在操作进程，请稍候。'
-  if (message.includes('process launch path is required'))
-    return '请在主窗口配置启动器路径，或打开 DNLauncher.exe 后扫描。'
-  if (message.includes('process launch application not found')) {
-    return PROCESS_TEST_MODE
-      ? '找不到 Firefox，请确认已安装且路径未改变。'
-      : '找不到 DNLauncher.exe，请在主窗口修改启动器路径。'
-  }
-  if (message.includes('invalid Dragon Nest process target')) return '目标应用路径无效，请在主窗口重新扫描。'
+  if (message.includes('process launch path is required')) return '请配置启动路径，或打开目标应用后扫描。'
+  if (message.includes('process launch application not found'))
+    return `找不到 ${PROCESS_TARGET.displayName}，请修改启动路径。`
+  if (message.includes('invalid Dragon Nest process target'))
+    return `请选择有效的 ${PROCESS_TARGET.pathLabel} 完整路径。`
   if (message.includes('multiple Dragon Nest processes')) return '发现多个进程，请到主窗口的进程页扫描并选择。'
   if (message.includes('Dragon Nest process not found')) return '未找到目标进程，请刷新后重试。'
   if (message.includes('control is unavailable')) return '当前系统暂不支持此进程操作。'
   if (message.includes('Dragon Nest process access denied')) {
-    return PROCESS_TEST_MODE
-      ? '没有权限关闭 Firefox，请确认它属于当前用户。'
-      : '没有权限读取或结束龙之谷进程；若游戏以管理员身份运行，请以相同权限运行本应用后重试。'
+    return '没有权限读取或结束进程，请确认目标应用属于当前用户，且运行权限一致。'
   }
   if (message.includes('Dragon Nest process termination timed out')) {
     return '已发送结束请求，但未在 3 秒内确认进程退出；请重新扫描进程确认结果。'
@@ -85,8 +110,11 @@ export async function launchDragonNestProcess(): Promise<void> {
 
 export async function chooseDragonNestLauncher(): Promise<string | undefined> {
   const files = await pickFiles({
-    title: '选择龙之谷启动器 DNLauncher.exe',
-    filters: [{ displayName: '龙之谷启动器', pattern: 'DNLauncher.exe' }],
+    title: `选择 ${PROCESS_TARGET.displayName} 启动文件`,
+    defaultDirectory: PROCESS_TARGET.defaultDirectory,
+    filters: PROCESS_TARGET.filePattern
+      ? [{ displayName: PROCESS_TARGET.displayName, pattern: PROCESS_TARGET.filePattern }]
+      : [],
   })
   return files[0]
 }

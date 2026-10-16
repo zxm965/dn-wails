@@ -89,16 +89,21 @@ func TestSaveLauncherPathPreservesPreferencesAndReportsFailures(t *testing.T) {
 	}
 }
 
-func TestLaunchDragonNestUsesRememberedTarget(t *testing.T) {
-	current := settings.Default()
-	current.DragonNest.TargetPath = `C:\Games\DragonNest.exe`
-	process := &shortcutDnProcessStub{}
-	app := New(Dependencies{Settings: &shortcutSettingsStub{current: current}, DnProcess: process})
-	if err := app.LaunchDragonNestProcess(); err != nil {
-		t.Fatal(err)
-	}
-	if !process.launched || process.configuredPath != current.DragonNest.TargetPath {
-		t.Fatalf("wrong launch target: %+v", process)
+func TestLaunchDragonNestUsesOnlyLauncherPath(t *testing.T) {
+	for _, path := range []string{"", `C:\Games\DNLauncher.exe`, `/Applications/Firefox.app/Contents/MacOS/firefox`} {
+		t.Run(path, func(t *testing.T) {
+			current := settings.Default()
+			current.DragonNest.TargetPath = `C:\Games\DragonNest.exe`
+			current.DragonNest.LauncherPath = path
+			process := &shortcutDnProcessStub{}
+			app := New(Dependencies{Settings: &shortcutSettingsStub{current: current}, DnProcess: process})
+			if err := app.LaunchDragonNestProcess(); err != nil {
+				t.Fatal(err)
+			}
+			if !process.launched || process.configuredPath != path {
+				t.Fatalf("launch fell back to termination target: %+v", process)
+			}
+		})
 	}
 }
 

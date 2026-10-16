@@ -71,7 +71,7 @@ User-Agent: cull-pear-updater/<version> (<goos>; <goarch>)
 
 安装身份由 `main.go` 创建并同时注入应用生命周期和更新端点。其他功能不得自行读取身份文件、重复生成 ID 或从 React 传入安装 ID。
 
-修改身份数据结构时必须提升 `schemaVersion` 并明确迁移策略；不能把访问令牌、用户账号或设备敏感信息写入该文件。
+修改身份数据结构时必须提升 `schemaVersion`，仅接受当前版本结构；不能把访问令牌、用户账号或设备敏感信息写入该文件。
 
 ## 验证
 

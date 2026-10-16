@@ -11,14 +11,23 @@ var knownProcessNames = map[string]struct{}{
 	"dnlauncher.exe":     {},
 }
 
-// DetectedLauncherPath returns only an unambiguous Windows launcher installation.
+// DetectedLauncherPath returns only an unambiguous launch path from validated candidates.
 func DetectedLauncherPath(items []Info) string {
 	path := ""
 	for _, item := range items {
-		if !strings.EqualFold(item.Name, "DNLauncher.exe") || item.Path == "" {
+		var samePath func(string, string) bool
+		switch strings.ToLower(item.Name) {
+		case "dnlauncher.exe":
+			samePath = strings.EqualFold
+		case "firefox":
+			samePath = func(a, b string) bool { return a == b }
+		default:
 			continue
 		}
-		if path != "" && !strings.EqualFold(path, item.Path) {
+		if item.Path == "" {
+			continue
+		}
+		if path != "" && !samePath(path, item.Path) {
 			return ""
 		}
 		path = item.Path

@@ -122,8 +122,7 @@ try {
   if ($config.executableSHA256 -notmatch '^[a-fA-F0-9]{64}$') {
     throw 'expected executable SHA-256 is invalid'
   }
-  # Probe before asking the application to quit (including legacy Program
-  # Files installations that cannot be updated by a per-user installer).
+  # Verify directory write access before asking the application to quit.
   $probe = Join-Path $applicationDirectory ([IO.Path]::GetRandomFileName())
   try { [IO.File]::WriteAllText($probe, 'probe', $utf8) }
   finally { if (Test-Path -LiteralPath $probe) { Remove-Item -LiteralPath $probe -Force } }

@@ -19,7 +19,7 @@ env:
 jobs:
   quality:
     name: Quality checks
-    runs-on: ubuntu-latest
+    runs-on: macos-latest
     steps:
       - name: Check out source
         uses: actions/checkout@v7.0.1
@@ -27,7 +27,7 @@ jobs:
       - name: Set up pnpm
         uses: pnpm/action-setup@v6.1.0
         with:
-          version: 12.3.4
+          package_json_file: frontend/package.json
 
       - name: Set up Node.js
         uses: actions/setup-node@v7.0.0
@@ -42,14 +42,11 @@ jobs:
           go-version-file: go.mod
           cache: true
 
-      - name: Install Linux build dependencies
-        run: sudo apt-get update && sudo apt-get install --yes libgtk-4-dev libwebkitgtk-6.0-dev
-
       - name: Install frontend dependencies
         run: pnpm --dir frontend install --frozen-lockfile
 
       - name: Install Wails CLI
-        run: go install github.com/wailsapp/wails/v3/cmd/wails3@v3.0.0-beta.28
+        run: go install github.com/wailsapp/wails/v3/cmd/wails3@v3.0.0-beta.30
 
       - name: Check release tag
         run: node scripts/configure-release.mjs "$GITHUB_REF_NAME"
@@ -91,7 +88,7 @@ jobs:
       - name: Set up pnpm
         uses: pnpm/action-setup@v6.1.0
         with:
-          version: 12.3.4
+          package_json_file: frontend/package.json
 
       - name: Set up Node.js
         uses: actions/setup-node@v7.0.0
@@ -110,7 +107,7 @@ jobs:
         run: pnpm --dir frontend install --frozen-lockfile
 
       - name: Install Wails CLI
-        run: go install github.com/wailsapp/wails/v3/cmd/wails3@v3.0.0-beta.28
+        run: go install github.com/wailsapp/wails/v3/cmd/wails3@v3.0.0-beta.30
 
       - name: Install NSIS
         if: runner.os == 'Windows'

@@ -28,7 +28,7 @@ App → SiteMessageProvider
 
 ## 导航与配置
 
-`site-messages` 是不带分组标题的独立菜单项，默认显示，用户可在“设置 → 菜单 → 左侧菜单”单独隐藏。右上角消息盒子的“查看全部消息”跳转到同一路由；消息动作中的 `/messages` 保持兼容内部目标协议。
+`site-messages` 是不带分组标题的独立菜单项，默认显示，用户可在“设置 → 菜单 → 左侧菜单”单独隐藏。右上角消息盒子的“查看全部消息”跳转到同一路由；消息动作直接通过共享 `getAppViewFromPath` 解析当前应用路由，例如 `/site-messages`、`/dn/weekly`、`/dn/roles`、`/account`；不保留旧路径到 DN 子页面的映射或中间导航类型。未知路径给出不可用提示，HTTP(S) 外链统一通过 Native Kit 打开。
 
 ## 错误与边界
 

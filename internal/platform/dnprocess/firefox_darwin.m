@@ -4,24 +4,20 @@
 #include <stdlib.h>
 #include <string.h>
 
-char *firefox_application_path(const char *executable) {
+char *firefox_executable_path(const char *executable) {
     @autoreleasepool {
         NSString *path = [NSString stringWithUTF8String:executable];
-        NSURL *url;
-        if (path.length == 0) {
-            url = [[NSWorkspace sharedWorkspace] URLForApplicationWithBundleIdentifier:@"org.mozilla.firefox"];
-        } else {
-            if (![path isAbsolutePath]) return NULL;
-            url = [NSURL fileURLWithPath:[[[path stringByDeletingLastPathComponent]
-                stringByDeletingLastPathComponent] stringByDeletingLastPathComponent]];
-        }
-        if (!url) return NULL;
+        if (![path isAbsolutePath]) return NULL;
+        path = [path stringByStandardizingPath];
+        NSString *applicationPath = [path.pathExtension isEqualToString:@"app"] ? path :
+            [[[path stringByDeletingLastPathComponent] stringByDeletingLastPathComponent] stringByDeletingLastPathComponent];
+        NSURL *url = [NSURL fileURLWithPath:applicationPath];
         NSBundle *bundle = [NSBundle bundleWithURL:url];
         if (![bundle.bundleIdentifier isEqualToString:@"org.mozilla.firefox"] ||
             ![bundle.executablePath.lastPathComponent isEqualToString:@"firefox"] ||
-            (path.length > 0 && ![bundle.executablePath isEqualToString:path]) ||
+            (path.length > 0 && ![url.path isEqualToString:path] && ![bundle.executablePath isEqualToString:path]) ||
             ![[NSFileManager defaultManager] isExecutableFileAtPath:bundle.executablePath]) return NULL;
-        return strdup(url.path.UTF8String);
+        return strdup(bundle.executablePath.UTF8String);
     }
 }
 

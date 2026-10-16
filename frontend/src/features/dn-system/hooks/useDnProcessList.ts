@@ -15,8 +15,6 @@ interface DnProcessList {
   scanned: boolean
   scannedAt: Date | null
   refresh: () => Promise<void>
-  refreshAfterLaunch: () => Promise<boolean>
-  onTerminated: (process: DragonNestProcess) => void
 }
 
 export function useDnProcessList(): DnProcessList {
@@ -73,18 +71,6 @@ export function useDnProcessList(): DnProcessList {
   const refresh = useCallback(async () => {
     await scan(false)
   }, [scan])
-  const refreshAfterLaunch = useCallback(() => scan(true), [scan])
-
-  const onTerminated = useCallback(
-    (process: DragonNestProcess) => {
-      if (!active.current) return
-      setItems((current) => current.filter((item) => item.pid !== process.pid))
-      // A fresh request supersedes any scan started before termination completed.
-      void refresh()
-    },
-    [refresh],
-  )
-
   useEffect(() => {
     active.current = true
     const unsubscribe = onDragonNestProcessesChanged((waitForProcess) => void scan(waitForProcess))
@@ -96,5 +82,5 @@ export function useDnProcessList(): DnProcessList {
     }
   }, [scan])
 
-  return { items, scanning, error, scanned, scannedAt, refresh, refreshAfterLaunch, onTerminated }
+  return { items, scanning, error, scanned, scannedAt, refresh }
 }

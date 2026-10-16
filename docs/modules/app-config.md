@@ -81,7 +81,7 @@ DATABASE_URL='postgres://username:password@localhost:5432/database'
 - React 新增应用名称展示时统一读取 `appConfig.displayName`，禁止再次硬编码 `cull-pear`。
 - React 展示作者名称时统一读取 `appConfig.authorName`，禁止在组件中硬编码。
 - Go 启动窗口名称读取 `appconfig.Config.DisplayName`。
-- 安装包元数据由 `build/config.yml` 管理；`common:update:build-assets` 会先把 `.env` 的 `APP_DISPLAY_NAME` 同步到产品名称，再生成平台文件并补充 macOS `CFBundleDisplayName`。
+- 安装包元数据由 `build/config.yml` 管理；`common:update:build-assets` 会先把 `.env` 的 `APP_DISPLAY_NAME` 同步到产品名称，再在临时目录生成元数据，仅回写 macOS、Windows 文件并补充 macOS `CFBundleDisplayName`；不生成其他平台资源或覆盖构建任务。
 - 新增公开全局字段时，变量名必须使用 `APP_` 前缀，并同步更新 Go 类型与校验、前端环境类型、只读配置和本文档。
 - 环境相关但不敏感的构建值优先使用 GitHub Variables；密钥使用 GitHub Secrets，禁止通过 `APP_*` 暴露给前端。
 - `DATABASE_URL` 只允许出现在本地忽略文件、进程环境或 GitHub Environment Secret 中。Release 工作流仅在构建阶段生成临时 `.env.local`，不得输出完整值。

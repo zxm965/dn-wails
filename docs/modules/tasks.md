@@ -8,7 +8,7 @@ Google 邮件、Calendar、Chat、Docs、Drive 的来源链接、协作分配和
 
 ## 目录与职责
 
-- `database/migrations/20260908_create_tasks.sql`：创建 `app_task_list`、`app_task`、约束和查询索引。
+- `database/schema/tasks.sql`：创建 `app_task_list`、`app_task`、约束和查询索引。
 - `internal/tasks/model.go`：稳定 DTO、输入校验、重复规则和下次发生时间计算。
 - `internal/tasks/postgres_service.go`：账号隔离的 PostgreSQL 清单/任务操作、重复实例生成和到期提醒领取。
 - `internal/tasks/unavailable_service.go`：数据库不可用时的明确降级。
@@ -65,7 +65,7 @@ TaskReminderMonitor
 | `notification_sent_for` | 最近一次已领取提醒对应的时间，避免重复发送。 |
 | `created_at` / `updated_at` / `deleted_at` | 创建、更新和软删除时间。 |
 
-迁移脚本使用事务、外键、检查约束、默认清单唯一索引，以及清单顺序、任务顺序、完成状态、星标、提醒和重复系列索引。桌面客户端启动时只检查表是否存在，不自动执行 DDL。
+初始化脚本使用事务、外键、检查约束、默认清单唯一索引，以及清单顺序、任务顺序、完成状态、星标、提醒和重复系列索引。桌面客户端启动时只检查表是否存在，不自动执行 DDL。
 
 ## 数据契约与 Wails 接口
 
@@ -126,7 +126,7 @@ TaskReminderMonitor
 - 所有清单和任务查询都同时限制 `owner_id`；不能通过其他账号的 ID 访问或修改数据。
 - 任务标题必填且最多 255 个字符，详情最多 100,000 个字符。
 - 子任务最多一级并必须和父任务位于同一清单。
-- 数据库未配置、迁移未应用、未登录、记录不存在和状态冲突均保留可识别错误，不回退到本地明文文件。
+- 数据库未配置、结构未初始化、未登录、记录不存在和状态冲突均保留可识别错误，不回退到本地明文文件。
 - 删除使用软删除。数据库外键用于完整性，业务删除不会物理清除历史行。
 - 当前提醒以 `scheduled_at` 优先、否则使用 `deadline_at`；应用未运行期间错过的提醒会在下次登录运行时补发。
 - 编辑任务时，更新 SQL 将重复频率参数显式转换为 `varchar`，与 `repeat_frequency` 列一致，避免同一参数用于列赋值和“不重复”判断时产生 `42P08` 类型推断冲突。
@@ -136,10 +136,10 @@ TaskReminderMonitor
 部署前由数据库管理员执行：
 
 ```bash
-psql "$DATABASE_URL" -f database/migrations/20260908_create_tasks.sql
+psql "$DATABASE_URL" -f database/schema/tasks.sql
 ```
 
-应用数据库账号需要两张任务表的查询、新增和更新权限，以及现有会话所需的 `sys_user` 查询权限。迁移完成后重新启动应用即可使用任务模块。
+应用数据库账号需要两张任务表的查询、新增和更新权限，以及现有会话所需的 `sys_user` 查询权限。初始化完成后重新启动应用即可使用任务模块。
 
 ## 响应式与可访问性
 
@@ -167,6 +167,6 @@ pnpm build
 TASKS_TEST_DATABASE_URL='<测试数据库连接串>' go test ./internal/tasks -run TestPostgresSaveTaskEdit -v
 ```
 
-未设置 `TASKS_TEST_DATABASE_URL` 时该测试明确跳过；测试使用单连接、仅含 `pg_temp` 的搜索路径和按迁移脚本创建的临时表，不读取或修改持久业务表。覆盖普通任务编辑、各重复频率启用与保留、停止重复、星标变化、可空日期及提醒领取状态保留/重置。
+未设置 `TASKS_TEST_DATABASE_URL` 时该测试明确跳过；测试使用单连接、仅含 `pg_temp` 的搜索路径和按初始化脚本创建的临时表，不读取或修改持久业务表。覆盖普通任务编辑、各重复频率启用与保留、停止重复、星标变化、可空日期及提醒领取状态保留/重置。
 
-真实 PostgreSQL 部署迁移、系统通知点击、打印对话框和各平台原生表现仍需在已配置数据库的桌面应用中人工验证。
+真实 PostgreSQL 部署初始化、系统通知点击、打印对话框和各平台原生表现仍需在已配置数据库的桌面应用中人工验证。

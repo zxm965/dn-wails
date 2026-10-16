@@ -11,7 +11,7 @@ Go 服务通过 `pgxpool` 直连 PostgreSQL；本地构建从 `.env.local` 读�
 - `internal/dn/database_config.go`：按“进程环境优先、嵌入 `.env.local` 兜底”解析 PostgreSQL 连接配置。
 - `internal/dn/postgres_service.go`：DN 独立数据库连接池、必要表健康检查，并通过窄接口依赖全局账号身份。
 - `internal/dn/postgres_roles.go`：`dn_role_profession` 角色职业查询和维护。
-- `internal/dn/postgres_weekly.go`：`dn_weekly_plan` 周计划查询、维护、同步和重置；复用历史计数列保存剩余委托数量。
+- `internal/dn/postgres_weekly.go`：`dn_weekly_plan` 周计划查询、维护、同步和重置；使用 `remaining_commission_count` 保存剩余委托数量。
 - `internal/dn/postgres_messages.go`：`sys_site_message`、回执、官网消息同步和集成状态。
 - `internal/dn/model.go`：角色、周计划和消息 DTO，以及当前周委托计数规则。
 - `internal/dn/unavailable_service.go`：未配置安全连接时维持应用生命周期，并让 DN 用例返回明确的不可用错误。
@@ -91,7 +91,9 @@ DN 的两个业务路由在 `routeConfig.ts` 中统一声明 `requiresAuth: true
 
 所有角色和周计划读写都在 Go 层验证账号归属，不能通过传入其他账号的 ID 越权访问。
 
-新版本不再暴露巢穴类型明细、巢穴票或每日疲劳。为避免新增线上数据库列，`remainingCommissionCount` 复用历史 `level_commission_count` 列；保存、同步和重置时会清空历史 `nest_commissions`、`nest_tickets` 数据。读取只使用当前计数字段，不再按历史票券或本地 v1/v2 状态自动迁移。
+周常只读写当前字段：`remainingCommissionCount` 对应 `remaining_commission_count`，移除巢穴明细、票券、主线与其他任务字段的写入和清空逻辑，不保留双字段读取或旧数据推导。
+
+数据库使用当前结构，周常委托数量列为 `remaining_commission_count`，默认值为 6。客户端只校验结构，不执行 DDL；健康检查会报告缺少必需字段。仓库不保留旧结构转换脚本，测试直接创建新版临时表。
 
 ### 消息与官网同步
 
@@ -107,17 +109,17 @@ DN 的两个业务路由在 `routeConfig.ts` 中统一声明 `requiresAuth: true
 - `CheckOfficialSiteMessagesOnLogin` 只由全局消息 Provider 在登录建立时调用；`SyncOfficialSiteMessages` 由站内消息页的主动同步按钮调用。
 - 首次同步只回看最近 2 天，每次最多发布最新 20 条，通过 `source + sourceKey` 去重。
 - 官网分类为 `102,103,104,8021,8022,8023,122,7364,8167`，来源地址为龙之谷官网 `GetNewsList.ashx`。
-- 站内路径动作由 React 切换 DN 子页面；兼容的 `/account` 动作进入全局个人信息页；HTTP(S) 地址通过 Native Kit 在系统浏览器打开。
+- 站内动作直接使用统一路由表中的 `/dn/weekly`、`/dn/roles`、`/site-messages`、`/account` 等当前路径；不再翻译 `/weekly-plans`、`/roles`、`/messages` 等旧路径；HTTP(S) 地址通过 Native Kit 在系统浏览器打开。
 
 ### 进程工具
 
-- 主窗口进程页打开时不自动扫描，用户点击“扫描进程”后读取候选；置顶小窗首次打开、获得焦点、手动刷新和终结成功后自动读取候选，紧凑展示名称与 PID。重新启动同一路径的进程后可在小窗刷新并再次终结，实际终结每次重新解析当前 PID。
+- 主窗口进程页打开时不自动扫描，用户点击“扫描”后读取候选；置顶小窗首次打开、获得焦点、手动刷新和终结成功后自动读取候选，紧凑展示名称与 PID。重新启动同一路径的进程后可在小窗刷新并再次终结，实际终结每次重新解析当前 PID。
 - Windows 扫描名称为 `DragonNest.exe`、`DragonNest_x64.exe` 或 `DNLauncher.exe` 的进程，进程名匹配不区分大小写，不按路径关键字扩大候选范围；唯一启动器安装路径自动记录到独立的 `dragonNest.launcherPath`，小窗优先使用它启动。后端使用同一个进程句柄完成名称和完整路径校验、终止和退出等待，避免检查后重新打开 PID 时误杀复用该 PID 的进程。
 - Windows 使用 `OpenProcess(PROCESS_TERMINATE | PROCESS_QUERY_LIMITED_INFORMATION | SYNCHRONIZE)` 和 `TerminateProcess`，然后通过 `WaitForSingleObject` 最多等待 3 秒；只有确认进程退出才返回成功。等待超时返回 `ErrTerminationTimeout`，UI 提示重新扫描，不把已发送请求当作已结束。
 - 平台扫描遇到访问被拒绝时保留 PID、名称和空路径；业务服务仅对已识别的龙之谷候选将其转为 `ErrAccessDenied`，不会误报为未找到，也不会阻断与龙之谷无关的受限系统进程；有任一龙之谷候选无法读取路径时，本次扫描整体失败，以免快捷键自动选择不完整候选列表。
 - 选择候选进程后可直接结束；首次成功结束后自动保存目标路径，供窗口内快捷键使用。
-- 主窗口与小窗通过 `dn-process:changed` typed event 同步：启动/终结后两个已打开的列表都会重新扫描；启动请求成功时有限重试，较旧扫描结果不得覆盖新状态。记住启动器/终结目标后同步广播设置，避免主窗口保存旧偏好时覆盖路径。
-- Windows 主窗口支持配置、保存和修改 `DNLauncher.exe` 完整路径，提供原生文件选择；未扫描到启动器时主动展开配置提醒。保存需通过后端路径/文件校验，失败保留原配置；自动扫描不覆盖已保存的路径，终结目标和启动路径分别保存。
+- 主窗口与小窗通过 `dn-process:changed` typed event 同步：启动/终结后两个已打开的列表都会重新扫描；启动请求成功时有限重试，较旧扫描结果不得覆盖新状态。操作回调不额外扫描；手动结束、快捷键和小窗共用操作 Hook。记住启动器/终结目标后同步广播设置，避免主窗口保存旧偏好时覆盖路径。
+- 主窗口支持配置、保存和修改启动路径（Windows 的 `DNLauncher.exe`、macOS 的 Firefox），提供原生文件选择；未扫描到启动器且尚未配置时显示提醒，通过按钮打开配置弹窗。保存需通过后端路径/文件校验，失败保留原配置；自动扫描不覆盖已保存的路径，终结目标和启动路径分别保存。
 - 可配置 F1–F12（默认 F4）仅在进程页或独立置顶小窗获得焦点时响应，不再注册系统全局快捷键；小窗提供结束按钮、焦点和结果提示，关闭后隐藏，重复打开复用。修饰键与长按重复不触发，跨窗口操作共享并发防护；设置使用 v11 的 `localShortcutKey`，默认 F4，不再迁移旧版全局快捷键配置。完整链路见[窗口内快捷键](shortcut.md)。
 - 没有已记录路径且同时存在多个候选进程时，快捷键不会自动选择，用户需要打开“进程”页面手动选择。
 
@@ -129,7 +131,7 @@ macOS 的进程页自动显示“Firefox 进程”，复用扫描、单击结束
 - `dnprocess.NewFirefoxTestService` 使用独立名称白名单和区分大小写的路径匹配；Windows 继续使用原有规则。绑定方法名沿用 `ListDragonNestProcesses` / `TerminateDragonNestProcess` / `KillDragonNestProcess`，前端 API 按系统提供目标文案，同一 `dragonNest.targetPath` 保存当前平台最近成功结束的目标。
 - AppKit 按 bundle ID 枚举主应用；关闭前在同一个 `NSRunningApplication` 上校验 PID 对应应用、bundle ID 和完整可执行路径，然后调用 `forceTerminate`，不使用按名称批量关闭。保留该应用对象，并在 Go 工作线程最多等待 3 秒确认 `terminated`，不阻塞主线程更新状态，避免将已发送请求直接当作成功。
 - [Apple NSRunningApplication 文档](https://developer.apple.com/documentation/appkit/nsrunningapplication)说明其属性线程安全，但动态状态由主 run loop 更新；因此真实关闭验证必须在正在运行的 Wails 应用中完成，单元测试不关闭实际浏览器。
-- 小窗系统标题仅显示 Firefox（Windows 为“龙之谷”），内容区不再重复标题；“启动”按钮按已记住路径或已安装的 Firefox 启动应用，启动后有限重试刷新进程；启动/终结共享并发防护，完整平台规则与正常启动模式见[窗口内快捷键](shortcut.md)。小窗系统关闭按钮只隐藏小窗，“终结 Firefox”按钮才关闭浏览器。macOS 部分键盘需使用 Fn + F4；切到 Firefox 后小窗失焦，F4 不响应。
+- 小窗系统标题仅显示 Firefox（Windows 为“龙之谷”），内容区不再重复标题；“启动”按钮按已保存的启动路径启动应用，启动后有限重试刷新进程；启动/终结共享并发防护，完整平台规则与正常启动模式见[窗口内快捷键](shortcut.md)。小窗系统关闭按钮只隐藏小窗，“结束”按钮才关闭浏览器。macOS 部分键盘需使用 Fn + F4；切到 Firefox 后小窗失焦，F4 不响应。
 
 ### 社区方式对照与实机验收
 
@@ -140,7 +142,7 @@ macOS 的进程页自动显示“Firefox 进程”，复用扫描、单击结束
 按键触发与进程终止分开验收：
 
 1. 在 Windows 的“进程”页扫描并手动结束一次龙之谷，确认客户端退出且目标路径记录成功；若提示拒绝访问，先比较游戏与本工具的权限。[AutoHotkey 官方 FAQ](https://github.com/AutoHotkey/AutoHotkeyDocs/blob/v2/docs/FAQ.htm#L87)说明提升权限的前台程序可能阻止未提升权限程序的热键。
-2. 打开置顶小窗，点击获得焦点后按 F4；切回游戏确认 F4 不触发，再点击小窗的“终结 DN”验证鼠标操作。
+2. 打开置顶小窗，点击获得焦点后按 F4；切回游戏确认 F4 不触发，再点击小窗的“结束”验证鼠标操作。
 3. 检查小窗内成功或失败提示；确认成功仅在本地进程退出后出现，拒绝访问与超时须展示相应错误。
 4. 覆盖重复打开、长按不重复、修饰键过滤、主窗口与小窗同时操作、关闭重开和退出应用；独占全屏游戏是否允许覆盖须实机验证，服务端断线判定时间不属于本地进程退出保证。
 
@@ -200,3 +202,7 @@ pnpm build
 未启动 `wails3 dev`；侧栏展开、Dialog 焦点、消息轮询、官网真实网络和原生外链仍需人工桌面验证。
 
 当前规则的隔离回归测试位于 `internal/dn/rules_test.go` 与 `official_sync_test.go`，覆盖委托计数联动、消息输入校验、分页边界及官网响应解析；不依赖已移除的本地存储服务或真实官网请求。
+
+主窗口支持快速启动，与小窗共用启动及扫描刷新链路。Windows 和 macOS 的启动路径均通过弹窗配置、修改，保存后页面只保留入口；macOS 支持 Firefox.app 与其可执行文件，详见[窗口内快捷键](shortcut.md)。
+
+周常数据库回归：`DN_TEST_DATABASE_URL=... go test ./internal/dn -run TestWeeklyPlanCurrentSchema -v`。测试只创建连接内临时表，验证当前结构的增删改查、重置/同步和账号隔离；未设置独立测试数据库连接时明确跳过，不读取持久业务数据。

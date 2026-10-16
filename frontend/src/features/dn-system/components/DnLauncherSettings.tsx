@@ -1,10 +1,28 @@
-import { FolderOpen } from 'lucide-react'
+import { FolderOpen, Settings2 } from 'lucide-react'
 import { useState } from 'react'
 
 import { useSettings } from '@/features/settings'
-import { Button, Card, CardContent, Input, Label } from '@/shared/components/ui'
+import {
+  Button,
+  Dialog,
+  DialogBody,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+  Input,
+  Label,
+} from '@/shared/components/ui'
+import { useFeedback } from '@/shared/feedback'
 
-import { chooseDragonNestLauncher, getProcessErrorMessage, saveDragonNestLauncherPath } from '../api/dnProcessApi'
+import {
+  PROCESS_TARGET,
+  chooseDragonNestLauncher,
+  getProcessErrorMessage,
+  saveDragonNestLauncherPath,
+} from '../api/dnProcessApi'
 
 import { styles } from './DnLauncherSettings.css'
 
@@ -15,78 +33,64 @@ interface DnLauncherSettingsProps {
 
 export function DnLauncherSettings({ scanned, launcherDetected }: DnLauncherSettingsProps) {
   const { settings, isLoading, refreshSettings } = useSettings()
+  const { notify } = useFeedback()
   const savedPath = settings.dragonNest.launcherPath
-  const [draft, setDraft] = useState<string | null>(null)
-  const [editing, setEditing] = useState(false)
+  const [draft, setDraft] = useState('')
+  const [open, setOpen] = useState(false)
   const [saving, setSaving] = useState(false)
   const [choosing, setChoosing] = useState(false)
   const [error, setError] = useState('')
-  const [message, setMessage] = useState('')
-  const path = draft ?? savedPath
-  const missing = scanned && !launcherDetected
-  const expanded = editing || missing
+  const missing = scanned && !launcherDetected && !savedPath
   const busy = saving || choosing || isLoading
+  const application = PROCESS_TARGET.displayName
+
+  function changeOpen(next: boolean) {
+    if (saving || choosing) return
+    if (next) {
+      setDraft(savedPath)
+      setError('')
+    }
+    setOpen(next)
+  }
 
   async function choose() {
     if (busy) return
     setChoosing(true)
     setError('')
-    setMessage('')
     try {
       const selected = await chooseDragonNestLauncher()
-      if (selected) {
-        setDraft(selected)
-        setEditing(true)
-      }
+      if (selected) setDraft(selected)
     } catch (error) {
-      setError(getProcessErrorMessage(error, '选择启动器失败，请重试。'))
+      setError(getProcessErrorMessage(error, '选择应用失败，请重试。'))
     } finally {
       setChoosing(false)
     }
   }
 
   async function save() {
-    if (busy || !path.trim()) return
+    if (busy || !draft.trim()) return
     setSaving(true)
     setError('')
-    setMessage('')
     try {
-      const saved = await saveDragonNestLauncherPath(path.trim())
-      setDraft(saved)
+      await saveDragonNestLauncherPath(draft.trim())
       await refreshSettings()
-      setDraft(null)
-      setEditing(false)
-      setMessage('启动器路径已保存')
+      setOpen(false)
+      notify({ title: '启动路径已保存', tone: 'success' })
     } catch (error) {
-      setError(
-        error instanceof Error && error.message.includes('invalid Dragon Nest process target')
-          ? '请选择有效的 DNLauncher.exe 完整路径。'
-          : getProcessErrorMessage(error, '保存失败，请重试。'),
-      )
+      setError(getProcessErrorMessage(error, '保存失败，请重试。'))
     } finally {
       setSaving(false)
     }
   }
 
   return (
-    <Card className={styles.card}>
-      <CardContent>
-        <div className={styles.header}>
-          <strong>启动器路径</strong>
-          {!expanded && (
-            <Button variant='outline' disabled={busy} onClick={() => setEditing(true)}>
-              {savedPath ? '修改' : '配置'}
-            </Button>
-          )}
-        </div>
-        {missing && (
-          <p className={styles.hint}>
-            {savedPath
-              ? '未扫描到启动器，可使用已保存路径启动，或在下方修改。'
-              : '未扫描到启动器，请配置 DNLauncher.exe 路径。'}
-          </p>
-        )}
-        {expanded ? (
+    <div className={styles.entry}>
+      <Dialog open={open} onOpenChange={changeOpen}>
+        <DialogTrigger render={<Button variant='outline' disabled={busy} />}>
+          <Settings2 aria-hidden='true' />
+          {savedPath ? '修改启动路径' : '配置启动路径'}
+        </DialogTrigger>
+        <DialogContent size='sm' showCloseButton={!saving && !choosing}>
           <form
             className={styles.form}
             onSubmit={(event) => {
@@ -94,50 +98,49 @@ export function DnLauncherSettings({ scanned, launcherDetected }: DnLauncherSett
               void save()
             }}
           >
-            <Label htmlFor='dn-launcher-path'>DNLauncher.exe 完整路径</Label>
-            <div className={styles.controls}>
+            <DialogHeader>
+              <DialogTitle>{savedPath ? '修改启动路径' : '配置启动路径'}</DialogTitle>
+              <DialogDescription>选择 {PROCESS_TARGET.pathLabel}，或填写完整路径。</DialogDescription>
+            </DialogHeader>
+            <DialogBody className={styles.fields}>
+              <Label htmlFor='dn-launcher-path'>{application} 路径</Label>
               <Input
                 id='dn-launcher-path'
-                value={path}
-                placeholder='例如 D:\DragonNest\DNLauncher.exe'
+                value={draft}
+                placeholder={PROCESS_TARGET.placeholder}
                 maxLength={4096}
                 disabled={busy}
                 aria-invalid={Boolean(error)}
                 aria-describedby={error ? 'dn-launcher-error' : undefined}
                 onChange={(event) => {
                   setDraft(event.target.value)
-                  setEditing(true)
                   setError('')
-                  setMessage('')
                 }}
               />
-              <div className={styles.actions}>
+              <div className={styles.fileAction}>
                 <Button type='button' variant='outline' disabled={busy} onClick={() => void choose()}>
                   <FolderOpen aria-hidden='true' />
                   {choosing ? '选择中…' : '选择文件'}
                 </Button>
-                <Button type='submit' disabled={busy || !path.trim() || path.trim() === savedPath}>
-                  {saving ? '保存中…' : '保存'}
-                </Button>
               </div>
-            </div>
+              {error && (
+                <p id='dn-launcher-error' className={styles.error} role='alert'>
+                  {error}
+                </p>
+              )}
+            </DialogBody>
+            <DialogFooter>
+              <Button type='button' variant='outline' disabled={saving || choosing} onClick={() => changeOpen(false)}>
+                取消
+              </Button>
+              <Button type='submit' disabled={busy || !draft.trim() || draft.trim() === savedPath}>
+                {saving ? '保存中…' : '保存'}
+              </Button>
+            </DialogFooter>
           </form>
-        ) : (
-          <p className={styles.path} title={savedPath}>
-            {savedPath || '扫描可自动记住启动器，也可手动配置。'}
-          </p>
-        )}
-        {error && (
-          <p id='dn-launcher-error' className={styles.error} role='alert'>
-            {error}
-          </p>
-        )}
-        {message && (
-          <p className={styles.hint} role='status'>
-            {message}
-          </p>
-        )}
-      </CardContent>
-    </Card>
+        </DialogContent>
+      </Dialog>
+      {missing && <p className={styles.hint}>未扫描到 {application}，请配置启动路径。</p>}
+    </div>
   )
 }

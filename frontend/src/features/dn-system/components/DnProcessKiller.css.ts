@@ -15,7 +15,30 @@ const processCard = style({
   minWidth: '0',
 })
 
+const processToolbar = style({
+  display: 'flex',
+  flexWrap: 'wrap',
+  alignItems: 'flex-start',
+  justifyContent: 'space-between',
+  gap: 12,
+  minWidth: 0,
+  marginBottom: 16,
+  paddingBottom: 16,
+  borderBottom: '1px solid var(--border-subtle)',
+})
+
+const processTools = style({
+  display: 'flex',
+  flexWrap: 'wrap',
+  alignItems: 'flex-start',
+  justifyContent: 'flex-end',
+  gap: 8,
+  minWidth: 0,
+  marginLeft: 'auto',
+})
+
 const processIntro = style({
+  minWidth: 0,
   display: 'grid',
   gap: '8px',
   color: 'var(--text-secondary)',
@@ -29,6 +52,7 @@ const processMeta = style({
   alignItems: 'center',
   justifyContent: 'space-between',
   gap: '12px',
+  marginTop: '12px',
   marginBottom: '12px',
   color: 'var(--text-tertiary)',
   fontSize: '11px',
@@ -105,45 +129,10 @@ const processRowMeta = style({
 const processActions = style({
   display: 'flex',
   alignItems: 'center',
-  justifyContent: 'flex-end',
+  justifyContent: 'flex-start',
+  minWidth: 0,
   flexWrap: 'wrap',
   gap: '8px',
-})
-
-const processSelectedTarget = style({
-  display: 'flex',
-  alignItems: 'center',
-  justifyContent: 'space-between',
-  gap: '14px',
-  marginTop: '16px',
-  padding: '12px 14px',
-  '@container': {
-    'dn-process-page (max-width: 500px)': { flexDirection: 'column', alignItems: 'stretch' },
-  },
-  background: 'var(--danger-background)',
-  border: '1px solid var(--danger-border)',
-  borderRadius: '10px',
-})
-
-const processSelectedTargetCopy = style({
-  minWidth: '0',
-  display: 'grid',
-  gap: '3px',
-})
-
-const processSelectedTargetTitle = style({
-  color: 'var(--danger-text)',
-  fontSize: '12px',
-  fontWeight: '800',
-})
-
-const processSelectedTargetPath = style({
-  minWidth: '0',
-  overflow: 'hidden',
-  color: 'var(--text-secondary)',
-  fontSize: '10px',
-  textOverflow: 'ellipsis',
-  whiteSpace: 'nowrap',
 })
 
 const processShortcutHint = style({
@@ -202,6 +191,8 @@ export const styles = {
   'dn-process-shortcut-settings': processShortcutSettings,
   'dn-process-page': processPage,
   'dn-process-card': processCard,
+  'dn-process-toolbar': processToolbar,
+  'dn-process-tools': processTools,
   'dn-process-intro': processIntro,
   'dn-process-meta': processMeta,
   'dn-process-meta-text': processMetaText,
@@ -212,10 +203,6 @@ export const styles = {
   'dn-process-row-path': processRowPath,
   'dn-process-row-meta': processRowMeta,
   'dn-process-actions': processActions,
-  'dn-process-selected-target': processSelectedTarget,
-  'dn-process-selected-target-copy': processSelectedTargetCopy,
-  'dn-process-selected-target-title': processSelectedTargetTitle,
-  'dn-process-selected-target-path': processSelectedTargetPath,
   'dn-process-shortcut-hint': processShortcutHint,
   'dn-process-shortcut-key': processShortcutKey,
   'dn-process-empty': processEmpty,

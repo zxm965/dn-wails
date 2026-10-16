@@ -39,6 +39,7 @@ import {
 import { useFeedback } from '@/shared/feedback'
 import { createScopedClassNames } from '@/shared/lib/classNames'
 import { openExternalURL } from '@/shared/native-kit'
+import { getAppViewFromPath, type AppView } from '@/shared/navigation'
 
 import {
   deleteMessage,
@@ -73,9 +74,7 @@ const emptyForm: SiteMessageInput = {
   expiresAt: '',
 }
 
-export type SiteMessageNavigationTarget = 'weekly' | 'roles' | 'messages' | 'account'
-
-export function SiteMessages({ onNavigate }: { onNavigate: (target: SiteMessageNavigationTarget) => void }) {
+export function SiteMessages({ onNavigate }: { onNavigate: (target: AppView) => void }) {
   const { notify, confirm } = useFeedback()
   const { user } = useAccount()
   const isAdmin = user?.role === 1
@@ -149,13 +148,7 @@ export function SiteMessages({ onNavigate }: { onNavigate: (target: SiteMessageN
   }
 
   async function followAction(message: SiteMessage) {
-    const internalTargets: Record<string, SiteMessageNavigationTarget> = {
-      '/weekly-plans': 'weekly',
-      '/roles': 'roles',
-      '/messages': 'messages',
-      '/account': 'account',
-    }
-    const target = internalTargets[message.actionUrl]
+    const target = getAppViewFromPath(message.actionUrl)
     if (target) {
       setActiveMessage(null)
       onNavigate(target)
@@ -498,7 +491,7 @@ export function SiteMessages({ onNavigate }: { onNavigate: (target: SiteMessageN
                 <Label>跳转地址</Label>
                 <Input
                   value={form.actionUrl}
-                  placeholder='/weekly-plans 或 https://…'
+                  placeholder='/dn/weekly 或 https://…'
                   onChange={(event) => setForm((current) => ({ ...current, actionUrl: event.target.value }))}
                 />
               </label>

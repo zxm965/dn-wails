@@ -9,20 +9,8 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
   Button,
-  Dialog,
-  DialogBody,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  type DialogSize,
   Toaster,
 } from '@/shared/components/ui'
-import { createScopedClassNames } from '@/shared/lib/classNames'
-
-import { styles } from './InteractionProvider.css'
-
-const cx = createScopedClassNames(styles)
 
 export type FeedbackTone = 'info' | 'success' | 'warning' | 'error'
 
@@ -41,55 +29,20 @@ export interface ConfirmOptions {
   tone?: 'default' | 'danger'
 }
 
-export type OverlaySize = 'small' | 'medium' | 'large'
-
-export interface OverlayController {
-  close: () => void
-}
-
-export interface OverlayOptions {
-  title?: string
-  size?: OverlaySize
-  dismissible?: boolean
-}
-
-type OverlayRenderer = (controller: OverlayController) => ReactNode
-
-interface OverlayItem {
-  id: string
-  render: OverlayRenderer
-  options: Required<Pick<OverlayOptions, 'size' | 'dismissible'>> & Pick<OverlayOptions, 'title'>
-}
-
 interface FeedbackController {
   notify: (options: ToastOptions) => string
   dismiss: (id: string) => void
   confirm: (options: ConfirmOptions) => Promise<boolean>
 }
 
-interface OverlayContextController {
-  openOverlay: (render: OverlayRenderer, options?: OverlayOptions) => string
-  closeOverlay: (id: string) => void
-  closeTopOverlay: () => void
-}
+const InteractionContext = createContext<FeedbackController | null>(null)
 
-type InteractionContextValue = FeedbackController & OverlayContextController
-
-const InteractionContext = createContext<InteractionContextValue | null>(null)
-
-function createInteractionID(kind: 'feedback' | 'overlay'): string {
-  return globalThis.crypto?.randomUUID?.() ?? `${kind}-${Date.now()}-${Math.random().toString(16).slice(2)}`
-}
-
-function dialogSize(size: OverlaySize): DialogSize {
-  if (size === 'small') return 'sm'
-  if (size === 'large') return 'lg'
-  return 'md'
+function createFeedbackID(): string {
+  return globalThis.crypto?.randomUUID?.() ?? `feedback-${Date.now()}-${Math.random().toString(16).slice(2)}`
 }
 
 export function InteractionProvider({ children }: { children: ReactNode }) {
   const [confirmation, setConfirmation] = useState<ConfirmOptions | null>(null)
-  const [overlays, setOverlays] = useState<OverlayItem[]>([])
   const resolverRef = useRef<((confirmed: boolean) => void) | null>(null)
 
   const finishConfirmation = useCallback((confirmed: boolean) => {
@@ -107,7 +60,7 @@ export function InteractionProvider({ children }: { children: ReactNode }) {
   }, [])
 
   const notify = useCallback((options: ToastOptions) => {
-    const id = createInteractionID('feedback')
+    const id = createFeedbackID()
     const toastOptions = {
       id,
       description: options.message,
@@ -130,34 +83,6 @@ export function InteractionProvider({ children }: { children: ReactNode }) {
     toast.dismiss(id)
   }, [])
 
-  const closeOverlay = useCallback((id: string) => {
-    setOverlays((current) => current.filter((overlay) => overlay.id !== id))
-  }, [])
-
-  const openOverlay = useCallback((render: OverlayRenderer, options: OverlayOptions = {}) => {
-    const id = createInteractionID('overlay')
-    setOverlays((current) => [
-      ...current,
-      {
-        id,
-        render,
-        options: {
-          title: options.title,
-          size: options.size ?? 'medium',
-          dismissible: options.dismissible ?? true,
-        },
-      },
-    ])
-    return id
-  }, [])
-
-  const closeTopOverlay = useCallback(() => {
-    setOverlays((current) => {
-      const top = current.at(-1)
-      return top?.options.dismissible ? current.slice(0, -1) : current
-    })
-  }, [])
-
   useEffect(
     () => () => {
       resolverRef.current?.(false)
@@ -166,10 +91,7 @@ export function InteractionProvider({ children }: { children: ReactNode }) {
     [],
   )
 
-  const value = useMemo<InteractionContextValue>(
-    () => ({ notify, dismiss, confirm, openOverlay, closeOverlay, closeTopOverlay }),
-    [closeOverlay, closeTopOverlay, confirm, dismiss, notify, openOverlay],
-  )
+  const value = useMemo<FeedbackController>(() => ({ notify, dismiss, confirm }), [confirm, dismiss, notify])
 
   return (
     <InteractionContext.Provider value={value}>
@@ -204,45 +126,14 @@ export function InteractionProvider({ children }: { children: ReactNode }) {
           </AlertDialogContent>
         </AlertDialog>
       )}
-      {overlays.map((overlay) => (
-        <Dialog
-          key={overlay.id}
-          open
-          onOpenChange={(open) => {
-            if (!open && overlay.options.dismissible) {
-              closeOverlay(overlay.id)
-            }
-          }}
-        >
-          <DialogContent size={dialogSize(overlay.options.size)} showCloseButton={overlay.options.dismissible}>
-            {overlay.options.title && (
-              <DialogHeader>
-                <DialogTitle>{overlay.options.title}</DialogTitle>
-                <DialogDescription>应用内子视图</DialogDescription>
-              </DialogHeader>
-            )}
-            <DialogBody className={cx('overlay-content')}>
-              {overlay.render({ close: () => closeOverlay(overlay.id) })}
-            </DialogBody>
-          </DialogContent>
-        </Dialog>
-      ))}
     </InteractionContext.Provider>
   )
 }
 
-function useInteraction(): InteractionContextValue {
+export function useFeedback(): FeedbackController {
   const value = useContext(InteractionContext)
   if (!value) {
     throw new Error('Interaction hooks must be used inside InteractionProvider.')
   }
   return value
-}
-
-export function useFeedback(): FeedbackController {
-  return useInteraction()
-}
-
-export function useOverlay(): OverlayContextController {
-  return useInteraction()
 }

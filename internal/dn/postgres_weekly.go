@@ -217,8 +217,8 @@ func (s *PostgresService) syncDatabaseWeeklyPlans(reset bool) (WeeklyPlanInitial
 			}
 			if _, err := tx.Exec(ctx, `
 				update dn_weekly_plan set role_name=$1, profession=$2, priority=$3,
-				nest_commissions='[]'::jsonb, nest_tickets='null'::jsonb, level_commission_count=6,
-				has_invasion=false, has_ark=false, has_nightmare=false, has_mainline=false, has_other=false,
+				remaining_commission_count=6,
+				has_invasion=false, has_ark=false, has_nightmare=false,
 				sort_order=$4, updated_at=now() where id=$5 and owner_id=$6
 			`, role.RoleName, role.Profession, role.Priority, role.SortOrder, planID, ownerID); err != nil {
 				return WeeklyPlanInitializationResult{}, fmt.Errorf("reset DN weekly plan: %w", err)
@@ -228,8 +228,8 @@ func (s *PostgresService) syncDatabaseWeeklyPlans(reset bool) (WeeklyPlanInitial
 		}
 		if _, err := tx.Exec(ctx, `
 			insert into dn_weekly_plan
-			(role_name, profession, priority, nest_commissions, nest_tickets, level_commission_count, sort_order, role_profession_id, owner_id, created_at, updated_at)
-			values ($1,$2,$3,'[]'::jsonb,'null'::jsonb,6,$4,$5,$6,now(),now())
+			(role_name, profession, priority, remaining_commission_count, sort_order, role_profession_id, owner_id, created_at, updated_at)
+			values ($1,$2,$3,6,$4,$5,$6,now(),now())
 		`, role.RoleName, role.Profession, role.Priority, role.SortOrder, role.ID, ownerID); err != nil {
 			return WeeklyPlanInitializationResult{}, fmt.Errorf("create synchronized DN weekly plan: %w", err)
 		}
@@ -243,37 +243,37 @@ func (s *PostgresService) syncDatabaseWeeklyPlans(reset bool) (WeeklyPlanInitial
 
 const weeklyPlanSelect = `
 	select p.id, coalesce(p.owner_id, 0), p.role_name, coalesce(p.profession, ''), p.priority,
-	       p.level_commission_count, p.has_invasion, p.has_ark, p.has_nightmare,
+	       p.remaining_commission_count, p.has_invasion, p.has_ark, p.has_nightmare,
 	       coalesce(p.remark, ''), p.sort_order, coalesce(p.role_profession_id, 0), p.created_at, p.updated_at
 	from dn_weekly_plan p
 `
 
 const weeklyPlanInsertReturning = `
 	insert into dn_weekly_plan
-	(role_name, profession, priority, nest_commissions, nest_tickets, level_commission_count,
-	 has_invasion, has_ark, has_nightmare, has_mainline, has_other, remark, sort_order,
+	(role_name, profession, priority, remaining_commission_count,
+	 has_invasion, has_ark, has_nightmare, remark, sort_order,
 	 role_profession_id, owner_id, created_at, updated_at)
-	values ($1,$2,$3,'[]'::jsonb,'null'::jsonb,$4,$5,$6,$7,false,false,nullif($8,''),$9,$10,$11,now(),now())
+	values ($1,$2,$3,$4,$5,$6,$7,nullif($8,''),$9,$10,$11,now(),now())
 	returning id, coalesce(owner_id, 0), role_name, coalesce(profession, ''), priority,
-	          level_commission_count, has_invasion, has_ark, has_nightmare,
+	          remaining_commission_count, has_invasion, has_ark, has_nightmare,
 	          coalesce(remark, ''), sort_order, coalesce(role_profession_id, 0), created_at, updated_at
 `
 
 const weeklyPlanUpdateReturning = `
 	update dn_weekly_plan set role_name=$1, profession=$2, priority=$3,
-	 nest_commissions='[]'::jsonb, nest_tickets='null'::jsonb, level_commission_count=$4,
+	 remaining_commission_count=$4,
 	 has_invasion=$5, has_ark=$6, has_nightmare=$7, remark=nullif($8,''), sort_order=$9,
 	 role_profession_id=$10, updated_at=now()
 	where owner_id=$11 and id=$12
 	returning id, coalesce(owner_id, 0), role_name, coalesce(profession, ''), priority,
-	          level_commission_count, has_invasion, has_ark, has_nightmare,
+	          remaining_commission_count, has_invasion, has_ark, has_nightmare,
 	          coalesce(remark, ''), sort_order, coalesce(role_profession_id, 0), created_at, updated_at
 `
 
 const weeklyPlanDeleteReturning = `
 	delete from dn_weekly_plan where id=$1 and owner_id=$2
 	returning id, coalesce(owner_id, 0), role_name, coalesce(profession, ''), priority,
-	          level_commission_count, has_invasion, has_ark, has_nightmare,
+	          remaining_commission_count, has_invasion, has_ark, has_nightmare,
 	          coalesce(remark, ''), sort_order, coalesce(role_profession_id, 0), created_at, updated_at
 `
 

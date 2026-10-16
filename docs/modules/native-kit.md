@@ -42,6 +42,7 @@ interface FileFilter {
 
 - 对外 URL 只允许 `http` 和 `https`，拒绝 `javascript:`、任意 `file:` 和无效地址。
 - 打开本地路径只供内部诊断能力使用，要求绝对路径且目标存在。
+- 文件选择将 macOS 应用包视为完整文件（`TreatsFilePackagesAsDirectories(false)`），不进入包内选择；无筛选器时允许选择应用包及普通文件，目标身份仍由业务模块校验。
 - 文件选择取消时返回空字符串或非 `null` 的空数组，不应当作异常；Go 服务与前端 API 都会将底层 `nil` / `null` 结果规范化为空数组。
 - 文件拖放数据仍应由业务模块校验扩展名、大小和用途。
 - 主窗口启用 `EnableFileDrop`，页面根节点使用 `data-file-drop-target`；`WindowFilesDropped` 会转换成稳定的 typed event payload。

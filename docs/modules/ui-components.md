@@ -31,7 +31,7 @@ SettingsProvider
   → existing features + dn-system
 ```
 
-全局 Toast、确认框和 Overlay 由 `InteractionProvider` 统一挂载；业务模块继续分别通过 `useFeedback` 和 `useOverlay` 获取最小语义 API。
+全局 Toast 和确认框由 `InteractionProvider` 统一挂载，通过 `useFeedback` 访问；业务表单与详情直接组合受控 `Dialog`，由组件管理打开状态。
 
 Base UI 的弹层和组合组件使用 `render={<Button />}`，避免业务模块直接创建原生按钮。`PasswordInput` 的显隐操作同样使用固定结构的 `Button`，按钮固定在输入框内部右侧。`#root` 使用 `isolation: isolate`，保证 Portal 弹层位于应用内容之上。
 

@@ -47,7 +47,7 @@ func (s *PostgresService) Initialize() error {
 		return fmt.Errorf("inspect quick notes schema: %w", err)
 	}
 	if !tableExists {
-		return fmt.Errorf("%w: database migration app_quick_note has not been applied", ErrUnavailable)
+		return fmt.Errorf("%w: database table app_quick_note is not initialized", ErrUnavailable)
 	}
 	return nil
 }

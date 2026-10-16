@@ -3,18 +3,15 @@ import { useCallback, useEffect, useState } from 'react'
 
 import { Button, SpinnerIcon } from '@/shared/components/ui'
 
-import { PROCESS_NAME, PROCESS_CONTROL_SUPPORTED } from '../api/dnProcessApi'
+import { PROCESS_CONTROL_SUPPORTED } from '../api/dnProcessApi'
+import { useDnProcessActions } from '../hooks/useDnProcessActions'
 import { useDnProcessList } from '../hooks/useDnProcessList'
-import { useDnProcessShortcut } from '../hooks/useDnProcessShortcut'
 
 import { styles } from './DnProcessWindow.css'
 
 export function DnProcessWindow() {
   const processes = useDnProcessList()
-  const { shortcutKey, busy, launching, status, clearStatus, run, launch } = useDnProcessShortcut(
-    processes.onTerminated,
-    processes.refreshAfterLaunch,
-  )
+  const { shortcutKey, busy, launching, status, clearStatus, run, launch } = useDnProcessActions()
   const [focused, setFocused] = useState(() => document.hasFocus())
   const statusText = !PROCESS_CONTROL_SUPPORTED ? '当前系统暂不支持' : processes.error || status
   const refresh = useCallback(() => {
@@ -79,7 +76,7 @@ export function DnProcessWindow() {
         </Button>
         <Button variant='danger' disabled={busy || !PROCESS_CONTROL_SUPPORTED} onClick={() => void run()}>
           <Skull aria-hidden='true' />
-          {busy && !launching ? '终结中…' : `终结 ${PROCESS_NAME}`}
+          {busy && !launching ? '结束中…' : '结束'}
         </Button>
       </div>
       {statusText && (

@@ -5,7 +5,6 @@ vars:
   APP_BUNDLE_NAME:
     sh: node scripts/app-display-name.mjs
   BIN_DIR: 'bin'
-  PACKAGE_MANAGER: 'pnpm'
   VITE_PORT: '{{.WAILS_VITE_PORT | default 9245}}'
   GOOS: '{{.GOOS | default OS}}'
   APP_VERSION:
@@ -17,7 +16,6 @@ includes:
   common: ./build/Taskfile.yml
   windows: ./build/windows/Taskfile.yml
   darwin: ./build/darwin/Taskfile.yml
-  linux: ./build/linux/Taskfile.yml
 
 tasks:
   build:
@@ -39,15 +37,3 @@ tasks:
     summary: Runs the application in development mode
     cmds:
       - wails3 dev -config ./build/config.yml -port {{.VITE_PORT}}
-
-  setup:docker:
-    cmds:
-      - task: common:setup:docker
-
-  build:server:
-    cmds:
-      - task: common:build:server
-
-  run:server:
-    cmds:
-      - task: common:run:server

@@ -3,6 +3,7 @@ import { createContext, type ReactNode, useCallback, useContext, useEffect, useM
 import { useAccount } from '@/features/account'
 import { useFeedback } from '@/shared/feedback'
 import { openExternalURL } from '@/shared/native-kit'
+import { getAppViewFromPath, type AppView } from '@/shared/navigation'
 
 import {
   checkOfficialMessagesOnLogin,
@@ -14,7 +15,6 @@ import {
   markMessageRead,
   type SiteMessage,
 } from '../api/siteMessagesApi'
-import type { SiteMessageNavigationTarget } from '../components/SiteMessages'
 
 interface SiteMessageContextValue {
   inboxItems: SiteMessage[]
@@ -37,19 +37,12 @@ interface SiteMessageContextValue {
 
 const SiteMessageContext = createContext<SiteMessageContextValue | null>(null)
 
-const internalTargets: Record<string, SiteMessageNavigationTarget> = {
-  '/weekly-plans': 'weekly',
-  '/roles': 'roles',
-  '/messages': 'messages',
-  '/account': 'account',
-}
-
 export function SiteMessageProvider({
   children,
   onNavigate,
 }: {
   children: ReactNode
-  onNavigate: (target: SiteMessageNavigationTarget) => void
+  onNavigate: (target: AppView) => void
 }) {
   const { notify } = useFeedback()
   const { user } = useAccount()
@@ -181,16 +174,16 @@ export function SiteMessageProvider({
     async (message: SiteMessage) => {
       const updated = await markRead(message)
       if (!updated.actionUrl) return
-      if (updated.actionTarget === '_blank') {
-        await openExternalURL(updated.actionUrl)
-        return
-      }
-      const target = internalTargets[updated.actionUrl]
+      const target = getAppViewFromPath(updated.actionUrl)
       if (target) {
         onNavigate(target)
         return
       }
-      if (/^https?:\/\//i.test(updated.actionUrl)) await openExternalURL(updated.actionUrl)
+      if (/^https?:\/\//i.test(updated.actionUrl)) {
+        await openExternalURL(updated.actionUrl)
+      } else {
+        throw new Error('该消息指向的应用内页面不可用。')
+      }
     },
     [markRead, onNavigate],
   )
@@ -223,7 +216,7 @@ export function SiteMessageProvider({
 
   const showAllMessages = useCallback(() => {
     setCenterOpen(false)
-    onNavigate('messages')
+    onNavigate('site-messages')
   }, [onNavigate])
 
   const followPopupMessage = useCallback(

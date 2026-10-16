@@ -97,11 +97,7 @@ func (a *App) LaunchDragonNestProcess() error {
 		return dnprocess.ErrBusy
 	}
 	defer a.dnProcessMu.Unlock()
-	preferences := a.settingsService.Get().DragonNest
-	path := preferences.LauncherPath
-	if path == "" {
-		path = preferences.TargetPath
-	}
+	path := a.settingsService.Get().DragonNest.LauncherPath
 	err := a.dnProcessService.LaunchConfigured(path)
 	if err != nil {
 		a.emitDnProcessChanged("refresh")

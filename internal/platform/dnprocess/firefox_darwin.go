@@ -9,15 +9,18 @@ char *firefox_processes(void);
 int firefox_terminate(int pid, const char *path, void **handle);
 int firefox_exited(void *handle);
 void firefox_release(void *handle);
-char *firefox_application_path(const char *executable);
+char *firefox_executable_path(const char *executable);
 */
 import "C"
 
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
+	"os"
 	"os/exec"
+	"path/filepath"
 	"time"
 	"unsafe"
 
@@ -26,8 +29,21 @@ import (
 
 type firefoxPlatform struct{}
 
-func (firefoxPlatform) ValidateLauncherPath(string) (string, error) {
-	return "", core.ErrUnavailable
+func (firefoxPlatform) ValidateLauncherPath(path string) (string, error) {
+	if !filepath.IsAbs(path) {
+		return "", core.ErrInvalidTarget
+	}
+	path = filepath.Clean(path)
+	if _, err := os.Stat(path); errors.Is(err, os.ErrNotExist) {
+		return "", core.ErrLaunchNotFound
+	} else if err != nil {
+		return "", fmt.Errorf("inspect Firefox application: %w", err)
+	}
+	executable := resolveFirefoxExecutable(path)
+	if executable == "" {
+		return "", core.ErrInvalidTarget
+	}
+	return executable, nil
 }
 
 func New() core.Service {
@@ -35,20 +51,32 @@ func New() core.Service {
 }
 
 func (firefoxPlatform) Launch(path string) error {
-	executable := C.CString(path)
-	defer C.free(unsafe.Pointer(executable))
-	application := C.firefox_application_path(executable)
-	if application == nil {
+	if path == "" {
+		return core.ErrLaunchPathRequired
+	}
+	executable := resolveFirefoxExecutable(path)
+	if executable == "" {
 		return core.ErrLaunchNotFound
 	}
-	defer C.free(unsafe.Pointer(application))
+	application := filepath.Dir(filepath.Dir(filepath.Dir(executable)))
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 	// Launch through Launch Services without stealing the process window's focus.
-	if output, err := firefoxLaunchCommand(ctx, C.GoString(application)).CombinedOutput(); err != nil {
+	if output, err := firefoxLaunchCommand(ctx, application).CombinedOutput(); err != nil {
 		return fmt.Errorf("launch Firefox: %w: %s", err, output)
 	}
 	return nil
+}
+
+func resolveFirefoxExecutable(path string) string {
+	input := C.CString(path)
+	defer C.free(unsafe.Pointer(input))
+	executable := C.firefox_executable_path(input)
+	if executable == nil {
+		return ""
+	}
+	defer C.free(unsafe.Pointer(executable))
+	return C.GoString(executable)
 }
 
 func firefoxLaunchCommand(ctx context.Context, application string) *exec.Cmd {
