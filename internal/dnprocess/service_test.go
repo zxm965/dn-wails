@@ -61,9 +61,11 @@ func TestLaunchConfigured(t *testing.T) {
 		{name: "platform default", wantLaunch: true},
 		{name: "running target", path: `c:\games\dragonnest.exe`, items: []Info{{PID: 42, Name: "DragonNest.exe", Path: `C:\Games\DragonNest.exe`}}},
 		{name: "single running default", items: []Info{{PID: 42, Name: "DragonNest.exe", Path: `C:\Games\DragonNest.exe`}}},
-		{name: "different running target", path: `D:\Games\DragonNest.exe`, items: []Info{{PID: 42, Name: "DragonNest.exe", Path: `C:\Games\DragonNest.exe`}}, wantLaunch: true},
-		{name: "ambiguous default", items: []Info{{PID: 42, Name: "DragonNest.exe", Path: `C:\Games\DragonNest.exe`}, {PID: 43, Name: "DragonNest.exe", Path: `D:\Games\DragonNest.exe`}}, wantErr: ErrMultiple},
+		{name: "different running target", path: `D:\Games\DragonNest.exe`, items: []Info{{PID: 42, Name: "DragonNest.exe", Path: `C:\Games\DragonNest.exe`}}},
+		{name: "multiple running candidates", items: []Info{{PID: 42, Name: "DragonNest.exe", Path: `C:\Games\DragonNest.exe`}, {PID: 43, Name: "DragonNest.exe", Path: `D:\Games\DragonNest.exe`}}},
 		{name: "unreadable candidate", items: []Info{{PID: 42, Name: "DragonNest.exe"}}, wantErr: ErrAccessDenied},
+		{name: "running WeGame blocks launcher", path: `C:\Games\DNLauncher.exe`, items: []Info{{PID: 44, Name: "DragonNestWS_x64.exe", Path: `D:\WeGameApps\DragonNestWS_x64.exe`}}},
+		{name: "unrelated process allows launch", path: `C:\Games\DNLauncher.exe`, items: []Info{{PID: 45, Name: "Other.exe"}}, wantLaunch: true},
 		{name: "native error", launchErr: ErrLaunchNotFound, wantErr: ErrLaunchNotFound, wantLaunch: true},
 		{name: "null path", path: "bad\x00path", wantErr: ErrInvalidTarget},
 		{name: "oversize path", path: strings.Repeat("x", 32769), wantErr: ErrInvalidTarget},
@@ -236,6 +238,36 @@ func TestDetectFirefoxLaunchPath(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			if got := DetectedLauncherPath(tc.items); got != tc.want {
 				t.Fatalf("path=%q want %q", got, tc.want)
+			}
+		})
+	}
+}
+
+func TestWeGameProcess(t *testing.T) {
+	for _, name := range []string{"DragonNestWS_x64.exe", "DRAGONNESTWS_X64.EXE"} {
+		t.Run(name, func(t *testing.T) {
+			game := Info{PID: 44, Name: name, Path: `D:\WeGameApps\DragonNestWS_x64.exe`}
+			platform := &platformStub{items: []Info{game}}
+			service := NewService(platform)
+			items, err := service.List()
+			if err != nil || len(items) != 1 || items[0] != game {
+				t.Fatalf("WeGame candidate missing: %v %v", items, err)
+			}
+			if DetectedLauncherPath(items) != "" {
+				t.Fatal("WeGame game executable must not become launcher")
+			}
+			for _, path := range []string{"", strings.ToLower(game.Path)} {
+				got, err := service.TerminateConfigured(path)
+				if err != nil || got != game || platform.terminated != (Target{PID: game.PID, Name: game.Name, Path: game.Path}) {
+					t.Fatalf("WeGame termination failed: %+v %v", got, err)
+				}
+			}
+			if items, err := NewFirefoxTestService(platform).List(); err != nil || len(items) != 0 {
+				t.Fatalf("WeGame leaked into macOS candidates: %v %v", items, err)
+			}
+			platform.items[0].Path = ""
+			if _, err := service.List(); !errors.Is(err, ErrAccessDenied) {
+				t.Fatalf("WeGame access denial lost: %v", err)
 			}
 		})
 	}

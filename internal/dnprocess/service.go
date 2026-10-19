@@ -6,9 +6,10 @@ import (
 )
 
 var knownProcessNames = map[string]struct{}{
-	"dragonnest.exe":     {},
-	"dragonnest_x64.exe": {},
-	"dnlauncher.exe":     {},
+	"dragonnest.exe":       {},
+	"dragonnest_x64.exe":   {},
+	"dragonnestws_x64.exe": {},
+	"dnlauncher.exe":       {},
 }
 
 // DetectedLauncherPath returns only an unambiguous launch path from validated candidates.
@@ -117,7 +118,7 @@ func (s *service) Health() error {
 	return nil
 }
 
-// LaunchConfigured avoids duplicating a running target and leaves native path validation to the platform.
+// LaunchConfigured avoids launching while any candidate is running and leaves native path validation to the platform.
 func (s *service) LaunchConfigured(path string) error {
 	path = strings.TrimSpace(path)
 	if len(path) > 32768 || strings.ContainsRune(path, '\x00') {
@@ -127,13 +128,8 @@ func (s *service) LaunchConfigured(path string) error {
 	if err != nil {
 		return err
 	}
-	if path == "" && len(items) > 1 {
-		return ErrMultiple
-	}
-	for _, item := range items {
-		if path == "" || s.matchPath(item.Path, path) {
-			return nil
-		}
+	if len(items) > 0 {
+		return nil
 	}
 	return s.platform.Launch(path)
 }

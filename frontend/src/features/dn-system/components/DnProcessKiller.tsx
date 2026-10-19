@@ -80,7 +80,14 @@ export function DnProcessKiller() {
             <div className={cx('dn-process-actions')} role='group' aria-label='进程操作'>
               <Button
                 disabled={
-                  scanning || shortcut.busy || settingsLoading || Boolean(settingsError) || !PROCESS_CONTROL_SUPPORTED
+                  !scanned ||
+                  scanning ||
+                  Boolean(error) ||
+                  items.length > 0 ||
+                  shortcut.busy ||
+                  settingsLoading ||
+                  Boolean(settingsError) ||
+                  !PROCESS_CONTROL_SUPPORTED
                 }
                 onClick={() => void shortcut.launch()}
               >
@@ -151,7 +158,7 @@ export function DnProcessKiller() {
             <ListState
               className={cx('dn-process-empty')}
               loading={false}
-              emptyText={`点击“扫描”获取当前运行的 ${PROCESS_NAME} 进程。`}
+              emptyText={`正在扫描当前运行的 ${PROCESS_NAME} 进程。`}
               icon={<Skull aria-hidden='true' />}
             />
           ) : items.length ? (

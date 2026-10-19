@@ -74,11 +74,15 @@ export function useDnProcessList(): DnProcessList {
   useEffect(() => {
     active.current = true
     const unsubscribe = onDragonNestProcessesChanged((waitForProcess) => void scan(waitForProcess))
+    const onFocus = () => void scan(false)
+    void scan(false)
+    window.addEventListener('focus', onFocus)
     return () => {
       active.current = false
       requestId.current++
       cancelWait.current?.()
       unsubscribe()
+      window.removeEventListener('focus', onFocus)
     }
   }, [scan])
 

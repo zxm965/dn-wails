@@ -14,16 +14,17 @@ export function DnProcessWindow() {
   const { shortcutKey, busy, launching, status, clearStatus, run, launch } = useDnProcessActions()
   const [focused, setFocused] = useState(() => document.hasFocus())
   const statusText = !PROCESS_CONTROL_SUPPORTED ? '当前系统暂不支持' : processes.error || status
+  const actionsDisabled =
+    busy || !PROCESS_CONTROL_SUPPORTED || !processes.scanned || processes.scanning || Boolean(processes.error)
   const refresh = useCallback(() => {
     clearStatus()
     void processes.refresh()
   }, [clearStatus, processes.refresh])
 
   useEffect(() => {
-    refresh()
     const focus = () => {
       setFocused(true)
-      refresh()
+      clearStatus()
     }
     const blur = () => setFocused(false)
     window.addEventListener('focus', focus)
@@ -32,7 +33,7 @@ export function DnProcessWindow() {
       window.removeEventListener('focus', focus)
       window.removeEventListener('blur', blur)
     }
-  }, [refresh])
+  }, [clearStatus])
 
   return (
     <main className={styles.window}>
@@ -70,11 +71,15 @@ export function DnProcessWindow() {
         )}
       </div>
       <div className={styles.actions}>
-        <Button variant='secondary' disabled={busy || !PROCESS_CONTROL_SUPPORTED} onClick={() => void launch()}>
+        <Button
+          variant='secondary'
+          disabled={actionsDisabled || processes.items.length > 0}
+          onClick={() => void launch()}
+        >
           <SpinnerIcon icon={Play} spinning={launching} aria-hidden='true' />
           {launching ? '启动中…' : '启动'}
         </Button>
-        <Button variant='danger' disabled={busy || !PROCESS_CONTROL_SUPPORTED} onClick={() => void run()}>
+        <Button variant='danger' disabled={actionsDisabled || processes.items.length === 0} onClick={() => void run()}>
           <Skull aria-hidden='true' />
           {busy && !launching ? '结束中…' : '结束'}
         </Button>
