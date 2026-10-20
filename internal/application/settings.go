@@ -17,6 +17,7 @@ func (a *App) UpdateSettings(next settings.AppSettings) (settings.AppSettings, e
 		return settings.AppSettings{}, err
 	}
 	a.windowService.ApplyPreferences(windowPreferences(updated.Window))
+	a.syncDragonNestShortcut()
 	if a.runtime != nil {
 		a.runtime.Event.Emit(SettingsChangedEvent, updated)
 	}
@@ -31,6 +32,7 @@ func (a *App) ResetSettings() (settings.AppSettings, error) {
 		return settings.AppSettings{}, err
 	}
 	a.windowService.ApplyPreferences(windowPreferences(updated.Window))
+	a.syncDragonNestShortcut()
 	if a.runtime != nil {
 		a.runtime.Event.Emit(SettingsChangedEvent, updated)
 	}

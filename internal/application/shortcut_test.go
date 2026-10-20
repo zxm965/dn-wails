@@ -165,6 +165,62 @@ type processWindowStub struct {
 	err   error
 }
 
+type globalShortcutNativeStub struct {
+	starts   int
+	stops    int
+	key      string
+	gameMode bool
+	fire     func()
+}
+
+func (n *globalShortcutNativeStub) Start(key string, gameMode bool, fire func(), _ func(error)) (func() error, error) {
+	n.starts++
+	n.key, n.gameMode, n.fire = key, gameMode, fire
+	return func() error { n.stops++; return nil }, nil
+}
+
+func TestGlobalShortcutReadySettingsAndBackgroundExecution(t *testing.T) {
+	current := settings.Default()
+	current.DragonNest.GlobalShortcutEnabled = true
+	current.DragonNest.TargetPath = `C:\Games\DragonNest.exe`
+	preferences := &shortcutSettingsStub{current: current}
+	process := &shortcutDnProcessStub{}
+	native := &globalShortcutNativeStub{}
+	app := New(Dependencies{Settings: preferences, DnProcess: process, Shortcut: native, Window: runtimeReadyWindowStub{}})
+	app.syncDragonNestShortcut()
+	if native.starts != 0 {
+		t.Fatal("registered before runtime ready")
+	}
+	app.runtimeReady = true
+	app.syncDragonNestShortcut()
+	// No React window or frontend key event participates in this execution.
+	native.fire()
+	if !process.terminated || process.configuredPath != current.DragonNest.TargetPath ||
+		app.GetDragonNestShortcutStatus().TriggerCount != 1 {
+		t.Fatal("background execution did not use configured target")
+	}
+	next := preferences.Get()
+	next.DragonNest.LocalShortcutKey = "Ctrl+Shift+F4"
+	next.DragonNest.GameShortcutMode = true
+	preferences.updateErr = errors.New("disk full")
+	if _, err := app.UpdateSettings(next); err == nil || native.starts != 1 {
+		t.Fatal("failed persistence changed active shortcut")
+	}
+	preferences.updateErr = nil
+	if _, err := app.UpdateSettings(next); err != nil {
+		t.Fatal(err)
+	}
+	if native.key != "Ctrl+Shift+F4" || !native.gameMode || native.starts != 2 || native.stops != 1 {
+		t.Fatal("configuration not applied")
+	}
+	if _, err := app.ResetSettings(); err != nil {
+		t.Fatal(err)
+	}
+	if app.GetDragonNestShortcutStatus().Enabled || native.stops != 2 {
+		t.Fatal("reset did not disable global shortcut")
+	}
+}
+
 func (w *processWindowStub) Open() error { w.calls++; return w.err }
 
 func TestOpenProcessWindow(t *testing.T) {

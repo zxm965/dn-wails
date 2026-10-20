@@ -152,8 +152,8 @@ func validate(value AppSettings) error {
 	if !contains([]string{CloseBehaviorQuit, CloseBehaviorHide}, value.Window.CloseBehavior) {
 		return fmt.Errorf("%w: unsupported close behavior %q", ErrInvalidSettings, value.Window.CloseBehavior)
 	}
-	if !contains([]string{"F1", "F2", "F3", "F4", "F5", "F6", "F7", "F8", "F9", "F10", "F11", "F12"}, value.DragonNest.LocalShortcutKey) {
-		return fmt.Errorf("%w: unsupported local shortcut %q", ErrInvalidSettings, value.DragonNest.LocalShortcutKey)
+	if !contains([]string{"F1", "F2", "F3", "F4", "F5", "F6", "F7", "F8", "F9", "F10", "F11", "F12", "Ctrl+Shift+F4"}, value.DragonNest.LocalShortcutKey) {
+		return fmt.Errorf("%w: unsupported shortcut %q", ErrInvalidSettings, value.DragonNest.LocalShortcutKey)
 	}
 	if len(value.DragonNest.TargetPath) > 4096 || strings.ContainsAny(value.DragonNest.TargetPath, "\r\n") {
 		return fmt.Errorf("%w: invalid Dragon Nest target path", ErrInvalidSettings)

@@ -4,15 +4,16 @@ const processPage = style({
   width: 'min(100%, var(--page-content-max-width))',
   minWidth: '0',
   display: 'grid',
-  gap: '18px',
+  gap: '12px',
   margin: '0 auto',
-  padding: 'var(--page-padding-start) var(--page-padding-inline) var(--page-padding-end)',
+  padding: '16px var(--page-padding-inline)',
   containerName: 'dn-process-page',
   containerType: 'inline-size',
 })
 
 const processCard = style({
   minWidth: '0',
+  vars: { '--panel-padding': '14px 16px' },
 })
 
 const processToolbar = style({
@@ -22,8 +23,8 @@ const processToolbar = style({
   justifyContent: 'space-between',
   gap: 12,
   minWidth: 0,
-  marginBottom: 16,
-  paddingBottom: 16,
+  marginBottom: 12,
+  paddingBottom: 12,
   borderBottom: '1px solid var(--border-subtle)',
 })
 
@@ -137,6 +138,7 @@ const processActions = style({
 
 const processShortcutHint = style({
   display: 'flex',
+  flexWrap: 'wrap',
   alignItems: 'center',
   gap: '6px',
   color: 'var(--text-tertiary)',
@@ -154,7 +156,10 @@ const processShortcutKey = style({
 })
 
 const processEmpty = style({
-  minHeight: '200px',
+  minHeight: '88px',
+  padding: '8px 12px',
+  gap: '8px',
+  overflowWrap: 'anywhere',
 })
 
 const processShortcutCard = style({ vars: { '--panel-padding': '14px 16px' } })
@@ -174,7 +179,7 @@ const processShortcutSettings = style({
   fontSize: 12,
   color: 'var(--text-secondary)',
 })
-const processShortcutSelect = style({ width: 88, minWidth: 0 })
+const processShortcutSelect = style({ width: 176, maxWidth: '100%', minWidth: 0 })
 const processShortcutNote = style({
   margin: '8px 0 0',
   fontSize: 11,

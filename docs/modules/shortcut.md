@@ -1,73 +1,93 @@
-# 窗口内快捷键
+# 全局快捷键与置顶小窗
 
 ## 模块目标
 
-为 Windows 龙之谷、macOS Firefox 测试的进程页及置顶小窗提供可配置 F1–F12（默认 F4）操作；移除系统全局注册、键盘钩子、后台轮询及全局启用开关。
+在 Windows 龙之谷、macOS Firefox 测试模式下，通过全局快捷键结束已确认的目标进程；应用最小化、隐藏、离开进程页或小窗失焦均不依赖前端键盘监听。Windows 提供标准全局和游戏兼容两种输入模式，明确区分输入通道注册、按键到达与进程执行结果。
 
 ## 目录与职责
 
-- `frontend/src/features/dn-system/hooks/useDnProcessActions.ts`：统一主窗口选择结束、小窗结束、快捷键与启动操作，共用防重入和结果提示；维护窗口内按键订阅与过滤。
-- `frontend/src/features/dn-system/components/DnProcessKiller.tsx`：进程扫描、手动选择、快捷键和打开小窗入口。
-- `frontend/src/features/dn-system/components/DnLauncherSettings.tsx`：双端启动路径配置、原生文件选择、保存/修改和扫描缺失提示。
-- `frontend/src/features/dn-system/components/DnProcessWindow.tsx`：小窗刷新按钮、进程名称/PID 列表、焦点状态和结果反馈。
-- `frontend/src/features/dn-system/hooks/useDnProcessList.ts`：主窗口与小窗共用候选扫描、加载/失败状态、进程事件订阅和扫描结果时序保护。
-- `frontend/src/features/dn-system/api/dnProcessApi.ts`：生成绑定适配与进程错误提示。
-- `internal/application/dn_process.go`：打开小窗、调用进程用例、记忆路径及跨窗口并发操作防护。
-- `internal/platform/dnprocess/firefox_darwin.go`、`firefox_darwin.m`：macOS Firefox 主应用识别、关闭与退出确认。
-- `internal/platform/window/process.go`：原生小窗创建、复用、置顶、显示与关闭隐藏。
+- `internal/shortcut/service.go`：平台无关的注册状态、配置切换、过期回调隔离、并发抑制和执行结果。
+- `internal/platform/shortcut/native.go`：Wails `GlobalShortcut.Register` 适配及平台选择。
+- `internal/platform/shortcut/raw_windows.go`：Windows Raw Input 后台接收、独立 OS 线程、消息窗口、设备生命周期及资源释放。
+- `internal/platform/shortcut/keyboard.go`：仅跟踪功能键和修饰键的按下/释放状态，不保存输入文本。
+- `internal/application/shortcut.go`：运行时就绪协调、状态查询与注册重试；回调复用 `KillDragonNestProcess`。
+- `internal/application/dn_process.go`：进程用例、路径记忆、跨窗口并发防护与刷新事件。
+- `frontend/src/features/dn-system/api/dnProcessApi.ts`：生成绑定、typed event 和错误适配。
+- `frontend/src/features/dn-system/hooks/useDnShortcut.ts`：订阅状态、首次及重新聚焦时查询、注册重试、版本顺序保护。
+- `frontend/src/features/dn-system/hooks/useDnProcessActions.ts`：主窗口与小窗的启动/结束操作；不监听 `keydown`。
+- `frontend/src/features/dn-system/components/DnProcessKiller.tsx`：启用开关、键位、Windows 输入模式、诊断信息与小窗入口。
+- `frontend/src/features/dn-system/components/DnProcessWindow.tsx`：进程列表、手动操作、全局输入状态和最近结果。
+- `internal/platform/window/process.go`：原生置顶小窗创建、复用、显示和关闭隐藏。
 
 ## 依赖与核心链路
 
 ```text
-main.tsx 的 ?window=dn-process 分支 → SettingsProvider → DnProcessWindow
-DnProcessKiller / DnProcessWindow → useDnProcessActions → dnProcessApi
-  → Wails TerminateDragonNestProcess / KillDragonNestProcess / LaunchDragonNestProcess → application.App → dnprocess.Service
-  → platform/dnprocess → 操作系统进程 API
+main → platform/shortcut.New(Wails App) → application.Dependencies.Shortcut
+WindowRuntimeReady → application.syncDragonNestShortcut → shortcut.Service.Configure
+  → 标准：Wails GlobalShortcut → Windows RegisterHotKey / macOS Carbon hotkey
+  → Windows 游戏兼容：Raw Input / RIDEV_INPUTSINK → WM_INPUT
+  → shortcut.Service → application.KillDragonNestProcess
+  → dnprocess.Service.TerminateConfigured → platform/dnprocess → 系统进程 API
+  → dn-shortcut:changed / dn-process:changed → 前端 API → Hook → 主窗口与小窗
 
-DnProcessKiller → dnProcessApi → Wails OpenDragonNestProcessWindow
-  → application.App → platform/window.ProcessWindow.Open
+进程页 → SettingsProvider → UpdateSettings → 保存成功 → 同步全局注册
+main.tsx 的 ?window=dn-process 分支 → SettingsProvider → DnProcessWindow
 ```
 
-进程页采用紧凑操作条：快捷键选择、保存状态与打开小窗并排，窄内容区域自动折行，底部仅显示焦点/Fn 简短提示；下拉选择 F1–F12 后自动保存，`settings:changed` typed event 携带 `AppSettings` 同步已打开的小窗；Provider 卸载时解除订阅，正在保存的窗口以保存结果为准。
+注册在 `WindowRuntimeReady` 后进行，避免把 Wails 启动前的待注册队列当作操作系统已确认成功；主窗口事件中异步协调，避免阻塞 UI 线程。修改设置、重置或重试均读取后端最新设置并串行协调。保存失败不修改当前输入通道。注册失败仍保留已保存的意图，单独展示注册错误，可更换键位或重试，不把“保存成功”当作“热键可用”。
 
-小窗首次打开、重新获得焦点、点击右上角刷新按钮以及成功终结后都会读取最新候选列表；展示名称/PID，悬停查看路径，多项在局部区域滚动。未发现进程时显示“未运行 · 启动后刷新”；扫描失败显示错误并允许重试。较早扫描的迟到响应不得覆盖更新的结果，卸载后忽略未完成扫描。终结用例每次重新扫描当前进程并按已记录路径匹配，因此关闭后重新启动会操作新 PID，不复用旧 PID；多个候选且无法自动匹配时仍需主窗口选择。
+两种输入模式互斥，切换时先停旧通道再启动新通道，不同时使用 Wails、键盘钩子和轮询竞争触发。旧通道注销失败时拒绝启动新通道；过期回调通过代次校验丢弃。执行中忽略重入；手动操作与全局回调仍共用应用门面的进程锁。
 
-应用门面在启动/终结操作后广播 `dn-process:changed` typed event：`action=launch` 表示启动请求成功，`terminate` 表示终结尝试完成，`refresh` 表示启动失败后校准状态；包括可能已生效但返回失败的终结请求，锁占用拒绝不广播。主窗口进程页和小窗各自订阅并重新读取候选，启动事件触发有限重试；操作完成只通过该事件触发列表刷新，操作 Hook 不再额外回调扫描；路径设置也只通过 `settings:changed` 同步，避免重复读取。双方共用请求序号防止旧结果回写，卸载时解除订阅和取消等待。主窗口和小窗均在首次打开与重新获得焦点时扫描，并在打开期间响应操作事件刷新。这里“关闭”指终结目标应用，小窗自身关闭仅隐藏窗口。
+## Windows 游戏兼容模式
 
-主窗口在进程卡片顶部操作栏左侧放置“启动、结束”，右侧并排放置“扫描”和路径配置入口，窄内容区域自动折行；扫描未完成、扫描失败或扫描中时禁用启动；存在任一候选进程（含启动器）时禁用启动，无进程时禁用结束；小窗沿用相同规则，主窗口还需选中进程才可结束，选中状态直接显示在列表和扫描信息中，不再额外重复展示目标卡片。主窗口选择结束、小窗结束与快捷键共用 `useDnProcessActions`；启动按钮复用同一 Hook 和跨窗口事件同步，启动中禁用重复操作并展示结果。主窗口与小窗的操作按钮统一使用“启动”“结束”，不附加应用名称；小窗两项操作并排展示；启动使用已保存的启动器路径，存在任一候选进程时后端也不重复启动（不依赖启动器与游戏路径相同），且与终结共享前后端并发防护。启动请求成功后最多重试扫描 5 秒，发现进程后结束等待；操作结果仅提示请求已发送，是否运行以扫描列表为准。新扫描和卸载会取消旧扫描的等待计时器，只有显式启动触发这段有限重试。
+使用 `RegisterRawInputDevices` 注册键盘 `UsagePage=1, Usage=6`，标记 `RIDEV_INPUTSINK | RIDEV_DEVNOTIFY`，将事件送入专用 message-only window；固定 OS 线程持续处理 `WM_INPUT`，通过 `GetRawInputData` 读取键盘数据。它不依赖 WebView 焦点、传统 `WM_KEYDOWN` 或 `WH_KEYBOARD_LL` 钩子链，也不使用 `RIDEV_EXINPUTSINK` 的前台未注册条件。依据[微软 Raw Input 文档](https://learn.microsoft.com/en-us/windows/win32/inputdev/about-raw-input)。
 
-Windows 扫描白名单包含 `DNLauncher.exe`、`DragonNest.exe`、`DragonNest_x64.exe` 和 WeGame 渠道的 `DragonNestWS_x64.exe`。尚未记录启动器时，扫描发现唯一安装路径则自动持久化 `dragonNest.launcherPath`，与终结目标 `targetPath` 分开；多个安装路径不自动选取。启动优先使用已保存的 `DNLauncher.exe`；仅接受明确的启动器路径，不从游戏目录猜测；未发现时由用户配置。通过 `ShellExecuteW` 的普通“打开”动作启动，以启动器目录为工作目录，不拼接命令行、不经过命令解释器；目标已运行则不重复启动，不直接运行游戏 exe 代替登录启动器。按照[微软游戏 UAC 指南](https://learn.microsoft.com/en-us/windows/win32/dxtecharts/user-account-control-for-game-developers)，系统 Shell 启动可处理启动器清单要求的提权提示，取消或失败需返回错误；本工具不强制以管理员运行所有启动器。
+每个键盘单独跟踪功能键和左右修饰键，跨设备合并修饰键；只在首次按下匹配键时触发，长按重复包被忽略，设备移除时清除状态。启动时只读取一次修饰键初始状态，不进行后台轮询。回调在 Go goroutine 执行业务，消息线程不等待进程结束。`WM_INPUT` 读完后始终交给 `DefWindowProc` 清理。
 
-主窗口在进程卡片右上角的扫描按钮旁提供“配置启动路径 / 修改启动路径”按钮，点击后通过弹窗选择文件、直接填写、保存或取消；未扫描到应用且没有配置时显示提醒，不自动打开表单。保存成功关闭弹窗并隐藏路径，重新打开回填已保存值；取消丢弃未保存修改，保存失败保留弹窗与输入，选择文件或保存期间禁止关闭。已保存路径在启动器未运行时仍可使用，不把未运行等同于文件不存在。保存经 `SaveDragonNestLauncherPath → dnprocess.ValidateLauncherPath → Windows platform` 校验绝对路径、名称、非系统目录及普通文件存在性；无效路径与落盘失败保留旧配置并展示错误。扫描、自动记忆和普通偏好更新均不会覆盖已有路径，显式保存才修改它；路径保存成功广播设置和进程刷新事件。macOS 同样提供配置弹窗，可选择 Firefox.app 或输入其 firefox 可执行文件路径；原生选择器不加扩展名筛选，避免系统将应用包置灰，选中后统一执行 Firefox 身份校验；后端校验 bundle ID、可执行文件名及执行权限，统一保存可执行文件路径，以匹配进程扫描结果。Linux 不显示配置入口并返回不可用。
+游戏兼容模式不拦截或吞掉游戏原有按键；游戏可能同时响应 F4，因此提供 `Ctrl+Shift+F4`。它是系统公开的后台输入接口，不注入游戏、不安装驱动、不绕过游戏保护；不能承诺所有反作弊、独占输入、远程会话或安全桌面下都能收到。**游戏兼容性必须以 Windows 实机“收到次数是否增加”与执行结果分别验收。**
 
-两端共用配置弹窗、保存接口、扫描记忆唯一启动路径、启动并发防护及事件刷新逻辑；前端差异集中在 `PROCESS_TARGET` 的软件名称、路径说明和文件筛选数据。未记录路径时统一提示配置或先打开目标应用后扫描，不隐式猜测安装位置。macOS 校验 Firefox bundle ID、可执行路径和文件可执行性，经 `/usr/bin/open -g -a` 启动。启动时用 `--env MOZ_DISABLE_AUTO_SAFE_MODE=1` 仅向该应用传入环境变量，跳过连续强制退出后的自动排障模式提示；不修改 Firefox 配置文件或全局环境，也不改变用户主动启用的排障模式设置。依据 [Mozilla 启动实现](https://github.com/mozilla-firefox/firefox/blob/main/toolkit/components/startup/nsAppStartup.cpp) 的 `GetAutomaticSafeModeNecessary`。已经打开的排障提示不会被“启动”按钮强行重启，需先退出该 Firefox 实例后再启动。
-
-小窗使用独立 React 入口，只挂载设置 Provider 和进程操作，不重复装配账号、消息轮询、任务提醒或更新监听。标题仅显示在系统标题栏，内容区首行并排展示快捷键/Fn 提示与刷新按钮，避免重复标题占用空间。主窗口的进程页卸载后移除其按键订阅；小窗不跟随主窗口路由变化。
+停用或换键时通知线程退出，注销设备并销毁窗口；应用上下文取消也会停止该线程。Wails 在应用退出时自动释放标准全局热键，ServiceShutdown 仅使回调失效，不再次等待主线程注销。
 
 ## 数据契约
 
-- `dragonNest.localShortcutKey` 持久化窗口内功能键，允许 `F1`–`F12`，默认/重置为 `F4`；不支持修饰键组合配置，Fn 是否必需取决于键盘功能键模式。
-- `OpenDragonNestProcessWindow() error` 创建或激活唯一小窗。
-- `KillDragonNestProcess()` 沿用已有进程 DTO 和目标选择规则，读取后端最新 `dragonNest.targetPath`。
-- `LaunchDragonNestProcess() error` 只读取后端最新 `launcherPath`，不回退到终结目标 `targetPath`，调用 `LaunchConfigured`；`ErrLaunchPathRequired`、`ErrLaunchNotFound` 分别表示尚未记住启动路径与目标应用不存在，Linux 返回不可用。
-- `dn-process:changed` 使用应用 DTO `DnProcessChange { action: string }`，所有已打开的进程列表重新扫描，不直接信任事件推断进程存活状态。
-- `SaveDragonNestLauncherPath(DnLauncherConfiguration) (DnLauncherConfiguration, error)`，请求和响应均为 `{ path: string }`；请求 trim 后校验非空、4096 字符以内及不含换行/NUL，Windows 仅接受存在的 `DNLauncher.exe`；macOS 接受有效 Firefox.app 或其可执行文件，返回规范化可执行文件完整路径。通过共享 Native Kit `pickFiles` 选择文件不直接执行程序。
-- 设置 v11 使用可选 `dragonNest.launcherPath`，未配置时为空；扫描和成功终结启动器仅在未配置时自动记录，普通偏好保存保留后端最新路径。
-- 设置仅接受 v11，包含 `dragonNest.targetPath` 与 `localShortcutKey`，默认键位 F4；不提供旧版设置迁移。
+设置继续使用 v11，保留 `dragonNest.localShortcutKey` 字段名以免丢失已有键位，语义改为所选全局键位：
+
+- `localShortcutKey`：F1–F12 或 `Ctrl+Shift+F4`，默认 F4。Windows 标准模式明确拒绝保留给调试器的 F12；游戏兼容可观察 F12。
+- `globalShortcutEnabled`：可选 bool，默认 false；新安装和已有 v11 文件均需在进程页点击“启用全局快捷键”，启用后保存并随应用启动注册。
+- `gameShortcutMode`：可选 bool，默认 false；Windows 为 true 时使用 Raw Input，macOS 忽略此模式并使用 Wails Carbon hotkey，Linux 不支持进程操作。
+- `targetPath`、`launcherPath`：继续分别表示终止目标和启动器，普通设置保存保留后端最新路径。
+
+`GetDragonNestShortcutStatus()` 和 `RetryDragonNestShortcut()` 返回 `shortcut.Status`；typed event `dn-shortcut:changed` 使用同一结构：`revision`、`enabled`、`key`、`gameMode`、`registered`、`registrationError`、`triggerCount`、`lastTriggeredAt`、`running`、`lastError`、`lastProcess`。
+
+状态和计数保留在后端内存，不随路由切换或小窗关闭丢失；应用重启后清零。最近触发时间为 RFC3339Nano UTC，前端按本地时间显示。前端先订阅再读取，以 revision 拒绝旧响应，并在卸载时解除订阅。后台没有任何进程页面时仍能执行，重新打开后可查询结果。`registered` 表示输入通道已注册，不表示已验证游戏兼容；只有 `triggerCount` 增加才能证明按键到达。
+
+## 进程操作与小窗
+
+全局触发复用既有路径白名单、同一进程句柄校验、最多 3 秒退出等待和错误映射；终止成功才记录目标路径。没有已记忆路径且有多个候选时，要求在主窗口手动选择；不会通过 `taskkill /IM` 批量关闭。权限不足单独报告，管理员启动不是输入通道未注册的修复方式。
+
+主窗口与小窗的启动、扫描、配置启动路径、终止和跨窗口刷新链路保持一致，详见[DN 系统模块](dn-system.md)。`dn-process:changed` 驱动列表刷新；初次打开和重新聚焦时也会扫描，启动后有限重试 5 秒，旧扫描结果不得覆盖新结果。启动和结束共用并发防护；启动器与终止目标路径分开保存，macOS 仅操作 Firefox 主应用，Linux 显示不可用。
+
+小窗默认 `360 × 260`，最小 `280 × 220`，使用系统标题栏、置顶与关闭隐藏；重复打开复用，随应用退出释放。标题显示目标软件名称，内容展示全局键位、注册/触发状态、候选进程和操作结果。长状态单行省略并提供完整 title，内容可纵向滚动；主窗口快捷键操作区自动折行，长错误可换行。
 
 ## 错误与边界
 
-- **置顶不等于获得键盘焦点**：需先点击小窗，再按配置的功能键；切回游戏、最小化或隐藏后不响应。界面显示当前焦点提示，也提供直接点击的“终结”按钮，与配置的功能键共用操作；系统标题仅显示“Firefox”或“龙之谷”；聚焦和失焦提示都展示当前键位及 Fn+键位，保持单行，长结果省略并通过悬停查看全文。
-- 输入框、可编辑区域、弹窗内不响应；Ctrl/Shift/Alt/Meta 组合键、输入法组合和长按重复事件不触发。
-- 前端防止重复提交，门面共享锁拒绝跨窗口重叠操作并返回 `ErrBusy`；成功、失败均显示状态。
-- Windows 终止 DN；macOS 测试模式仅关闭 bundle ID 为 `org.mozilla.firefox`、可执行文件名为 `firefox` 的主应用，排除内容/辅助进程；Linux 显示不可用。既有权限、完整路径校验、候选数量限制和退出等待规则继续生效。
-- 小窗默认 `360 × 260`，最小 `280 × 220`，使用系统标题栏拖动和关闭；关闭仅隐藏，重新打开复用，随应用退出释放；打开状态和尺寸不写入主窗口偏好。
-- 原生置顶效果受系统窗口管理器、独占全屏与权限限制，必须实机验证。
+- 标准模式注册冲突、Windows F12、Raw Input 启动/读取/消息循环失败均显示为输入通道错误，并提供重试；不会默默退回前端监听。
+- 全局快捷键在输入框和弹窗内也生效；停用开关用于释放键位。Fn 属于硬件功能键模式，不是可注册的修饰键。
+- 两种模式各自抑制长按，标准 Windows 使用 Wails 的 `MOD_NOREPEAT`，游戏兼容使用按下/释放状态。
+- 全局回调与手动操作冲突时可能返回“正在操作进程”，不会重复终止；停用不会撤销已经开始的终止操作。
+- 游戏权限、进程保护、独占全屏和系统窗口管理器仍需实机验证；本工具不修改 manifest 强制提升整个应用。
 
-## 接入与验证
+## 验证方式
 
-通过进程页“打开置顶小窗”接入；主窗口进程页和小窗内均可按配置的功能键（默认 F4），快捷操作会优先选择已记录路径，没有记录时只接受唯一候选。
+自动检查：`go test ./...`，shortcut/platform/application/settings 包 race 检查，Windows amd64/arm64 交叉编译，`pnpm fmt:check`、`pnpm lint`、`pnpm build`；绑定和 typed event 变化后生成并审查绑定。测试覆盖未就绪不注册、保存失败不切换、重试、过期回调、切换模式、停用、重置、权限错误、并发触发、长按、修饰键、多设备及 Windows ABI 布局（Windows 测试需该平台运行）。
 
-执行 `go test ./...`、`pnpm fmt:check`、`pnpm lint`、`pnpm build`，服务签名变化后重新生成绑定。测试验证旧版设置拒绝且不覆写、目标路径保留与跨窗口并发拒绝。
+Windows 实机验收（启动应用前需授权）：
 
-人工桌面验收：重复打开只有一个小窗、始终置顶、失焦提示、聚焦后 F4、切回游戏不触发、长按不重复、错误提示、关闭/重开以及应用退出；macOS 验证 Firefox 扫描、手动关闭、F4（部分键盘需 Fn + F4）与小窗关闭；Windows 验证启动器路径、启动与结束同步。启动应用前须获用户授权。
+1. 主窗口进程页确认目标，启用全局快捷键；检查“已就绪”。
+2. 切到记事本、最小化主窗口、小窗失焦分别按 F4，确认次数与结果更新；长按仅触发一次。
+3. 游戏置于前台，分别测试标准全局、游戏兼容、Ctrl+Shift+F4，以及窗口化/无边框/独占全屏；记录收到次数、最近触发时间、结果和日志 `shortcut:` 行。
+4. 次数为零表示输入未到达，次数增加但失败表示进程操作问题；拒绝访问时再比较普通与管理员运行。
+5. 验证切换键位和模式、旧键失效、其他应用占用键位、注册重试、停用后不响应、退出后键位释放，以及多键盘拔插。
+6. macOS 测试 Firefox 的前台/后台触发和 Fn；Linux 检查不可用提示。
+
+自动测试与交叉编译不代替 Windows 游戏实机验收。

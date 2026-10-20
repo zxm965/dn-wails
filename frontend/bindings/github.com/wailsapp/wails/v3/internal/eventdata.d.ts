@@ -19,6 +19,9 @@ import type * as notification$0 from "../../../../../cull-pear/internal/notifica
 import type * as settings$0 from "../../../../../cull-pear/internal/settings/models.js";
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore: Unused imports
+import type * as shortcut$0 from "../../../../../cull-pear/internal/shortcut/models.js";
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment
+// @ts-ignore: Unused imports
 import type * as singleinstance$0 from "../../../../../cull-pear/internal/singleinstance/models.js";
 
 declare module "@wailsio/runtime" {
@@ -27,6 +30,7 @@ declare module "@wailsio/runtime" {
             "app-update:progress": appupdate$0.Progress;
             "app:second-instance": singleinstance$0.LaunchData;
             "dn-process:changed": application$0.DnProcessChange;
+            "dn-shortcut:changed": shortcut$0.Status;
             "native-kit:file-drop": application$0.FileDrop;
             "settings:changed": settings$0.AppSettings;
             "system-notification:activated": notification$0.Activation;

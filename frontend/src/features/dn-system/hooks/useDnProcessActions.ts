@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useRef, useState } from 'react'
 
 import { useSettings } from '@/features/settings'
 
@@ -11,8 +11,10 @@ import {
   terminateDragonNestProcess,
   type DragonNestProcess,
 } from '../api/dnProcessApi'
+import { useDnShortcut, type DnShortcutState } from './useDnShortcut'
 
 export interface DnProcessActions {
+  globalShortcut: DnShortcutState
   shortcutKey: string
   busy: boolean
   launching: boolean
@@ -23,7 +25,8 @@ export interface DnProcessActions {
 }
 
 export function useDnProcessActions(): DnProcessActions {
-  const { settings, isLoading, error } = useSettings()
+  const { settings } = useSettings()
+  const globalShortcut = useDnShortcut()
   const shortcutKey = settings.dragonNest.localShortcutKey
   const running = useRef(false)
   const [operation, setOperation] = useState<'launch' | 'terminate' | null>(null)
@@ -66,35 +69,14 @@ export function useDnProcessActions(): DnProcessActions {
     }
   }, [])
 
-  useEffect(() => {
-    function handleKeyDown(event: KeyboardEvent) {
-      if (
-        isLoading ||
-        Boolean(error) ||
-        event.key !== shortcutKey ||
-        event.repeat ||
-        event.isComposing ||
-        event.defaultPrevented ||
-        event.ctrlKey ||
-        event.altKey ||
-        event.shiftKey ||
-        event.metaKey ||
-        !document.hasFocus()
-      )
-        return
-      if (
-        event.target instanceof Element &&
-        event.target.closest(
-          'input, textarea, select, [contenteditable="true"], [role="dialog"], [role="alertdialog"], [role="combobox"], [role="listbox"]',
-        )
-      )
-        return
-      event.preventDefault()
-      void run()
-    }
-    window.addEventListener('keydown', handleKeyDown)
-    return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [run, shortcutKey, isLoading, error])
-
-  return { shortcutKey, busy: operation !== null, launching: operation === 'launch', status, clearStatus, run, launch }
+  return {
+    globalShortcut,
+    shortcutKey,
+    busy: operation !== null || Boolean(globalShortcut.state?.running),
+    launching: operation === 'launch',
+    status,
+    clearStatus,
+    run,
+    launch,
+  }
 }

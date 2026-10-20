@@ -1,5 +1,5 @@
 import { Play, RefreshCw, Skull } from 'lucide-react'
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback } from 'react'
 
 import { Button, SpinnerIcon } from '@/shared/components/ui'
 
@@ -11,8 +11,7 @@ import { styles } from './DnProcessWindow.css'
 
 export function DnProcessWindow() {
   const processes = useDnProcessList()
-  const { shortcutKey, busy, launching, status, clearStatus, run, launch } = useDnProcessActions()
-  const [focused, setFocused] = useState(() => document.hasFocus())
+  const { globalShortcut, shortcutKey, busy, launching, status, clearStatus, run, launch } = useDnProcessActions()
   const statusText = !PROCESS_CONTROL_SUPPORTED ? '当前系统暂不支持' : processes.error || status
   const actionsDisabled =
     busy || !PROCESS_CONTROL_SUPPORTED || !processes.scanned || processes.scanning || Boolean(processes.error)
@@ -21,25 +20,11 @@ export function DnProcessWindow() {
     void processes.refresh()
   }, [clearStatus, processes.refresh])
 
-  useEffect(() => {
-    const focus = () => {
-      setFocused(true)
-      clearStatus()
-    }
-    const blur = () => setFocused(false)
-    window.addEventListener('focus', focus)
-    window.addEventListener('blur', blur)
-    return () => {
-      window.removeEventListener('focus', focus)
-      window.removeEventListener('blur', blur)
-    }
-  }, [clearStatus])
-
   return (
     <main className={styles.window}>
       <div className={styles.header}>
         <p className={styles.hint} title={`部分键盘需按 Fn + ${shortcutKey}`}>
-          {focused ? '快捷键' : '激活后按'} {shortcutKey} / Fn+{shortcutKey}
+          全局 {shortcutKey}
         </p>
         <Button
           size='sm'
@@ -52,6 +37,14 @@ export function DnProcessWindow() {
           <SpinnerIcon icon={RefreshCw} spinning={processes.scanning} aria-hidden='true' />
         </Button>
       </div>
+      <p className={styles.status} role='status' title={globalShortcut.summary}>
+        {globalShortcut.summary}
+      </p>
+      {globalShortcut.result && (
+        <p className={styles.status} role='status' title={globalShortcut.result}>
+          {globalShortcut.result}
+        </p>
+      )}
       <div className={styles.processes} aria-label='当前进程' aria-busy={processes.scanning}>
         {processes.scanning ? (
           <p className={styles.status}>正在刷新…</p>

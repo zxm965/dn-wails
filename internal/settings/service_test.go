@@ -214,3 +214,28 @@ func TestLocalShortcutConfiguration(t *testing.T) {
 		t.Fatalf("reset: %+v %v", reset, err)
 	}
 }
+
+func TestGlobalShortcutPreferencesPersist(t *testing.T) {
+	store := newMemoryStore()
+	service := NewService(store)
+	if err := service.Initialize(); err != nil {
+		t.Fatal(err)
+	}
+	value := service.Get()
+	if value.DragonNest.GlobalShortcutEnabled || value.DragonNest.GameShortcutMode {
+		t.Fatal("new global shortcut must require explicit enablement")
+	}
+	value.DragonNest.GlobalShortcutEnabled = true
+	value.DragonNest.GameShortcutMode = true
+	value.DragonNest.LocalShortcutKey = "Ctrl+Shift+F4"
+	if _, err := service.Update(value); err != nil {
+		t.Fatal(err)
+	}
+	reloaded := NewService(store)
+	if err := reloaded.Initialize(); err != nil {
+		t.Fatal(err)
+	}
+	if reloaded.Get().DragonNest != value.DragonNest {
+		t.Fatal("global shortcut preferences not persisted")
+	}
+}

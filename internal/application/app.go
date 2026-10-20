@@ -17,6 +17,7 @@ import (
 	"cull-pear/internal/notification"
 	"cull-pear/internal/quicknotes"
 	"cull-pear/internal/settings"
+	"cull-pear/internal/shortcut"
 	"cull-pear/internal/singleinstance"
 	"cull-pear/internal/tasks"
 	"cull-pear/internal/windowmanager"
@@ -26,6 +27,7 @@ import (
 
 const (
 	SettingsChangedEvent             = "settings:changed"
+	DnShortcutChangedEvent           = "dn-shortcut:changed"
 	DnProcessChangedEvent            = "dn-process:changed"
 	SystemNotificationActivatedEvent = "system-notification:activated"
 	SecondInstanceLaunchedEvent      = "app:second-instance"
@@ -38,6 +40,7 @@ var ErrAppNotReady = errors.New("application is not ready")
 func init() {
 	wailsapplication.RegisterEvent[settings.AppSettings](SettingsChangedEvent)
 	wailsapplication.RegisterEvent[DnProcessChange](DnProcessChangedEvent)
+	wailsapplication.RegisterEvent[shortcut.Status](DnShortcutChangedEvent)
 	wailsapplication.RegisterEvent[notification.Activation](SystemNotificationActivatedEvent)
 	wailsapplication.RegisterEvent[singleinstance.LaunchData](SecondInstanceLaunchedEvent)
 	wailsapplication.RegisterEvent[FileDrop](FileDropEvent)
@@ -196,6 +199,7 @@ type ProcessWindow interface {
 }
 
 type Dependencies struct {
+	Shortcut           shortcut.Native
 	Runtime            *wailsapplication.App
 	ProcessWindow      ProcessWindow
 	SystemNotification SystemNotificationService
@@ -233,7 +237,9 @@ type App struct {
 	tasksService              TasksService
 	dnProcessService          DnProcessService
 
-	dnProcessMu sync.Mutex
+	dnProcessMu    sync.Mutex
+	shortcutSyncMu sync.Mutex
+	shortcut       *shortcut.Service
 
 	mu                    sync.RWMutex
 	ctx                   context.Context
@@ -243,7 +249,7 @@ type App struct {
 }
 
 func New(dependencies Dependencies) *App {
-	return &App{
+	app := &App{
 		runtime:                   dependencies.Runtime,
 		processWindow:             dependencies.ProcessWindow,
 		systemNotificationService: dependencies.SystemNotification,
@@ -261,6 +267,12 @@ func New(dependencies Dependencies) *App {
 		tasksService:              dependencies.Tasks,
 		dnProcessService:          dependencies.DnProcess,
 	}
+	app.shortcut = shortcut.New(dependencies.Shortcut, app.KillDragonNestProcess, func(status shortcut.Status) {
+		if app.runtime != nil {
+			app.runtime.Event.Emit(DnShortcutChangedEvent, status)
+		}
+	})
+	return app
 }
 
 func (a *App) ServiceStartup(ctx context.Context, _ wailsapplication.ServiceOptions) error {
@@ -303,6 +315,7 @@ func (a *App) RuntimeReady() {
 
 	a.windowService.Restore(windowPreferences(a.settingsService.Get().Window))
 	a.lifecycleService.MarkReady()
+	go a.syncDragonNestShortcut()
 	for _, launch := range pendingLaunches {
 		a.emitSecondInstance(launch)
 	}
@@ -378,6 +391,7 @@ func (a *App) QuitApplication() error {
 }
 
 func (a *App) ServiceShutdown() error {
+	a.shortcut.Shutdown()
 	a.lifecycleService.Stop()
 	if err := a.tasksService.Close(); err != nil {
 		log.Printf("close tasks database: %v", err)

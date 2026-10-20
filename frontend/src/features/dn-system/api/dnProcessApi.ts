@@ -1,4 +1,6 @@
 import {
+  GetDragonNestShortcutStatus,
+  RetryDragonNestShortcut,
   KillDragonNestProcess,
   LaunchDragonNestProcess,
   OpenDragonNestProcessWindow,
@@ -122,4 +124,28 @@ export async function chooseDragonNestLauncher(): Promise<string | undefined> {
 export async function saveDragonNestLauncherPath(path: string): Promise<string> {
   const saved = await SaveDragonNestLauncherPath(new DnLauncherConfiguration({ path }))
   return saved.path
+}
+
+export interface DnShortcutStatus {
+  revision: number
+  enabled: boolean
+  key: string
+  gameMode: boolean
+  registered: boolean
+  registrationError: string
+  triggerCount: number
+  lastTriggeredAt: string
+  running: boolean
+  lastError: string
+  lastProcess: DragonNestProcess
+}
+
+export async function getDragonNestShortcutStatus(): Promise<DnShortcutStatus> {
+  return GetDragonNestShortcutStatus()
+}
+export async function retryDragonNestShortcut(): Promise<DnShortcutStatus> {
+  return RetryDragonNestShortcut()
+}
+export function onDragonNestShortcutChanged(callback: (status: DnShortcutStatus) => void): () => void {
+  return Events.On('dn-shortcut:changed', (event) => callback(event.data))
 }

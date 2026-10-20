@@ -104,6 +104,8 @@ export class Appearance {
 }
 
 export class DragonNest {
+    "globalShortcutEnabled"?: boolean;
+    "gameShortcutMode"?: boolean;
     "localShortcutKey": string;
     "targetPath": string;
     "launcherPath"?: string;

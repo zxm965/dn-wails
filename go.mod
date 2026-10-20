@@ -6,7 +6,7 @@ toolchain go1.26.5
 
 require (
 	github.com/jackc/pgx/v5 v5.11.0
-	github.com/wailsapp/wails/v3 v3.0.0-beta.30
+	github.com/wailsapp/wails/v3 v3.0.0-beta.33
 	golang.org/x/crypto v0.58.0
 	golang.org/x/sys v0.49.0
 )

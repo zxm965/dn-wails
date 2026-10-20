@@ -25,6 +25,7 @@ import (
 	platformdnprocess "cull-pear/internal/platform/dnprocess"
 	platformnativekit "cull-pear/internal/platform/nativekit"
 	platformnotification "cull-pear/internal/platform/notification"
+	platformshortcut "cull-pear/internal/platform/shortcut"
 	platformsingleinstance "cull-pear/internal/platform/singleinstance"
 	platformwindow "cull-pear/internal/platform/window"
 	"cull-pear/internal/quicknotes"
@@ -205,6 +206,7 @@ func main() {
 
 	facade = appservice.New(appservice.Dependencies{
 		Runtime:            wailsApp,
+		Shortcut:           platformshortcut.New(wailsApp),
 		ProcessWindow:      platformwindow.NewProcessWindow(wailsApp),
 		SystemNotification: notificationService,
 		Settings:           settingsService,

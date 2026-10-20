@@ -41,10 +41,26 @@ export interface WindowSettings {
   bounds?: WindowBounds
 }
 
-export const LOCAL_SHORTCUT_KEYS = ['F1', 'F2', 'F3', 'F4', 'F5', 'F6', 'F7', 'F8', 'F9', 'F10', 'F11', 'F12'] as const
+export const LOCAL_SHORTCUT_KEYS = [
+  'F1',
+  'F2',
+  'F3',
+  'F4',
+  'F5',
+  'F6',
+  'F7',
+  'F8',
+  'F9',
+  'F10',
+  'F11',
+  'F12',
+  'Ctrl+Shift+F4',
+] as const
 export type LocalShortcutKey = (typeof LOCAL_SHORTCUT_KEYS)[number]
 
 export interface DragonNestSettings {
+  globalShortcutEnabled: boolean
+  gameShortcutMode: boolean
   localShortcutKey: LocalShortcutKey
   targetPath: string
   launcherPath: string
@@ -83,6 +99,8 @@ export const DEFAULT_SETTINGS: AppSettings = {
   },
   dragonNest: {
     localShortcutKey: 'F4',
+    globalShortcutEnabled: false,
+    gameShortcutMode: false,
     targetPath: '',
     launcherPath: '',
   },
@@ -128,6 +146,8 @@ function normalizeSettings(value: WailsAppSettings): AppSettings {
     },
     dragonNest: {
       localShortcutKey: value.dragonNest.localShortcutKey as LocalShortcutKey,
+      globalShortcutEnabled: value.dragonNest.globalShortcutEnabled ?? false,
+      gameShortcutMode: value.dragonNest.gameShortcutMode ?? false,
       targetPath: value.dragonNest.targetPath,
       launcherPath: value.dragonNest.launcherPath ?? '',
     },

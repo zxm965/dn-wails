@@ -5,6 +5,7 @@ import { LOCAL_SHORTCUT_KEYS, useSettings, type LocalShortcutKey } from '@/featu
 import { Button, Card, CardContent, ListState, PageHeader, SpinnerIcon, Select } from '@/shared/components/ui'
 import { useFeedback } from '@/shared/feedback'
 import { createScopedClassNames } from '@/shared/lib/classNames'
+import { isWindows } from '@/shared/lib/platform'
 
 import {
   PROCESS_NAME,
@@ -126,7 +127,7 @@ export function DnProcessKiller() {
           <div className={cx('dn-process-intro')}>
             <span>首次结束成功后会记住该进程路径，按 {shortcut.shortcutKey} 时优先结束同一路径的进程。</span>
             <span className={cx('dn-process-shortcut-hint')}>
-              本页获得焦点时按 <kbd className={cx('dn-process-shortcut-key')}>{shortcut.shortcutKey}</kbd> 结束进程
+              启用全局快捷键后按 <kbd className={cx('dn-process-shortcut-key')}>{shortcut.shortcutKey}</kbd> 结束进程
             </span>
           </div>
 
@@ -196,6 +197,22 @@ export function DnProcessKiller() {
         <CardContent>
           <div className={cx('dn-process-shortcut-toolbar')}>
             <div className={cx('dn-process-shortcut-settings')}>
+              <Button
+                variant='outline'
+                aria-pressed={settings.dragonNest.globalShortcutEnabled}
+                disabled={settingsLoading || settingsSaving || !PROCESS_CONTROL_SUPPORTED}
+                onClick={() =>
+                  void updateSettings((current) => ({
+                    ...current,
+                    dragonNest: {
+                      ...current.dragonNest,
+                      globalShortcutEnabled: !current.dragonNest.globalShortcutEnabled,
+                    },
+                  })).catch(() => undefined)
+                }
+              >
+                {settings.dragonNest.globalShortcutEnabled ? '停用全局快捷键' : '启用全局快捷键'}
+              </Button>
               <span id='process-shortcut-label'>快捷键</span>
               <Select<LocalShortcutKey>
                 className={cx('dn-process-shortcut-select')}
@@ -210,6 +227,24 @@ export function DnProcessKiller() {
                   })).catch(() => undefined)
                 }}
               />
+              {isWindows() && (
+                <Select<'standard' | 'game'>
+                  className={cx('dn-process-shortcut-select')}
+                  aria-label='快捷键输入模式'
+                  value={settings.dragonNest.gameShortcutMode ? 'game' : 'standard'}
+                  options={[
+                    { value: 'standard', label: '标准全局' },
+                    { value: 'game', label: '游戏兼容' },
+                  ]}
+                  disabled={settingsLoading || settingsSaving}
+                  onValueChange={(mode) =>
+                    void updateSettings((current) => ({
+                      ...current,
+                      dragonNest: { ...current.dragonNest, gameShortcutMode: mode === 'game' },
+                    })).catch(() => undefined)
+                  }
+                />
+              )}
               <span role='status'>{settingsSaving ? '保存中…' : '默认 F4 · 自动保存'}</span>
             </div>
             <Button
@@ -222,8 +257,28 @@ export function DnProcessKiller() {
             </Button>
           </div>
           <p className={cx('dn-process-shortcut-note')}>
-            聚焦后生效，部分键盘需 Fn+{shortcut.shortcutKey}。关闭应用前请保存工作。
+            启用后无需窗口焦点；部分键盘需 Fn。
+            {isWindows() ? '游戏内未收到按键时，切换游戏兼容模式或 Ctrl+Shift+F4。' : ''}
+            {isWindows() ? '游戏兼容模式不会拦截游戏原有按键；Windows 标准模式不支持 F12。' : ''}
+            启用期间输入框和弹窗内也会响应，结束目标应用前请保存工作。
           </p>
+          <p className={cx('dn-process-shortcut-note')} role='status'>
+            {shortcut.globalShortcut.summary}
+          </p>
+          {shortcut.globalShortcut.result && (
+            <p className={cx('dn-process-shortcut-note')} role='status'>
+              {shortcut.globalShortcut.result}
+            </p>
+          )}
+          {settings.dragonNest.globalShortcutEnabled && !shortcut.globalShortcut.state?.registered && (
+            <Button
+              variant='outline'
+              disabled={shortcut.globalShortcut.retrying}
+              onClick={() => void shortcut.globalShortcut.retry()}
+            >
+              {shortcut.globalShortcut.retrying ? '正在重试…' : '重试注册'}
+            </Button>
+          )}
           {settingsError && (
             <p className={cx('dn-process-shortcut-note')} role='alert'>
               {settingsError}

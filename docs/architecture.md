@@ -10,7 +10,7 @@
 
 发布仅维护 macOS（universal）与 Windows（amd64）桌面端；构建入口固定使用 pnpm。macOS 在 macOS 主机构建，Windows 使用纯 Go 构建并可交叉编译；不维护 Linux、移动端、服务端或 Docker 构建模板。非目标平台的 Go 不可用适配仍用于明确降级与包级检查。
 
-依赖基线（2026-10-16）：Wails Go 模块、前端 runtime 和 CI CLI 统一为 `v3.0.0-beta.30`；pnpm 使用 `frontend/package.json` 的 `packageManager` 版本，CI 从同一文件读取。前后端已声明依赖更新至本次核对的最新发布版本，TypeScript 按要求保留 `7.0.2`；依赖解析结果分别由 `pnpm-lock.yaml` 与 `go.sum` 记录。
+依赖基线（2026-10-20）：Wails Go 模块、前端 runtime 和 CI CLI 统一为 `v3.0.0-beta.33`；lucide-react 更新为 `1.59.0`；pnpm 使用 `frontend/package.json` 的 `packageManager` 版本 `12.14.0`，CI 从同一文件读取。前后端已声明依赖更新至本次核对的最新发布版本，TypeScript 按要求保留 `7.0.2`；依赖解析结果分别由 `pnpm-lock.yaml` 与 `go.sum` 记录。
 
 ## 后端依赖方向
 
@@ -153,7 +153,7 @@ app
 - [日历](modules/calendar.md)
 - [云端任务](modules/tasks.md)
 - [龙之谷](modules/dn-system.md)
-- [窗口内快捷键与置顶小窗](modules/shortcut.md)
+- [全局快捷键与置顶小窗](modules/shortcut.md)
 - [站内消息](modules/site-messages.md)
 - [应用生命周期](modules/app-lifecycle.md)
 - [安装身份](modules/installation-identity.md)
