@@ -227,26 +227,72 @@ const empty = style({
 })
 
 const zodiacOverview = style({
-  display: 'flex',
-  alignItems: 'center',
-  flexWrap: 'wrap',
-  gap: 'calc(8px * var(--layout-spacing)) calc(12px * var(--layout-spacing))',
+  minWidth: 0,
   marginTop: 'calc(12px * var(--layout-spacing))',
-  '@container': {
-    'calendar-page (max-width: 620px)': {
-      marginTop: 'calc(8px * var(--layout-spacing))',
-      gap: 'calc(6px * var(--layout-spacing)) calc(10px * var(--layout-spacing))',
-    },
-  },
 })
 
+const zodiacToggle = style({
+  width: '100%',
+  justifyContent: 'flex-start',
+  padding: '0 2px',
+  gap: '8px',
+  fontSize: 'var(--font-size-secondary)',
+  fontWeight: 600,
+  borderRadius: '6px',
+  selectors: {
+    '&[data-button-variant="ghost"]': { background: 'transparent' },
+    '&[data-button-variant="ghost"]:hover:not(:disabled)': { color: 'var(--accent)', background: 'transparent' },
+    '&[aria-expanded="true"]': { color: 'var(--text-primary)' },
+  },
+})
+const zodiacToggleIcon = style({ width: '14px', height: '14px', color: 'var(--accent)', flexShrink: 0 })
+const zodiacRule = style({
+  flex: 1,
+  minWidth: '12px',
+  height: '1px',
+  background: 'var(--border-subtle)',
+  margin: '0 4px',
+})
+const zodiacChevron = style({
+  display: 'grid',
+  placeItems: 'center',
+  width: '22px',
+  height: '22px',
+  flexShrink: 0,
+  borderRadius: '50%',
+  color: 'var(--text-tertiary)',
+  transition: 'transform 260ms cubic-bezier(0.22, 1, 0.36, 1), background-color 160ms ease, color 160ms ease',
+  selectors: {
+    [`${zodiacToggle}[aria-expanded="true"] &`]: { transform: 'rotate(180deg)', color: 'var(--accent)' },
+    [`${zodiacToggle}:hover &`]: { background: 'var(--accent-muted)', color: 'var(--accent)' },
+  },
+  '@media': { '(prefers-reduced-motion: reduce)': { transition: 'none' } },
+})
+const zodiacPanel = style({
+  display: 'grid',
+  // Preserve the content's natural height in both states so the calendar never shifts.
+  gridTemplateRows: '1fr',
+  minWidth: 0,
+  opacity: 0,
+  visibility: 'hidden',
+  transition: 'opacity 180ms ease, visibility 0s linear 260ms',
+  selectors: {
+    '&[data-expanded="true"]': { opacity: 1, visibility: 'visible', transitionDelay: '0s' },
+  },
+  '@media': { '(prefers-reduced-motion: reduce)': { transition: 'none' } },
+})
+const zodiacClip = style({ minHeight: 0, overflow: 'hidden' })
 const zodiacRanges = style({
-  selectors: { '&[hidden]': { display: 'none' } },
-  minWidth: '0',
-  flex: '1 1 auto',
+  minWidth: 0,
   display: 'grid',
   gridTemplateColumns: 'repeat(2, minmax(0, 1fr))',
-  gap: '6px',
+  gap: '8px',
+  paddingTop: 'calc(10px * var(--layout-spacing))',
+  transform: 'translateY(-6px)',
+  transition: 'transform 260ms cubic-bezier(0.22, 1, 0.36, 1)',
+  selectors: { [`${zodiacPanel}[data-expanded="true"] &`]: { transform: 'translateY(0)' } },
+  '@container': { 'calendar-page (max-width: 390px)': { gridTemplateColumns: 'minmax(0, 1fr)' } },
+  '@media': { '(prefers-reduced-motion: reduce)': { transition: 'none', transform: 'none' } },
 })
 
 const zodiacRange = style({
@@ -255,7 +301,7 @@ const zodiacRange = style({
   alignItems: 'center',
   flexWrap: 'wrap',
   gap: '3px 5px',
-  padding: '5px 7px',
+  padding: 'calc(9px * var(--layout-spacing)) 10px',
   color: 'var(--text-secondary)',
   background: 'color-mix(in srgb, var(--surface-muted) 70%, transparent)',
   border: '1px solid var(--border-subtle)',
@@ -309,6 +355,12 @@ export const styles = {
   festivalDate,
   empty,
   zodiacOverview,
+  zodiacToggle,
+  zodiacToggleIcon,
+  zodiacRule,
+  zodiacChevron,
+  zodiacPanel,
+  zodiacClip,
   zodiacRanges,
   zodiacRange,
   zodiacSymbol,

@@ -70,17 +70,43 @@ const metaIcon = style({ flexShrink: 0 })
 const metaLabel = style({ minWidth: 0, overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis' })
 const actions = style({ display: 'flex', flexWrap: 'wrap', gap: 8, minWidth: 0 })
 const chevron = style({
-  transition: 'transform 180ms ease',
+  transition: 'transform 260ms cubic-bezier(0.22, 1, 0.36, 1)',
   selectors: { '&[data-expanded="true"]': { transform: 'rotate(180deg)' } },
   '@media': { '(prefers-reduced-motion: reduce)': { transition: 'none' } },
 })
+const diagnosticsPanel = style({
+  display: 'grid',
+  gridTemplateRows: '0fr',
+  minWidth: 0,
+  marginTop: 'calc(-16px * var(--layout-spacing))',
+  opacity: 0,
+  visibility: 'hidden',
+  transition:
+    'grid-template-rows 260ms cubic-bezier(0.22, 1, 0.36, 1), margin-top 260ms cubic-bezier(0.22, 1, 0.36, 1), opacity 180ms ease, visibility 0s linear 260ms',
+  selectors: {
+    '&[data-expanded="true"]': {
+      gridTemplateRows: '1fr',
+      marginTop: 0,
+      opacity: 1,
+      visibility: 'visible',
+      transitionDelay: '0s',
+    },
+  },
+  '@media': { '(prefers-reduced-motion: reduce)': { transition: 'none' } },
+})
+const diagnosticsClip = style({ minHeight: 0, overflow: 'hidden' })
 const diagnostics = style({
   display: 'grid',
   minWidth: 0,
   gap: 'calc(16px * var(--layout-spacing))',
   paddingTop: 'calc(16px * var(--layout-spacing))',
+  paddingInline: 4,
+  paddingBottom: 4,
   borderTop: '1px solid var(--border-subtle)',
-  selectors: { '&[hidden]': { display: 'none' } },
+  transform: 'translateY(-6px)',
+  transition: 'transform 260ms cubic-bezier(0.22, 1, 0.36, 1)',
+  selectors: { [`${diagnosticsPanel}[data-expanded="true"] &`]: { transform: 'translateY(0)' } },
+  '@media': { '(prefers-reduced-motion: reduce)': { transition: 'none', transform: 'none' } },
 })
 const details = style({
   minWidth: 0,
@@ -136,6 +162,8 @@ export const styles = {
   metaLabel,
   actions,
   chevron,
+  diagnosticsPanel,
+  diagnosticsClip,
   diagnostics,
   details,
   detail,

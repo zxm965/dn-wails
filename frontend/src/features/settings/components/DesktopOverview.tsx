@@ -85,28 +85,38 @@ export function DesktopOverview({
           </Button>
         </div>
       </div>
-      <div id={detailsId} hidden={!expanded} className={styles.diagnostics}>
-        <dl className={styles.details}>
-          <Detail pending={pending} label='启动时间' value={status ? formatDate(status.startedAt) : '—'} />
-          <Detail pending={pending} label='第二实例' value={status ? `${status.secondInstanceCount} 次` : '—'} />
-          <Detail pending={pending} label='Go 版本' value={status?.goVersion || '—'} />
-          <Detail pending={pending} label='日志文件' value={status ? fileName(status.logFile) : '—'} />
-          <Detail pending={pending} label='检查时间' value={status ? formatDate(status.checkedAt) : '—'} />
-          <Detail
-            pending={loading && !updateInfo}
-            label='构建类型'
-            value={updateInfo ? (updateInfo.configured ? '正式发布构建' : '开发构建') : '—'}
-          />
-        </dl>
-        <div className={styles.actions}>
-          <Button variant='secondary' disabled={!status || copying} onClick={() => void onCopySummary()}>
-            <SpinnerIcon icon={ClipboardCopy} spinning={copying} size={15} aria-hidden='true' />
-            复制摘要
-          </Button>
-          <Button variant='ghost' disabled={openingLogs} onClick={() => void onOpenLogs()}>
-            <SpinnerIcon icon={FolderOpen} spinning={openingLogs} size={15} aria-hidden='true' />
-            打开日志
-          </Button>
+      <div
+        id={detailsId}
+        data-expanded={expanded}
+        aria-hidden={!expanded}
+        inert={!expanded}
+        className={styles.diagnosticsPanel}
+      >
+        <div className={styles.diagnosticsClip}>
+          <div className={styles.diagnostics}>
+            <dl className={styles.details}>
+              <Detail pending={pending} label='启动时间' value={status ? formatDate(status.startedAt) : '—'} />
+              <Detail pending={pending} label='第二实例' value={status ? `${status.secondInstanceCount} 次` : '—'} />
+              <Detail pending={pending} label='Go 版本' value={status?.goVersion || '—'} />
+              <Detail pending={pending} label='日志文件' value={status ? fileName(status.logFile) : '—'} />
+              <Detail pending={pending} label='检查时间' value={status ? formatDate(status.checkedAt) : '—'} />
+              <Detail
+                pending={loading && !updateInfo}
+                label='构建类型'
+                value={updateInfo ? (updateInfo.configured ? '正式发布构建' : '开发构建') : '—'}
+              />
+            </dl>
+            <div className={styles.actions}>
+              <Button variant='secondary' disabled={!status || copying} onClick={() => void onCopySummary()}>
+                <SpinnerIcon icon={ClipboardCopy} spinning={copying} size={15} aria-hidden='true' />
+                复制摘要
+              </Button>
+              <Button variant='ghost' disabled={openingLogs} onClick={() => void onOpenLogs()}>
+                <SpinnerIcon icon={FolderOpen} spinning={openingLogs} size={15} aria-hidden='true' />
+                打开日志
+              </Button>
+            </div>
+          </div>
         </div>
       </div>
       {error && (

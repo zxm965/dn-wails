@@ -131,3 +131,5 @@ React 组件通过 `useSettings` 读取和更新设置。所有配置项取消�
 go test ./internal/settings
 cd frontend && pnpm build
 ```
+
+诊断详情使用 260ms 网格高度与间距过渡、内容淡入/位移及箭头旋转，快速切换从当前进度反向衔接；收起后通过 `inert` 与 `aria-hidden` 禁止隐藏控件参与焦点导航，减少动态效果时立即切换，展开状态继续保存在当前会话。

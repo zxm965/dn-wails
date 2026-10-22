@@ -1,4 +1,4 @@
-import { ChevronDown, ChevronRight, Flower2 } from 'lucide-react'
+import { ChevronDown, Flower2, Sparkles } from 'lucide-react'
 import { useId, useState } from 'react'
 
 import { Button } from '@/shared/components/ui'
@@ -84,30 +84,47 @@ export function CalendarSummary({ day, monthDays, onSelect }: CalendarSummaryPro
           <Button
             variant='ghost'
             size='sm'
+            ripple={false}
+            className={styles.zodiacToggle}
             aria-expanded={zodiacExpanded}
             aria-controls={zodiacId}
             onClick={() => setZodiacExpanded((current) => !current)}
           >
-            {zodiacExpanded ? <ChevronDown aria-hidden='true' /> : <ChevronRight aria-hidden='true' />}本月星座
+            <Sparkles className={styles.zodiacToggleIcon} aria-hidden='true' />
+            <span>本月星座</span>
+            <span className={styles.zodiacRule} aria-hidden='true' />
+            <span className={styles.zodiacChevron}>
+              <ChevronDown size={14} aria-hidden='true' />
+            </span>
           </Button>
-          <div id={zodiacId} hidden={!zodiacExpanded} className={styles.zodiacRanges}>
-            {zodiacRanges.map((zodiac) => (
-              <div
-                key={zodiac.name}
-                className={styles.zodiacRange}
-                data-selected={
-                  day.isCurrentMonth && day.day >= zodiac.startDay && day.day <= zodiac.endDay ? 'true' : undefined
-                }
-              >
-                <span className={styles.zodiacSymbol} aria-hidden='true'>
-                  {zodiac.symbol}
-                </span>
-                <span className={styles.zodiacName}>{zodiac.name}</span>
-                <span className={styles.zodiacDates}>
-                  {zodiac.startDay}–{zodiac.endDay} 日
-                </span>
+          <div
+            id={zodiacId}
+            data-expanded={zodiacExpanded}
+            aria-hidden={!zodiacExpanded}
+            inert={!zodiacExpanded}
+            className={styles.zodiacPanel}
+          >
+            <div className={styles.zodiacClip}>
+              <div className={styles.zodiacRanges}>
+                {zodiacRanges.map((zodiac) => (
+                  <div
+                    key={zodiac.name}
+                    className={styles.zodiacRange}
+                    data-selected={
+                      day.isCurrentMonth && day.day >= zodiac.startDay && day.day <= zodiac.endDay ? 'true' : undefined
+                    }
+                  >
+                    <span className={styles.zodiacSymbol} aria-hidden='true'>
+                      {zodiac.symbol}
+                    </span>
+                    <span className={styles.zodiacName}>{zodiac.name}</span>
+                    <span className={styles.zodiacDates}>
+                      {zodiac.startDay}–{zodiac.endDay} 日
+                    </span>
+                  </div>
+                ))}
               </div>
-            ))}
+            </div>
           </div>
         </div>
       </div>
