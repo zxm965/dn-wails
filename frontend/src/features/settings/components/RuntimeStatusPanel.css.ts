@@ -111,26 +111,23 @@ const runtimeServiceIcon = style({
   },
 })
 
-const runtimeConfigurationDescription = style({
-  selectors: {
-    [`${runtimeServiceCard} &`]: {
-      overflow: 'visible',
-      textOverflow: 'clip',
-      whiteSpace: 'normal',
-      overflowWrap: 'anywhere',
-      lineHeight: '1.5',
-    },
-  },
+const pendingDescription = style({ margin: '3px 0 0', fontSize: 'var(--font-size-caption)' })
+const descriptionSkeleton = style({
+  width: 'min(100%, 18ch)',
+  display: 'inline-block',
+  verticalAlign: 'middle',
+  selectors: { '&[aria-hidden="true"]': { minHeight: 0, height: '0.85em', borderRadius: 4 } },
 })
 
 export const styles = {
+  pendingDescription,
+  descriptionSkeleton,
   'runtime-status-panel': runtimeStatusPanel,
   'runtime-service-section': runtimeServiceSection,
   'runtime-service-grid': runtimeServiceGrid,
   'runtime-status-link': runtimeStatusLink,
   'runtime-service-card': runtimeServiceCard,
   'runtime-service-icon': runtimeServiceIcon,
-  'runtime-configuration-description': runtimeConfigurationDescription,
   'is-ready': isReady,
   'is-warning': isWarning,
   'is-unavailable': isUnavailable,
@@ -145,17 +142,8 @@ globalStyle(`${runtimeServiceSection} > header`, {
   marginBottom: '14px',
 })
 
-globalStyle(`${runtimeServiceSection} > header p`, {
-  margin: '0',
-  color: 'var(--accent)',
-  fontSize: 'var(--font-size-micro)',
-  fontWeight: '800',
-  letterSpacing: '0.1em',
-  textTransform: 'uppercase',
-})
-
 globalStyle(`${runtimeServiceSection} > header h3`, {
-  margin: '4px 0 0',
+  margin: '0',
   fontSize: 'var(--font-size-subtitle)',
 })
 

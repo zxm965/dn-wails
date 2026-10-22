@@ -241,6 +241,7 @@ const zodiacOverview = style({
 })
 
 const zodiacRanges = style({
+  selectors: { '&[hidden]': { display: 'none' } },
   minWidth: '0',
   flex: '1 1 auto',
   display: 'grid',

@@ -24,7 +24,9 @@ import {
   SpinnerIcon,
   Textarea,
 } from '@/shared/components/ui'
+import { QueryFeedback } from '@/shared/components/ui/QueryFeedback'
 import { useFeedback } from '@/shared/feedback'
+import { useRequestGuard } from '@/shared/hooks/useRequestGuard'
 import { createScopedClassNames } from '@/shared/lib/classNames'
 
 import {
@@ -53,24 +55,31 @@ export function DnRoles() {
   const [filters, setFilters] = useState(emptyFilters)
   const [appliedFilters, setAppliedFilters] = useState(emptyFilters)
   const [loading, setLoading] = useState(true)
+  const [loadError, setLoadError] = useState('')
+  const [requestedPage, setRequestedPage] = useState(1)
+  const beginRequest = useRequestGuard()
   const [saving, setSaving] = useState(false)
   const [editorOpen, setEditorOpen] = useState(false)
   const [form, setForm] = useState<RoleProfessionInput>(emptyForm)
 
   const load = useCallback(
     async (page: number) => {
+      const isCurrent = beginRequest()
+      setRequestedPage(page)
+      setLoadError('')
       setLoading(true)
       try {
         const data = await listRoles({ ...appliedFilters, page, pageSize: 15 })
+        if (!isCurrent()) return
         setItems(data.items)
         setMeta(data.meta)
       } catch (error) {
-        notify({ title: '角色加载失败', message: getErrorMessage(error, '请稍后重试。'), tone: 'error' })
+        if (isCurrent()) setLoadError(getErrorMessage(error, '角色加载失败，请重试。'))
       } finally {
-        setLoading(false)
+        if (isCurrent()) setLoading(false)
       }
     },
-    [appliedFilters, notify],
+    [appliedFilters, beginRequest],
   )
 
   useEffect(() => {
@@ -144,7 +153,6 @@ export function DnRoles() {
   return (
     <div className={cx('dn-page')}>
       <PageHeader
-        eyebrow='DN workspace'
         title='角色'
         subtitle='维护周计划所使用的角色和职业。'
         actions={
@@ -195,11 +203,18 @@ export function DnRoles() {
           </div>
         </CardHeader>
         <CardContent>
+          <QueryFeedback
+            layout='table'
+            loading={loading}
+            error={loadError}
+            hasData={items.length > 0}
+            onRetry={() => void load(requestedPage)}
+          />
           {items.length ? (
             <RoleTable items={items} onEdit={openEdit} onDelete={(item) => void remove(item)} />
-          ) : (
+          ) : !loading && !loadError ? (
             <ListState loading={loading} emptyText='暂无角色记录' />
-          )}
+          ) : null}
         </CardContent>
         <CardFooter>
           <Pagination meta={meta} loading={loading} totalLabel='个角色' onPageChange={(page) => void load(page)} />

@@ -12,6 +12,7 @@ import {
 import { useState } from 'react'
 
 import { Button, Label, Select, Textarea } from '@/shared/components/ui'
+import { useSessionState } from '@/shared/hooks/useSessionState'
 import { createScopedClassNames } from '@/shared/lib/classNames'
 import { writeClipboard } from '@/shared/native-kit'
 
@@ -43,7 +44,6 @@ interface TextToolDefinition {
   id: TextToolId
   label: string
   description: string
-  eyebrow: string
   inputPlaceholder: string
   icon: LucideIcon
 }
@@ -53,7 +53,6 @@ const TEXT_TOOLS: TextToolDefinition[] = [
     id: 'json',
     label: 'JSON 工具',
     description: '对象与 JSON 互转、格式化与压缩',
-    eyebrow: 'JSON / 01',
     inputPlaceholder: "{ name: 'Cull Pear', enabled: true }",
     icon: Braces,
   },
@@ -61,7 +60,6 @@ const TEXT_TOOLS: TextToolDefinition[] = [
     id: 'base64',
     label: 'Base64',
     description: '文本编解码',
-    eyebrow: 'BASE64 / 02',
     inputPlaceholder: '输入需要编码或解码的 UTF-8 文本',
     icon: Binary,
   },
@@ -69,7 +67,6 @@ const TEXT_TOOLS: TextToolDefinition[] = [
     id: 'url',
     label: 'URL 编码',
     description: '组件编码与解码',
-    eyebrow: 'URL / 03',
     inputPlaceholder: '输入 URL 参数或已编码的内容',
     icon: Link2,
   },
@@ -77,7 +74,6 @@ const TEXT_TOOLS: TextToolDefinition[] = [
     id: 'hash',
     label: '哈希计算',
     description: 'MD5 与 SHA',
-    eyebrow: 'HASH / 04',
     inputPlaceholder: '输入需要计算摘要的文本',
     icon: Fingerprint,
   },
@@ -98,9 +94,12 @@ function textSummary(value: string): string {
 }
 
 export function DeveloperTextToolbox() {
-  const [activeTool, setActiveTool] = useState<TextToolId>('json')
-  const [toolStates, setToolStates] = useState<Record<TextToolId, TextToolState>>(EMPTY_STATE)
-  const [hashAlgorithm, setHashAlgorithm] = useState<HashAlgorithm>('SHA-256')
+  const [activeTool, setActiveTool] = useSessionState<TextToolId>('devtools.tool', 'json')
+  const [toolStates, setToolStates] = useSessionState<Record<TextToolId, TextToolState>>(
+    'devtools.content',
+    EMPTY_STATE,
+  )
+  const [hashAlgorithm, setHashAlgorithm] = useSessionState<HashAlgorithm>('devtools.hash', 'SHA-256')
   const [isProcessing, setIsProcessing] = useState(false)
   const [feedback, setFeedback] = useState('所有内容仅在当前应用内处理。')
 
@@ -270,16 +269,15 @@ export function DeveloperTextToolbox() {
 
         <div className={cx('text-toolbox-privacy')}>
           <LockKeyhole aria-hidden='true' />
-          <span>Local processing</span>
+          <span>仅本地处理</span>
         </div>
       </div>
 
       <main className={cx('text-toolbox-workspace')}>
         <header className={cx('text-toolbox-heading')}>
           <div>
-            <span>{definition.eyebrow}</span>
             <h2>{definition.label}</h2>
-            <p>{definition.description}，处理结果不会离开当前应用。</p>
+            <p>{definition.description}</p>
           </div>
           <span className={cx('text-toolbox-feedback')} aria-live='polite'>
             <span aria-hidden='true' />

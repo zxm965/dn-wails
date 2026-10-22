@@ -208,3 +208,7 @@ pnpm build
 主窗口支持快速启动，与小窗共用启动及扫描刷新链路。Windows 和 macOS 的启动路径均通过弹窗配置、修改，保存后页面只保留入口；macOS 支持 Firefox.app 与其可执行文件，详见[全局快捷键](shortcut.md)。
 
 周常数据库回归：`DN_TEST_DATABASE_URL=... go test ./internal/dn -run TestWeeklyPlanCurrentSchema -v`。测试只创建连接内临时表，验证当前结构的增删改查、重置/同步和账号隔离；未设置独立测试数据库连接时明确跳过，不读取持久业务数据。
+
+## 列表加载反馈
+
+角色和周常列表首次读取使用共享 `QueryFeedback` 骨架屏；再次读取时保留原数据，并标注刷新中。加载失败显示可重试错误，不显示误导性的空记录；周常角色选项失败也不会提示用户创建角色。查询使用 `useRequestGuard`，只接受最新请求结果，卸载后的响应不会更新列表。后端数据契约保持不变。

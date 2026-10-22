@@ -17,6 +17,7 @@ import { SystemNotificationPanel } from '@/features/system-notification'
 import { Button, PageHeader, PageTabs, type PageTab } from '@/shared/components/ui'
 import { openDiagnosticsDirectory } from '@/shared/diagnostics'
 import { useFeedback } from '@/shared/feedback'
+import { useSessionState } from '@/shared/hooks/useSessionState'
 import { createScopedClassNames } from '@/shared/lib/classNames'
 import { pickFiles, readClipboard, subscribeFileDrop, writeClipboard } from '@/shared/native-kit'
 import { windowManager } from '@/shared/window'
@@ -31,7 +32,7 @@ type ToolCategory = 'text' | 'desktop'
 
 export function DevToolsPanel() {
   const { notify, confirm } = useFeedback()
-  const [activeCategory, setActiveCategory] = useState<ToolCategory>('text')
+  const [activeCategory, setActiveCategory] = useSessionState<ToolCategory>('devtools.category', 'text')
   const [result, setResult] = useState('选择测试操作后，结果会显示在这里。')
   const [droppedFiles, setDroppedFiles] = useState<string[]>([])
 
@@ -265,7 +266,7 @@ export function DevToolsPanel() {
 
   return (
     <section className={cx('devtools-panel')}>
-      <PageHeader eyebrow='Laboratory' title='实验室' subtitle='处理文本、编码与哈希，验证桌面原生能力。' />
+      <PageHeader title='实验室' subtitle='处理文本、编码与哈希，验证桌面原生能力。' />
       <PageTabs label='实验室分类' tabs={tabs} value={activeCategory} onValueChange={setActiveCategory} />
     </section>
   )

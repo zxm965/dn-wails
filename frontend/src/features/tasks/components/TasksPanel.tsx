@@ -19,8 +19,9 @@ import {
   Star,
   Trash2,
 } from 'lucide-react'
-import { useEffect, useMemo, useState, type DragEvent, type FormEvent, type KeyboardEvent } from 'react'
+import { useEffect, useMemo, useRef, useState, type DragEvent, type FormEvent, type KeyboardEvent } from 'react'
 
+import { useAccount } from '@/features/account'
 import {
   Button,
   Dialog,
@@ -37,6 +38,8 @@ import {
   Select,
 } from '@/shared/components/ui'
 import { useFeedback } from '@/shared/feedback'
+import { useSessionScroll } from '@/shared/hooks/useSessionScroll'
+import { useSessionState } from '@/shared/hooks/useSessionState'
 import { createScopedClassNames } from '@/shared/lib/classNames'
 
 import {
@@ -153,12 +156,16 @@ function repeatLabel(task: TaskItem): string {
 
 export function TasksPanel() {
   const { notify, confirm } = useFeedback()
+  const { user } = useAccount()
+  const sessionKey = `tasks.${user!.id}`
+  const scrollRef = useRef<HTMLDivElement>(null)
+  const listsRef = useRef<HTMLDivElement>(null)
   const [workspace, setWorkspace] = useState<TaskWorkspace>({ lists: [], tasks: [] })
-  const [selectedList, setSelectedList] = useState<SelectedList>('starred')
-  const [sortMode, setSortMode] = useState<SortMode>('manual')
-  const [search, setSearch] = useState('')
+  const [selectedList, setSelectedList] = useSessionState<SelectedList | null>(`${sessionKey}.list`, null)
+  const [sortMode, setSortMode] = useSessionState<SortMode>(`${sessionKey}.sort`, 'manual')
+  const [search, setSearch] = useSessionState(`${sessionKey}.search`, '')
   const [quickTitle, setQuickTitle] = useState('')
-  const [completedExpanded, setCompletedExpanded] = useState(false)
+  const [completedExpanded, setCompletedExpanded] = useSessionState(`${sessionKey}.completed`, false)
   const [loading, setLoading] = useState(true)
   const [working, setWorking] = useState(false)
   const [loadError, setLoadError] = useState('')
@@ -168,6 +175,9 @@ export function TasksPanel() {
   const [listDraft, setListDraft] = useState<{ id: number; title: string }>({ id: 0, title: '' })
   const [activeListActionsID, setActiveListActionsID] = useState<number | null>(null)
   const [draggedTaskID, setDraggedTaskID] = useState<number | null>(null)
+
+  useSessionScroll(scrollRef, `${sessionKey}.scroll.${selectedList}`, !loading)
+  useSessionScroll(listsRef, `${sessionKey}.listsScroll`, !loading)
 
   const activeList = selectedList === 'starred' ? undefined : workspace.lists.find((list) => list.id === selectedList)
   const selectedListID = activeList?.id ?? workspace.lists[0]?.id ?? 0
@@ -204,7 +214,7 @@ export function TasksPanel() {
       const next = await getTaskWorkspace()
       setWorkspace(next)
       setSelectedList((current) => {
-        if (current === 'starred') return next.lists[0]?.id ?? 'starred'
+        if (current === 'starred') return current
         return next.lists.some((list) => list.id === current) ? current : (next.lists[0]?.id ?? 'starred')
       })
       setLoadError('')
@@ -527,15 +537,31 @@ export function TasksPanel() {
   return (
     <div className={cx('tasks-page')} onKeyDown={handleShortcut}>
       <PageHeader
-        eyebrow='Task workspace'
         title='任务清单'
         subtitle='用清单、日期、重复计划和子任务管理每一件待办事项。'
         actions={
           <>
-            <Button variant='outline' onClick={() => window.print()}>
-              <Printer aria-hidden='true' />
-              打印
-            </Button>
+            <PopoverPrimitive.Root>
+              <PopoverPrimitive.Trigger render={<Button variant='outline' />} aria-label='更多任务操作'>
+                <MoreHorizontal aria-hidden='true' />
+                更多
+              </PopoverPrimitive.Trigger>
+              <PopoverPrimitive.Portal>
+                <PopoverPrimitive.Positioner
+                  side='bottom'
+                  align='end'
+                  sideOffset={7}
+                  className={cx('tasks-list-actions-positioner')}
+                >
+                  <PopoverPrimitive.Popup className={cx('tasks-list-actions-popup')}>
+                    <PopoverPrimitive.Close render={<Button variant='ghost' />} onClick={() => window.print()}>
+                      <Printer aria-hidden='true' />
+                      打印任务
+                    </PopoverPrimitive.Close>
+                  </PopoverPrimitive.Popup>
+                </PopoverPrimitive.Positioner>
+              </PopoverPrimitive.Portal>
+            </PopoverPrimitive.Root>
             <Button disabled={!selectedListID} onClick={() => openNewTask()}>
               <Plus aria-hidden='true' />
               添加任务
@@ -547,7 +573,7 @@ export function TasksPanel() {
       <section className={cx('tasks-workspace')}>
         <aside className={cx('tasks-lists-panel')}>
           <div className={cx('tasks-lists-header')}>
-            <strong>任务清单</strong>
+            <strong>我的清单</strong>
             <Button size='sm' variant='ghost' title='新建清单' aria-label='新建清单' onClick={() => openListDialog()}>
               <ListPlus aria-hidden='true' />
             </Button>
@@ -563,7 +589,7 @@ export function TasksPanel() {
               {workspace.tasks.filter((task) => task.starred && !task.completedAt).length}
             </small>
           </Button>
-          <div className={cx('tasks-lists')}>
+          <div ref={listsRef} className={cx('tasks-lists')}>
             {workspace.lists.map((list, index) => (
               <div key={list.id} className={cx('tasks-list-row')}>
                 <Button
@@ -694,7 +720,7 @@ export function TasksPanel() {
             </form>
           )}
 
-          <div className={cx('tasks-scroll')}>
+          <div ref={scrollRef} className={cx('tasks-scroll')}>
             {pendingTasks.length > 0 && (
               <div className={cx('tasks-items')}>{pendingTasks.map((task) => renderTask(task))}</div>
             )}

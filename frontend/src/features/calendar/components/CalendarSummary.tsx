@@ -1,4 +1,5 @@
-import { Flower2, Sparkles } from 'lucide-react'
+import { ChevronDown, ChevronRight, Flower2 } from 'lucide-react'
+import { useId, useState } from 'react'
 
 import { Button } from '@/shared/components/ui'
 
@@ -16,6 +17,8 @@ interface CalendarSummaryProps {
 const weekdayFormatter = new Intl.DateTimeFormat('zh-CN', { weekday: 'long' })
 
 export function CalendarSummary({ day, monthDays, onSelect }: CalendarSummaryProps) {
+  const [zodiacExpanded, setZodiacExpanded] = useState(false)
+  const zodiacId = useId()
   const festivals = monthDays.filter((monthDay) => monthDay.traditionalFestival)
   const weekendCount = monthDays.filter((monthDay) => monthDay.isWeekend).length
   const zodiacRanges = monthDays[0] ? getMonthZodiacRanges(monthDays[0].date) : []
@@ -78,11 +81,16 @@ export function CalendarSummary({ day, monthDays, onSelect }: CalendarSummaryPro
         )}
         <p className={styles.hint}>传统节日按农历标注，放假与补班以官方安排为准。</p>
         <div className={styles.zodiacOverview}>
-          <div className={styles.overviewTitle}>
-            <Sparkles className={styles.overviewIcon} aria-hidden='true' />
-            <h2 className={styles.heading}>本月星座</h2>
-          </div>
-          <div className={styles.zodiacRanges}>
+          <Button
+            variant='ghost'
+            size='sm'
+            aria-expanded={zodiacExpanded}
+            aria-controls={zodiacId}
+            onClick={() => setZodiacExpanded((current) => !current)}
+          >
+            {zodiacExpanded ? <ChevronDown aria-hidden='true' /> : <ChevronRight aria-hidden='true' />}本月星座
+          </Button>
+          <div id={zodiacId} hidden={!zodiacExpanded} className={styles.zodiacRanges}>
             {zodiacRanges.map((zodiac) => (
               <div
                 key={zodiac.name}

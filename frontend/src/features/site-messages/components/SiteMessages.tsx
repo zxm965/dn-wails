@@ -10,7 +10,7 @@ import {
   Trash2,
   TriangleAlert,
 } from 'lucide-react'
-import { type FormEvent, useCallback, useEffect, useState } from 'react'
+import { type FormEvent, useCallback, useEffect, useRef, useState } from 'react'
 
 import { useAccount } from '@/features/account'
 import {
@@ -36,7 +36,9 @@ import {
   SpinnerIcon,
   Textarea,
 } from '@/shared/components/ui'
+import { QueryFeedback } from '@/shared/components/ui/QueryFeedback'
 import { useFeedback } from '@/shared/feedback'
+import { useRequestGuard } from '@/shared/hooks/useRequestGuard'
 import { createScopedClassNames } from '@/shared/lib/classNames'
 import { openExternalURL } from '@/shared/native-kit'
 import { getAppViewFromPath, type AppView } from '@/shared/navigation'
@@ -45,8 +47,6 @@ import {
   deleteMessage,
   getErrorMessage,
   listMessages,
-  markAllMessagesRead,
-  markMessageRead,
   publishMessage,
   syncOfficialMessages,
   type ListMeta,
@@ -81,69 +81,80 @@ export function SiteMessages({ onNavigate }: { onNavigate: (target: AppView) => 
   const messageCenter = useSiteMessages()
   const [items, setItems] = useState<SiteMessage[]>([])
   const [meta, setMeta] = useState<ListMeta>(emptyMeta)
-  const [unreadCount, setUnreadCount] = useState(0)
+  const { unreadCount, readRevision } = messageCenter
+  const observedReadRevision = useRef(readRevision)
   const [filters, setFilters] = useState<{ keyword: string; readStatus: 'all' | 'read' | 'unread' }>({
     keyword: '',
     readStatus: 'all',
   })
   const [appliedFilters, setAppliedFilters] = useState(filters)
   const [loading, setLoading] = useState(true)
+  const [loadError, setLoadError] = useState('')
+  const [requestedPage, setRequestedPage] = useState(1)
+  const beginRequest = useRequestGuard()
   const [activeMessage, setActiveMessage] = useState<SiteMessage | null>(null)
   const [publishOpen, setPublishOpen] = useState(false)
   const [publishing, setPublishing] = useState(false)
+  const [markingAll, setMarkingAll] = useState(false)
   const [syncing, setSyncing] = useState(false)
   const [editingMessage, setEditingMessage] = useState<SiteMessage | null>(null)
   const [form, setForm] = useState<SiteMessageInput>({ ...emptyForm })
 
   const load = useCallback(
     async (page: number) => {
+      const isCurrent = beginRequest()
+      setRequestedPage(page)
+      setLoadError('')
       setLoading(true)
       try {
         const data = await listMessages({ ...appliedFilters, page, pageSize: 10, manage: isAdmin })
+        if (!isCurrent()) return
         setItems(data.items)
         setMeta(data.meta)
-        setUnreadCount(data.unreadCount)
         if (data.syncError) {
           notify({ title: '官网消息同步暂时失败', message: data.syncError, tone: 'warning' })
         }
       } catch (error) {
-        notify({ title: '消息加载失败', message: getErrorMessage(error, '请稍后重试。'), tone: 'error' })
+        if (isCurrent()) setLoadError(getErrorMessage(error, '消息加载失败，请重试。'))
       } finally {
-        setLoading(false)
+        if (isCurrent()) setLoading(false)
       }
     },
-    [appliedFilters, isAdmin, notify],
+    [appliedFilters, isAdmin, notify, beginRequest],
   )
 
   useEffect(() => {
     void load(1)
   }, [load])
 
+  useEffect(() => {
+    if (observedReadRevision.current === readRevision) return
+    observedReadRevision.current = readRevision
+    void load(meta.page)
+  }, [readRevision, load, meta.page])
+
   async function openMessage(message: SiteMessage) {
-    let next = message
-    if (!message.isRead && isMessageCurrentlyActive(message)) {
-      try {
-        next = await markMessageRead(message.id)
-        setItems((current) => current.map((item) => (item.id === message.id ? next : item)))
-        setUnreadCount((current) => Math.max(0, current - 1))
-        await messageCenter.refreshInbox()
-      } catch (error) {
-        notify({ title: '已读状态更新失败', message: getErrorMessage(error, '请稍后重试。'), tone: 'error' })
-      }
+    setActiveMessage(message)
+    if (message.isRead || !isMessageCurrentlyActive(message)) return
+    try {
+      const updated = await messageCenter.markRead(message)
+      setItems((current) => current.map((item) => (item.id === updated.id ? updated : item)))
+      setActiveMessage((current) => (current?.id === updated.id ? updated : current))
+    } catch (error) {
+      notify({ title: '已读状态更新失败', message: getErrorMessage(error, '请稍后重试。'), tone: 'error' })
     }
-    setActiveMessage(next)
   }
 
   async function markAll() {
-    setLoading(true)
+    if (markingAll) return
+    setMarkingAll(true)
     try {
-      const count = await markAllMessagesRead()
+      const count = await messageCenter.markAll()
       notify({ title: count ? `已将 ${count} 条消息标记为已读` : '当前没有未读消息', tone: 'success' })
-      await load(meta.page)
-      await messageCenter.refreshInbox()
     } catch (error) {
       notify({ title: '全部已读失败', message: getErrorMessage(error, '请稍后重试。'), tone: 'error' })
-      setLoading(false)
+    } finally {
+      setMarkingAll(false)
     }
   }
 
@@ -265,13 +276,12 @@ export function SiteMessages({ onNavigate }: { onNavigate: (target: AppView) => 
   return (
     <div className={cx('dn-page')}>
       <PageHeader
-        eyebrow='DN workspace'
         title='站内消息'
         subtitle='查看桌面工作区公告与提醒。'
         actions={
           <>
             {unreadCount > 0 && (
-              <Button variant='outline' disabled={loading} onClick={() => void markAll()}>
+              <Button variant='outline' disabled={loading || markingAll} onClick={() => void markAll()}>
                 <CheckCheck aria-hidden='true' />
                 全部已读
               </Button>
@@ -333,6 +343,12 @@ export function SiteMessages({ onNavigate }: { onNavigate: (target: AppView) => 
           </div>
         </CardHeader>
         <CardContent>
+          <QueryFeedback
+            loading={loading}
+            error={loadError}
+            hasData={items.length > 0}
+            onRetry={() => void load(requestedPage)}
+          />
           {items.length ? (
             <div className={cx('site-message-list')}>
               {items.map((message) => (
@@ -387,9 +403,9 @@ export function SiteMessages({ onNavigate }: { onNavigate: (target: AppView) => 
                 </article>
               ))}
             </div>
-          ) : (
+          ) : !loading && !loadError ? (
             <ListState loading={loading} emptyText='没有符合条件的消息' icon={<MailCheck aria-hidden='true' />} />
-          )}
+          ) : null}
         </CardContent>
         <CardFooter>
           <Pagination meta={meta} loading={loading} totalLabel='条消息' onPageChange={(page) => void load(page)} />

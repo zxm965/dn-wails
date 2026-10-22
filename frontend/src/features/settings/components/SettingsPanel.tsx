@@ -1,13 +1,15 @@
-import { useRef, useState } from 'react'
+import { useRef } from 'react'
 
 import { useAppUpdate } from '@/features/app-update'
-import { Button, PageHeader, PageTabs, RadioGroup, Select, Switch, type PageTab } from '@/shared/components/ui'
+import { Button, PageTabs, RadioGroup, Select, Switch, type PageTab } from '@/shared/components/ui'
 import { useFeedback } from '@/shared/feedback'
 import { createScopedClassNames } from '@/shared/lib/classNames'
 import { FONT_SIZE_PRESETS, type FontSizePreset } from '@/shared/theme/typography'
 
 import { type AccentColor, type AppSettings, type ButtonSize, type ThemeMode } from '../api/settingsApi'
 import { useSettings } from '../context/SettingsProvider'
+import { useSettingsViewState } from '../hooks/useSettingsViewState'
+import type { SettingsCategory } from '../lib/settingsViewSession'
 import { MenuPreferences } from './MenuPreferences'
 import { RuntimeStatusPanel, type SettingsPreferenceCategory } from './RuntimeStatusPanel'
 
@@ -34,12 +36,10 @@ const BUTTON_SIZE_OPTIONS: Array<{ value: ButtonSize; label: string }> = [
   { value: 'lg', label: '大型' },
 ]
 
-type SettingsCategory = 'overview' | SettingsPreferenceCategory
-
 export function SettingsPanel() {
   const panelRef = useRef<HTMLDivElement>(null)
-  const [activeCategory, setActiveCategory] = useState<SettingsCategory>('overview')
   const { settings, isLoading, isSaving, error: settingsError, updateSettings, resetSettings } = useSettings()
+  const { activeCategory, selectCategory } = useSettingsViewState(panelRef, !isLoading)
   const {
     info: updateInfo,
     status: updateStatus,
@@ -57,15 +57,14 @@ export function SettingsPanel() {
     : updateStatus?.updateAvailable
       ? `发现新版本 ${updateStatus.latestVersion}`
       : updateStatus
-        ? `当前已是最新版 ${updateStatus.currentVersion}`
+        ? '已是最新版'
         : updateInfo?.configured
           ? '启动时自动检查更新'
           : '开发构建未启用更新'
 
   function openPreferences(category: SettingsPreferenceCategory) {
-    setActiveCategory(category)
+    selectCategory(category, true)
     window.requestAnimationFrame(() => {
-      panelRef.current?.scrollIntoView({ block: 'start' })
       panelRef.current?.querySelector<HTMLElement>('[role="tab"][aria-selected="true"]')?.focus({ preventScroll: true })
     })
   }
@@ -99,9 +98,10 @@ export function SettingsPanel() {
 
   async function handleReset() {
     const accepted = await confirm({
-      title: '恢复默认设置',
-      message: '主题、菜单、通知和窗口设置都会恢复默认值，是否继续？',
-      confirmLabel: '恢复默认',
+      title: '恢复全部默认设置',
+      message:
+        '全部偏好将恢复默认，包括外观、菜单顺序与显隐、通知、窗口以及龙之谷快捷键和路径设置。业务数据不会删除，是否继续？',
+      confirmLabel: '全部恢复',
       tone: 'danger',
     })
     if (!accepted) {
@@ -136,9 +136,6 @@ export function SettingsPanel() {
             <div className={cx('settings-update-content')}>
               <div>
                 <strong>{updateSummary}</strong>
-                <small>
-                  {updateInfo?.currentVersion ? `当前版本 ${updateInfo.currentVersion}` : '正在读取当前版本'}
-                </small>
                 {updateError && (
                   <p className={cx('settings-update-error')} role='alert'>
                     {updateError}
@@ -372,29 +369,19 @@ export function SettingsPanel() {
 
   return (
     <div ref={panelRef} className={cx('settings-panel')}>
-      <PageHeader
-        eyebrow='Settings'
-        title='设置'
-        subtitle='查看应用信息、运行状态并管理使用偏好。'
-        actions={
-          activeCategory !== 'overview' ? (
-            <>
-              <span className={cx('settings-save-status')} aria-live='polite'>
-                {isSaving ? '正在同步…' : '修改后自动保存'}
-              </span>
-              <Button
-                className={cx('settings-button settings-button-secondary')}
-                variant='outline'
-                type='button'
-                onClick={handleReset}
-                disabled={isSaving}
-              >
-                恢复默认
-              </Button>
-            </>
-          ) : undefined
-        }
-      />
+      <header className={styles.header}>
+        <h1 className={styles.title}>设置</h1>
+        {activeCategory !== 'overview' && (
+          <div className={styles.headerActions}>
+            <span className={cx('settings-save-status')} aria-live='polite'>
+              {isSaving ? '正在同步…' : '修改后自动保存'}
+            </span>
+            <Button variant='outline' onClick={handleReset} disabled={isSaving}>
+              恢复全部默认设置
+            </Button>
+          </div>
+        )}
+      </header>
 
       {settingsError && (
         <p className={cx('settings-error')} role='alert'>
@@ -402,7 +389,7 @@ export function SettingsPanel() {
         </p>
       )}
 
-      <PageTabs label='设置分类' tabs={tabs} value={activeCategory} onValueChange={setActiveCategory} />
+      <PageTabs label='设置分类' tabs={tabs} value={activeCategory} onValueChange={selectCategory} />
     </div>
   )
 }

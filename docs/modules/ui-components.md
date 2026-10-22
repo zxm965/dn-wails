@@ -82,3 +82,11 @@ Dialog 焦点返回、Escape、遮罩关闭和极窄窗口布局需要人工桌�
 ## 布局密度
 
 Card 的面板内边距与 PageHeader、PageTabs 内容、Dialog 正文和操作区的布局间距跟随 `--layout-spacing`（舒适 1、紧凑 0.75）。Dialog 标题右侧仍预留 52px 关闭按钮空间。字号和按钮尺寸保持独立配置，列表通过内边距与间距收紧，不压缩文字行高或操作控件。
+
+## 异步列表反馈与会话 Hook
+
+- `QueryFeedback.tsx` / `.css.ts`：首次加载骨架屏、保留旧数据时的刷新提示、独立错误与重试按钮；空状态仍由业务页面按成功结果决定。加载骨架提供 `table`、`cards`、`list` 三种结构：角色使用表格短线、周常使用卡片轮廓、消息使用图标与标题/摘要短线，避免整行灰色大块；使用低对比度整体呼吸动画，reduced motion 下静止，窄容器自适应。
+- `shared/hooks/useRequestGuard.ts`：生成请求有效性判定，后发请求或组件卸载使旧请求失效，不取消后端操作。
+- `shared/hooks/useSessionState.ts`：WebView 内存中的视图状态，业务调用方为私有偏好提供包含账号 ID 的 key，并在账号切换时重新挂载。
+- `shared/hooks/useSessionScroll.ts`：内容就绪后恢复滚动位置，滚动监听在卸载时解除；调用方为各账号、列表提供独立 key。
+- 回归检查：`node --test frontend/tests/*.test.mjs`（Node.js 24+）。

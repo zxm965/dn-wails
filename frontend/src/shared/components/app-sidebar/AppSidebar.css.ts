@@ -105,8 +105,14 @@ const isActive = style({
   },
 })
 
+const appSidebarSubmenuItems = style({ minHeight: 0, overflow: 'hidden', display: 'flex', flexDirection: 'column' })
+
 const appSidebarMenuItem = style({
   selectors: {
+    [`${appSidebarSubmenuItems} & + &`]: {
+      marginTop: 'calc(6px * var(--layout-spacing))',
+    },
+
     '& + &': {
       marginTop: 'calc(4px * var(--layout-spacing))',
     },
@@ -148,15 +154,20 @@ const appSidebarSubmenu = style({
   gridTemplateRows: '0fr',
   opacity: 0,
   marginLeft: '10px',
-  transition: 'grid-template-rows 220ms ease, opacity 180ms ease',
+  marginTop: 0,
+  marginBottom: 0,
+  transition: 'grid-template-rows 220ms ease, opacity 180ms ease, margin 220ms ease',
   selectors: {
-    [`&${isExpanded}`]: { gridTemplateRows: '1fr', opacity: 1 },
+    [`&${isExpanded}`]: {
+      gridTemplateRows: '1fr',
+      opacity: 1,
+      marginTop: 'calc(6px * var(--layout-spacing))',
+      marginBottom: 'calc(6px * var(--layout-spacing))',
+    },
     [`${appSidebar}${isCollapsed} &`]: { display: 'none' },
   },
   '@media': { '(prefers-reduced-motion: reduce)': { transition: 'none' } },
 })
-
-const appSidebarSubmenuItems = style({ minHeight: 0, overflow: 'hidden', display: 'flex', flexDirection: 'column' })
 
 const appSidebarFlyout = style({
   position: 'fixed',

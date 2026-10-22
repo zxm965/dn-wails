@@ -67,14 +67,15 @@ export default function App() {
       }
     }
 
-    if (view === 'quick-notes') return <QuickNotesPanel />
+    if (view === 'quick-notes') return <QuickNotesPanel key={account.user?.id} />
     if (view === 'calendar') return <CalendarPanel />
-    if (view === 'tasks') return <TasksPanel />
-    if (view === 'account') return <AccountPanel />
-    if (view === 'dn-weekly') return <DnWeeklyPlans onNavigateRoles={() => navigateToView('dn-roles')} />
-    if (view === 'dn-roles') return <DnRoles />
+    if (view === 'tasks') return <TasksPanel key={account.user?.id} />
+    if (view === 'account') return <AccountPanel key={account.user?.id} />
+    if (view === 'dn-weekly')
+      return <DnWeeklyPlans key={account.user?.id} onNavigateRoles={() => navigateToView('dn-roles')} />
+    if (view === 'dn-roles') return <DnRoles key={account.user?.id} />
     if (view === 'dn-kill-process') return <DnProcessKiller />
-    if (view === 'site-messages') return <SiteMessages onNavigate={navigateToView} />
+    if (view === 'site-messages') return <SiteMessages key={account.user?.id} onNavigate={navigateToView} />
     if (view === 'settings') return <SettingsPanel />
     if (view === 'devtools') return <DevToolsPanel />
     return null

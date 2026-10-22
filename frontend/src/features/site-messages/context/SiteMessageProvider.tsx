@@ -19,6 +19,8 @@ import {
 interface SiteMessageContextValue {
   inboxItems: SiteMessage[]
   unreadCount: number
+  readRevision: number
+  markRead: (message: SiteMessage) => Promise<SiteMessage>
   loading: boolean
   centerOpen: boolean
   activeMessage: SiteMessage | null
@@ -49,6 +51,12 @@ export function SiteMessageProvider({
   const userId = user?.id ?? 0
   const [inboxItems, setInboxItems] = useState<SiteMessage[]>([])
   const [unreadCount, setUnreadCount] = useState(0)
+  const [readRevision, setReadRevision] = useState(0)
+  const revision = useRef(0)
+  const ownerRef = useRef(userId)
+  ownerRef.current = userId
+  const readRequests = useRef(new Map<number, Promise<SiteMessage>>())
+  const readIds = useRef(new Set<number>())
   const [loading, setLoading] = useState(false)
   const [centerOpen, setCenterOpen] = useState(false)
   const [popupMessages, setPopupMessages] = useState<SiteMessage[]>([])
@@ -88,10 +96,10 @@ export function SiteMessageProvider({
   }, [])
 
   const claimPopup = useCallback(async () => {
-    if (!userId || popupOpenRef.current) return
+    if (!userId || ownerRef.current !== userId || popupOpenRef.current) return
     try {
       const claimed = await claimMessageNotifications(20)
-      showMessages(claimed.items)
+      if (ownerRef.current === userId) showMessages(claimed.items)
     } catch {
       // Inbox refresh remains available even when claiming a popup fails.
     }
@@ -105,12 +113,19 @@ export function SiteMessageProvider({
   }, [acknowledgeMessage, popupMessages, popupOpen])
 
   const refreshInbox = useCallback(async () => {
-    if (!userId) return
+    if (!userId || ownerRef.current !== userId) return
     if (refreshPromise.current) return refreshPromise.current
     setLoading(true)
     const request = (async () => {
       try {
-        const inbox = await getMessageInbox(8)
+        let inbox
+        while (ownerRef.current === userId) {
+          const startedRevision = revision.current
+          inbox = await getMessageInbox(8)
+          if (ownerRef.current !== userId) return
+          if (revision.current === startedRevision) break
+        }
+        if (!inbox || ownerRef.current !== userId) return
         setInboxItems(inbox.items)
         setUnreadCount(inbox.unreadCount)
         setLastSyncedAt(inbox.lastSyncedAt)
@@ -120,10 +135,13 @@ export function SiteMessageProvider({
         }
         if (!inbox.syncError) lastSyncError.current = ''
       } catch (error) {
+        if (ownerRef.current !== userId) return
         notify({ title: '消息盒子加载失败', message: getErrorMessage(error, '请稍后重试。'), tone: 'error' })
       } finally {
-        setLoading(false)
-        refreshPromise.current = null
+        if (ownerRef.current === userId) {
+          setLoading(false)
+          refreshPromise.current = null
+        }
       }
     })()
     refreshPromise.current = request
@@ -131,6 +149,11 @@ export function SiteMessageProvider({
   }, [notify, userId])
 
   useEffect(() => {
+    revision.current += 1
+    refreshPromise.current = null
+    readRequests.current.clear()
+    readIds.current.clear()
+    setLoading(false)
     setInboxItems([])
     setUnreadCount(0)
     setCenterOpen(false)
@@ -155,20 +178,41 @@ export function SiteMessageProvider({
     if (centerOpen) void refreshInbox()
   }, [centerOpen, refreshInbox])
 
-  const markRead = useCallback(async (message: SiteMessage) => {
-    if (message.isRead) return message
-    const updated = await markMessageRead(message.id)
-    setInboxItems((current) => current.filter((item) => item.id !== message.id))
-    setUnreadCount((current) => Math.max(0, current - 1))
-    return updated
-  }, [])
+  const markRead = useCallback(
+    (message: SiteMessage): Promise<SiteMessage> => {
+      if (message.isRead || readIds.current.has(message.id)) return Promise.resolve({ ...message, isRead: true })
+      const existing = readRequests.current.get(message.id)
+      if (existing) return existing
+      const request = markMessageRead(message.id)
+        .then((updated) => {
+          if (ownerRef.current !== userId) return updated
+          readIds.current.add(message.id)
+          revision.current += 1
+          setReadRevision((value) => value + 1)
+          setInboxItems((current) => current.filter((item) => item.id !== message.id))
+          setUnreadCount((current) => Math.max(0, current - 1))
+          void refreshInbox()
+          return updated
+        })
+        .finally(() => {
+          if (ownerRef.current === userId) readRequests.current.delete(message.id)
+        })
+      readRequests.current.set(message.id, request)
+      return request
+    },
+    [userId, refreshInbox],
+  )
 
   const markAll = useCallback(async () => {
     const count = await markAllMessagesRead()
+    if (ownerRef.current !== userId) return count
+    revision.current += 1
+    setReadRevision((value) => value + 1)
     setInboxItems([])
     setUnreadCount(0)
+    void refreshInbox()
     return count
-  }, [])
+  }, [userId, refreshInbox])
 
   const followMessage = useCallback(
     async (message: SiteMessage) => {
@@ -238,6 +282,8 @@ export function SiteMessageProvider({
     () => ({
       inboxItems,
       unreadCount,
+      readRevision,
+      markRead,
       loading,
       centerOpen,
       activeMessage,
@@ -263,6 +309,8 @@ export function SiteMessageProvider({
       lastSyncedAt,
       loading,
       markAll,
+      markRead,
+      readRevision,
       openInboxMessage,
       popupOpen,
       popupMessages,

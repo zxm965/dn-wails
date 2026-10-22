@@ -24,40 +24,6 @@ const settingsSaveStatus = style({
   whiteSpace: 'nowrap',
 })
 
-const settingsButton = style([
-  {
-    padding: '0 16px',
-    fontSize: 'var(--font-size-body)',
-    fontWeight: '750',
-    border: '1px solid transparent',
-    borderRadius: '9px',
-    cursor: 'pointer',
-    ':disabled': {
-      cursor: 'not-allowed',
-      opacity: '0.56',
-    },
-  },
-  {
-    '@container': {
-      'settings-panel (max-width: 440px)': {
-        width: '100%',
-        whiteSpace: 'nowrap',
-      },
-    },
-  },
-])
-
-const settingsButtonPrimary = style({
-  color: 'var(--button-primary-text)',
-  background: 'var(--accent)',
-})
-
-const settingsButtonSecondary = style({
-  color: 'var(--text-primary)',
-  background: 'var(--surface-muted)',
-  borderColor: 'var(--border-strong)',
-})
-
 const settingsUpdateContent = style([
   {
     display: 'flex',
@@ -282,7 +248,21 @@ const fontPreviewDescription = style({
   overflowWrap: 'anywhere',
 })
 
+const header = style({
+  display: 'flex',
+  flexWrap: 'wrap',
+  alignItems: 'center',
+  justifyContent: 'space-between',
+  gap: 12,
+  minWidth: 0,
+})
+const title = style({ margin: 0, fontSize: 'var(--font-size-title)' })
+const headerActions = style({ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 12, minWidth: 0 })
+
 export const styles = {
+  header,
+  title,
+  headerActions,
   compactOptions,
   fontPreview,
   fontPreviewTitle,
@@ -291,9 +271,6 @@ export const styles = {
   'settings-panel': settingsPanel,
   'settings-state': settingsState,
   'settings-save-status': settingsSaveStatus,
-  'settings-button': settingsButton,
-  'settings-button-primary': settingsButtonPrimary,
-  'settings-button-secondary': settingsButtonSecondary,
   'settings-update-content': settingsUpdateContent,
   'settings-update-error': settingsUpdateError,
   'settings-update-progress': settingsUpdateProgress,

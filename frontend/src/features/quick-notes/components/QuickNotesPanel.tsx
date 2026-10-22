@@ -1,8 +1,11 @@
 import { Columns3, Eye, FileText, Pencil, Pin, PinOff, Plus, Save, Search, Trash2 } from 'lucide-react'
-import { useEffect, useMemo, useRef, useState, type KeyboardEvent } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState, type KeyboardEvent } from 'react'
 
+import { useAccount } from '@/features/account'
 import { Button, Input, ListState, PageHeader, Textarea } from '@/shared/components/ui'
+import { QueryFeedback } from '@/shared/components/ui/QueryFeedback'
 import { useFeedback } from '@/shared/feedback'
+import { useRequestGuard } from '@/shared/hooks/useRequestGuard'
 import { createScopedClassNames } from '@/shared/lib/classNames'
 import { openExternalURL } from '@/shared/native-kit'
 
@@ -13,6 +16,7 @@ import {
   type QuickNote,
   type QuickNoteInput,
 } from '../api/quickNotesApi'
+import { getNoteSession } from '../lib/noteSessions'
 import { MarkdownPreview } from './MarkdownPreview'
 
 import { styles } from './QuickNotesPanel.css'
@@ -52,16 +56,21 @@ function errorMessage(error: unknown, fallback: string): string {
 
 export function QuickNotesPanel() {
   const { notify, confirm } = useFeedback()
-  const [notes, setNotes] = useState<QuickNote[]>([])
-  const [draft, setDraft] = useState<QuickNote | null>(null)
+  const { user } = useAccount()
+  const queue = getNoteSession(user!.id)
+  const beginRequest = useRequestGuard()
+  const [notes, setNotes] = useState<QuickNote[]>(() => [...queue.drafts.values()])
+  const [draft, setDraft] = useState<QuickNote | null>(() => queue.drafts.values().next().value ?? null)
   const [search, setSearch] = useState('')
   const [loading, setLoading] = useState(true)
   const [creating, setCreating] = useState(false)
   const [viewMode, setViewMode] = useState<NoteViewMode>('preview')
-  const [saveStatus, setSaveStatus] = useState<SaveStatus>('saved')
+  const [saveStatus, setSaveStatus] = useState<SaveStatus>(() =>
+    draft ? (queue.errors.has(draft.id) ? 'error' : 'pending') : 'saved',
+  )
   const [loadError, setLoadError] = useState('')
-  const draftRef = useRef<QuickNote | null>(null)
-  const selectedIDRef = useRef<number | null>(null)
+  const draftRef = useRef<QuickNote | null>(draft)
+  const selectedIDRef = useRef<number | null>(draft?.id ?? null)
   const savedFingerprints = useRef(new Map<number, string>())
 
   const filteredNotes = useMemo(() => {
@@ -75,23 +84,26 @@ export function QuickNotesPanel() {
     draftRef.current = note
     setDraft(note)
     setViewMode(nextViewMode)
-    setSaveStatus('saved')
+    setSaveStatus(note && queue.errors.has(note.id) ? 'error' : note && queue.drafts.has(note.id) ? 'pending' : 'saved')
   }
 
   async function persistNote(note: QuickNote) {
     const fingerprint = noteFingerprint(note)
-    if (savedFingerprints.current.get(note.id) === fingerprint) return
+    if (!queue.drafts.has(note.id) && savedFingerprints.current.get(note.id) === fingerprint) {
+      if (selectedIDRef.current === note.id) setSaveStatus('saved')
+      return
+    }
 
     if (selectedIDRef.current === note.id) {
       setSaveStatus('saving')
     }
     try {
-      const saved = await saveQuickNote(note)
+      const saved = await queue.flush(note)
       savedFingerprints.current.set(saved.id, noteFingerprint(saved))
       setNotes((current) => sortNotes([...current.filter((item) => item.id !== saved.id), saved]))
 
       const currentDraft = draftRef.current
-      if (currentDraft?.id === saved.id && noteFingerprint(currentDraft) === fingerprint) {
+      if (currentDraft?.id === saved.id && !queue.drafts.has(saved.id)) {
         draftRef.current = saved
         setDraft(saved)
         setSaveStatus('saved')
@@ -108,25 +120,34 @@ export function QuickNotesPanel() {
 
   function selectNote(note: QuickNote) {
     const current = draftRef.current
-    if (current && savedFingerprints.current.get(current.id) !== noteFingerprint(current)) {
+    if (
+      current &&
+      (queue.drafts.has(current.id) || savedFingerprints.current.get(current.id) !== noteFingerprint(current))
+    ) {
       void persistNote(current)
     }
-    activateNote(note)
+    activateNote(queue.drafts.get(note.id) ?? note)
   }
 
   function updateDraft(patch: Partial<QuickNote>) {
     const current = draftRef.current
     if (!current) return
     const next = { ...current, ...patch }
+    queue.errors.delete(next.id)
+    queue.stage(next)
     draftRef.current = next
     setDraft(next)
+    setNotes((current) => current.map((item) => (item.id === next.id ? next : item)))
     setSaveStatus('pending')
   }
 
   async function createNote() {
-    if (creating) return
+    if (creating || loading) return
     const current = draftRef.current
-    if (current && savedFingerprints.current.get(current.id) !== noteFingerprint(current)) {
+    if (
+      current &&
+      (queue.drafts.has(current.id) || savedFingerprints.current.get(current.id) !== noteFingerprint(current))
+    ) {
       void persistNote(current)
     }
 
@@ -155,7 +176,7 @@ export function QuickNotesPanel() {
     if (!accepted) return
 
     try {
-      await deleteQuickNote(current.id)
+      await queue.remove(current.id, () => deleteQuickNote(current.id))
       savedFingerprints.current.delete(current.id)
       const remaining = notes.filter((note) => note.id !== current.id)
       setNotes(remaining)
@@ -186,31 +207,44 @@ export function QuickNotesPanel() {
     }
   }
 
-  useEffect(() => {
-    let active = true
-    void listQuickNotes()
-      .then((items) => {
-        if (!active) return
-        const sorted = sortNotes(items)
-        savedFingerprints.current = new Map(sorted.map((note) => [note.id, noteFingerprint(note)]))
-        setNotes(sorted)
-        activateNote(sorted[0] ?? null)
-        setLoadError('')
-      })
-      .catch((error: unknown) => {
-        if (!active) return
-        setLoadError(errorMessage(error, '快速笔记加载失败。'))
-      })
-      .finally(() => {
-        if (active) setLoading(false)
-      })
-    return () => {
-      active = false
+  const load = useCallback(async () => {
+    const isCurrent = beginRequest()
+    setLoading(true)
+    setLoadError('')
+    try {
+      const items = await listQuickNotes()
+      if (!isCurrent()) return
+      const merged = new Map(items.map((note) => [note.id, note]))
+      for (const note of queue.savedNotes.values()) {
+        const remote = merged.get(note.id)
+        if (remote && note.updatedAt > remote.updatedAt) merged.set(note.id, note)
+      }
+      savedFingerprints.current = new Map([...merged.values()].map((note) => [note.id, noteFingerprint(note)]))
+      for (const note of queue.drafts.values()) merged.set(note.id, note)
+      const sorted = sortNotes([...merged.values()])
+      setNotes(sorted)
+      const selected = selectedIDRef.current
+      const next =
+        (selected ? merged.get(selected) : undefined) ?? queue.drafts.values().next().value ?? sorted[0] ?? null
+      activateNote(next)
+    } catch (error) {
+      if (isCurrent()) setLoadError(errorMessage(error, '快速笔记加载失败。'))
+    } finally {
+      if (isCurrent()) setLoading(false)
     }
-  }, [])
+  }, [queue, beginRequest])
 
   useEffect(() => {
-    if (!draft || savedFingerprints.current.get(draft.id) === noteFingerprint(draft)) return
+    void load()
+  }, [load])
+
+  useEffect(() => {
+    if (
+      !draft ||
+      queue.errors.has(draft.id) ||
+      (!queue.drafts.has(draft.id) && savedFingerprints.current.get(draft.id) === noteFingerprint(draft))
+    )
+      return
     const timer = window.setTimeout(() => void persistNote(draft), 700)
     return () => window.clearTimeout(timer)
   }, [draft])
@@ -218,8 +252,17 @@ export function QuickNotesPanel() {
   useEffect(
     () => () => {
       const current = draftRef.current
-      if (current && savedFingerprints.current.get(current.id) !== noteFingerprint(current)) {
-        void saveQuickNote(current)
+      if (
+        current &&
+        (queue.drafts.has(current.id) || savedFingerprints.current.get(current.id) !== noteFingerprint(current))
+      ) {
+        void queue.flush(current).catch((error: unknown) => {
+          notify({
+            title: '笔记未保存',
+            message: errorMessage(error, '草稿已在本次会话中保留，请返回笔记重试。'),
+            tone: 'error',
+          })
+        })
       }
     },
     [],
@@ -235,17 +278,19 @@ export function QuickNotesPanel() {
   return (
     <div className={cx('quick-notes-page')} onKeyDown={handleShortcut}>
       <PageHeader
-        eyebrow='Cloud workspace'
         title='快速笔记'
         subtitle='随手记录内容，自动保存到云端账号。'
         actions={
-          <Button disabled={creating} onClick={() => void createNote()}>
+          <Button disabled={creating || loading} onClick={() => void createNote()}>
             <Plus aria-hidden='true' />
             {creating ? '正在新建…' : '新建笔记'}
           </Button>
         }
       />
 
+      {loadError && (
+        <QueryFeedback loading={loading} error={loadError} hasData={notes.length > 0} onRetry={() => void load()} />
+      )}
       <section className={cx('quick-notes-workspace')}>
         <aside className={cx('quick-notes-list-panel')}>
           <div className={cx('quick-notes-search')}>
@@ -367,14 +412,21 @@ export function QuickNotesPanel() {
                   <Button
                     size='sm'
                     variant='ghost'
-                    title='立即保存'
-                    aria-label='立即保存'
+                    title={saveStatus === 'error' ? '重试保存' : '立即保存'}
+                    aria-label={saveStatus === 'error' ? '重试保存' : '立即保存'}
                     disabled={saveStatus === 'saving'}
                     onClick={() => void persistNote(draft)}
                   >
                     <Save aria-hidden='true' />
                   </Button>
-                  <Button size='sm' variant='ghost' title='删除笔记' aria-label='删除笔记' onClick={removeNote}>
+                  <Button
+                    size='sm'
+                    variant='ghost'
+                    disabled={loading}
+                    title='删除笔记'
+                    aria-label='删除笔记'
+                    onClick={removeNote}
+                  >
                     <Trash2 aria-hidden='true' />
                   </Button>
                 </div>

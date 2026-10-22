@@ -1,5 +1,5 @@
 import { KeyRound, LogOut, RefreshCw, Upload } from 'lucide-react'
-import { type FormEvent, useCallback, useEffect, useMemo, useState } from 'react'
+import { type FormEvent, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
 import {
   Avatar,
@@ -10,7 +10,6 @@ import {
   CardContent,
   CardFooter,
   CardHeader,
-  CardTitle,
   Input,
   Label,
   ListState,
@@ -23,6 +22,7 @@ import {
   TabsTrigger,
 } from '@/shared/components/ui'
 import { useFeedback } from '@/shared/feedback'
+import { useRequestGuard } from '@/shared/hooks/useRequestGuard'
 import { createScopedClassNames } from '@/shared/lib/classNames'
 import { pickFiles } from '@/shared/native-kit'
 
@@ -47,9 +47,12 @@ export function AccountPanel() {
   const { notify, confirm } = useFeedback()
   const { user, logout: logoutUser, setUser } = useAccount()
   const [profile, setProfile] = useState<Profile | null>(user)
-  const [form, setForm] = useState<ProfileInput>({ ...emptyProfile })
-  const [initialForm, setInitialForm] = useState<ProfileInput>({ ...emptyProfile })
-  const [loading, setLoading] = useState(true)
+  const cachedForm = user ? { name: user.name, email: user.email, avatar: user.avatar } : emptyProfile
+  const [form, setForm] = useState<ProfileInput>(cachedForm)
+  const [initialForm, setInitialForm] = useState<ProfileInput>(cachedForm)
+  const [loading, setLoading] = useState(!user)
+  const dirtyRef = useRef(false)
+  const beginRequest = useRequestGuard()
   const [saving, setSaving] = useState(false)
   const [importing, setImporting] = useState(false)
   const [passwordSaving, setPasswordSaving] = useState(false)
@@ -68,17 +71,31 @@ export function AccountPanel() {
 
   const load = useCallback(
     async (showNotice = false) => {
+      if (
+        showNotice &&
+        dirtyRef.current &&
+        !(await confirm({
+          title: '重新加载资料？',
+          message: '当前未保存的修改将被服务器资料替换。',
+          confirmLabel: '重新加载',
+        }))
+      )
+        return
+      const isCurrent = beginRequest()
       setLoading(true)
       try {
-        syncForm(await getProfile())
+        const next = await getProfile()
+        if (!isCurrent()) return
+        syncForm(next)
         if (showNotice) notify({ title: '资料已重新加载', tone: 'success' })
       } catch (error) {
+        if (!isCurrent()) return
         notify({ title: '资料加载失败', message: getAccountErrorMessage(error, '请稍后重试。'), tone: 'error' })
       } finally {
-        setLoading(false)
+        if (isCurrent()) setLoading(false)
       }
     },
-    [notify, syncForm],
+    [notify, syncForm, confirm, beginRequest],
   )
 
   useEffect(() => {
@@ -86,6 +103,7 @@ export function AccountPanel() {
   }, [load])
 
   const dirty = form.name !== initialForm.name || form.email !== initialForm.email || form.avatar !== initialForm.avatar
+  dirtyRef.current = dirty
   const initial = useMemo(
     () => (form.name || form.email || profile?.account || 'U').trim().charAt(0).toUpperCase(),
     [form.email, form.name, profile?.account],
@@ -119,6 +137,7 @@ export function AccountPanel() {
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
+    if (loading || saving || importing || !dirty) return
     if (!form.name.trim() || !form.email.trim()) {
       notify({ title: '显示名称和邮箱不能为空', tone: 'warning' })
       return
@@ -178,7 +197,6 @@ export function AccountPanel() {
   return (
     <div className={cx('account-page')}>
       <PageHeader
-        eyebrow='Account'
         title='个人信息'
         subtitle='管理全局账号资料、头像和登录密码。'
         actions={
@@ -201,10 +219,9 @@ export function AccountPanel() {
             <Card>
               <CardHeader className={cx('account-card-heading')}>
                 <div className={cx('account-card-heading-copy')}>
-                  <CardTitle>个人资料</CardTitle>
                   <p>更新显示名称、邮箱和头像。</p>
                 </div>
-                <Button variant='outline' disabled={loading} onClick={() => void load(true)}>
+                <Button variant='outline' disabled={loading || saving || importing} onClick={() => void load(true)}>
                   <SpinnerIcon icon={RefreshCw} spinning={loading} aria-hidden='true' />
                   重新加载
                 </Button>
@@ -216,7 +233,12 @@ export function AccountPanel() {
                       <AvatarImage src={form.avatar || undefined} alt={form.name || form.email} />
                       <AvatarFallback>{initial}</AvatarFallback>
                     </Avatar>
-                    <Button type='button' variant='outline' disabled={importing} onClick={() => void chooseAvatar()}>
+                    <Button
+                      type='button'
+                      variant='outline'
+                      disabled={importing || loading || saving}
+                      onClick={() => void chooseAvatar()}
+                    >
                       <Upload aria-hidden='true' />
                       {importing ? '导入中…' : '选择头像'}
                     </Button>
@@ -224,6 +246,7 @@ export function AccountPanel() {
                       <Button
                         type='button'
                         variant='ghost'
+                        disabled={loading || saving || importing}
                         onClick={() => setForm((current) => ({ ...current, avatar: '' }))}
                       >
                         移除头像
@@ -234,6 +257,7 @@ export function AccountPanel() {
                     <label className={cx('account-field')}>
                       <Label>显示名称</Label>
                       <Input
+                        disabled={loading || saving || importing}
                         value={form.name}
                         onChange={(event) => setForm((current) => ({ ...current, name: event.target.value }))}
                       />
@@ -242,17 +266,18 @@ export function AccountPanel() {
                       <Label>邮箱</Label>
                       <Input
                         type='email'
+                        disabled={loading || saving || importing}
                         value={form.email}
                         onChange={(event) => setForm((current) => ({ ...current, email: event.target.value }))}
                       />
                     </label>
                     <label className={cx('account-field')}>
                       <Label>账号</Label>
-                      <Input value={profile?.account || ''} disabled />
+                      <span>{profile?.account || '—'}</span>
                     </label>
                     <label className={cx('account-field')}>
                       <Label>权限</Label>
-                      <Input value={profile?.role === 1 ? '管理员' : '用户'} disabled />
+                      <span>{profile?.role === 1 ? '管理员' : '用户'}</span>
                     </label>
                   </div>
                 </CardContent>
@@ -260,12 +285,12 @@ export function AccountPanel() {
                   <Button
                     type='button'
                     variant='outline'
-                    disabled={!dirty || saving}
+                    disabled={!dirty || saving || loading || importing}
                     onClick={() => setForm({ ...initialForm })}
                   >
                     重置
                   </Button>
-                  <Button type='submit' disabled={saving}>
+                  <Button type='submit' disabled={!dirty || saving || loading || importing}>
                     {saving ? '保存中…' : '保存资料'}
                   </Button>
                 </CardFooter>
@@ -275,7 +300,6 @@ export function AccountPanel() {
           <TabsContent value='security'>
             <Card>
               <CardHeader>
-                <CardTitle>密码与安全</CardTitle>
                 <p className={cx('account-card-description')}>
                   更新当前账号的登录密码。登录会话不会因为时间到期自动失效。
                 </p>

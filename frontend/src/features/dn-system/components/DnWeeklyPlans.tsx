@@ -26,7 +26,9 @@ import {
   Switch,
   Textarea,
 } from '@/shared/components/ui'
+import { QueryFeedback } from '@/shared/components/ui/QueryFeedback'
 import { useFeedback } from '@/shared/feedback'
+import { useRequestGuard } from '@/shared/hooks/useRequestGuard'
 import { createScopedClassNames } from '@/shared/lib/classNames'
 
 import {
@@ -77,38 +79,54 @@ function inputFromPlan(plan: WeeklyPlan): WeeklyPlanInput {
 export function DnWeeklyPlans({ onNavigateRoles }: { onNavigateRoles: () => void }) {
   const { notify, confirm } = useFeedback()
   const [roles, setRoles] = useState<RoleProfession[]>([])
+  const [rolesLoading, setRolesLoading] = useState(true)
+  const [rolesError, setRolesError] = useState('')
+  const beginRolesRequest = useRequestGuard()
   const [items, setItems] = useState<WeeklyPlan[]>([])
   const [meta, setMeta] = useState<ListMeta>(emptyMeta)
   const [filters, setFilters] = useState(emptyFilters)
   const [appliedFilters, setAppliedFilters] = useState(emptyFilters)
   const [loading, setLoading] = useState(true)
+  const [loadError, setLoadError] = useState('')
+  const [requestedPage, setRequestedPage] = useState(1)
+  const beginRequest = useRequestGuard()
   const [saving, setSaving] = useState(false)
   const [updatingIds, setUpdatingIds] = useState<Set<number>>(() => new Set())
   const [editorOpen, setEditorOpen] = useState(false)
   const [form, setForm] = useState<WeeklyPlanInput | null>(null)
 
   const loadRoles = useCallback(async () => {
+    const isCurrent = beginRolesRequest()
+    setRolesLoading(true)
+    setRolesError('')
     try {
-      setRoles(await listRoleOptions())
+      const next = await listRoleOptions()
+      if (isCurrent()) setRoles(next)
     } catch (error) {
-      notify({ title: '角色选项加载失败', message: getErrorMessage(error, '请稍后重试。'), tone: 'error' })
+      if (isCurrent()) setRolesError(getErrorMessage(error, '角色选项加载失败，请重试。'))
+    } finally {
+      if (isCurrent()) setRolesLoading(false)
     }
-  }, [notify])
+  }, [beginRolesRequest])
 
   const loadPlans = useCallback(
     async (page: number) => {
+      const isCurrent = beginRequest()
+      setRequestedPage(page)
+      setLoadError('')
       setLoading(true)
       try {
         const data = await listWeeklyPlans({ ...appliedFilters, page, pageSize: 20 })
+        if (!isCurrent()) return
         setItems(data.items)
         setMeta(data.meta)
       } catch (error) {
-        notify({ title: '周计划加载失败', message: getErrorMessage(error, '请稍后重试。'), tone: 'error' })
+        if (isCurrent()) setLoadError(getErrorMessage(error, '周计划加载失败，请重试。'))
       } finally {
-        setLoading(false)
+        if (isCurrent()) setLoading(false)
       }
     },
-    [appliedFilters, notify],
+    [appliedFilters, beginRequest],
   )
 
   useEffect(() => {
@@ -230,7 +248,6 @@ export function DnWeeklyPlans({ onNavigateRoles }: { onNavigateRoles: () => void
   return (
     <div className={cx('dn-page')}>
       <PageHeader
-        eyebrow='DN workspace'
         title='周常'
         subtitle='按角色维护本周任务完成状态。'
         actions={
@@ -286,6 +303,13 @@ export function DnWeeklyPlans({ onNavigateRoles }: { onNavigateRoles: () => void
           </div>
         </CardHeader>
         <CardContent>
+          <QueryFeedback
+            layout='cards'
+            loading={loading || rolesLoading}
+            error={loadError || rolesError}
+            hasData={items.length > 0}
+            onRetry={() => void Promise.all([loadRoles(), loadPlans(requestedPage)])}
+          />
           {items.length ? (
             <div className={cx('dn-plan-grid')}>
               {items.map((plan) => (
@@ -316,10 +340,10 @@ export function DnWeeklyPlans({ onNavigateRoles }: { onNavigateRoles: () => void
                 />
               ))}
             </div>
-          ) : (
+          ) : !loading && !rolesLoading && !loadError && !rolesError ? (
             <ListState loading={loading} emptyText={roles.length ? '暂无周计划记录' : '请先创建角色，再同步周计划'} />
-          )}
-          {!loading && !roles.length && (
+          ) : null}
+          {!loading && !rolesLoading && !loadError && !rolesError && !roles.length && (
             <div className={cx('dn-empty-action')}>
               <Button variant='outline' onClick={onNavigateRoles}>
                 前往创建角色

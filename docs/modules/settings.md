@@ -11,10 +11,12 @@
 - `internal/application/settings.go`：Wails 设置绑定门面。
 - `frontend/src/features/settings/api/`：生成类型转换和 API 封装。
 - `frontend/src/features/settings/context/`：全局设置状态，并将外观设置同步到 DOM。
-- `frontend/src/features/settings/components/SettingsPanel.tsx`：顶部页签设置界面，默认进入“概览”，该页包含整合运行信息的应用概览、能力状态和应用更新。
+- `frontend/src/features/settings/components/SettingsPanel.tsx`：顶部页签设置界面，首次进入“概览”，该页包含精简应用信息、服务状态和应用更新；后续恢复会话内上次分类与滚动位置。
 - `frontend/src/features/settings/components/MenuPreferences.tsx`、`MenuPreferences.css.ts`：菜单显隐、组内拖动排序、键盘排序与顺序恢复。
 - `frontend/src/features/settings/components/DesktopOverview.tsx`、`DesktopOverview.css.ts`：应用标识、版本、构建平台、Go 版本、生命周期与日志摘要整合为一张卡片，并提供刷新、复制摘要与打开日志入口。
-- `frontend/src/features/settings/components/RuntimeStatusPanel.tsx`、`RuntimeStatusPanel.css.ts`：统一加载运行快照、处理刷新/复制/日志动作，将快照传入 DesktopOverview，下方仅渲染服务矩阵和外观/窗口/通知配置摘要。
+- `frontend/src/features/settings/components/RuntimeStatusPanel.tsx`、`RuntimeStatusPanel.css.ts`：统一加载运行快照、处理刷新/复制/日志动作，将快照传入 DesktopOverview，下方仅渲染六项服务检查，不重复外观/窗口/通知配置摘要。
+- `frontend/src/features/settings/hooks/useRuntimeStatus.ts`：60 秒运行快照缓存、并发请求合并和强制刷新。
+- `frontend/src/features/settings/hooks/useSettingsViewState.ts`、`lib/settingsViewSession.ts`：会话内的分类、滚动位置与诊断展开状态，不进入持久化偏好。
 - `frontend/src/features/settings/lib/runtimeStatus.ts`：概览与复制摘要共用的日期、时长和日志文件名格式化。
 - `frontend/src/shared/components/ui/PageTabs.tsx`、`PageTabs.css.ts`：设置与实验室共用的顶部单行页签和键盘导航。
 - `frontend/src/shared/navigation/menuConfig.ts`：菜单唯一 key、结构、标题、图标、默认显隐和偏好说明的单一配置源；日历与站内消息在这里作为独立菜单项配置。
@@ -94,21 +96,27 @@ React 组件通过 `useSettings` 读取和更新设置。所有配置项取消�
 - `getOrderedMenuGroups` 为设置、侧栏与折叠浮层统一计算顺序；启动和隐藏当前页面后的回退按排序选取第一个可见入口，排序本身不切换当前页面，龙之谷父入口仍默认打开周常。
 - 松开后的菜单位移使用 220ms 动画，拖动项从浮层位置落到新位置；页签切换使用 180ms 淡入。`prefers-reduced-motion` 下关闭过渡，保留指针跟随与明确的插入提示。
 
-设置顶部页签按“概览 / 外观 / 菜单 / 通知 / 窗口”排序，默认进入概览；概览依次展示整合应用与运行信息的概览卡、能力状态和应用更新，不提供独立运行页签；移除独立发布通道、整体健康及生命周期/环境/诊断三张摘要卡，以及重复的运行状态标题。版本、平台与 Go 版本集中为概览底部标签，运行状态、启动时间、第二实例计数和日志文件以紧凑信息项展示，检查时间与打开日志入口位于卡片底部；刷新和复制按钮位于概览标题旁。更新状态统一在底部“应用更新”展示。外观方案、窗口策略和通知策略以紧凑配置卡片收敛到“能力状态”，不再在应用快照中单独占用三张大卡片。异常项优先于受限项；其余按外观、账号、系统通知、通知策略、窗口、任务、笔记、龙之谷、日志排序，后端检查数组不被修改。检查计数与配置计数分别展示，配置不参与服务健康判定；运行检查加载或失败时仍展示当前配置。其他页签分别承载对应偏好，继续自动保存；恢复默认按钮和保存状态仅在这些偏好页签展示。
+设置顶部页签按“概览 / 外观 / 菜单 / 通知 / 窗口”排序。页头只保留紧凑“设置”标题和必要操作，移除装饰性英文与重复的“概览”内容标题。概览显示应用名称、版本、平台和运行状态；版本号只在此展示，更新区显示“已是最新版”或目标新版本，不重复当前版本。
 
-能力卡片复用右侧状态标签作为配置入口：有目标时通过共享 `Button` 包裹原有 `Badge`，保留标签颜色、文案和紧凑布局，不新增底部操作区；无配置目标时保留只读标签。悬停提示说明跳转目标，可通过键盘聚焦并激活。外观/窗口/通知切换到对应设置页签，系统通知进入通知页签，账号进入个人信息页并沿用登录守卫，龙之谷进入进程页打开快捷操作小窗（菜单隐藏时先进入菜单页签）。任务、笔记和日志没有可编辑的服务配置，不提供配置跳转。设置页签跳转后滚动回页头并聚焦选中页签。能力列表不再展示“应用更新”卡片，概览底部继续提供正式版本检查；列表检查计数按实际展示的服务计算。
+“诊断详情”首次默认收起，展开后显示启动时间、第二实例、Go 版本、日志文件、检查时间和构建类型，以及复制摘要、打开日志入口。展开按钮采用共享 Button 和 aria-expanded/aria-controls，隐藏时内容不能聚焦；会话内记住展开状态，reduced motion 下关闭箭头转动过渡。打开日志不依赖运行快照成功获取，失败仍可打开诊断详情并查看日志。
 
-`App.tsx → SettingsPanel → RuntimeStatusPanel → DesktopOverview`：运行面板持有唯一运行快照并通过 Props 向概览传递状态和动作；概览用 app-update 的公开 Hook 补充构建类型，在运行快照未就绪时提供版本与平台信息；配置摘要来自 settings 内部 Context。运行状态通过 `shared/diagnostics`、Wails 生成的 `GetRuntimeStatus` 绑定和 `internal/application/runtime_status.go`，汇总业务服务的只读健康检查与平台能力。概览展示与菜单顺序分别使用各自的数据链路。
+“服务状态”固定展示账号、系统通知、任务、笔记、龙之谷、日志六项检查，异常通过颜色和标签提示，不重新排序；移除外观、窗口、通知三项重复配置摘要。右侧状态标签有目标时由共享 Button 包裹 Badge：系统通知进入通知页签，账号进入个人信息页，龙之谷进入进程页（菜单隐藏时进入菜单设置）；其余保持只读。更新检查仍包含在诊断摘要中，更新操作位于底部独立区域。
 
-隐藏实验室不影响设置中的概览和诊断。运行状态在进入概览或手动刷新时检查，不轮询；离开概览卸载组件，再次进入重新检查。首次加载或失败时，概览卡显示紧凑提示，应用信息及配置摘要仍可展示；刷新失败保留上次快照并明确标记。复制摘要和打开日志在执行期间禁用对应按钮并保留原有错误反馈，打开日志不依赖运行快照成功加载；敏感连接信息不返回前端。更新状态由根级 AppUpdateProvider 维护，切换页签不影响下载。
+`App.tsx → SettingsPanel → RuntimeStatusPanel → useRuntimeStatus → shared/diagnostics → Wails GetRuntimeStatus → internal/application/runtime_status.go`：检查仍是现有只读业务与平台能力，未修改后端 DTO 或健康判定。成功快照从请求完成时起缓存 60 秒；有效期内再次进入直接复用，过期后展示旧快照并后台检查，手动刷新始终绕过有效期，重叠请求复用。失败保留旧快照和错误，下次进入立即重试，不用有效期遮蔽错误；无定时轮询或磁盘缓存。
+
+首次加载使用共享 Skeleton 显示字段值和六项服务的描述占位，服务标签标记为“待获取”，不伪造正常状态。快照、加载状态、错误原子更新，卸载只解除订阅，进行中的请求仍可更新会话缓存。更新状态由根级 AppUpdateProvider 管理，切换分类不影响下载。
+
+`useSettingsViewState` 在实际滚动祖先上记录每个分类的 scrollTop，切换分类前保存当前位置；重新进入设置恢复上次分类，在布局阶段恢复该分类位置，卸载解除滚动监听。首次访问分类从顶部开始；从服务卡跳转偏好明确从顶部显示并以 preventScroll 聚焦页签。会话状态只在内存保留，重启后回到概览，不影响其他页面或持久化设置。
+
+偏好页签的恢复操作明确命名为“恢复全部默认设置”，确认文案列明外观、菜单、通知、窗口、龙之谷快捷键与路径都将恢复，业务数据不会删除；仍调用现有 ResetSettings，不改为局部重置。
 
 ## 响应式处理
 
-- 概览卡根据自身容器宽度布局：760px 以上品牌与运行信息并排，以下纵向排列；420px 以下运行信息由双列改为单列，元信息与操作区允许换行。日期、日志文件名和错误信息可换行，移除原有大块加载占位。
+- 概览品牌、运行状态及操作区允许换行，版本与平台保留两列槽位；诊断详情在 620px 以下双列、360px 以下单列，字段溢出省略并通过 title 提供完整文本，错误信息可换行。
 
 - 页签保持单行，空间不足时先隐藏说明和编号，极窄宽度允许页签条内部横向滚动，不造成整页横向滚动；页签使用固定 `md` 按钮和 Base UI 的键盘导航及面板关联。
 - 设置页以自身内容宽度作为 Container Query 条件，侧边栏展开或收起时都能正确切换布局。
-- 设置复用共享 `PageHeader`；内容宽度不足 620px 时页头操作移到标题下方，设置网格在 700px 以下由双列变为单列。
+- 设置使用局部紧凑页头，操作自动换行；设置网格在 700px 以下由双列变为单列。
 - 页头展示“修改自动保存/正在同步”状态；恢复默认按钮在极窄宽度下改为全宽。
 - 恢复默认操作不固定尺寸，跟随用户配置的默认按钮尺寸。
 - 主题分段、强调色、下拉框、滑块和开关行不得超出卡片；说明文字允许换行。

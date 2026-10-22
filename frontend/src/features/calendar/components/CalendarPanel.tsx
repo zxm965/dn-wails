@@ -1,5 +1,5 @@
 import { CalendarDays, ChevronLeft, ChevronRight } from 'lucide-react'
-import { useMemo, useState, type MouseEvent } from 'react'
+import { useLayoutEffect, useMemo, useRef, useState, type MouseEvent } from 'react'
 
 import { Button, Select } from '@/shared/components/ui'
 import { useFeedback } from '@/shared/feedback'
@@ -7,6 +7,7 @@ import { createScopedClassNames } from '@/shared/lib/classNames'
 import { openExternalURL } from '@/shared/native-kit'
 
 import { getHolidayScheduleInfo, OFFICIAL_HOLIDAY_YEARS } from '../data/chinaHolidays'
+import { useToday } from '../hooks/useToday'
 import {
   buildCalendarMonth,
   CALENDAR_MAX_YEAR,
@@ -39,10 +40,12 @@ function CalendarDayCell({
   day,
   selected,
   onSelect,
+  onNavigate,
 }: {
   day: CalendarDay
   selected: boolean
   onSelect: (dateKey: string) => void
+  onNavigate: (date: Date) => void
 }) {
   const status = day.holiday?.status
   const secondaryLabel = day.holiday?.name ?? day.traditionalFestival ?? day.lunarLabel
@@ -60,9 +63,25 @@ function CalendarDayCell({
       aria-label={dayDescription(day)}
       aria-current={day.isToday ? 'date' : undefined}
       aria-selected={selected}
-      tabIndex={0}
+      data-calendar-date={day.dateKey}
+      tabIndex={selected ? 0 : -1}
       onClick={selectDay}
       onKeyDown={(event) => {
+        const shifts: Record<string, number> = {
+          ArrowLeft: -1,
+          ArrowRight: 1,
+          ArrowUp: -7,
+          ArrowDown: 7,
+          Home: -day.date.getDay(),
+          End: 6 - day.date.getDay(),
+        }
+        if (event.key in shifts) {
+          event.preventDefault()
+          const next = new Date(day.date)
+          next.setDate(next.getDate() + shifts[event.key])
+          onNavigate(next)
+          return
+        }
         if (event.key !== 'Enter' && event.key !== ' ') return
         event.preventDefault()
         selectDay()
@@ -87,7 +106,9 @@ function CalendarDayCell({
 
 export function CalendarPanel() {
   const { notify } = useFeedback()
-  const today = useMemo(() => new Date(), [])
+  const today = useToday()
+  const panelRef = useRef<HTMLDivElement>(null)
+  const pendingFocus = useRef<string | null>(null)
   const [displayed, setDisplayed] = useState(() => ({ year: today.getFullYear(), month: today.getMonth() + 1 }))
   const [selectedDateKey, setSelectedDateKey] = useState(() => toDateKey(today))
   const days = useMemo(() => buildCalendarMonth(displayed.year, displayed.month, today), [displayed, today])
@@ -99,6 +120,22 @@ export function CalendarPanel() {
   const next = shiftMonth(displayed.year, displayed.month, 1)
   const canGoPrevious = previous.year >= CALENDAR_MIN_YEAR
   const canGoNext = next.year <= CALENDAR_MAX_YEAR
+
+  useLayoutEffect(() => {
+    if (!pendingFocus.current) return
+    panelRef.current
+      ?.querySelector<HTMLElement>(`[data-calendar-date="${pendingFocus.current}"]`)
+      ?.focus({ preventScroll: true })
+    pendingFocus.current = null
+  }, [selectedDateKey, displayed])
+
+  function navigateDate(date: Date) {
+    if (date.getFullYear() < CALENDAR_MIN_YEAR || date.getFullYear() > CALENDAR_MAX_YEAR) return
+    const key = toDateKey(date)
+    pendingFocus.current = key
+    setSelectedDateKey(key)
+    if (!days.some((day) => day.dateKey === key)) setDisplayed({ year: date.getFullYear(), month: date.getMonth() + 1 })
+  }
 
   function goToToday() {
     setDisplayed({ year: today.getFullYear(), month: today.getMonth() + 1 })
@@ -119,7 +156,7 @@ export function CalendarPanel() {
   }
 
   return (
-    <div className={cx('calendar-page')}>
+    <div ref={panelRef} className={cx('calendar-page')}>
       {selectedDay && <CalendarSummary day={selectedDay} monthDays={monthDays} onSelect={setSelectedDateKey} />}
       <section className={cx('calendar-panel')} aria-labelledby='calendar-heading'>
         <header className={cx('calendar-toolbar')}>
@@ -210,6 +247,7 @@ export function CalendarPanel() {
               day={day}
               selected={day.dateKey === selectedDay?.dateKey}
               onSelect={setSelectedDateKey}
+              onNavigate={navigateDate}
             />
           ))}
         </div>
