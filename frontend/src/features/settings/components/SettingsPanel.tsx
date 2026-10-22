@@ -1,14 +1,14 @@
 import { useRef, useState } from 'react'
 
 import { useAppUpdate } from '@/features/app-update'
-import { Button, PageHeader, PageTabs, RadioGroup, Select, Slider, Switch, type PageTab } from '@/shared/components/ui'
+import { Button, PageHeader, PageTabs, RadioGroup, Select, Switch, type PageTab } from '@/shared/components/ui'
 import { useFeedback } from '@/shared/feedback'
 import { createScopedClassNames } from '@/shared/lib/classNames'
-import { CONFIGURABLE_MENU_ENTRIES, resolveMenuVisibility, type MenuPreferenceKey } from '@/shared/navigation'
+import { FONT_SIZE_PRESETS, type FontSizePreset } from '@/shared/theme/typography'
 
 import { type AccentColor, type AppSettings, type ButtonSize, type ThemeMode } from '../api/settingsApi'
 import { useSettings } from '../context/SettingsProvider'
-import { DesktopOverview } from './DesktopOverview'
+import { MenuPreferences } from './MenuPreferences'
 import { RuntimeStatusPanel, type SettingsPreferenceCategory } from './RuntimeStatusPanel'
 
 import { styles } from './SettingsPanel.css'
@@ -97,16 +97,6 @@ export function SettingsPanel() {
     })).catch(() => undefined)
   }
 
-  function updateMenuVisibility(key: MenuPreferenceKey, visible: boolean) {
-    void updateSettings((current) => ({
-      ...current,
-      navigation: {
-        ...current.navigation,
-        menuVisibility: { ...current.navigation.menuVisibility, [key]: visible },
-      },
-    })).catch(() => undefined)
-  }
-
   async function handleReset() {
     const accepted = await confirm({
       title: '恢复默认设置',
@@ -137,7 +127,6 @@ export function SettingsPanel() {
       description: '版本、运行与更新',
       content: (
         <>
-          <DesktopOverview embedded />
           <RuntimeStatusPanel onOpenSettings={openPreferences} />
           <section className={cx('settings-section')}>
             <div className={cx('settings-section-title')}>
@@ -197,7 +186,7 @@ export function SettingsPanel() {
         <section className={cx('settings-section')}>
           <div className={cx('settings-section-title')}>
             <h2>主题与外观</h2>
-            <p>控制应用配色、强调色、界面密度、默认按钮尺寸和文字缩放。</p>
+            <p>控制应用配色、强调色、界面密度、默认按钮尺寸和全局默认字号组合。</p>
           </div>
 
           <div className={cx('settings-grid')}>
@@ -205,6 +194,7 @@ export function SettingsPanel() {
               <legend>主题模式</legend>
               <RadioGroup
                 aria-label='主题模式'
+                className={styles.compactOptions}
                 name='theme-mode'
                 value={settings.appearance.themeMode}
                 options={THEME_OPTIONS}
@@ -234,8 +224,8 @@ export function SettingsPanel() {
                 aria-label='界面密度'
                 value={settings.appearance.density}
                 options={[
-                  { value: 'comfortable', label: '舒适' },
-                  { value: 'compact', label: '紧凑' },
+                  { value: 'comfortable', label: '舒适 · 标准留白' },
+                  { value: 'compact', label: '紧凑 · 减少留白' },
                 ]}
                 onValueChange={(density) => updateAppearance('density', density)}
               />
@@ -266,17 +256,32 @@ export function SettingsPanel() {
               </div>
             </fieldset>
 
-            <label className={cx('settings-field')}>
-              <span>文字缩放：{Math.round(settings.appearance.fontScale * 100)}%</span>
-              <Slider
-                aria-label='文字缩放'
-                min={0.85}
-                max={1.25}
-                step={0.05}
-                value={settings.appearance.fontScale}
-                onValueChange={(fontScale) => updateAppearance('fontScale', fontScale)}
+            <fieldset className={cx('settings-fieldset')}>
+              <legend>全局默认字号组合</legend>
+              <RadioGroup<FontSizePreset>
+                aria-label='全局默认字号组合'
+                className={styles.compactOptions}
+                name='font-size-preset'
+                value={settings.appearance.fontSizePreset}
+                options={Object.entries(FONT_SIZE_PRESETS).map(([value, preset]) => ({
+                  value: value as FontSizePreset,
+                  label: preset.label,
+                }))}
+                onValueChange={(preset) => updateAppearance('fontSizePreset', preset)}
               />
-            </label>
+              <div className={styles.fontPreview}>
+                <strong className={styles.fontPreviewTitle}>
+                  标题示例 · {FONT_SIZE_PRESETS[settings.appearance.fontSizePreset].sizes.title}px
+                </strong>
+                <span className={styles.fontPreviewBody}>
+                  正文示例 · {FONT_SIZE_PRESETS[settings.appearance.fontSizePreset].sizes.body}px
+                </span>
+                <span className={styles.fontPreviewDescription}>
+                  辅助说明 · {FONT_SIZE_PRESETS[settings.appearance.fontSizePreset].sizes.secondary}px
+                </span>
+              </div>
+              <p className={styles.fontPreviewDescription}>统一应用于菜单、页面、表单和弹窗中的文字。</p>
+            </fieldset>
           </div>
         </section>
       ),
@@ -285,49 +290,7 @@ export function SettingsPanel() {
       value: 'menus',
       label: '菜单',
       description: '功能入口与显隐',
-      content: (
-        <section className={cx('settings-section')}>
-          <div className={cx('settings-section-title')}>
-            <h2>左侧菜单</h2>
-            <p>按需显示功能入口；关闭后仅隐藏菜单，不影响已有数据，设置始终保留。</p>
-          </div>
-          <div className={cx('settings-menu-grid')}>
-            {CONFIGURABLE_MENU_ENTRIES.map((entry) => {
-              const parentVisible = resolveMenuVisibility(
-                entry.key,
-                entry.defaultVisible,
-                settings.navigation.menuVisibility,
-              )
-              return (
-                <div key={entry.key} className={cx('settings-toggle-group')}>
-                  <ToggleRow
-                    compact
-                    title={entry.label}
-                    description={entry.description}
-                    checked={parentVisible}
-                    onChange={(checked) => updateMenuVisibility(entry.key, checked)}
-                  />
-                  {entry.children.map((child) => (
-                    <ToggleRow
-                      key={child.key}
-                      compact
-                      title={child.label}
-                      description={child.description}
-                      checked={
-                        parentVisible &&
-                        resolveMenuVisibility(child.key, child.defaultVisible, settings.navigation.menuVisibility)
-                      }
-                      disabled={!parentVisible}
-                      nested
-                      onChange={(checked) => updateMenuVisibility(child.key, checked)}
-                    />
-                  ))}
-                </div>
-              )
-            })}
-          </div>
-        </section>
-      ),
+      content: <MenuPreferences />,
     },
     {
       value: 'notifications',
@@ -463,26 +426,12 @@ interface ToggleRowProps {
   description: string
   checked: boolean
   disabled?: boolean
-  nested?: boolean
-  compact?: boolean
   onChange: (checked: boolean) => void
 }
 
-function ToggleRow({
-  title,
-  description,
-  checked,
-  disabled = false,
-  nested = false,
-  compact = false,
-  onChange,
-}: ToggleRowProps) {
+function ToggleRow({ title, description, checked, disabled = false, onChange }: ToggleRowProps) {
   return (
-    <label
-      className={cx(
-        `settings-toggle-row${nested ? ' is-nested' : ''}${disabled ? ' is-disabled' : ''}${compact ? ' settings-menu-row' : ''}`,
-      )}
-    >
+    <label className={cx(`settings-toggle-row${disabled ? ' is-disabled' : ''}`)}>
       <span className={cx('settings-toggle-text')}>
         <strong className={cx('settings-toggle-title')}>{title}</strong>
         <small className={cx('settings-toggle-description')}>{description}</small>

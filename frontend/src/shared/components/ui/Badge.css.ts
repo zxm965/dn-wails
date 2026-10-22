@@ -7,7 +7,7 @@ const uiBadge = style({
   justifyContent: 'center',
   padding: '2px 8px',
   color: 'var(--text-secondary)',
-  fontSize: '11px',
+  fontSize: 'var(--font-size-secondary)',
   fontWeight: '800',
   lineHeight: '1.2',
   whiteSpace: 'nowrap',

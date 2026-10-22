@@ -3,7 +3,7 @@ import { globalStyle, style } from '@vanilla-extract/css'
 const settingsPanel = style({
   width: 'min(var(--page-content-max-width), 100%)',
   display: 'grid',
-  gap: '16px',
+  gap: 'calc(16px * var(--layout-spacing))',
   margin: '0 auto',
   padding: 'var(--page-padding-start) var(--page-padding-inline) var(--page-padding-end)',
   containerName: 'settings-panel',
@@ -20,14 +20,14 @@ const settingsState = style({
 const settingsSaveStatus = style({
   margin: '0',
   color: 'var(--text-tertiary)',
-  fontSize: '11px',
+  fontSize: 'var(--font-size-secondary)',
   whiteSpace: 'nowrap',
 })
 
 const settingsButton = style([
   {
     padding: '0 16px',
-    fontSize: '13px',
+    fontSize: 'var(--font-size-body)',
     fontWeight: '750',
     border: '1px solid transparent',
     borderRadius: '9px',
@@ -63,7 +63,7 @@ const settingsUpdateContent = style([
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'space-between',
-    gap: '20px',
+    gap: 'calc(20px * var(--layout-spacing))',
   },
   {
     '@container': {
@@ -78,7 +78,7 @@ const settingsUpdateContent = style([
 const settingsUpdateError = style({
   margin: '12px 0 0',
   color: 'var(--danger-text)',
-  fontSize: '11px',
+  fontSize: 'var(--font-size-secondary)',
 })
 
 const settingsUpdateProgress = style({
@@ -86,7 +86,7 @@ const settingsUpdateProgress = style({
   gap: '5px',
   marginTop: '12px',
   color: 'var(--text-secondary)',
-  fontSize: '11px',
+  fontSize: 'var(--font-size-secondary)',
 })
 
 const settingsUpdateProgressBar = style({
@@ -112,14 +112,14 @@ const settingsSection = style({
 })
 
 const settingsSectionTitle = style({
-  marginBottom: '22px',
+  marginBottom: 'calc(22px * var(--layout-spacing))',
 })
 
 const settingsGrid = style([
   {
     display: 'grid',
     gridTemplateColumns: 'repeat(2, minmax(0, 1fr))',
-    gap: '20px',
+    gap: 'calc(20px * var(--layout-spacing))',
   },
   {
     '@container': {
@@ -139,6 +139,11 @@ const settingsFieldset = style({
 
 const settingsField = style({})
 
+const compactOptions = style({
+  width: 'min(100%, 300px)',
+  vars: { '--radio-segment-height': 'var(--button-height-sm)' },
+})
+
 const settingsAccent = style({
   width: '20px',
   height: '20px',
@@ -148,11 +153,12 @@ const settingsAccent = style({
 })
 
 const settingsButtonSizeOptions = style({
+  width: 'min(100%, 300px)',
   display: 'flex',
   alignItems: 'center',
   gap: '8px',
-  height: '44px',
-  minHeight: '44px',
+  height: '36px',
+  minHeight: '36px',
   padding: '0',
   background: 'transparent',
   border: '0',
@@ -199,38 +205,14 @@ const settingsToggles = style({
   flexDirection: 'column',
 })
 
-const settingsToggleGroup = style({
-  minWidth: '0',
-  background: 'color-mix(in srgb, var(--surface-muted) 45%, var(--surface-elevated))',
-  border: '1px solid var(--border-subtle)',
-  borderRadius: '10px',
-})
-
-const settingsMenuGrid = style({
-  minWidth: '0',
-  display: 'grid',
-  gridTemplateColumns: 'repeat(3, minmax(0, 1fr))',
-  alignItems: 'start',
-  gap: '10px',
-  '@container': {
-    'settings-panel (max-width: 1050px)': {
-      gridTemplateColumns: 'repeat(2, minmax(0, 1fr))',
-    },
-    'settings-panel (max-width: 660px)': {
-      gridTemplateColumns: 'minmax(0, 1fr)',
-      gap: '8px',
-    },
-  },
-})
-
 const settingsToggleRow = style([
   {
     position: 'relative',
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'space-between',
-    gap: '18px',
-    padding: '14px 0',
+    gap: 'calc(18px * var(--layout-spacing))',
+    padding: 'calc(14px * var(--layout-spacing)) 0',
     cursor: 'pointer',
     selectors: {
       '& + &': {
@@ -256,35 +238,13 @@ const isDisabled = style({
   },
 })
 
-const isNested = style({
-  selectors: {
-    [`${settingsToggleRow}&`]: {
-      marginLeft: '22px',
-      paddingLeft: '14px',
-      borderLeft: '2px solid color-mix(in srgb, var(--accent) 28%, var(--border-subtle))',
-    },
-  },
-})
-
-const settingsMenuRow = style({
-  minWidth: '0',
-  gap: '12px',
-  padding: '10px 12px',
-  selectors: {
-    [`&${isNested}`]: {
-      margin: '0 12px 10px',
-      padding: '8px 0 0 10px',
-    },
-  },
-})
-
 const settingsToggleText = style({
   minWidth: '0',
 })
 
 const settingsToggleTitle = style({
   display: 'block',
-  fontSize: '13px',
+  fontSize: 'var(--font-size-body)',
   overflowWrap: 'anywhere',
 })
 
@@ -293,13 +253,6 @@ const settingsToggleDescription = style({
   marginTop: '5px',
   color: 'var(--text-tertiary)',
   lineHeight: '1.45',
-  selectors: {
-    [`${settingsMenuRow} &`]: {
-      marginTop: '3px',
-      fontSize: '11px',
-      overflowWrap: 'anywhere',
-    },
-  },
   '@container': {
     'settings-panel (max-width: 440px)': {
       overflowWrap: 'anywhere',
@@ -307,7 +260,34 @@ const settingsToggleDescription = style({
   },
 })
 
+const fontPreview = style({
+  display: 'grid',
+  width: 'min(100%, 300px)',
+  gap: 4,
+  minWidth: 0,
+  marginTop: 8,
+  padding: 10,
+  border: '1px solid var(--border-subtle)',
+  borderRadius: 10,
+  background: 'var(--surface-muted)',
+  lineHeight: 1.5,
+  overflowWrap: 'anywhere',
+})
+const fontPreviewTitle = style({ fontSize: 'var(--font-size-title)' })
+const fontPreviewBody = style({ fontSize: 'var(--font-size-body)' })
+const fontPreviewDescription = style({
+  fontSize: 'var(--font-size-secondary)',
+  color: 'var(--text-secondary)',
+  lineHeight: 1.5,
+  overflowWrap: 'anywhere',
+})
+
 export const styles = {
+  compactOptions,
+  fontPreview,
+  fontPreviewTitle,
+  fontPreviewBody,
+  fontPreviewDescription,
   'settings-panel': settingsPanel,
   'settings-state': settingsState,
   'settings-save-status': settingsSaveStatus,
@@ -333,26 +313,22 @@ export const styles = {
   'is-purple': isPurple,
   'is-orange': isOrange,
   'settings-toggles': settingsToggles,
-  'settings-toggle-group': settingsToggleGroup,
-  'settings-menu-grid': settingsMenuGrid,
-  'settings-menu-row': settingsMenuRow,
   'settings-toggle-row': settingsToggleRow,
   'settings-toggle-text': settingsToggleText,
   'settings-toggle-title': settingsToggleTitle,
   'settings-toggle-description': settingsToggleDescription,
   'is-disabled': isDisabled,
-  'is-nested': isNested,
 } as const
 
 globalStyle(`${settingsSectionTitle} h2`, {
   margin: '0',
-  fontSize: '17px',
+  fontSize: 'var(--font-size-title)',
 })
 
 globalStyle(`${settingsSectionTitle} p`, {
   margin: '7px 0 0',
   color: 'var(--text-secondary)',
-  fontSize: '13px',
+  fontSize: 'var(--font-size-body)',
   lineHeight: '1.55',
 })
 
@@ -362,14 +338,14 @@ globalStyle(`${settingsUpdateContent} > div`, {
 
 globalStyle(`${settingsUpdateContent} strong`, {
   display: 'block',
-  fontSize: '14px',
+  fontSize: 'var(--font-size-body)',
 })
 
 globalStyle(`${settingsUpdateContent} small`, {
   display: 'block',
   marginTop: '7px',
   color: 'var(--text-tertiary)',
-  fontSize: '10px',
+  fontSize: 'var(--font-size-caption)',
   overflowWrap: 'anywhere',
 })
 
@@ -389,7 +365,7 @@ ${settingsField} > span`,
     display: 'block',
     marginBottom: '9px',
     color: 'var(--text-secondary)',
-    fontSize: '12px',
+    fontSize: 'var(--font-size-secondary)',
     fontWeight: '700',
   },
 )

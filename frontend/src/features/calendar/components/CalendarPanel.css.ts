@@ -16,9 +16,10 @@ const calendarPage = style([
     minHeight: '0',
     display: 'grid',
     gridTemplateRows: 'minmax(min-content, 1fr) minmax(0, max-content)',
-    gap: '16px',
+    gap: 'calc(16px * var(--layout-spacing))',
     margin: '0 auto',
-    padding: 'clamp(18px, 2.4cqw, 24px) clamp(28px, 4.5cqw, 52px) clamp(22px, 2.8cqw, 30px)',
+    padding:
+      'calc(clamp(18px, 2.4cqw, 24px) * var(--layout-spacing)) calc(clamp(28px, 4.5cqw, 52px) * var(--layout-spacing)) calc(clamp(22px, 2.8cqw, 30px) * var(--layout-spacing))',
     containerName: 'calendar-page',
     containerType: 'inline-size',
     WebkitUserSelect: 'none',
@@ -27,12 +28,13 @@ const calendarPage = style([
   {
     '@container': {
       'app-content (max-width: 620px)': {
-        gap: '12px',
-        padding: '14px 16px 20px',
+        gap: 'calc(12px * var(--layout-spacing))',
+        padding:
+          'calc(14px * var(--layout-spacing)) calc(16px * var(--layout-spacing)) calc(20px * var(--layout-spacing))',
       },
       'app-content (max-width: 390px)': {
-        paddingRight: '12px',
-        paddingLeft: '12px',
+        paddingRight: 'calc(12px * var(--layout-spacing))',
+        paddingLeft: 'calc(12px * var(--layout-spacing))',
       },
     },
   },
@@ -44,7 +46,7 @@ const calendarPanel = style([
     minHeight: '0',
     display: 'grid',
     gridTemplateRows: 'max-content max-content minmax(0, 1fr) max-content',
-    padding: '10px',
+    padding: 'calc(10px * var(--layout-spacing))',
     overflow: 'hidden',
     background:
       'linear-gradient(145deg, color-mix(in srgb, var(--surface-elevated) 94%, var(--accent) 6%), color-mix(in srgb, var(--surface-elevated) 96%, var(--surface-muted) 4%))',
@@ -55,11 +57,11 @@ const calendarPanel = style([
   {
     '@container': {
       'calendar-page (max-width: 620px)': {
-        padding: '8px',
+        padding: 'calc(8px * var(--layout-spacing))',
         borderRadius: '18px',
       },
       'calendar-page (max-width: 390px)': {
-        padding: '7px',
+        padding: 'calc(7px * var(--layout-spacing))',
         borderRadius: '15px',
       },
     },
@@ -72,9 +74,9 @@ const calendarToolbar = style([
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'space-between',
-    gap: '18px',
-    marginBottom: '8px',
-    padding: '11px 14px',
+    gap: 'calc(18px * var(--layout-spacing))',
+    marginBottom: 'calc(8px * var(--layout-spacing))',
+    padding: 'calc(11px * var(--layout-spacing)) calc(14px * var(--layout-spacing))',
     background:
       'radial-gradient(circle at 0% 0%, var(--accent-muted), transparent 36%), color-mix(in srgb, var(--surface-elevated) 96%, var(--accent) 4%)',
     border: '1px solid var(--border-subtle)',
@@ -86,13 +88,13 @@ const calendarToolbar = style([
       'calendar-page (max-width: 620px)': {
         alignItems: 'stretch',
         flexDirection: 'column',
-        gap: '14px',
-        marginBottom: '8px',
-        padding: '11px 12px',
+        gap: 'calc(14px * var(--layout-spacing))',
+        marginBottom: 'calc(8px * var(--layout-spacing))',
+        padding: 'calc(11px * var(--layout-spacing)) calc(12px * var(--layout-spacing))',
       },
       'calendar-page (max-width: 390px)': {
-        gap: '8px',
-        padding: '8px',
+        gap: 'calc(8px * var(--layout-spacing))',
+        padding: 'calc(8px * var(--layout-spacing))',
       },
     },
   },
@@ -124,11 +126,11 @@ const calendarHeadingIconSvg = style({
 
 const calendarHeadingTitle = style({
   margin: '0',
-  fontSize: '18px',
+  fontSize: 'var(--font-size-title)',
   letterSpacing: '-0.02em',
   '@container': {
     'calendar-page (max-width: 390px)': {
-      fontSize: '16px',
+      fontSize: 'var(--font-size-subtitle)',
     },
   },
 })
@@ -136,12 +138,12 @@ const calendarHeadingTitle = style({
 const calendarHeadingText = style({
   margin: '4px 0 0',
   color: 'var(--text-tertiary)',
-  fontSize: '10px',
+  fontSize: 'var(--font-size-caption)',
   lineHeight: '1.4',
   '@container': {
     'calendar-page (max-width: 390px)': {
       marginTop: '2px',
-      fontSize: '9px',
+      fontSize: 'var(--font-size-caption)',
       lineHeight: '1.2',
     },
   },
@@ -262,7 +264,7 @@ const calendarWeekday = style({
   minWidth: '0',
   padding: '5px 4px',
   color: 'var(--text-secondary)',
-  fontSize: '10px',
+  fontSize: 'var(--font-size-caption)',
   fontWeight: '800',
   textAlign: 'center',
   selectors: {
@@ -397,7 +399,7 @@ const calendarDayNumber = style({
   height: '23px',
   display: 'grid',
   placeItems: 'center',
-  fontSize: '14px',
+  fontSize: 'var(--font-size-body)',
   fontWeight: '800',
   lineHeight: '1',
   borderRadius: '8px',
@@ -405,13 +407,13 @@ const calendarDayNumber = style({
     'calendar-page (max-width: 390px)': {
       width: '18px',
       height: '18px',
-      fontSize: '12px',
+      fontSize: 'var(--font-size-secondary)',
       borderRadius: '6px',
     },
     'calendar-page (max-width: 320px)': {
       width: '16px',
       height: '16px',
-      fontSize: '11px',
+      fontSize: 'var(--font-size-secondary)',
     },
   },
   selectors: {
@@ -430,7 +432,7 @@ const calendarStatus = style({
   display: 'grid',
   placeItems: 'center',
   color: '#fff',
-  fontSize: '10px',
+  fontSize: 'var(--font-size-caption)',
   fontStyle: 'normal',
   fontWeight: '900',
   borderRadius: '7px',
@@ -439,13 +441,13 @@ const calendarStatus = style({
     'calendar-page (max-width: 390px)': {
       width: '14px',
       height: '14px',
-      fontSize: '9px',
+      fontSize: 'var(--font-size-caption)',
       borderRadius: '5px',
     },
     'calendar-page (max-width: 320px)': {
       width: '10px',
       height: '10px',
-      fontSize: '8px',
+      fontSize: 'var(--font-size-micro)',
       borderRadius: '3px',
     },
   },
@@ -463,14 +465,14 @@ const calendarLunar = style({
   minWidth: '0',
   overflow: 'hidden',
   color: 'var(--text-tertiary)',
-  fontSize: '10px',
+  fontSize: 'var(--font-size-caption)',
   fontWeight: '650',
   lineHeight: '1.3',
   textOverflow: 'ellipsis',
   whiteSpace: 'nowrap',
   '@container': {
     'calendar-page (max-width: 320px)': {
-      fontSize: '8px',
+      fontSize: 'var(--font-size-micro)',
       lineHeight: '1.2',
     },
   },
@@ -495,7 +497,7 @@ const calendarFooter = style([
     marginTop: '8px',
     padding: '7px 4px 1px',
     color: 'var(--text-tertiary)',
-    fontSize: '10px',
+    fontSize: 'var(--font-size-caption)',
   },
   {
     '@container': {

@@ -1,6 +1,6 @@
 export {
-  CONFIGURABLE_MENU_ENTRIES,
-  DEVTOOLS_DESKTOP_LAB_PREFERENCE,
+  getOrderedMenuGroups,
+  orderMenuItems,
   MENU_GROUPS,
   getFirstVisibleView,
   isAppViewVisible,
@@ -17,5 +17,5 @@ export {
   getAppViewTitle,
   isStandaloneAppView,
 } from './routeConfig'
-export type { ConfigurableMenuEntry, MenuEntry, MenuKey, MenuPreferenceKey, MenuVisibility } from './menuConfig'
+export type { MenuEntry, MenuKey, MenuVisibility, MenuOrder } from './menuConfig'
 export type { AppRouteDefinition, AppView } from './routeConfig'

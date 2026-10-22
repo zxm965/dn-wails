@@ -79,7 +79,7 @@ const systemNotificationHeadingIcon = style({
 const systemNotificationEyebrow = style({
   margin: '0 0 3px',
   color: 'var(--accent)',
-  fontSize: '8px',
+  fontSize: 'var(--font-size-micro)',
   fontWeight: '800',
   letterSpacing: '0.12em',
   textTransform: 'uppercase',
@@ -88,7 +88,7 @@ const systemNotificationEyebrow = style({
 const systemNotificationDescription = style({
   margin: '4px 0 0',
   color: 'var(--text-secondary)',
-  fontSize: '10px',
+  fontSize: 'var(--font-size-caption)',
   lineHeight: '1.45',
 })
 
@@ -100,7 +100,7 @@ const notificationStatus = style({
   minHeight: '28px',
   padding: '0 10px',
   color: 'var(--text-secondary)',
-  fontSize: '9px',
+  fontSize: 'var(--font-size-caption)',
   fontWeight: '700',
   background: 'color-mix(in srgb, var(--surface-muted) 78%, transparent)',
   border: '1px solid var(--border-subtle)',
@@ -157,7 +157,7 @@ const notificationPreviewAvatar = style({
   display: 'grid',
   placeItems: 'center',
   color: 'var(--button-primary-text)',
-  fontSize: '13px',
+  fontSize: 'var(--font-size-body)',
   fontWeight: '800',
   background: 'linear-gradient(145deg, var(--accent), color-mix(in srgb, var(--accent) 72%, #052d1d))',
   borderRadius: '10px',
@@ -171,8 +171,8 @@ const notificationPreviewCopy = style({
 const notificationForm = style({
   minWidth: '0',
   display: 'grid',
-  gap: '12px',
-  padding: '14px',
+  gap: 'calc(12px * var(--layout-spacing))',
+  padding: 'calc(14px * var(--layout-spacing))',
   background: 'color-mix(in srgb, var(--surface-muted) 64%, transparent)',
   border: '1px solid var(--border-subtle)',
   borderRadius: '14px',
@@ -180,7 +180,7 @@ const notificationForm = style({
 
 const notificationComposer = style({
   display: 'grid',
-  gap: '10px',
+  gap: 'calc(10px * var(--layout-spacing))',
 })
 
 const notificationField = style({
@@ -218,7 +218,7 @@ const notificationFieldHeading = style({
 const notificationFieldCounter = style({
   flex: '0 0 auto',
   color: 'var(--text-tertiary)',
-  fontSize: '8px',
+  fontSize: 'var(--font-size-micro)',
   fontVariantNumeric: 'tabular-nums',
 })
 
@@ -228,8 +228,8 @@ const notificationFooter = style([
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'space-between',
-    gap: '14px',
-    paddingTop: '11px',
+    gap: 'calc(14px * var(--layout-spacing))',
+    paddingTop: 'calc(11px * var(--layout-spacing))',
     borderTop: '1px solid var(--border-subtle)',
   },
   {
@@ -247,7 +247,7 @@ const notificationFeedback = style({
   flex: '1',
   margin: '0',
   color: 'var(--text-secondary)',
-  fontSize: '9px',
+  fontSize: 'var(--font-size-caption)',
   lineHeight: '1.5',
   overflowWrap: 'anywhere',
   selectors: {
@@ -272,7 +272,7 @@ const notificationActions = style([
 
 const notificationButton = style({
   padding: '0 13px',
-  fontSize: '10px',
+  fontSize: 'var(--font-size-caption)',
   fontWeight: '700',
   border: '1px solid transparent',
   borderRadius: '9px',
@@ -342,19 +342,20 @@ globalStyle(`${systemNotificationHeadingIcon} svg`, {
 
 globalStyle(`${systemNotificationHeading} h1`, {
   margin: '0',
-  fontSize: 'clamp(24px, 4vw, 34px)',
+  fontSize:
+    'clamp(calc(24px + var(--font-size-heading-offset)), calc(4vw + var(--font-size-heading-offset)), calc(34px + var(--font-size-heading-offset)))',
   lineHeight: '1.15',
 })
 
 globalStyle(`${systemNotificationHeading} h2`, {
   margin: '0',
-  fontSize: '15px',
+  fontSize: 'var(--font-size-subtitle)',
 })
 
 globalStyle(`${notificationPreviewCopy} > span`, {
   display: 'block',
   color: 'var(--accent)',
-  fontSize: '7px',
+  fontSize: 'var(--font-size-micro)',
   fontWeight: '800',
   letterSpacing: '0.1em',
   textTransform: 'uppercase',
@@ -364,7 +365,7 @@ globalStyle(`${notificationPreviewCopy} strong`, {
   display: 'block',
   overflow: 'hidden',
   marginTop: '2px',
-  fontSize: '11px',
+  fontSize: 'var(--font-size-secondary)',
   textOverflow: 'ellipsis',
   whiteSpace: 'nowrap',
 })
@@ -373,7 +374,7 @@ globalStyle(`${notificationPreviewCopy} p`, {
   overflow: 'hidden',
   margin: '2px 0 0',
   color: 'var(--text-secondary)',
-  fontSize: '9px',
+  fontSize: 'var(--font-size-caption)',
   textOverflow: 'ellipsis',
   whiteSpace: 'nowrap',
 })
@@ -382,7 +383,7 @@ globalStyle(`${notificationField} label`, {
   display: 'block',
   marginBottom: '6px',
   color: 'var(--text-secondary)',
-  fontSize: '9px',
+  fontSize: 'var(--font-size-caption)',
   fontWeight: '700',
 })
 
@@ -401,7 +402,7 @@ ${notificationField} textarea`,
   {
     width: '100%',
     color: 'var(--text-primary)',
-    fontSize: '10px',
+    fontSize: 'var(--font-size-caption)',
     background: 'color-mix(in srgb, var(--surface-elevated) 78%, transparent)',
     border: '1px solid var(--border-strong)',
     borderRadius: '9px',

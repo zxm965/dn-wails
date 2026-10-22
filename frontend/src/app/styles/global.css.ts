@@ -1,5 +1,7 @@
 import { globalFontFace, globalStyle } from '@vanilla-extract/css'
 
+import { FONT_SIZE_PRESETS } from '@/shared/theme/typography'
+
 globalFontFace('Nunito', {
   fontStyle: 'normal',
   fontWeight: '400',
@@ -9,7 +11,6 @@ globalFontFace('Nunito', {
 globalStyle(':root', {
   colorScheme: 'dark',
   vars: {
-    '--font-scale': '1',
     '--accent': '#07c160',
     '--accent-hover': '#06ad56',
     '--accent-muted': 'rgba(7, 193, 96, 0.13)',
@@ -36,11 +37,12 @@ globalStyle(':root', {
     '--button-height-lg': '36px',
     '--button-height-default': 'var(--button-height-md)',
     '--control-height': '42px',
+    '--layout-spacing': '1',
     '--page-content-max-width': '1180px',
-    '--page-padding-inline': 'clamp(18px, 3vw, 32px)',
+    '--page-padding-inline': 'calc(clamp(18px, 3vw, 32px) * var(--layout-spacing))',
     '--page-padding-start': 'var(--page-padding-inline)',
     '--page-padding-end': 'var(--page-padding-inline)',
-    '--panel-padding': 'clamp(18px, 2.5vw, 24px)',
+    '--panel-padding': 'calc(clamp(18px, 2.5vw, 24px) * var(--layout-spacing))',
     '--panel-radius': '16px',
   },
 })
@@ -94,6 +96,7 @@ globalStyle(":root[data-accent='orange']", {
 globalStyle(":root[data-density='compact']", {
   vars: {
     '--control-height': '36px',
+    '--layout-spacing': '0.75',
   },
 })
 
@@ -127,7 +130,7 @@ globalStyle('html,\nbody,\n#root', {
 globalStyle('html', {
   color: 'var(--text-primary)',
   background: 'var(--app-background)',
-  fontSize: 'calc(16px * var(--font-scale))',
+  fontSize: 'var(--font-size-body)',
 })
 
 globalStyle('body', {
@@ -161,10 +164,16 @@ globalStyle(':root', {
   '@media': {
     '(max-width: 640px)': {
       vars: {
-        '--page-padding-inline': '16px',
-        '--panel-padding': '16px',
+        '--page-padding-inline': 'calc(16px * var(--layout-spacing))',
+        '--panel-padding': 'calc(16px * var(--layout-spacing))',
         '--panel-radius': '13px',
       },
     },
   },
 })
+
+for (const [preset, { sizes }] of Object.entries(FONT_SIZE_PRESETS)) {
+  globalStyle(preset === 'md' ? ':root' : `:root[data-font-size='${preset}']`, {
+    vars: Object.fromEntries(Object.entries(sizes).map(([role, size]) => [`--font-size-${role}`, `${size}px`])),
+  })
+}

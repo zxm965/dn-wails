@@ -6,7 +6,7 @@ const taskEditorForm = style({
 
 const taskEditorBody = style({
   display: 'grid',
-  gap: '16px',
+  gap: 'calc(16px * var(--layout-spacing))',
 })
 
 const taskEditorField = style({
@@ -30,7 +30,7 @@ const taskEditorIcon = style({
 const taskEditorGrid = style({
   display: 'grid',
   gridTemplateColumns: 'repeat(2, minmax(0, 1fr))',
-  gap: '14px',
+  gap: 'calc(14px * var(--layout-spacing))',
   '@media': {
     '(max-width: 620px)': {
       gridTemplateColumns: 'minmax(0, 1fr)',
@@ -62,7 +62,7 @@ const taskEditorSectionTitle = style({
   alignItems: 'center',
   gap: '7px',
   color: 'var(--text-primary)',
-  fontSize: '12px',
+  fontSize: 'var(--font-size-secondary)',
   fontWeight: '800',
 })
 
@@ -83,7 +83,7 @@ const taskEditorCompactField = style({
   display: 'grid',
   gap: '5px',
   color: 'var(--text-secondary)',
-  fontSize: '11px',
+  fontSize: 'var(--font-size-secondary)',
 })
 
 const taskEditorHelp = style({

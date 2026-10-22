@@ -5,7 +5,7 @@ const uiLabel = style({
   alignItems: 'center',
   gap: '8px',
   color: 'var(--text-secondary)',
-  fontSize: '12px',
+  fontSize: 'var(--font-size-secondary)',
   fontWeight: '700',
 })
 

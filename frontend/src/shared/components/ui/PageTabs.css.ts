@@ -1,4 +1,4 @@
-import { style } from '@vanilla-extract/css'
+import { keyframes, style } from '@vanilla-extract/css'
 
 const root = style({
   minWidth: '0',
@@ -56,7 +56,7 @@ const trigger = style({
 const index = style({
   flex: '0 0 auto',
   color: 'var(--accent)',
-  fontSize: '9px',
+  fontSize: 'var(--font-size-caption)',
   fontWeight: '800',
   fontVariantNumeric: 'tabular-nums',
   letterSpacing: '0.08em',
@@ -74,7 +74,7 @@ const copy = style({
 
 const label = style({
   overflow: 'hidden',
-  fontSize: '11px',
+  fontSize: 'var(--font-size-secondary)',
   textOverflow: 'ellipsis',
   whiteSpace: 'nowrap',
 })
@@ -82,7 +82,7 @@ const label = style({
 const description = style({
   overflow: 'hidden',
   color: 'var(--text-tertiary)',
-  fontSize: '9px',
+  fontSize: 'var(--font-size-caption)',
   textOverflow: 'ellipsis',
   whiteSpace: 'nowrap',
   '@container': {
@@ -90,10 +90,17 @@ const description = style({
   },
 })
 
+const enter = keyframes({
+  from: { opacity: 0.65, transform: 'translateY(4px)' },
+  to: { opacity: 1, transform: 'translateY(0)' },
+})
+
 const content = style({
+  animation: `${enter} 180ms ease-out`,
+  '@media': { '(prefers-reduced-motion: reduce)': { animation: 'none' } },
   minWidth: '0',
   display: 'grid',
-  gap: '16px',
+  gap: 'calc(16px * var(--layout-spacing))',
   selectors: {
     '&[hidden]': { display: 'none' },
   },

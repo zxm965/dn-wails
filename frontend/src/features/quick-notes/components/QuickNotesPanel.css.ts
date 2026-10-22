@@ -11,7 +11,7 @@ const quickNotesPage = style({
   width: 'min(100%, var(--page-content-max-width))',
   minWidth: '0',
   display: 'grid',
-  gap: '18px',
+  gap: 'calc(18px * var(--layout-spacing))',
   margin: '0 auto',
   padding: 'var(--page-padding-start) var(--page-padding-inline) var(--page-padding-end)',
   containerName: 'quick-notes-page',
@@ -47,7 +47,7 @@ const quickNotesListPanel = style([
     minHeight: '0',
     display: 'flex',
     flexDirection: 'column',
-    padding: '14px',
+    padding: 'calc(14px * var(--layout-spacing))',
     background: 'color-mix(in srgb, var(--surface-elevated) 92%, var(--accent) 8%)',
     borderRight: '1px solid var(--border-subtle)',
   },
@@ -91,7 +91,7 @@ const quickNotesListMeta = style({
   gap: '10px',
   padding: '10px 3px 8px',
   color: 'var(--text-tertiary)',
-  fontSize: '10px',
+  fontSize: 'var(--font-size-caption)',
 })
 
 const quickNotesListMetaText = style({
@@ -112,7 +112,7 @@ const quickNotesList = style({
   minHeight: '0',
   display: 'grid',
   alignContent: 'start',
-  gap: '5px',
+  gap: 'calc(5px * var(--layout-spacing))',
   overflowY: 'auto',
   overscrollBehavior: 'contain',
 })
@@ -153,7 +153,7 @@ const quickNotesListItemTitle = style({
 const quickNotesListItemTime = style({
   flex: '0 0 auto',
   color: 'var(--text-tertiary)',
-  fontSize: '9px',
+  fontSize: 'var(--font-size-caption)',
   fontWeight: '600',
 })
 
@@ -168,13 +168,13 @@ const quickNotesEditorPanel = style([
     minHeight: '0',
     display: 'flex',
     flexDirection: 'column',
-    padding: '18px',
+    padding: 'calc(18px * var(--layout-spacing))',
   },
   {
     '@container': {
       'quick-notes-page (max-width: 700px)': {
         minHeight: '420px',
-        padding: '14px',
+        padding: 'calc(14px * var(--layout-spacing))',
       },
       'quick-notes-page (max-width: 430px)': {
         minHeight: '380px',
@@ -188,8 +188,8 @@ const quickNotesEditorHeader = style([
     minWidth: '0',
     display: 'flex',
     alignItems: 'center',
-    gap: '12px',
-    paddingBottom: '14px',
+    gap: 'calc(12px * var(--layout-spacing))',
+    paddingBottom: 'calc(14px * var(--layout-spacing))',
     borderBottom: '1px solid var(--border-subtle)',
   },
   {
@@ -206,7 +206,8 @@ const quickNotesTitleInput = style({
   minWidth: '0',
   flex: '1',
   padding: '0 2px',
-  fontSize: 'clamp(18px, 2.4vw, 24px)',
+  fontSize:
+    'clamp(var(--font-size-title), calc(2.4vw + var(--font-size-heading-offset)), calc(24px + var(--font-size-heading-offset)))',
   fontWeight: '800',
   background: 'transparent',
   borderColor: 'transparent',
@@ -227,7 +228,8 @@ const quickNotesTitle = style({
   margin: '0',
   overflow: 'hidden',
   color: 'var(--text-primary)',
-  fontSize: 'clamp(18px, 2.4vw, 24px)',
+  fontSize:
+    'clamp(var(--font-size-title), calc(2.4vw + var(--font-size-heading-offset)), calc(24px + var(--font-size-heading-offset)))',
   fontWeight: '800',
   lineHeight: '1.3',
   textOverflow: 'ellipsis',
@@ -259,7 +261,7 @@ const quickNotesModeButton = style({
 const quickNotesSaveStatus = style({
   marginRight: '3px',
   color: 'var(--text-tertiary)',
-  fontSize: '10px',
+  fontSize: 'var(--font-size-caption)',
   whiteSpace: 'nowrap',
   selectors: {
     [`&${isSaved}`]: {
@@ -282,7 +284,7 @@ const quickNotesContent = style({
   marginTop: '14px',
   padding: '14px',
   fontFamily: 'inherit',
-  fontSize: '14px',
+  fontSize: 'var(--font-size-body)',
   lineHeight: '1.75',
   background: 'transparent',
   borderColor: 'transparent',
@@ -305,8 +307,8 @@ const quickNotesSplitView = style([
     flex: '1',
     display: 'grid',
     gridTemplateColumns: 'minmax(0, 1fr) minmax(0, 1fr)',
-    gap: '14px',
-    marginTop: '14px',
+    gap: 'calc(14px * var(--layout-spacing))',
+    marginTop: 'calc(14px * var(--layout-spacing))',
   },
   {
     '@container': {
@@ -335,10 +337,10 @@ const quickNotesEditorFooter = style({
   display: 'flex',
   alignItems: 'center',
   justifyContent: 'space-between',
-  gap: '12px',
-  padding: '10px 2px 0',
+  gap: 'calc(12px * var(--layout-spacing))',
+  padding: 'calc(10px * var(--layout-spacing)) calc(2px * var(--layout-spacing)) 0',
   color: 'var(--text-tertiary)',
-  fontSize: '10px',
+  fontSize: 'var(--font-size-caption)',
 })
 
 const quickNotesEditorFooterItem = style({

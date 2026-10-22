@@ -7,8 +7,9 @@ const summary = style({
   display: 'grid',
   gridTemplateColumns: 'minmax(0, 1fr) minmax(0, 1.35fr)',
   alignItems: 'center',
-  gap: 'clamp(20px, 3cqw, 40px)',
-  padding: 'clamp(16px, 2cqw, 24px) clamp(20px, 3cqw, 36px)',
+  gap: 'calc(clamp(20px, 3cqw, 40px) * var(--layout-spacing))',
+  padding:
+    'calc(clamp(16px, 2cqw, 24px) * var(--layout-spacing)) calc(clamp(20px, 3cqw, 36px) * var(--layout-spacing))',
   overflow: 'hidden',
   background:
     'radial-gradient(ellipse at 0% 100%, color-mix(in srgb, var(--accent-muted) 65%, transparent), transparent 60%), color-mix(in srgb, var(--surface-elevated) 65%, transparent)',
@@ -31,12 +32,12 @@ const summary = style({
   '@container': {
     'calendar-page (max-width: 620px)': {
       gridTemplateColumns: 'minmax(0, 1fr)',
-      gap: '10px',
-      padding: '12px 16px',
+      gap: 'calc(10px * var(--layout-spacing))',
+      padding: 'calc(12px * var(--layout-spacing)) calc(16px * var(--layout-spacing))',
       borderRadius: '18px',
     },
     'calendar-page (max-width: 390px)': {
-      padding: '10px 12px',
+      padding: 'calc(10px * var(--layout-spacing)) calc(12px * var(--layout-spacing))',
       borderRadius: '15px',
     },
   },
@@ -63,14 +64,15 @@ const dateRow = style({
 const dateNumber = style({
   flex: '0 0 auto',
   color: 'var(--accent)',
-  fontSize: 'clamp(48px, 7cqw, 76px)',
+  fontSize:
+    'clamp(calc(48px + var(--font-size-heading-offset)), calc(7cqw + var(--font-size-heading-offset)), calc(76px + var(--font-size-heading-offset)))',
   fontWeight: '800',
   fontVariantNumeric: 'tabular-nums',
   lineHeight: '1',
   letterSpacing: '-0.06em',
   '@container': {
     'calendar-page (max-width: 620px)': {
-      fontSize: '40px',
+      fontSize: 'calc(40px + var(--font-size-heading-offset))',
     },
   },
 })
@@ -89,7 +91,7 @@ const dateDetails = style({
 
 const caption = style({
   color: 'var(--text-tertiary)',
-  fontSize: '10px',
+  fontSize: 'var(--font-size-caption)',
   fontWeight: '700',
   letterSpacing: '0.08em',
   '@container': {
@@ -101,14 +103,14 @@ const caption = style({
 
 const dateTitle = style({
   color: 'var(--text-primary)',
-  fontSize: '12px',
+  fontSize: 'var(--font-size-secondary)',
   fontWeight: '750',
   lineHeight: '1.5',
 })
 
 const dateMeta = style({
   color: 'var(--text-secondary)',
-  fontSize: '11px',
+  fontSize: 'var(--font-size-secondary)',
 })
 
 const dateStatus = style({
@@ -117,7 +119,7 @@ const dateStatus = style({
   textOverflow: 'ellipsis',
   whiteSpace: 'nowrap',
   color: 'var(--accent)',
-  fontSize: '11px',
+  fontSize: 'var(--font-size-secondary)',
   fontWeight: '700',
   lineHeight: '1.5',
 })
@@ -125,7 +127,7 @@ const dateStatus = style({
 const hint = style({
   margin: '12px 0 0',
   color: 'var(--text-tertiary)',
-  fontSize: '10px',
+  fontSize: 'var(--font-size-caption)',
   lineHeight: '1.6',
   overflowWrap: 'anywhere',
   '@container': {
@@ -139,11 +141,11 @@ const monthOverview = style({
   position: 'relative',
   zIndex: '1',
   minWidth: '0',
-  paddingLeft: 'clamp(20px, 3cqw, 40px)',
+  paddingLeft: 'calc(clamp(20px, 3cqw, 40px) * var(--layout-spacing))',
   borderLeft: '1px solid var(--border-subtle)',
   '@container': {
     'calendar-page (max-width: 620px)': {
-      paddingTop: '10px',
+      paddingTop: 'calc(10px * var(--layout-spacing))',
       paddingLeft: '0',
       borderTop: '1px solid var(--border-subtle)',
       borderLeft: '0',
@@ -174,25 +176,25 @@ const overviewIcon = style({
 const heading = style({
   margin: '0',
   color: 'var(--text-secondary)',
-  fontSize: '12px',
+  fontSize: 'var(--font-size-secondary)',
   fontWeight: '750',
 })
 
 const monthMeta = style({
   color: 'var(--text-tertiary)',
-  fontSize: '10px',
+  fontSize: 'var(--font-size-caption)',
 })
 
 const festivals = style({
   minWidth: '0',
   display: 'flex',
   flexWrap: 'wrap',
-  gap: '8px',
-  marginTop: '12px',
+  gap: 'calc(8px * var(--layout-spacing))',
+  marginTop: 'calc(12px * var(--layout-spacing))',
   '@container': {
     'calendar-page (max-width: 620px)': {
-      gap: '6px',
-      marginTop: '8px',
+      gap: 'calc(6px * var(--layout-spacing))',
+      marginTop: 'calc(8px * var(--layout-spacing))',
     },
   },
 })
@@ -213,14 +215,14 @@ const festivalButton = style({
 
 const festivalDate = style({
   color: 'var(--text-tertiary)',
-  fontSize: '10px',
+  fontSize: 'var(--font-size-caption)',
   fontVariantNumeric: 'tabular-nums',
 })
 
 const empty = style({
   margin: '12px 0 0',
   color: 'var(--text-secondary)',
-  fontSize: '12px',
+  fontSize: 'var(--font-size-secondary)',
   lineHeight: '1.6',
 })
 
@@ -228,12 +230,12 @@ const zodiacOverview = style({
   display: 'flex',
   alignItems: 'center',
   flexWrap: 'wrap',
-  gap: '8px 12px',
-  marginTop: '12px',
+  gap: 'calc(8px * var(--layout-spacing)) calc(12px * var(--layout-spacing))',
+  marginTop: 'calc(12px * var(--layout-spacing))',
   '@container': {
     'calendar-page (max-width: 620px)': {
-      marginTop: '8px',
-      gap: '6px 10px',
+      marginTop: 'calc(8px * var(--layout-spacing))',
+      gap: 'calc(6px * var(--layout-spacing)) calc(10px * var(--layout-spacing))',
     },
   },
 })
@@ -267,19 +269,19 @@ const zodiacRange = style({
 })
 
 const zodiacSymbol = style({
-  fontSize: '14px',
+  fontSize: 'var(--font-size-body)',
   lineHeight: '1',
 })
 
 const zodiacName = style({
-  fontSize: '11px',
+  fontSize: 'var(--font-size-secondary)',
   fontWeight: '700',
   whiteSpace: 'nowrap',
 })
 
 const zodiacDates = style({
   color: 'var(--text-tertiary)',
-  fontSize: '10px',
+  fontSize: 'var(--font-size-caption)',
   fontVariantNumeric: 'tabular-nums',
   whiteSpace: 'nowrap',
 })

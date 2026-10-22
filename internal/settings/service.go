@@ -42,6 +42,9 @@ func (s *Service) Initialize() error {
 	if err := json.Unmarshal(data, &loaded); err != nil {
 		return fmt.Errorf("decode application settings: %w", err)
 	}
+	if loaded.Appearance.FontSizePreset == "" {
+		loaded.Appearance.FontSizePreset = FontSizeMD
+	}
 	if err := validate(loaded); err != nil {
 		return err
 	}
@@ -138,8 +141,8 @@ func validate(value AppSettings) error {
 	if !contains([]string{ButtonSizeSM, ButtonSizeMD, ButtonSizeLG}, value.Appearance.ButtonSize) {
 		return fmt.Errorf("%w: unsupported button size %q", ErrInvalidSettings, value.Appearance.ButtonSize)
 	}
-	if value.Appearance.FontScale < 0.85 || value.Appearance.FontScale > 1.25 {
-		return fmt.Errorf("%w: font scale must be between 0.85 and 1.25", ErrInvalidSettings)
+	if !contains([]string{FontSizeSM, FontSizeMD, FontSizeLG}, value.Appearance.FontSizePreset) {
+		return fmt.Errorf("%w: unsupported font size preset %q", ErrInvalidSettings, value.Appearance.FontSizePreset)
 	}
 	if value.Navigation.MenuVisibility == nil {
 		return fmt.Errorf("%w: menu visibility must be an object", ErrInvalidSettings)
@@ -147,6 +150,21 @@ func validate(value AppSettings) error {
 	for key := range value.Navigation.MenuVisibility {
 		if strings.TrimSpace(key) != key || key == "" || len(key) > 64 {
 			return fmt.Errorf("%w: invalid menu key %q", ErrInvalidSettings, key)
+		}
+	}
+	if len(value.Navigation.MenuOrder) > 32 {
+		return fmt.Errorf("%w: too many menu order groups", ErrInvalidSettings)
+	}
+	for group, keys := range value.Navigation.MenuOrder {
+		if strings.TrimSpace(group) != group || group == "" || len(group) > 64 || len(keys) > 128 {
+			return fmt.Errorf("%w: invalid menu order group %q", ErrInvalidSettings, group)
+		}
+		seen := make(map[string]bool, len(keys))
+		for _, key := range keys {
+			if strings.TrimSpace(key) != key || key == "" || len(key) > 64 || seen[key] {
+				return fmt.Errorf("%w: invalid or duplicate menu order key %q", ErrInvalidSettings, key)
+			}
+			seen[key] = true
 		}
 	}
 	if !contains([]string{CloseBehaviorQuit, CloseBehaviorHide}, value.Window.CloseBehavior) {
@@ -179,6 +197,10 @@ func clone(value AppSettings) AppSettings {
 	result.Navigation.MenuVisibility = make(map[string]bool, len(value.Navigation.MenuVisibility))
 	for key, visible := range value.Navigation.MenuVisibility {
 		result.Navigation.MenuVisibility[key] = visible
+	}
+	result.Navigation.MenuOrder = make(map[string][]string, len(value.Navigation.MenuOrder))
+	for group, keys := range value.Navigation.MenuOrder {
+		result.Navigation.MenuOrder[group] = append([]string{}, keys...)
 	}
 	if value.Window.Bounds != nil {
 		bounds := *value.Window.Bounds

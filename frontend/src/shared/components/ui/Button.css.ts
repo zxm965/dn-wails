@@ -18,7 +18,7 @@ const root = style({
   overflow: 'hidden',
   padding: '0 12px',
   color: 'var(--button-primary-text)',
-  fontSize: '13px',
+  fontSize: 'var(--font-size-body)',
   fontWeight: '700',
   whiteSpace: 'nowrap',
   background: 'var(--accent)',

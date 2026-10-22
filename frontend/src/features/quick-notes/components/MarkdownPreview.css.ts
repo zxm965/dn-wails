@@ -6,7 +6,7 @@ const markdownPreview = style({
   overflowY: 'auto',
   padding: '18px 20px',
   color: 'var(--text-primary)',
-  fontSize: '14px',
+  fontSize: 'var(--font-size-body)',
   lineHeight: '1.75',
   overflowWrap: 'anywhere',
 })
@@ -25,7 +25,8 @@ const markdownHeading = style({
 const markdownHeading1 = style([
   markdownHeading,
   {
-    fontSize: 'clamp(24px, 3vw, 32px)',
+    fontSize:
+      'clamp(calc(24px + var(--font-size-heading-offset)), calc(3vw + var(--font-size-heading-offset)), calc(32px + var(--font-size-heading-offset)))',
   },
 ])
 
@@ -33,7 +34,8 @@ const markdownHeading2 = style([
   markdownHeading,
   {
     paddingBottom: '6px',
-    fontSize: 'clamp(20px, 2.5vw, 26px)',
+    fontSize:
+      'clamp(calc(20px + var(--font-size-heading-offset)), 2.5vw, calc(26px + var(--font-size-heading-offset)))',
     borderBottom: '1px solid var(--border-subtle)',
   },
 ])
@@ -41,21 +43,21 @@ const markdownHeading2 = style([
 const markdownHeading3 = style([
   markdownHeading,
   {
-    fontSize: '20px',
+    fontSize: 'calc(20px + var(--font-size-heading-offset))',
   },
 ])
 
 const markdownHeading4 = style([
   markdownHeading,
   {
-    fontSize: '17px',
+    fontSize: 'var(--font-size-title)',
   },
 ])
 
 const markdownHeading5 = style([
   markdownHeading,
   {
-    fontSize: '15px',
+    fontSize: 'var(--font-size-subtitle)',
   },
 ])
 
@@ -63,7 +65,7 @@ const markdownHeading6 = style([
   markdownHeading,
   {
     color: 'var(--text-secondary)',
-    fontSize: '14px',
+    fontSize: 'var(--font-size-body)',
   },
 ])
 
@@ -98,7 +100,7 @@ const markdownCodeBlock = style({
   overflowX: 'auto',
   color: 'var(--text-primary)',
   fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Consolas, monospace',
-  fontSize: '12px',
+  fontSize: 'var(--font-size-secondary)',
   lineHeight: '1.65',
   background: 'var(--surface-muted)',
   border: '1px solid var(--border-subtle)',

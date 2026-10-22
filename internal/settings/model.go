@@ -21,16 +21,20 @@ const (
 	ButtonSizeMD = "md"
 	ButtonSizeLG = "lg"
 
+	FontSizeSM = "sm"
+	FontSizeMD = "md"
+	FontSizeLG = "lg"
+
 	CloseBehaviorQuit = "quit"
 	CloseBehaviorHide = "hide"
 )
 
 type Appearance struct {
-	ThemeMode  string  `json:"themeMode"`
-	Accent     string  `json:"accent"`
-	Density    string  `json:"density"`
-	ButtonSize string  `json:"buttonSize"`
-	FontScale  float64 `json:"fontScale"`
+	ThemeMode      string `json:"themeMode"`
+	Accent         string `json:"accent"`
+	Density        string `json:"density"`
+	ButtonSize     string `json:"buttonSize"`
+	FontSizePreset string `json:"fontSizePreset"`
 }
 
 type Notifications struct {
@@ -40,7 +44,8 @@ type Notifications struct {
 }
 
 type Navigation struct {
-	MenuVisibility map[string]bool `json:"menuVisibility"`
+	MenuVisibility map[string]bool     `json:"menuVisibility"`
+	MenuOrder      map[string][]string `json:"menuOrder,omitempty"`
 }
 
 type WindowBounds struct {
@@ -80,11 +85,11 @@ func Default() AppSettings {
 		Version:    CurrentVersion,
 		DragonNest: DragonNest{LocalShortcutKey: DefaultLocalShortcutKey},
 		Appearance: Appearance{
-			ThemeMode:  ThemeSystem,
-			Accent:     AccentGreen,
-			Density:    DensityComfortable,
-			ButtonSize: ButtonSizeMD,
-			FontScale:  1,
+			ThemeMode:      ThemeSystem,
+			Accent:         AccentGreen,
+			Density:        DensityComfortable,
+			ButtonSize:     ButtonSizeMD,
+			FontSizePreset: FontSizeMD,
 		},
 		Notifications: Notifications{
 			Enabled:      true,
@@ -93,6 +98,7 @@ func Default() AppSettings {
 		},
 		Navigation: Navigation{
 			MenuVisibility: make(map[string]bool),
+			MenuOrder:      make(map[string][]string),
 		},
 		Window: Window{
 			CloseBehavior:  CloseBehaviorQuit,

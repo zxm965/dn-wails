@@ -29,14 +29,13 @@ const cx = createScopedClassNames(styles)
 
 type ToolCategory = 'text' | 'desktop'
 
-export function DevToolsPanel({ showDesktopLab = false }: { showDesktopLab?: boolean }) {
+export function DevToolsPanel() {
   const { notify, confirm } = useFeedback()
   const [activeCategory, setActiveCategory] = useState<ToolCategory>('text')
   const [result, setResult] = useState('选择测试操作后，结果会显示在这里。')
   const [droppedFiles, setDroppedFiles] = useState<string[]>([])
 
   useEffect(() => {
-    if (!showDesktopLab) return
     return subscribeFileDrop((_position, paths) => {
       setDroppedFiles(paths)
       setResult(
@@ -46,13 +45,7 @@ export function DevToolsPanel({ showDesktopLab = false }: { showDesktopLab?: boo
       )
       setActiveCategory('desktop')
     })
-  }, [showDesktopLab])
-
-  useEffect(() => {
-    if (!showDesktopLab && activeCategory === 'desktop') {
-      setActiveCategory('text')
-    }
-  }, [activeCategory, showDesktopLab])
+  }, [])
 
   async function runAction(label: string, action: () => Promise<string>) {
     try {
@@ -100,9 +93,7 @@ export function DevToolsPanel({ showDesktopLab = false }: { showDesktopLab?: boo
         </div>
       ),
     },
-  ]
-  if (showDesktopLab) {
-    tabs.push({
+    {
       value: 'desktop',
       label: '桌面实验室',
       description: '窗口与原生能力验证',
@@ -269,18 +260,13 @@ export function DevToolsPanel({ showDesktopLab = false }: { showDesktopLab?: boo
           </div>
         </div>
       ),
-    })
-  }
+    },
+  ]
 
   return (
     <section className={cx('devtools-panel')}>
       <PageHeader eyebrow='Laboratory' title='实验室' subtitle='处理文本、编码与哈希，验证桌面原生能力。' />
-      <PageTabs
-        label='实验室分类'
-        tabs={tabs}
-        value={showDesktopLab ? activeCategory : 'text'}
-        onValueChange={setActiveCategory}
-      />
+      <PageTabs label='实验室分类' tabs={tabs} value={activeCategory} onValueChange={setActiveCategory} />
     </section>
   )
 }

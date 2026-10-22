@@ -16,16 +16,6 @@ import { isStandaloneAppView, type AppView } from './routeConfig'
 
 interface MenuPreference {
   description: string
-  children?: readonly MenuChildPreference[]
-}
-
-type MenuChildPreferenceKey = 'devtools-desktop'
-
-interface MenuChildPreference {
-  key: MenuChildPreferenceKey
-  label: string
-  description: string
-  defaultVisible: boolean
 }
 
 interface MenuEntryBase {
@@ -85,28 +75,11 @@ function defineMenuGroups<const Groups extends readonly MenuGroupDefinition[]>(g
           keys.add(child.key)
         }
       }
-
-      if ('preference' in entry && entry.preference) {
-        const preference: MenuPreference = entry.preference
-        for (const child of preference.children ?? []) {
-          if (keys.has(child.key)) {
-            throw new Error(`Duplicate menu key: ${child.key}`)
-          }
-          keys.add(child.key)
-        }
-      }
     }
   }
 
   return groups
 }
-
-export const DEVTOOLS_DESKTOP_LAB_PREFERENCE = {
-  key: 'devtools-desktop',
-  label: '桌面实验室',
-  description: '显示窗口、原生集成和系统通知的人工验证页签。',
-  defaultVisible: false,
-} as const satisfies MenuChildPreference
 
 export const MENU_GROUPS = defineMenuGroups([
   {
@@ -187,8 +160,7 @@ export const MENU_GROUPS = defineMenuGroups([
         icon: Wrench,
         defaultVisible: false,
         preference: {
-          description: '显示文本工具与可选的桌面能力验证入口。',
-          children: [DEVTOOLS_DESKTOP_LAB_PREFERENCE],
+          description: '显示文本工具与桌面能力验证入口。',
         },
       },
     ],
@@ -196,41 +168,52 @@ export const MENU_GROUPS = defineMenuGroups([
 ] as const)
 
 type ConfiguredGroup = (typeof MENU_GROUPS)[number]
-export type MenuEntry = ConfiguredGroup['entries'][number]
-export type MenuKey = MenuEntry['key']
-export type MenuPreferenceKey = MenuKey | MenuChildPreferenceKey
+type ConfiguredEntry = ConfiguredGroup['entries'][number]
+type ParentEntry = Extract<ConfiguredEntry, { children: readonly unknown[] }>
+export type MenuEntry =
+  | Exclude<ConfiguredEntry, ParentEntry>
+  | (Omit<ParentEntry, 'children'> & { children: readonly MenuItemDefinition[] })
+export type MenuKey = ConfiguredEntry['key']
 export type MenuVisibility = Readonly<Partial<Record<string, boolean>>>
+export type MenuOrder = Readonly<Record<string, readonly string[]>>
 
-export interface ConfigurableMenuEntry {
-  key: MenuKey
-  label: string
-  description: string
-  defaultVisible: boolean
-  children: readonly MenuChildPreference[]
+export interface OrderedMenuGroup {
+  key: string
+  label?: string
+  entries: MenuEntry[]
 }
 
-export const CONFIGURABLE_MENU_ENTRIES: readonly ConfigurableMenuEntry[] = MENU_GROUPS.flatMap((group) =>
-  group.entries.flatMap((entry) => {
-    if (!('preference' in entry) || !entry.preference) return []
-    const preference: MenuPreference = entry.preference
-    return [
-      {
-        key: entry.key,
-        label: entry.label,
-        description: preference.description,
-        defaultVisible: entry.defaultVisible,
-        children: preference.children ?? [],
-      },
-    ]
-  }),
-)
+/** Ignore unknown keys and append newly added entries in their default order. */
+export function orderMenuItems<Item extends { key: string }>(
+  items: readonly Item[],
+  order: readonly string[] = [],
+): Item[] {
+  const remaining = new Map(items.map((item) => [item.key, item]))
+  const result: Item[] = []
+  for (const key of order) {
+    const item = remaining.get(key)
+    if (!item) continue
+    result.push(item)
+    remaining.delete(key)
+  }
+  return [...result, ...remaining.values()]
+}
+
+export function getOrderedMenuGroups(order: MenuOrder = {}): OrderedMenuGroup[] {
+  return MENU_GROUPS.map((group) => ({
+    ...group,
+    entries: orderMenuItems<MenuEntry>(group.entries, order[group.key]).map((entry) =>
+      'children' in entry ? { ...entry, children: orderMenuItems(entry.children, order[entry.key]) } : entry,
+    ),
+  }))
+}
 
 export function resolveMenuVisibility(key: string, defaultVisible: boolean, visibility: MenuVisibility): boolean {
   return visibility[key] ?? defaultVisible
 }
 
 export function isMenuEntryVisible(entry: MenuEntry, visibility: MenuVisibility): boolean {
-  return resolveMenuVisibility(entry.key, entry.defaultVisible, visibility)
+  return entry.key === 'settings' || resolveMenuVisibility(entry.key, entry.defaultVisible, visibility)
 }
 
 export function isAppViewVisible(view: AppView, visibility: MenuVisibility): boolean {
@@ -251,8 +234,8 @@ export function isAppViewVisible(view: AppView, visibility: MenuVisibility): boo
   return false
 }
 
-export function getFirstVisibleView(visibility: MenuVisibility): AppView {
-  for (const group of MENU_GROUPS) {
+export function getFirstVisibleView(visibility: MenuVisibility, order: MenuOrder = {}): AppView {
+  for (const group of getOrderedMenuGroups(order)) {
     for (const entry of group.entries) {
       if (!isMenuEntryVisible(entry, visibility)) {
         continue

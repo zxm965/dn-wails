@@ -91,7 +91,7 @@ const titlebarLogo = style([
 const titlebarTitle = style({
   overflow: 'hidden',
   color: 'var(--text-primary)',
-  fontSize: '13px',
+  fontSize: 'var(--font-size-body)',
   fontWeight: '600',
   lineHeight: '1',
   textOverflow: 'ellipsis',

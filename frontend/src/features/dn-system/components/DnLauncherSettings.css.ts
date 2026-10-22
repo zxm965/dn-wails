@@ -17,9 +17,15 @@ export const styles = {
     margin: 0,
     marginRight: 'auto',
     color: 'var(--text-secondary)',
-    fontSize: 12,
+    fontSize: 'var(--font-size-secondary)',
     lineHeight: 1.5,
     overflowWrap: 'anywhere',
   }),
-  error: style({ margin: 0, color: 'var(--danger-text)', fontSize: 12, lineHeight: 1.5, overflowWrap: 'anywhere' }),
+  error: style({
+    margin: 0,
+    color: 'var(--danger-text)',
+    fontSize: 'var(--font-size-secondary)',
+    lineHeight: 1.5,
+    overflowWrap: 'anywhere',
+  }),
 }

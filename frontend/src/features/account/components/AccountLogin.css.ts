@@ -42,7 +42,7 @@ const accountAuthForm = style({
 const accountAuthRegisterNote = style({
   margin: '5px 0 0',
   color: 'var(--text-tertiary)',
-  fontSize: '10px',
+  fontSize: 'var(--font-size-caption)',
   lineHeight: '1.5',
 })
 
@@ -56,7 +56,7 @@ const accountAlert = style({
   marginBottom: '14px',
   padding: '12px 14px',
   color: '#e7a72f',
-  fontSize: '12px',
+  fontSize: 'var(--font-size-secondary)',
   background: 'rgba(231, 167, 47, 0.1)',
   border: '1px solid rgba(231, 167, 47, 0.2)',
   borderRadius: '10px',

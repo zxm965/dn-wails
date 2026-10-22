@@ -3,7 +3,7 @@ import { globalStyle, style } from '@vanilla-extract/css'
 const textToolbox = style({
   minWidth: '0',
   display: 'grid',
-  gap: '12px',
+  gap: 'calc(12px * var(--layout-spacing))',
   containerName: 'text-toolbox',
   containerType: 'inline-size',
 })
@@ -17,8 +17,8 @@ const textToolboxToolbar = style([
     display: 'grid',
     gridTemplateColumns: 'auto minmax(0, 1fr) auto',
     alignItems: 'center',
-    gap: '12px',
-    padding: '8px',
+    gap: 'calc(12px * var(--layout-spacing))',
+    padding: 'calc(8px * var(--layout-spacing))',
     background:
       'linear-gradient(135deg, color-mix(in srgb, var(--surface-elevated) 91%, var(--accent) 9%), color-mix(in srgb, var(--surface-elevated) 94%, transparent))',
     border: '1px solid color-mix(in srgb, var(--accent) 14%, var(--border-subtle))',
@@ -106,7 +106,7 @@ const textToolboxMenuCopy = style({
 const textToolboxMenuIndex = style({
   flex: '0 0 auto',
   color: 'var(--text-tertiary)',
-  fontSize: '8px',
+  fontSize: 'var(--font-size-micro)',
   fontWeight: '900',
   fontVariantNumeric: 'tabular-nums',
   '@container': {
@@ -122,7 +122,7 @@ const textToolboxPrivacy = style({
   gap: '7px',
   padding: '0 4px',
   color: 'var(--text-tertiary)',
-  fontSize: '8px',
+  fontSize: 'var(--font-size-micro)',
   fontWeight: '800',
   letterSpacing: '0.08em',
   textTransform: 'uppercase',
@@ -137,7 +137,7 @@ const textToolboxPrivacy = style({
 const textToolboxWorkspace = style({
   minWidth: '0',
   overflow: 'hidden',
-  padding: 'clamp(18px, 2.8vw, 26px)',
+  padding: 'calc(clamp(18px, 2.8vw, 26px) * var(--layout-spacing))',
   background:
     'radial-gradient(circle at 4% 0%, var(--accent-muted), transparent 25%), linear-gradient(145deg, var(--surface-elevated), color-mix(in srgb, var(--surface-elevated) 96%, var(--accent) 4%))',
   border: '1px solid color-mix(in srgb, var(--accent) 14%, var(--border-subtle))',
@@ -152,9 +152,9 @@ const textToolboxHeading = style([
     display: 'flex',
     alignItems: 'flex-start',
     justifyContent: 'space-between',
-    gap: '20px',
-    marginBottom: '16px',
-    paddingBottom: '15px',
+    gap: 'calc(20px * var(--layout-spacing))',
+    marginBottom: 'calc(16px * var(--layout-spacing))',
+    paddingBottom: 'calc(15px * var(--layout-spacing))',
     borderBottom: '1px solid var(--border-subtle)',
   },
   {
@@ -174,7 +174,7 @@ const textToolboxFeedback = style({
   gap: '8px',
   padding: '0 11px',
   color: 'var(--text-secondary)',
-  fontSize: '9px',
+  fontSize: 'var(--font-size-caption)',
   background: 'var(--surface-muted)',
   border: '1px solid var(--border-subtle)',
   borderRadius: '999px',
@@ -211,7 +211,7 @@ const textToolboxError = style({
   margin: '0 0 13px',
   padding: '10px 12px',
   color: 'var(--danger-text)',
-  fontSize: '10px',
+  fontSize: 'var(--font-size-caption)',
   lineHeight: '1.5',
   background: 'var(--danger-background)',
   border: '1px solid var(--danger-border)',
@@ -222,7 +222,7 @@ const textToolboxEditors = style([
   {
     display: 'grid',
     gridTemplateColumns: 'repeat(2, minmax(0, 1fr))',
-    gap: '12px',
+    gap: 'calc(12px * var(--layout-spacing))',
   },
   {
     '@container': {
@@ -244,8 +244,8 @@ const textToolboxEditor = style({
 const textToolboxFooter = style({
   display: 'flex',
   flexWrap: 'wrap',
-  gap: '8px',
-  marginTop: '13px',
+  gap: 'calc(8px * var(--layout-spacing))',
+  marginTop: 'calc(13px * var(--layout-spacing))',
 })
 
 export const styles = {
@@ -289,7 +289,7 @@ globalStyle(`${textToolboxBrand} svg`, {
 globalStyle(`${textToolboxBrand} small`, {
   display: 'block',
   color: 'var(--text-tertiary)',
-  fontSize: '7px',
+  fontSize: 'var(--font-size-micro)',
   fontWeight: '900',
   letterSpacing: '0.12em',
   textTransform: 'uppercase',
@@ -298,7 +298,7 @@ globalStyle(`${textToolboxBrand} small`, {
 globalStyle(`${textToolboxBrand} strong`, {
   display: 'block',
   marginTop: '3px',
-  fontSize: '12px',
+  fontSize: 'var(--font-size-secondary)',
 })
 
 globalStyle(`${textToolboxMenu} button`, {
@@ -325,7 +325,7 @@ globalStyle(`${textToolboxMenuIcon} svg`, {
 globalStyle(`${textToolboxMenuCopy} strong`, {
   overflow: 'hidden',
   display: 'block',
-  fontSize: '10px',
+  fontSize: 'var(--font-size-caption)',
   textOverflow: 'ellipsis',
   whiteSpace: 'nowrap',
 })
@@ -344,7 +344,7 @@ globalStyle(`${textToolboxHeading} > div > span`, {
   display: 'block',
   marginBottom: '5px',
   color: 'var(--accent)',
-  fontSize: '8px',
+  fontSize: 'var(--font-size-micro)',
   fontWeight: '900',
   letterSpacing: '0.14em',
   textTransform: 'uppercase',
@@ -352,13 +352,13 @@ globalStyle(`${textToolboxHeading} > div > span`, {
 
 globalStyle(`${textToolboxHeading} h2`, {
   margin: '0',
-  fontSize: '18px',
+  fontSize: 'var(--font-size-title)',
 })
 
 globalStyle(`${textToolboxHeading} p`, {
   margin: '5px 0 0',
   color: 'var(--text-secondary)',
-  fontSize: '10px',
+  fontSize: 'var(--font-size-caption)',
   lineHeight: '1.5',
 })
 
@@ -381,7 +381,7 @@ globalStyle(`${textToolboxOperations} > div`, {
 globalStyle(`${textToolboxOperations} > small`, {
   maxWidth: '390px',
   color: 'var(--text-tertiary)',
-  fontSize: '9px',
+  fontSize: 'var(--font-size-caption)',
   lineHeight: '1.45',
 })
 
@@ -397,7 +397,7 @@ globalStyle(`${textToolboxEditor} > header`, {
 
 globalStyle(`${textToolboxEditor} > header span`, {
   color: 'var(--text-tertiary)',
-  fontSize: '8px',
+  fontSize: 'var(--font-size-micro)',
   fontVariantNumeric: 'tabular-nums',
 })
 
@@ -406,7 +406,7 @@ globalStyle(`${textToolboxEditor} textarea`, {
   display: 'block',
   padding: '14px',
   fontFamily: "ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', monospace",
-  fontSize: '11px',
+  fontSize: 'var(--font-size-secondary)',
   lineHeight: '1.65',
   background: 'transparent',
   border: '0',

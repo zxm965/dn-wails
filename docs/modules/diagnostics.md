@@ -10,8 +10,8 @@
 - `internal/application/diagnostics.go`：Wails 基础诊断查询与打开日志目录接口。
 - `internal/application/runtime_status.go`：汇总生命周期、数据库服务、通知、更新和日志状态，并过滤底层敏感错误。
 - `frontend/src/shared/diagnostics/`：类型化诊断 API。
-- 设置“概览”中的 `RuntimeStatusPanel`：展示运行环境、健康矩阵、诊断摘要和日志入口，并在“能力状态”中展示外观、窗口和通知的配置摘要。
-- 设置“概览”中的 `DesktopOverview`：展示版本、更新通道与功能启用地图，外观/窗口/通知策略统一由 RuntimeStatusPanel 展示。
+- 设置“概览”中的 `RuntimeStatusPanel`：持有运行快照并处理刷新、复制摘要、打开日志；向 DesktopOverview 传递信息，在“能力状态”中展示服务检查与外观、窗口和通知的配置摘要。
+- 设置“概览”中的 `DesktopOverview`：整合应用标识、版本/平台/Go 版本、运行状态与时长、启动时间、第二实例计数、日志文件及检查时间，提供刷新、复制和日志入口。
 
 ## 诊断数据
 
@@ -27,6 +27,8 @@ interface DiagnosticsInfo {
   logFile: string
 }
 ```
+
+概览不再展示独立发布通道、整体健康以及生命周期/运行环境/本地诊断三张摘要卡；运行信息合并到顶部应用概览，共用一次 GetRuntimeStatus 查询，未新增轮询。首次加载失败仍可打开日志，刷新失败保留旧快照并标注；服务明细位于下方能力状态，更新操作位于底部“应用更新”。
 
 运行状态额外返回 `RuntimeStatus`：整体健康状态、检查时间、生命周期、运行环境、日志路径以及七项服务状态。账号、快速笔记、任务和 DN 服务实现只读 `Health()`，检查数据库连接和必要表；通知、更新与诊断通过已有能力接口汇总。
 

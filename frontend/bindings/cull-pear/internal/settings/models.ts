@@ -71,7 +71,7 @@ export class Appearance {
     "accent": string;
     "density": string;
     "buttonSize": string;
-    "fontScale": number;
+    "fontSizePreset": string;
 
     /** Creates a new Appearance instance. */
     constructor($$source: Partial<Appearance> = {}) {
@@ -87,8 +87,8 @@ export class Appearance {
         if (!("buttonSize" in $$source)) {
             this["buttonSize"] = "";
         }
-        if (!("fontScale" in $$source)) {
-            this["fontScale"] = 0;
+        if (!("fontSizePreset" in $$source)) {
+            this["fontSizePreset"] = "";
         }
 
         Object.assign(this, $$source);
@@ -133,6 +133,7 @@ export class DragonNest {
 
 export class Navigation {
     "menuVisibility": { [_ in string]?: boolean };
+    "menuOrder"?: { [_ in string]?: string[] };
 
     /** Creates a new Navigation instance. */
     constructor($$source: Partial<Navigation> = {}) {
@@ -148,9 +149,13 @@ export class Navigation {
      */
     static createFrom($$source: any = {}): Navigation {
         const $$createField0_0 = $$createType5;
+        const $$createField1_0 = $$createType7;
         let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
         if ("menuVisibility" in $$parsedSource) {
             $$parsedSource["menuVisibility"] = $$createField0_0($$parsedSource["menuVisibility"]);
+        }
+        if ("menuOrder" in $$parsedSource) {
+            $$parsedSource["menuOrder"] = $$createField1_0($$parsedSource["menuOrder"]);
         }
         return new Navigation($$parsedSource as Partial<Navigation>);
     }
@@ -210,7 +215,7 @@ export class Window {
      * Creates a new Window instance from a string or object.
      */
     static createFrom($$source: any = {}): Window {
-        const $$createField3_0 = $$createType7;
+        const $$createField3_0 = $$createType9;
         let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
         if ("bounds" in $$parsedSource) {
             $$parsedSource["bounds"] = $$createField3_0($$parsedSource["bounds"]);
@@ -263,5 +268,7 @@ const $$createType2 = Navigation.createFrom;
 const $$createType3 = Window.createFrom;
 const $$createType4 = DragonNest.createFrom;
 const $$createType5 = $Create.Map($Create.Any, $Create.Any);
-const $$createType6 = WindowBounds.createFrom;
-const $$createType7 = $Create.Nullable($$createType6);
+const $$createType6 = $Create.Array($Create.Any);
+const $$createType7 = $Create.Map($Create.Any, $$createType6);
+const $$createType8 = WindowBounds.createFrom;
+const $$createType9 = $Create.Nullable($$createType8);

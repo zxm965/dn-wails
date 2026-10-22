@@ -2,6 +2,8 @@ import { GetSettings, ResetSettings, UpdateSettings } from '@bindings/cull-pear/
 import { AppSettings as WailsAppSettings } from '@bindings/cull-pear/internal/settings/models'
 import { Events } from '@wailsio/runtime'
 
+import type { FontSizePreset } from '@/shared/theme/typography'
+
 export type ThemeMode = 'system' | 'light' | 'dark'
 export type AccentColor = 'green' | 'blue' | 'purple' | 'orange'
 export type Density = 'comfortable' | 'compact'
@@ -13,7 +15,7 @@ export interface AppearanceSettings {
   accent: AccentColor
   density: Density
   buttonSize: ButtonSize
-  fontScale: number
+  fontSizePreset: FontSizePreset
 }
 
 export interface NotificationSettings {
@@ -23,6 +25,7 @@ export interface NotificationSettings {
 }
 
 export interface NavigationSettings {
+  menuOrder: Record<string, string[]>
   menuVisibility: Record<string, boolean>
 }
 
@@ -82,7 +85,7 @@ export const DEFAULT_SETTINGS: AppSettings = {
     accent: 'green',
     density: 'comfortable',
     buttonSize: 'md',
-    fontScale: 1,
+    fontSizePreset: 'md',
   },
   notifications: {
     enabled: true,
@@ -91,6 +94,7 @@ export const DEFAULT_SETTINGS: AppSettings = {
   },
   navigation: {
     menuVisibility: {},
+    menuOrder: {},
   },
   window: {
     closeBehavior: 'quit',
@@ -120,7 +124,7 @@ function normalizeSettings(value: WailsAppSettings): AppSettings {
       accent: value.appearance.accent as AccentColor,
       density: value.appearance.density as Density,
       buttonSize: value.appearance.buttonSize as ButtonSize,
-      fontScale: value.appearance.fontScale,
+      fontSizePreset: value.appearance.fontSizePreset as FontSizePreset,
     },
     notifications: {
       enabled: value.notifications.enabled,
@@ -129,6 +133,9 @@ function normalizeSettings(value: WailsAppSettings): AppSettings {
     },
     navigation: {
       menuVisibility: normalizeMenuVisibility(value.navigation.menuVisibility),
+      menuOrder: Object.fromEntries(
+        Object.entries(value.navigation.menuOrder ?? {}).map(([key, order]) => [key, [...(order ?? [])]]),
+      ),
     },
     window: {
       closeBehavior: value.window.closeBehavior as CloseBehavior,

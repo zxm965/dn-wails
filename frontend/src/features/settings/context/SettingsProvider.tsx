@@ -40,6 +40,9 @@ function cloneSettings(settings: AppSettings): AppSettings {
     navigation: {
       ...settings.navigation,
       menuVisibility: { ...settings.navigation.menuVisibility },
+      menuOrder: Object.fromEntries(
+        Object.entries(settings.navigation.menuOrder).map(([key, order]) => [key, [...order]]),
+      ),
     },
     window: {
       ...settings.window,
@@ -112,7 +115,7 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
     root.dataset.accent = settings.appearance.accent
     root.dataset.density = settings.appearance.density
     root.dataset.buttonSize = settings.appearance.buttonSize
-    root.style.setProperty('--font-scale', String(settings.appearance.fontScale))
+    root.dataset.fontSize = settings.appearance.fontSizePreset
   }, [effectiveTheme, settings.appearance])
 
   const schedulePersist = useCallback(

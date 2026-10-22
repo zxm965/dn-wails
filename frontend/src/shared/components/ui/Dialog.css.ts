@@ -111,19 +111,20 @@ const uiDialog = style([
 
 const uiDialogHeader = style({
   minWidth: '0',
-  padding: '20px 52px 16px 22px',
+  padding:
+    'calc(20px * var(--layout-spacing)) 52px calc(16px * var(--layout-spacing)) calc(22px * var(--layout-spacing))',
   borderBottom: '1px solid var(--border-subtle)',
 })
 
 const uiDialogTitle = style({
   margin: '0',
-  fontSize: '16px',
+  fontSize: 'var(--font-size-subtitle)',
 })
 
 const uiDialogDescription = style({
   margin: '6px 0 0',
   color: 'var(--text-secondary)',
-  fontSize: '12px',
+  fontSize: 'var(--font-size-secondary)',
   lineHeight: '1.55',
 })
 
@@ -131,7 +132,7 @@ const uiDialogBody = style({
   minHeight: '0',
   flex: '1',
   overflowY: 'auto',
-  padding: '20px 22px',
+  padding: 'calc(20px * var(--layout-spacing)) calc(22px * var(--layout-spacing))',
   overscrollBehavior: 'contain',
 })
 
@@ -139,8 +140,8 @@ const uiDialogFooter = style([
   {
     display: 'flex',
     justifyContent: 'flex-end',
-    gap: '10px',
-    padding: '14px 22px',
+    gap: 'calc(10px * var(--layout-spacing))',
+    padding: 'calc(14px * var(--layout-spacing)) calc(22px * var(--layout-spacing))',
     background: 'var(--surface-muted)',
     borderTop: '1px solid var(--border-subtle)',
   },

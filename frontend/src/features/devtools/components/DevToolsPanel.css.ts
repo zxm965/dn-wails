@@ -3,7 +3,7 @@ import { globalStyle, style } from '@vanilla-extract/css'
 const devToolsPanel = style({
   width: 'min(var(--page-content-max-width), 100%)',
   display: 'grid',
-  gap: '14px',
+  gap: 'calc(14px * var(--layout-spacing))',
   margin: '0 auto',
   padding: 'var(--page-padding-start) var(--page-padding-inline) var(--page-padding-end)',
   containerName: 'devtools-panel',
@@ -75,7 +75,7 @@ const devToolsSection = style({
 
 const devToolsDesktopLab = style({
   isolation: 'isolate',
-  padding: 'clamp(18px, 2.4vw, 26px)',
+  padding: 'calc(clamp(18px, 2.4vw, 26px) * var(--layout-spacing))',
   background:
     'radial-gradient(circle at 0% 0%, color-mix(in srgb, var(--accent-muted) 72%, transparent), transparent 32%), linear-gradient(145deg, color-mix(in srgb, var(--surface-elevated) 97%, var(--accent) 3%), var(--surface-elevated))',
   selectors: {
@@ -116,7 +116,7 @@ const devToolsLabMeta = style({
   alignItems: 'center',
   padding: '0 10px',
   color: 'var(--accent)',
-  fontSize: '9px',
+  fontSize: 'var(--font-size-caption)',
   fontWeight: '800',
   letterSpacing: '0.04em',
   background: 'color-mix(in srgb, var(--accent-muted) 74%, transparent)',
@@ -133,7 +133,7 @@ const devToolsCapabilityGrid = style([
   {
     display: 'grid',
     gridTemplateColumns: 'repeat(2, minmax(0, 1fr))',
-    gap: '12px',
+    gap: 'calc(12px * var(--layout-spacing))',
     alignItems: 'stretch',
   },
   {
@@ -147,7 +147,7 @@ const devToolsCapabilityGrid = style([
 
 const devToolsCapabilityGroup = style({
   minWidth: '0',
-  padding: '16px',
+  padding: 'calc(16px * var(--layout-spacing))',
   background:
     'linear-gradient(145deg, color-mix(in srgb, var(--surface-muted) 68%, transparent), color-mix(in srgb, var(--surface-elevated) 78%, transparent))',
   border: '1px solid color-mix(in srgb, var(--border-subtle) 82%, var(--accent) 18%)',
@@ -188,7 +188,7 @@ const devToolsCapabilityCount = style({
   minWidth: '30px',
   padding: '4px 7px',
   color: 'var(--text-tertiary)',
-  fontSize: '9px',
+  fontSize: 'var(--font-size-caption)',
   fontWeight: '800',
   fontVariantNumeric: 'tabular-nums',
   textAlign: 'center',
@@ -272,7 +272,7 @@ globalStyle(`${devToolsResultIcon} svg`, {
 
 globalStyle(`${devToolsResult} > div > span`, {
   color: 'var(--accent)',
-  fontSize: '9px',
+  fontSize: 'var(--font-size-caption)',
   fontWeight: '800',
   letterSpacing: '0.1em',
   textTransform: 'uppercase',
@@ -282,7 +282,7 @@ globalStyle(`${devToolsResult} p`, {
   minWidth: '0',
   margin: '3px 0 0',
   color: 'var(--text-secondary)',
-  fontSize: '10px',
+  fontSize: 'var(--font-size-caption)',
   lineHeight: '1.55',
   overflowWrap: 'anywhere',
   whiteSpace: 'pre-wrap',
@@ -298,7 +298,7 @@ globalStyle(`${devToolsLabHeader} > div > span`, {
   display: 'block',
   marginBottom: '6px',
   color: 'var(--accent)',
-  fontSize: '8px',
+  fontSize: 'var(--font-size-micro)',
   fontWeight: '800',
   letterSpacing: '0.14em',
   textTransform: 'uppercase',
@@ -306,13 +306,13 @@ globalStyle(`${devToolsLabHeader} > div > span`, {
 
 globalStyle(`${devToolsSection} h2`, {
   margin: '0',
-  fontSize: '15px',
+  fontSize: 'var(--font-size-subtitle)',
 })
 
 globalStyle(`${devToolsSection} header p`, {
   margin: '5px 0 0',
   color: 'var(--text-secondary)',
-  fontSize: '10px',
+  fontSize: 'var(--font-size-caption)',
   lineHeight: '1.5',
 })
 
@@ -328,7 +328,7 @@ globalStyle(`${devToolsCapabilityHeading} > div`, {
 globalStyle(`${devToolsCapabilityHeading} small`, {
   display: 'block',
   color: 'var(--accent)',
-  fontSize: '8px',
+  fontSize: 'var(--font-size-micro)',
   fontWeight: '800',
   letterSpacing: '0.1em',
   textTransform: 'uppercase',
@@ -337,14 +337,14 @@ globalStyle(`${devToolsCapabilityHeading} small`, {
 globalStyle(`${devToolsCapabilityHeading} strong`, {
   display: 'block',
   marginTop: '3px',
-  fontSize: '13px',
+  fontSize: 'var(--font-size-body)',
 })
 
 globalStyle(`${devToolsCapabilityGroup} > p`, {
   minHeight: '32px',
   margin: '10px 0 14px',
   color: 'var(--text-secondary)',
-  fontSize: '10px',
+  fontSize: 'var(--font-size-caption)',
   lineHeight: '1.55',
 })
 
@@ -354,7 +354,7 @@ globalStyle(`${devToolsActions} button`, {
   gap: '9px',
   padding: '0 10px',
   color: 'var(--text-primary)',
-  fontSize: '10px',
+  fontSize: 'var(--font-size-caption)',
   fontWeight: '700',
   background: 'color-mix(in srgb, var(--surface-elevated) 72%, transparent)',
   borderColor: 'var(--border-subtle)',
@@ -376,7 +376,7 @@ globalStyle(`${devToolsActions} button:hover`, {
 globalStyle(`${devToolsDropCopy} strong`, {
   display: 'block',
   overflow: 'hidden',
-  fontSize: '10px',
+  fontSize: 'var(--font-size-caption)',
   textOverflow: 'ellipsis',
   whiteSpace: 'nowrap',
 })
@@ -386,7 +386,7 @@ globalStyle(`${devToolsDropCopy} small`, {
   overflow: 'hidden',
   marginTop: '2px',
   color: 'var(--text-tertiary)',
-  fontSize: '8px',
+  fontSize: 'var(--font-size-micro)',
   textOverflow: 'ellipsis',
   whiteSpace: 'nowrap',
 })

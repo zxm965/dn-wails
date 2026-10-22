@@ -139,7 +139,7 @@ const uiSelectItem = style({
   gap: '10px',
   padding: '7px 9px',
   color: 'var(--text-secondary)',
-  fontSize: '12px',
+  fontSize: 'var(--font-size-secondary)',
   lineHeight: '1.35',
   borderRadius: '7px',
   outline: 'none',

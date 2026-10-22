@@ -23,7 +23,7 @@ const uiAvatarFallback = style({
   height: '100%',
   display: 'grid',
   placeItems: 'center',
-  fontSize: '24px',
+  fontSize: 'calc(24px + var(--font-size-heading-offset))',
   fontWeight: '800',
 })
 

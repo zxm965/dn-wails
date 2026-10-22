@@ -30,7 +30,7 @@ const uiCardFooter = style([
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'space-between',
-    gap: '12px',
+    gap: 'calc(12px * var(--layout-spacing))',
     selectors: {
       [`${uiCardContent} + &`]: {
         borderTop: '1px solid var(--border-subtle)',
@@ -44,7 +44,7 @@ const uiCardTitle = style([
     margin: '0',
   },
   {
-    fontSize: '16px',
+    fontSize: 'var(--font-size-subtitle)',
   },
 ])
 
@@ -55,7 +55,7 @@ const uiCardDescription = style([
   {
     marginTop: '5px',
     color: 'var(--text-secondary)',
-    fontSize: '12px',
+    fontSize: 'var(--font-size-secondary)',
     lineHeight: '1.5',
   },
 ])

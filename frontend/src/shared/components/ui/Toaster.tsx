@@ -4,6 +4,8 @@ import { Toaster as Sonner, type ToasterProps } from 'sonner'
 
 import { SpinnerIcon } from './Spinner'
 
+import { styles } from './Toaster.css'
+
 function subscribeTheme(callback: () => void) {
   const observer = new MutationObserver(callback)
   observer.observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] })
@@ -30,6 +32,12 @@ export function Toaster(props: ToasterProps) {
         loading: <SpinnerIcon aria-hidden='true' />,
       }}
       toastOptions={{
+        classNames: {
+          toast: styles.toast,
+          description: styles.description,
+          actionButton: styles.action,
+          cancelButton: styles.action,
+        },
         style: {
           color: 'var(--text-primary)',
           background: 'var(--surface-elevated)',

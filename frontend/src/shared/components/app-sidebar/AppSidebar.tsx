@@ -12,14 +12,17 @@ import {
 import { appConfig } from '@/app/appConfig'
 import { BrandIcon } from '@/shared/components/brand-icon'
 import { Button } from '@/shared/components/ui'
+import { useListMotion } from '@/shared/hooks/useListMotion'
 import { createScopedClassNames } from '@/shared/lib/classNames'
 import {
   MENU_GROUPS,
+  getOrderedMenuGroups,
   isMenuEntryVisible,
   type AppView,
   type MenuEntry,
   type MenuKey,
   type MenuVisibility,
+  type MenuOrder,
 } from '@/shared/navigation'
 
 import { styles } from './AppSidebar.css'
@@ -73,10 +76,13 @@ function activeParentKey(activeView: AppView): MenuKey | undefined {
 interface AppSidebarProps {
   activeView: AppView
   menuVisibility: MenuVisibility
+  menuOrder: MenuOrder
   onNavigate: (view: AppView) => void
 }
 
-export function AppSidebar({ activeView, menuVisibility, onNavigate }: AppSidebarProps) {
+export function AppSidebar({ activeView, menuVisibility, menuOrder, onNavigate }: AppSidebarProps) {
+  const groups = getOrderedMenuGroups(menuOrder)
+  const navigationRef = useListMotion(JSON.stringify(menuOrder))
   const [sidebarWidth, setSidebarWidth] = useState(initialSidebarWidth)
   const [isCompactViewport, setIsCompactViewport] = useState(initialCompactViewport)
   const [isResizing, setIsResizing] = useState(false)
@@ -224,8 +230,8 @@ export function AppSidebar({ activeView, menuVisibility, onNavigate }: AppSideba
         </div>
       </div>
 
-      <nav className={cx('app-sidebar-navigation')} aria-label='应用菜单'>
-        {MENU_GROUPS.map((group) => {
+      <nav ref={navigationRef} className={cx('app-sidebar-navigation')} aria-label='应用菜单'>
+        {groups.map((group) => {
           const visibleEntries = group.entries.filter((entry) => isMenuEntryVisible(entry, menuVisibility))
           if (visibleEntries.length === 0) {
             return null
@@ -239,6 +245,7 @@ export function AppSidebar({ activeView, menuVisibility, onNavigate }: AppSideba
                   return (
                     <Button
                       key={entry.key}
+                      data-motion-key={entry.key}
                       className={cx(`app-sidebar-menu-item${activeView === entry.view ? ' is-active' : ''}`)}
                       size='lg'
                       variant='ghost'
@@ -260,6 +267,7 @@ export function AppSidebar({ activeView, menuVisibility, onNavigate }: AppSideba
                 return (
                   <Fragment key={entry.key}>
                     <Button
+                      data-motion-key={entry.key}
                       className={cx(`app-sidebar-menu-item app-sidebar-parent${active ? ' is-active' : ''}`)}
                       size='lg'
                       variant='ghost'
@@ -316,6 +324,7 @@ export function AppSidebar({ activeView, menuVisibility, onNavigate }: AppSideba
                           {entry.children.map((item) => (
                             <Button
                               key={item.key}
+                              data-motion-key={`flyout-${item.key}`}
                               className={cx(
                                 `app-sidebar-flyout-item${activeView === item.view ? ' is-flyout-active' : ''}`,
                               )}
@@ -337,24 +346,29 @@ export function AppSidebar({ activeView, menuVisibility, onNavigate }: AppSideba
                     <div
                       id={`${entry.key}-submenu`}
                       className={cx(`app-sidebar-submenu${expanded ? ' is-expanded' : ''}`)}
+                      inert={!expanded || isCollapsed}
+                      aria-hidden={!expanded || isCollapsed}
                     >
-                      {entry.children.map((item) => (
-                        <Button
-                          key={item.key}
-                          className={cx(`app-sidebar-menu-item${activeView === item.view ? ' is-active' : ''}`)}
-                          size='md'
-                          variant='ghost'
-                          type='button'
-                          title={item.label}
-                          aria-current={activeView === item.view ? 'page' : undefined}
-                          onClick={() => navigate(item.view)}
-                        >
-                          <NavigationIcon icon={item.icon} />
-                          <span className={cx('app-sidebar-label')}>
-                            <strong>{item.label}</strong>
-                          </span>
-                        </Button>
-                      ))}
+                      <div className={cx('app-sidebar-submenu-items')}>
+                        {entry.children.map((item) => (
+                          <Button
+                            key={item.key}
+                            data-motion-key={item.key}
+                            className={cx(`app-sidebar-menu-item${activeView === item.view ? ' is-active' : ''}`)}
+                            size='md'
+                            variant='ghost'
+                            type='button'
+                            title={item.label}
+                            aria-current={activeView === item.view ? 'page' : undefined}
+                            onClick={() => navigate(item.view)}
+                          >
+                            <NavigationIcon icon={item.icon} />
+                            <span className={cx('app-sidebar-label')}>
+                              <strong>{item.label}</strong>
+                            </span>
+                          </Button>
+                        ))}
+                      </div>
                     </div>
                   </Fragment>
                 )

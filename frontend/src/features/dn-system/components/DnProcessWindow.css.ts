@@ -24,8 +24,14 @@ export const styles = {
   }),
   header: style({ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }),
   actions: style({ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) minmax(0, 1.5fr)', gap: 8 }),
-  hint: style({ ...singleLine, margin: 0, fontSize: 13, color: 'var(--text-secondary)' }),
-  status: style({ ...singleLine, margin: 0, fontSize: 12, lineHeight: 1.5, color: 'var(--text-secondary)' }),
+  hint: style({ ...singleLine, margin: 0, fontSize: 'var(--font-size-body)', color: 'var(--text-secondary)' }),
+  status: style({
+    ...singleLine,
+    margin: 0,
+    fontSize: 'var(--font-size-secondary)',
+    lineHeight: 1.5,
+    color: 'var(--text-secondary)',
+  }),
   processes: style({
     minWidth: 0,
     maxHeight: 64,
@@ -42,9 +48,14 @@ export const styles = {
     justifyContent: 'space-between',
     gap: 8,
     minWidth: 0,
-    fontSize: 12,
+    fontSize: 'var(--font-size-secondary)',
     lineHeight: 1.5,
   }),
   processName: style(singleLine),
-  pid: style({ whiteSpace: 'nowrap', flexShrink: 0, color: 'var(--text-tertiary)', fontSize: 11 }),
+  pid: style({
+    whiteSpace: 'nowrap',
+    flexShrink: 0,
+    color: 'var(--text-tertiary)',
+    fontSize: 'var(--font-size-secondary)',
+  }),
 }

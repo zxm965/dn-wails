@@ -5,7 +5,7 @@ import { styles as buttonStyles } from '../../../shared/components/ui/Button.css
 const dnPage = style({
   width: 'min(var(--page-content-max-width), 100%)',
   display: 'grid',
-  gap: '18px',
+  gap: 'calc(18px * var(--layout-spacing))',
   margin: '0 auto',
   padding: 'var(--page-padding-start) var(--page-padding-inline) var(--page-padding-end)',
   containerName: 'dn-page',
@@ -17,7 +17,7 @@ const dnCardHeadingRow = style({
   display: 'flex',
   alignItems: 'flex-start',
   justifyContent: 'space-between',
-  gap: '12px',
+  gap: 'calc(12px * var(--layout-spacing))',
   '@container': {
     'dn-page (max-width: 410px)': {
       alignItems: 'stretch',
@@ -29,13 +29,13 @@ const dnCardHeadingRow = style({
 const dnCardHeaderCopy = style({
   margin: '4px 0 0',
   color: 'var(--text-tertiary)',
-  fontSize: '11px',
+  fontSize: 'var(--font-size-secondary)',
 })
 
 const dnFilterGrid = style({
   display: 'grid',
   alignItems: 'end',
-  gap: '12px',
+  gap: 'calc(12px * var(--layout-spacing))',
 })
 
 const dnRoleFilterGrid = style([
@@ -133,7 +133,7 @@ const dnTable = style({
   width: '100%',
   minWidth: '760px',
   borderCollapse: 'collapse',
-  fontSize: '12px',
+  fontSize: 'var(--font-size-secondary)',
 })
 
 const dnTableRemark = style({
@@ -153,7 +153,7 @@ const dnPlanGrid = style({
   gridTemplateColumns: 'repeat(auto-fill, minmax(min(320px, 100%), 360px))',
   alignItems: 'start',
   justifyContent: 'start',
-  gap: '14px',
+  gap: 'calc(14px * var(--layout-spacing))',
 })
 
 const dnPlanCard = style([
@@ -162,9 +162,9 @@ const dnPlanCard = style([
     minWidth: '0',
     display: 'grid',
     alignContent: 'start',
-    gap: '14px',
+    gap: 'calc(14px * var(--layout-spacing))',
     overflow: 'hidden',
-    padding: '16px',
+    padding: 'calc(16px * var(--layout-spacing))',
     background:
       'linear-gradient(150deg, color-mix(in srgb, var(--accent-muted) 26%, var(--surface-elevated)) 0%, color-mix(in srgb, var(--surface-muted) 44%, var(--surface-elevated)) 46%, color-mix(in srgb, var(--surface-muted) 28%, transparent) 100%)',
     border: '1px solid var(--border-subtle)',
@@ -197,7 +197,7 @@ const dnPlanCardHeader = style({
   display: 'grid',
   gridTemplateColumns: '40px minmax(0, 1fr) auto',
   alignItems: 'center',
-  gap: '11px',
+  gap: 'calc(11px * var(--layout-spacing))',
 })
 
 const dnPlanAvatar = style({
@@ -206,7 +206,7 @@ const dnPlanAvatar = style({
   display: 'grid',
   placeItems: 'center',
   color: 'var(--accent)',
-  fontSize: '15px',
+  fontSize: 'var(--font-size-subtitle)',
   fontWeight: '850',
   background: 'var(--accent-muted)',
   border: '1px solid color-mix(in srgb, var(--accent) 22%, transparent)',
@@ -221,7 +221,7 @@ const dnPlanIdentity = style({
 
 const dnPlanRoleName = style({
   overflow: 'hidden',
-  fontSize: '14px',
+  fontSize: 'var(--font-size-body)',
   fontWeight: '850',
   lineHeight: '1.25',
   textOverflow: 'ellipsis',
@@ -231,7 +231,7 @@ const dnPlanRoleName = style({
 const dnPlanProfession = style({
   overflow: 'hidden',
   color: 'var(--text-tertiary)',
-  fontSize: '11px',
+  fontSize: 'var(--font-size-secondary)',
   textOverflow: 'ellipsis',
   whiteSpace: 'nowrap',
 })
@@ -261,7 +261,7 @@ const dnPlanRemark = style({
   margin: '0',
   padding: '9px 11px',
   color: 'var(--text-secondary)',
-  fontSize: '11px',
+  fontSize: 'var(--font-size-secondary)',
   lineHeight: '1.55',
   background: 'color-mix(in srgb, var(--surface-muted) 74%, transparent)',
   borderLeft: '2px solid color-mix(in srgb, var(--accent) 52%, transparent)',
@@ -272,7 +272,7 @@ const dnFormGrid = style([
   {
     display: 'grid',
     gridTemplateColumns: 'repeat(2, minmax(0, 1fr))',
-    gap: '16px',
+    gap: 'calc(16px * var(--layout-spacing))',
   },
   {
     '@container': {
@@ -292,7 +292,7 @@ const dnAlert = style({
   alignItems: 'center',
   gap: '10px',
   padding: '12px 14px',
-  fontSize: '12px',
+  fontSize: 'var(--font-size-secondary)',
   border: '1px solid',
   borderRadius: '10px',
 })
@@ -305,8 +305,8 @@ const dnAlertWarning = style({
 
 const dnPlanCommissionPanel = style({
   display: 'grid',
-  gap: '11px',
-  padding: '13px',
+  gap: 'calc(11px * var(--layout-spacing))',
+  padding: 'calc(13px * var(--layout-spacing))',
   background: 'color-mix(in srgb, var(--surface-elevated) 56%, transparent)',
   border: '1px solid var(--border-subtle)',
   borderRadius: '12px',
@@ -327,18 +327,18 @@ const dnPlanCommissionCopy = style({
 
 const dnPlanCommissionLabel = style({
   color: 'var(--text-primary)',
-  fontSize: '12px',
+  fontSize: 'var(--font-size-secondary)',
   fontWeight: '800',
 })
 
 const dnPlanCommissionMeta = style({
   color: 'var(--text-tertiary)',
-  fontSize: '10px',
+  fontSize: 'var(--font-size-caption)',
 })
 
 const dnPlanCommissionCount = style({
   color: 'var(--accent)',
-  fontSize: '28px',
+  fontSize: 'calc(28px + var(--font-size-heading-offset))',
   fontWeight: '900',
   lineHeight: '1',
   letterSpacing: '-0.04em',
@@ -347,7 +347,7 @@ const dnPlanCommissionCount = style({
 const dnPlanCommissionTotal = style({
   marginLeft: '3px',
   color: 'var(--text-tertiary)',
-  fontSize: '11px',
+  fontSize: 'var(--font-size-secondary)',
   fontWeight: '700',
   letterSpacing: '0',
 })
@@ -362,7 +362,7 @@ const dnPlanCounterActions = style({
 const dnPlanCounterCopy = style({
   overflow: 'hidden',
   color: 'var(--text-secondary)',
-  fontSize: '10px',
+  fontSize: 'var(--font-size-caption)',
   fontWeight: '700',
   textAlign: 'center',
   textOverflow: 'ellipsis',
@@ -371,7 +371,7 @@ const dnPlanCounterCopy = style({
 
 const dnPlanWeeklySection = style({
   display: 'grid',
-  gap: '9px',
+  gap: 'calc(9px * var(--layout-spacing))',
 })
 
 const dnPlanWeeklyHeading = style({
@@ -388,13 +388,13 @@ const dnPlanWeeklyCopy = style({
 })
 
 const dnPlanWeeklyTitle = style({
-  fontSize: '11px',
+  fontSize: 'var(--font-size-secondary)',
   fontWeight: '800',
 })
 
 const dnPlanWeeklyMeta = style({
   color: 'var(--text-tertiary)',
-  fontSize: '10px',
+  fontSize: 'var(--font-size-caption)',
 })
 
 const dnSectionHeading = style({
@@ -403,7 +403,7 @@ const dnSectionHeading = style({
   justifyContent: 'space-between',
   gap: '10px',
   color: 'var(--text-secondary)',
-  fontSize: '11px',
+  fontSize: 'var(--font-size-secondary)',
   fontWeight: '750',
 })
 
@@ -455,7 +455,7 @@ const dnPlanFlagCopy = style({
 const dnPlanFlagTitle = style({
   overflow: 'hidden',
   color: 'var(--text-secondary)',
-  fontSize: '10px',
+  fontSize: 'var(--font-size-caption)',
   fontWeight: '800',
   textOverflow: 'ellipsis',
   whiteSpace: 'nowrap',
@@ -463,7 +463,7 @@ const dnPlanFlagTitle = style({
 
 const dnPlanFlagStatus = style({
   color: 'var(--text-tertiary)',
-  fontSize: '9px',
+  fontSize: 'var(--font-size-caption)',
 })
 
 const dnPlanActions = style({
@@ -477,7 +477,7 @@ const dnPlanActions = style({
 
 const dnPlanSort = style({
   color: 'var(--text-tertiary)',
-  fontSize: '9px',
+  fontSize: 'var(--font-size-caption)',
 })
 
 const dnPlanActionButtons = style({
@@ -499,10 +499,10 @@ const dnSwitchRow = style({
   display: 'flex',
   alignItems: 'center',
   justifyContent: 'space-between',
-  gap: '10px',
-  padding: '9px 10px',
+  gap: 'calc(10px * var(--layout-spacing))',
+  padding: 'calc(9px * var(--layout-spacing)) calc(10px * var(--layout-spacing))',
   color: 'var(--text-secondary)',
-  fontSize: '11px',
+  fontSize: 'var(--font-size-secondary)',
   background: 'var(--surface-muted)',
   borderRadius: '9px',
 })
@@ -533,14 +533,14 @@ const dnPlanCountValue = style({
 
 const dnPlanCountNumber = style({
   color: 'var(--accent)',
-  fontSize: '28px',
+  fontSize: 'calc(28px + var(--font-size-heading-offset))',
   fontWeight: '900',
   lineHeight: '1',
 })
 
 const dnPlanCountUnit = style({
   color: 'var(--text-tertiary)',
-  fontSize: '10px',
+  fontSize: 'var(--font-size-caption)',
 })
 
 const dnPlanCountScale = style({
@@ -549,7 +549,7 @@ const dnPlanCountScale = style({
   justifyContent: 'space-between',
   gap: '12px',
   color: 'var(--text-tertiary)',
-  fontSize: '9px',
+  fontSize: 'var(--font-size-caption)',
 })
 
 const dnEmptyAction = style({
@@ -561,7 +561,7 @@ const dnEmptyAction = style({
 
 const siteMessageList = style({
   display: 'grid',
-  gap: '8px',
+  gap: 'calc(8px * var(--layout-spacing))',
 })
 
 const siteMessageItem = style([
@@ -570,8 +570,8 @@ const siteMessageItem = style([
     display: 'grid',
     gridTemplateColumns: 'auto minmax(0, 1fr) auto',
     alignItems: 'center',
-    gap: '12px',
-    padding: '13px',
+    gap: 'calc(12px * var(--layout-spacing))',
+    padding: 'calc(13px * var(--layout-spacing))',
     background: 'transparent',
     border: '1px solid var(--border-subtle)',
     borderRadius: '11px',
@@ -643,7 +643,7 @@ const siteMessageTitle = style({
   flexWrap: 'wrap',
   alignItems: 'center',
   gap: '6px',
-  fontSize: '13px',
+  fontSize: 'var(--font-size-body)',
   fontWeight: '800',
 })
 
@@ -652,7 +652,7 @@ const siteMessageContent = style({
   overflow: 'hidden',
   marginTop: '5px',
   color: 'var(--text-secondary)',
-  fontSize: '11px',
+  fontSize: 'var(--font-size-secondary)',
   lineHeight: '1.55',
   WebkitBoxOrient: 'vertical',
   WebkitLineClamp: '2',
@@ -779,7 +779,7 @@ ${dnCardHeadingRow} p`,
   {
     margin: '4px 0 0',
     color: 'var(--text-tertiary)',
-    fontSize: '11px',
+    fontSize: 'var(--font-size-secondary)',
   },
 )
 
@@ -787,7 +787,7 @@ globalStyle(
   `${dnTable} th,
 ${dnTable} td`,
   {
-    padding: '10px 12px',
+    padding: 'calc(10px * var(--layout-spacing)) calc(12px * var(--layout-spacing))',
     textAlign: 'left',
     borderBottom: '1px solid var(--border-subtle)',
   },
@@ -795,7 +795,7 @@ ${dnTable} td`,
 
 globalStyle(`${dnTable} th`, {
   color: 'var(--text-secondary)',
-  fontSize: '10px',
+  fontSize: 'var(--font-size-caption)',
   letterSpacing: '0.04em',
   background: 'var(--surface-muted)',
 })
@@ -833,7 +833,7 @@ globalStyle(`${dnEditorSwitches} label`, {
   gap: '10px',
   padding: '9px 10px',
   color: 'var(--text-secondary)',
-  fontSize: '11px',
+  fontSize: 'var(--font-size-secondary)',
   background: 'var(--surface-muted)',
   borderRadius: '9px',
 })
@@ -855,7 +855,7 @@ globalStyle(`${siteMessageIcon} svg`, {
 globalStyle(`${siteMessageItem} small`, {
   display: 'block',
   color: 'var(--text-secondary)',
-  fontSize: '11px',
+  fontSize: 'var(--font-size-secondary)',
 })
 
 globalStyle(`${siteMessageItem} small`, {

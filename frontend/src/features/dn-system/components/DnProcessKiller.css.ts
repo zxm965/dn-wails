@@ -43,7 +43,7 @@ const processIntro = style({
   display: 'grid',
   gap: '8px',
   color: 'var(--text-secondary)',
-  fontSize: '12px',
+  fontSize: 'var(--font-size-secondary)',
   lineHeight: '1.65',
 })
 
@@ -56,7 +56,7 @@ const processMeta = style({
   marginTop: '12px',
   marginBottom: '12px',
   color: 'var(--text-tertiary)',
-  fontSize: '11px',
+  fontSize: 'var(--font-size-secondary)',
 })
 
 const processMetaText = style({
@@ -104,7 +104,7 @@ const processRowTitle = style({
   minWidth: '0',
   overflow: 'hidden',
   color: 'var(--text-primary)',
-  fontSize: '13px',
+  fontSize: 'var(--font-size-body)',
   fontWeight: '800',
   textOverflow: 'ellipsis',
   whiteSpace: 'nowrap',
@@ -114,7 +114,7 @@ const processRowPath = style({
   minWidth: '0',
   overflow: 'hidden',
   color: 'var(--text-tertiary)',
-  fontSize: '10px',
+  fontSize: 'var(--font-size-caption)',
   textOverflow: 'ellipsis',
   whiteSpace: 'nowrap',
 })
@@ -123,7 +123,7 @@ const processRowMeta = style({
   flex: '0 0 auto',
   color: 'var(--text-secondary)',
   fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Consolas, monospace',
-  fontSize: '11px',
+  fontSize: 'var(--font-size-secondary)',
   fontWeight: '700',
 })
 
@@ -142,7 +142,7 @@ const processShortcutHint = style({
   alignItems: 'center',
   gap: '6px',
   color: 'var(--text-tertiary)',
-  fontSize: '11px',
+  fontSize: 'var(--font-size-secondary)',
 })
 
 const processShortcutKey = style({
@@ -176,13 +176,13 @@ const processShortcutSettings = style({
   alignItems: 'center',
   gap: 10,
   minWidth: 0,
-  fontSize: 12,
+  fontSize: 'var(--font-size-secondary)',
   color: 'var(--text-secondary)',
 })
 const processShortcutSelect = style({ width: 176, maxWidth: '100%', minWidth: 0 })
 const processShortcutNote = style({
   margin: '8px 0 0',
-  fontSize: 11,
+  fontSize: 'var(--font-size-secondary)',
   lineHeight: 1.5,
   color: 'var(--text-tertiary)',
   overflowWrap: 'anywhere',

@@ -21,7 +21,7 @@ const uiTabsTrigger = style({
   padding: '0 12px',
   color: 'var(--text-secondary)',
   font: 'inherit',
-  fontSize: '12px',
+  fontSize: 'var(--font-size-secondary)',
   fontWeight: '750',
   background: 'transparent',
   border: '0',

@@ -12,9 +12,9 @@ const uiPageHeader = style([
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'space-between',
-    gap: '20px',
+    gap: 'calc(20px * var(--layout-spacing))',
     overflow: 'hidden',
-    padding: 'clamp(17px, 2.4vw, 22px)',
+    padding: 'calc(clamp(17px, 2.4vw, 22px) * var(--layout-spacing))',
     background:
       'radial-gradient(circle at 14% 0%, var(--accent-muted), transparent 34%), linear-gradient(135deg, var(--surface-elevated), color-mix(in srgb, var(--surface-elevated) 90%, var(--accent) 10%))',
     border: '1px solid var(--border-subtle)',
@@ -49,7 +49,7 @@ const uiPageHeaderEyebrow = style({
   display: 'block',
   marginBottom: '6px',
   color: 'var(--accent)',
-  fontSize: '9px',
+  fontSize: 'var(--font-size-caption)',
   fontWeight: '800',
   letterSpacing: '0.15em',
   textTransform: 'uppercase',
@@ -83,7 +83,7 @@ const uiPagination = style([
     justifyContent: 'space-between',
     gap: '12px',
     color: 'var(--text-secondary)',
-    fontSize: '12px',
+    fontSize: 'var(--font-size-secondary)',
   },
   {
     '@media': {
@@ -102,7 +102,7 @@ const uiListState = style({
   justifyItems: 'center',
   gap: '10px',
   color: 'var(--text-secondary)',
-  fontSize: '13px',
+  fontSize: 'var(--font-size-body)',
   textAlign: 'center',
 })
 
@@ -147,7 +147,8 @@ globalStyle(`${uiPageHeader} > div:first-child`, {
 })
 
 globalStyle(`${uiPageHeader} h1`, {
-  fontSize: 'clamp(23px, 3.2vw, 31px)',
+  fontSize:
+    'clamp(calc(23px + var(--font-size-heading-offset)), calc(3.2vw + var(--font-size-heading-offset)), calc(31px + var(--font-size-heading-offset)))',
   letterSpacing: '-0.025em',
   lineHeight: '1.08',
 })
@@ -155,7 +156,7 @@ globalStyle(`${uiPageHeader} h1`, {
 globalStyle(`${uiPageHeader} p`, {
   marginTop: '7px',
   color: 'var(--text-secondary)',
-  fontSize: '11px',
+  fontSize: 'var(--font-size-secondary)',
   lineHeight: '1.5',
 })
 

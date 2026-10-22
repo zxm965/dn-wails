@@ -1,25 +1,17 @@
 import {
-  Activity,
   BellRing,
   CircleAlert,
   CircleCheckBig,
   CircleOff,
   CircleX,
-  ClipboardCopy,
-  Clock3,
-  Cpu,
-  FileText,
-  FolderOpen,
-  RefreshCw,
   Palette,
   Settings2,
   type LucideIcon,
-  ServerCog,
 } from 'lucide-react'
 import { Fragment, useCallback, useEffect, useState, type ReactNode } from 'react'
 import { useNavigate } from 'react-router'
 
-import { Badge, Button, SpinnerIcon, type BadgeTone } from '@/shared/components/ui'
+import { Badge, Button, type BadgeTone } from '@/shared/components/ui'
 import {
   getRuntimeStatus,
   openDiagnosticsDirectory,
@@ -31,8 +23,11 @@ import { useFeedback } from '@/shared/feedback'
 import { createScopedClassNames } from '@/shared/lib/classNames'
 import { writeClipboard } from '@/shared/native-kit'
 import { getAppViewPath, isAppViewVisible } from '@/shared/navigation'
+import { FONT_SIZE_PRESETS } from '@/shared/theme/typography'
 
 import { useSettings } from '../context/SettingsProvider'
+import { formatDate, formatUptime } from '../lib/runtimeStatus'
+import { DesktopOverview } from './DesktopOverview'
 
 import { styles } from './RuntimeStatusPanel.css'
 
@@ -73,27 +68,6 @@ const CLOSE_BEHAVIOR_LABELS = {
   quit: '关闭时退出',
   hide: '隐藏到后台',
 } as const
-
-function formatDate(value: string): string {
-  if (!value) return '—'
-  const date = new Date(value)
-  if (Number.isNaN(date.getTime())) return '—'
-  return date.toLocaleString('zh-CN', { hour12: false })
-}
-
-function formatUptime(totalSeconds: number): string {
-  const seconds = Math.max(0, Math.floor(totalSeconds))
-  const days = Math.floor(seconds / 86_400)
-  const hours = Math.floor((seconds % 86_400) / 3_600)
-  const minutes = Math.floor((seconds % 3_600) / 60)
-  if (days > 0) return `${days} 天 ${hours} 小时`
-  if (hours > 0) return `${hours} 小时 ${minutes} 分钟`
-  return `${minutes} 分钟`
-}
-
-function fileName(path: string): string {
-  return path.split(/[\\/]/).filter(Boolean).at(-1) ?? '—'
-}
 
 function createSummary(status: RuntimeStatus): string {
   const services = status.services
@@ -150,6 +124,8 @@ export function RuntimeStatusPanel({ onOpenSettings }: RuntimeStatusPanelProps) 
   const [status, setStatus] = useState<RuntimeStatus | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
+  const [openingLogs, setOpeningLogs] = useState(false)
+  const [copying, setCopying] = useState(false)
 
   const load = useCallback(async () => {
     setLoading(true)
@@ -168,7 +144,8 @@ export function RuntimeStatusPanel({ onOpenSettings }: RuntimeStatusPanelProps) 
   }, [load])
 
   async function copySummary() {
-    if (!status) return
+    if (!status || copying) return
+    setCopying(true)
     try {
       await writeClipboard(createSummary(status))
       notify({ title: '诊断摘要已复制', tone: 'success' })
@@ -178,10 +155,14 @@ export function RuntimeStatusPanel({ onOpenSettings }: RuntimeStatusPanelProps) 
         message: copyError instanceof Error ? copyError.message : '请稍后重试。',
         tone: 'error',
       })
+    } finally {
+      setCopying(false)
     }
   }
 
   async function openLogs() {
+    if (openingLogs) return
+    setOpeningLogs(true)
     try {
       await openDiagnosticsDirectory()
     } catch (openError: unknown) {
@@ -190,6 +171,8 @@ export function RuntimeStatusPanel({ onOpenSettings }: RuntimeStatusPanelProps) 
         message: openError instanceof Error ? openError.message : '请稍后重试。',
         tone: 'error',
       })
+    } finally {
+      setOpeningLogs(false)
     }
   }
 
@@ -228,7 +211,7 @@ export function RuntimeStatusPanel({ onOpenSettings }: RuntimeStatusPanelProps) 
           value={`${THEME_LABELS[settings.appearance.themeMode]} · ${ACCENT_LABELS[settings.appearance.accent]}`}
           details={[
             `${DENSITY_LABELS[settings.appearance.density]}密度`,
-            `字号 ${Math.round(settings.appearance.fontScale * 100)}%`,
+            `${FONT_SIZE_PRESETS[settings.appearance.fontSizePreset].label}字号`,
             BUTTON_SIZE_LABELS[settings.appearance.buttonSize],
           ]}
           onConfigure={() => onOpenSettings('appearance')}
@@ -279,135 +262,34 @@ export function RuntimeStatusPanel({ onOpenSettings }: RuntimeStatusPanelProps) 
   capabilityItems.sort((left, right) => left.attention - right.attention || left.priority - right.priority)
 
   return (
-    <section className={cx('runtime-status-panel')}>
-      <header className={cx('runtime-status-heading')}>
-        <div>
-          <p>Runtime health</p>
-          <h2>运行状态</h2>
-          <span>检查应用生命周期、服务连接、系统能力与本地诊断。</span>
-        </div>
-        <div className={cx('runtime-status-actions')}>
-          <Button variant='outline' disabled={loading} onClick={() => void load()}>
-            <SpinnerIcon icon={RefreshCw} spinning={loading} aria-hidden='true' />
-            刷新状态
-          </Button>
-          <Button variant='secondary' disabled={!status} onClick={() => void copySummary()}>
-            <ClipboardCopy aria-hidden='true' />
-            复制摘要
-          </Button>
-        </div>
-      </header>
-
-      {error && (
-        <p className={cx('runtime-status-error')} role='alert'>
-          {error}
-        </p>
-      )}
-
-      {!status ? (
-        <div className={cx('runtime-status-empty')}>
-          <Activity aria-hidden='true' />
-          <strong>{loading ? '正在检查运行状态…' : '暂时无法读取运行状态'}</strong>
-          <span>{loading ? '数据库与系统能力检查会并发完成。' : '请刷新重试或打开本地日志查看。'}</span>
-        </div>
-      ) : (
-        <>
-          <section className={cx(`runtime-status-hero ${status.overall === 'healthy' ? 'is-healthy' : 'is-degraded'}`)}>
-            <span className={cx('runtime-status-hero-icon')} aria-hidden='true'>
-              {status.overall === 'healthy' ? <CircleCheckBig /> : <CircleAlert />}
-            </span>
+    <>
+      <DesktopOverview
+        status={status}
+        loading={loading}
+        error={error}
+        openingLogs={openingLogs}
+        copying={copying}
+        onRefresh={load}
+        onCopySummary={copySummary}
+        onOpenLogs={openLogs}
+      />
+      <section className={cx('runtime-status-panel')}>
+        <section className={cx('runtime-service-section')}>
+          <header>
             <div>
-              <p>Overall health</p>
-              <h3>{status.overall === 'healthy' ? '应用运行正常' : '部分服务受限'}</h3>
-              <span>
-                {status.overall === 'healthy'
-                  ? '生命周期和已配置服务均已通过检查。'
-                  : '应用仍可使用，但部分业务或平台能力当前不可用。'}
-              </span>
+              <p>Service matrix</p>
+              <h3>能力状态</h3>
             </div>
-            <Badge tone={status.overall === 'healthy' ? 'success' : 'warning'}>
-              {status.overall === 'healthy' ? 'Healthy' : 'Degraded'}
-            </Badge>
-          </section>
-
-          <div className={cx('runtime-status-summary')}>
-            <SummaryCard
-              icon={Clock3}
-              label='进程生命周期'
-              value={status.ready ? '已就绪' : '初始化中'}
-              details={[
-                `运行 ${formatUptime(status.uptimeSeconds)}`,
-                `启动于 ${formatDate(status.startedAt)}`,
-                `第二实例 ${status.secondInstanceCount} 次`,
-              ]}
-            />
-            <SummaryCard
-              icon={Cpu}
-              label='运行环境'
-              value={`${status.os || '—'} / ${status.arch || '—'}`}
-              details={[status.goVersion || '—', `应用版本 ${status.appVersion || '—'}`]}
-            />
-            <SummaryCard
-              icon={FileText}
-              label='本地诊断'
-              value={fileName(status.logFile)}
-              details={[`检查于 ${formatDate(status.checkedAt)}`]}
-              action={
-                <Button size='sm' variant='ghost' onClick={() => void openLogs()}>
-                  <FolderOpen aria-hidden='true' />
-                  打开日志
-                </Button>
-              }
-            />
+            <span>{status ? `${visibleServices.length} 项检查 · ` : ''}3 项配置</span>
+          </header>
+          <div className={cx('runtime-service-grid')}>
+            {capabilityItems.map((item) => (
+              <Fragment key={item.key}>{item.content}</Fragment>
+            ))}
           </div>
-        </>
-      )}
-
-      <section className={cx('runtime-service-section')}>
-        <header>
-          <div>
-            <p>Service matrix</p>
-            <h3>能力状态</h3>
-          </div>
-          <span>{status ? `${visibleServices.length} 项检查 · ` : ''}3 项配置</span>
-        </header>
-        <div className={cx('runtime-service-grid')}>
-          {capabilityItems.map((item) => (
-            <Fragment key={item.key}>{item.content}</Fragment>
-          ))}
-        </div>
+        </section>
       </section>
-    </section>
-  )
-}
-
-function SummaryCard({
-  icon: Icon,
-  label,
-  value,
-  details,
-  action,
-}: {
-  icon: typeof ServerCog
-  label: string
-  value: string
-  details: string[]
-  action?: React.ReactNode
-}) {
-  return (
-    <article className={cx('runtime-summary-card')}>
-      <span className={cx('runtime-summary-icon')} aria-hidden='true'>
-        <Icon />
-      </span>
-      <div>
-        <span>{label}</span>
-        <strong>{value}</strong>
-        {details.map((detail) => (
-          <small key={detail}>{detail}</small>
-        ))}
-      </div>
-      {action}
-    </article>
+    </>
   )
 }
 

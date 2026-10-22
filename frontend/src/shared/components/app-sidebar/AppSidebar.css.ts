@@ -86,11 +86,11 @@ const appSidebarNavigation = style({
 const appSidebarGroup = style({
   selectors: {
     '& + &': {
-      marginTop: '14px',
+      marginTop: 'calc(14px * var(--layout-spacing))',
     },
     [`${appSidebar}${isCollapsed} & + &`]: {
-      marginTop: '14px',
-      paddingTop: '14px',
+      marginTop: 'calc(14px * var(--layout-spacing))',
+      paddingTop: 'calc(14px * var(--layout-spacing))',
       borderTop: '1px solid var(--border-subtle)',
     },
   },
@@ -108,10 +108,10 @@ const isActive = style({
 const appSidebarMenuItem = style({
   selectors: {
     '& + &': {
-      marginTop: '4px',
+      marginTop: 'calc(4px * var(--layout-spacing))',
     },
     [`${appSidebar}${isCollapsed} & + &`]: {
-      marginTop: '8px',
+      marginTop: 'calc(8px * var(--layout-spacing))',
     },
   },
 })
@@ -131,7 +131,8 @@ const appSidebarChevron = style({
   width: '14px',
   height: '14px',
   marginLeft: 'auto',
-  transition: 'transform 150ms ease',
+  transition: 'transform 220ms ease',
+  '@media': { '(prefers-reduced-motion: reduce)': { transition: 'none' } },
   selectors: {
     [`&${isExpanded}`]: {
       transform: 'rotate(180deg)',
@@ -143,17 +144,19 @@ const appSidebarChevron = style({
 })
 
 const appSidebarSubmenu = style({
-  display: 'none',
-  margin: '4px 0 0 10px',
+  display: 'grid',
+  gridTemplateRows: '0fr',
+  opacity: 0,
+  marginLeft: '10px',
+  transition: 'grid-template-rows 220ms ease, opacity 180ms ease',
   selectors: {
-    [`&${isExpanded}`]: {
-      display: 'grid',
-    },
-    [`${appSidebar}${isCollapsed} &`]: {
-      display: 'none',
-    },
+    [`&${isExpanded}`]: { gridTemplateRows: '1fr', opacity: 1 },
+    [`${appSidebar}${isCollapsed} &`]: { display: 'none' },
   },
+  '@media': { '(prefers-reduced-motion: reduce)': { transition: 'none' } },
 })
+
+const appSidebarSubmenuItems = style({ minHeight: 0, overflow: 'hidden', display: 'flex', flexDirection: 'column' })
 
 const appSidebarFlyout = style({
   position: 'fixed',
@@ -171,7 +174,7 @@ const appSidebarFlyoutTitle = style({
   display: 'block',
   padding: '4px 8px 8px',
   color: 'var(--text-tertiary)',
-  fontSize: '10px',
+  fontSize: 'var(--font-size-caption)',
   fontWeight: '800',
   letterSpacing: '0.06em',
 })
@@ -203,7 +206,7 @@ const isFlyoutActive = style({
 
 const appSidebarFlyoutLabel = style({
   overflow: 'hidden',
-  fontSize: '11px',
+  fontSize: 'var(--font-size-secondary)',
   fontWeight: '700',
   textOverflow: 'ellipsis',
   whiteSpace: 'nowrap',
@@ -265,6 +268,7 @@ export const styles = {
   'app-sidebar-chevron': appSidebarChevron,
   'is-expanded': isExpanded,
   'app-sidebar-submenu': appSidebarSubmenu,
+  'app-sidebar-submenu-items': appSidebarSubmenuItems,
   'app-sidebar-flyout': appSidebarFlyout,
   'app-sidebar-flyout-title': appSidebarFlyoutTitle,
   'app-sidebar-flyout-items': appSidebarFlyoutItems,
@@ -311,20 +315,20 @@ ${appSidebarFooter} small`,
 )
 
 globalStyle(`${appSidebarProduct} strong`, {
-  fontSize: '14px',
+  fontSize: 'var(--font-size-body)',
 })
 
 globalStyle(`${appSidebarProduct} span`, {
   marginTop: '3px',
   color: 'var(--text-tertiary)',
-  fontSize: '10px',
+  fontSize: 'var(--font-size-caption)',
   letterSpacing: '0.04em',
 })
 
 globalStyle(`${appSidebarGroup} > p`, {
   margin: '0 9px 5px',
   color: 'var(--text-tertiary)',
-  fontSize: '10px',
+  fontSize: 'var(--font-size-caption)',
   fontWeight: '800',
   letterSpacing: '0.1em',
 })
@@ -372,7 +376,7 @@ globalStyle(`${appSidebarGroup} button strong`, {
 })
 
 globalStyle(`${appSidebarGroup} button strong`, {
-  fontSize: '11px',
+  fontSize: 'var(--font-size-secondary)',
 })
 
 globalStyle(`${appSidebarSubmenu} button`, {
@@ -386,13 +390,13 @@ globalStyle(`${appSidebarSubmenu} button svg`, {
 })
 
 globalStyle(`${appSidebarFooter} strong`, {
-  fontSize: '10px',
+  fontSize: 'var(--font-size-caption)',
 })
 
 globalStyle(`${appSidebarFooter} small`, {
   marginTop: '3px',
   color: 'var(--text-tertiary)',
-  fontSize: '9px',
+  fontSize: 'var(--font-size-caption)',
 })
 
 globalStyle(

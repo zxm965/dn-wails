@@ -45,7 +45,7 @@ const accountCardHeadingCopy = style({
 const accountCardDescription = style({
   margin: '5px 0 0',
   color: 'var(--text-tertiary)',
-  fontSize: '11px',
+  fontSize: 'var(--font-size-secondary)',
 })
 
 const accountProfileForm = style([

@@ -1,4 +1,4 @@
-import { useEffect, type ReactNode } from 'react'
+import { useEffect, useLayoutEffect, useRef, type ReactNode } from 'react'
 import { Navigate, Route, Routes, useLocation, useNavigate } from 'react-router'
 
 import { AccountLogin, AccountPanel, AccountTitleBarButton, useAccount } from '@/features/account'
@@ -16,14 +16,12 @@ import { createScopedClassNames } from '@/shared/lib/classNames'
 import {
   APP_ROUTES,
   APP_VIEWS,
-  DEVTOOLS_DESKTOP_LAB_PREFERENCE,
   appViewRequiresAuth,
   getAppViewFromPath,
   getAppViewPath,
   getAppViewTitle,
   getFirstVisibleView,
   isAppViewVisible,
-  resolveMenuVisibility,
   type AppView,
 } from '@/shared/navigation'
 import { windowManager } from '@/shared/window'
@@ -35,22 +33,25 @@ import { styles } from './App.css'
 const cx = createScopedClassNames(styles)
 
 export default function App() {
+  const contentRef = useRef<HTMLElement>(null)
   const { settings, isLoading: isSettingsLoading } = useSettings()
   const account = useAccount()
   const navigate = useNavigate()
   const location = useLocation()
   const routeView = getAppViewFromPath(location.pathname)
-  const fallbackView = getFirstVisibleView(settings.navigation.menuVisibility)
+  const fallbackView = getFirstVisibleView(settings.navigation.menuVisibility, settings.navigation.menuOrder)
   const activeView = routeView ?? fallbackView
   const viewTitle = getAppViewTitle(activeView)
   const windowTitle = `${appConfig.displayName} · ${viewTitle}`
-  const showDevToolsDesktopLab =
-    isAppViewVisible('devtools', settings.navigation.menuVisibility) &&
-    resolveMenuVisibility(
-      DEVTOOLS_DESKTOP_LAB_PREFERENCE.key,
-      DEVTOOLS_DESKTOP_LAB_PREFERENCE.defaultVisible,
-      settings.navigation.menuVisibility,
-    )
+
+  useLayoutEffect(() => {
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return
+    const animation = contentRef.current?.animate([{ opacity: 0.65 }, { opacity: 1 }], {
+      duration: 180,
+      easing: 'ease-out',
+    })
+    return () => animation?.cancel()
+  }, [activeView])
 
   function navigateToView(view: AppView, replace = false) {
     navigate(getAppViewPath(view), { replace })
@@ -75,7 +76,7 @@ export default function App() {
     if (view === 'dn-kill-process') return <DnProcessKiller />
     if (view === 'site-messages') return <SiteMessages onNavigate={navigateToView} />
     if (view === 'settings') return <SettingsPanel />
-    if (view === 'devtools') return <DevToolsPanel showDesktopLab={showDevToolsDesktopLab} />
+    if (view === 'devtools') return <DevToolsPanel />
     return null
   }
 
@@ -88,8 +89,8 @@ export default function App() {
     if (isSettingsLoading || !routeView || isAppViewVisible(routeView, settings.navigation.menuVisibility)) {
       return
     }
-    navigateToView(getFirstVisibleView(settings.navigation.menuVisibility), true)
-  }, [isSettingsLoading, routeView, settings.navigation.menuVisibility])
+    navigateToView(getFirstVisibleView(settings.navigation.menuVisibility, settings.navigation.menuOrder), true)
+  }, [isSettingsLoading, routeView, settings.navigation.menuVisibility, settings.navigation.menuOrder])
 
   return (
     <SiteMessageProvider onNavigate={navigateToView}>
@@ -108,9 +109,10 @@ export default function App() {
           <AppSidebar
             activeView={activeView}
             menuVisibility={settings.navigation.menuVisibility}
+            menuOrder={settings.navigation.menuOrder}
             onNavigate={navigateToView}
           />
-          <main className={cx('app-content')}>
+          <main ref={contentRef} className={cx('app-content')}>
             <Routes>
               <Route path='/' element={<Navigate replace to={getAppViewPath(fallbackView)} />} />
               {APP_VIEWS.map((view) => (

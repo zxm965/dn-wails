@@ -15,7 +15,7 @@ const accountTitlebarAvatar = style({
 })
 
 const accountTitlebarAvatarFallback = style({
-  fontSize: '9px',
+  fontSize: 'var(--font-size-caption)',
 })
 
 const accountTitlebarPlaceholderIcon = style({

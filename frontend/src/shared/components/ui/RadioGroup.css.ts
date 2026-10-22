@@ -35,13 +35,13 @@ const uiRadioItem = style({
   justifyContent: 'center',
   gap: '7px',
   color: 'var(--text-secondary)',
-  fontSize: '12px',
+  fontSize: 'var(--font-size-secondary)',
   cursor: 'pointer',
   userSelect: 'none',
   transition: 'color 140ms ease, background-color 140ms ease, border-color 140ms ease, box-shadow 140ms ease',
   selectors: {
     [`${uiRadioGroup}[data-variant="segmented"] &`]: {
-      minHeight: 'var(--control-height)',
+      minHeight: 'var(--radio-segment-height, var(--control-height))',
       padding: '0 10px',
       borderRadius: '7px',
     },

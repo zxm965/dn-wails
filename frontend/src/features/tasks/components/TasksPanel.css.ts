@@ -9,7 +9,7 @@ const tasksPage = style({
   width: 'min(100%, var(--page-content-max-width))',
   minWidth: '0',
   display: 'grid',
-  gap: '18px',
+  gap: 'calc(18px * var(--layout-spacing))',
   margin: '0 auto',
   padding: 'var(--page-padding-start) var(--page-padding-inline) var(--page-padding-end)',
   containerName: 'tasks-page',
@@ -53,8 +53,8 @@ const tasksListsPanel = style([
     minHeight: '0',
     display: 'flex',
     flexDirection: 'column',
-    gap: '5px',
-    padding: '14px 10px',
+    gap: 'calc(5px * var(--layout-spacing))',
+    padding: 'calc(14px * var(--layout-spacing)) calc(10px * var(--layout-spacing))',
     background: 'color-mix(in srgb, var(--surface-elevated) 92%, var(--accent) 8%)',
     borderRight: '1px solid var(--border-subtle)',
   },
@@ -79,7 +79,7 @@ const tasksListsHeader = style({
   gap: '8px',
   padding: '0 6px 7px',
   color: 'var(--text-secondary)',
-  fontSize: '11px',
+  fontSize: 'var(--font-size-secondary)',
   letterSpacing: '0.04em',
 })
 
@@ -137,7 +137,7 @@ const tasksListLabel = style({
 const tasksListCount = style({
   flex: '0 0 auto',
   color: 'var(--text-tertiary)',
-  fontSize: '9px',
+  fontSize: 'var(--font-size-caption)',
 })
 
 const tasksListActionTrigger = style({
@@ -255,9 +255,9 @@ const tasksMainHeader = style([
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'space-between',
-    gap: '16px',
+    gap: 'calc(16px * var(--layout-spacing))',
     margin: '12px 12px 0',
-    padding: '15px 16px',
+    padding: 'calc(15px * var(--layout-spacing)) calc(16px * var(--layout-spacing))',
     background: 'color-mix(in srgb, var(--surface-elevated) 92%, var(--accent) 8%)',
     border: '1px solid var(--border-subtle)',
     borderRadius: '16px',
@@ -282,7 +282,7 @@ const tasksMainTitle = style({
 const tasksMainHeading = style({
   margin: '0',
   overflow: 'hidden',
-  fontSize: '18px',
+  fontSize: 'var(--font-size-title)',
   lineHeight: '1.25',
   letterSpacing: '-0.02em',
   textOverflow: 'ellipsis',
@@ -291,7 +291,7 @@ const tasksMainHeading = style({
 
 const tasksMainSummary = style({
   color: 'var(--text-tertiary)',
-  fontSize: '11px',
+  fontSize: 'var(--font-size-secondary)',
   fontWeight: '650',
 })
 
@@ -370,7 +370,7 @@ const tasksScroll = style({
   minHeight: '0',
   flex: '1',
   overflowY: 'auto',
-  padding: '8px 12px 16px',
+  padding: 'calc(8px * var(--layout-spacing)) calc(12px * var(--layout-spacing)) calc(16px * var(--layout-spacing))',
   overscrollBehavior: 'contain',
   '@media': {
     print: { overflow: 'visible' },
@@ -379,7 +379,7 @@ const tasksScroll = style({
 
 const tasksItems = style({
   display: 'grid',
-  gap: '8px',
+  gap: 'calc(8px * var(--layout-spacing))',
 })
 
 const tasksItemGroup = style({
@@ -396,8 +396,8 @@ const tasksItem = style({
   display: 'grid',
   gridTemplateColumns: '30px minmax(0, 1fr) repeat(3, 30px)',
   alignItems: 'center',
-  gap: '4px',
-  padding: '9px 10px',
+  gap: 'calc(4px * var(--layout-spacing))',
+  padding: 'calc(9px * var(--layout-spacing)) calc(10px * var(--layout-spacing))',
   background: 'color-mix(in srgb, var(--surface-muted) 76%, var(--surface-elevated) 24%)',
   border: '1px solid var(--border-subtle)',
   borderRadius: '14px',
@@ -447,7 +447,7 @@ const tasksItemTitle = style({
   maxWidth: '100%',
   overflow: 'hidden',
   color: 'var(--text-primary)',
-  fontSize: '13px',
+  fontSize: 'var(--font-size-body)',
   fontWeight: '750',
   textOverflow: 'ellipsis',
   whiteSpace: 'nowrap',
@@ -466,7 +466,7 @@ const tasksItemMeta = style({
   gap: '9px',
   overflow: 'hidden',
   color: 'var(--text-tertiary)',
-  fontSize: '10px',
+  fontSize: 'var(--font-size-caption)',
   whiteSpace: 'nowrap',
 })
 
@@ -483,9 +483,9 @@ const tasksIconButton = style({
 
 const tasksSubtasks = style({
   display: 'grid',
-  gap: '5px',
+  gap: 'calc(5px * var(--layout-spacing))',
   margin: '5px 0 0 32px',
-  paddingLeft: '12px',
+  paddingLeft: 'calc(12px * var(--layout-spacing))',
   borderLeft: '2px solid color-mix(in srgb, var(--accent) 24%, var(--border-subtle))',
 })
 
@@ -495,9 +495,9 @@ const tasksEmpty = style({
 
 const tasksCompleted = style({
   display: 'grid',
-  gap: '8px',
-  marginTop: '16px',
-  padding: '12px',
+  gap: 'calc(8px * var(--layout-spacing))',
+  marginTop: 'calc(16px * var(--layout-spacing))',
+  padding: 'calc(12px * var(--layout-spacing))',
   background: 'color-mix(in srgb, var(--surface-muted) 48%, transparent)',
   border: '1px solid var(--border-subtle)',
   borderRadius: '14px',

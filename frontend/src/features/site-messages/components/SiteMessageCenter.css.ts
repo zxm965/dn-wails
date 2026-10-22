@@ -35,9 +35,9 @@ const centerBody = style({ padding: '0' })
 const centerList = style({
   maxHeight: 'min(52vh, 430px)',
   display: 'grid',
-  gap: '3px',
+  gap: 'calc(3px * var(--layout-spacing))',
   overflow: 'auto',
-  padding: '8px',
+  padding: 'calc(8px * var(--layout-spacing))',
 })
 
 const centerItem = style({
@@ -45,8 +45,8 @@ const centerItem = style({
   display: 'grid',
   gridTemplateColumns: 'auto minmax(0, 1fr) auto',
   alignItems: 'center',
-  gap: '10px',
-  padding: '0 10px',
+  gap: 'calc(10px * var(--layout-spacing))',
+  padding: '0 calc(10px * var(--layout-spacing))',
   textAlign: 'left',
 })
 
@@ -61,7 +61,7 @@ const centerItemTitle = style({
   minWidth: '0',
   flex: '1',
   overflow: 'hidden',
-  fontSize: '12px',
+  fontSize: 'var(--font-size-secondary)',
   textOverflow: 'ellipsis',
   whiteSpace: 'nowrap',
 })
@@ -70,7 +70,7 @@ const centerItemTime = style({
   flex: '0 0 auto',
   overflow: 'hidden',
   color: 'var(--text-tertiary)',
-  fontSize: '9px',
+  fontSize: 'var(--font-size-caption)',
   textOverflow: 'ellipsis',
   whiteSpace: 'nowrap',
 })
@@ -84,14 +84,15 @@ const centerItemExternal = style({
 const centerFooter = style({
   justifyContent: 'space-between',
   color: 'var(--text-tertiary)',
-  fontSize: '10px',
+  fontSize: 'var(--font-size-caption)',
 })
 
 const popupContent = style({
   margin: '0',
   maxWidth: '760px',
   color: 'var(--text-primary)',
-  fontSize: 'clamp(18px, 2.4vw, 28px)',
+  fontSize:
+    'clamp(var(--font-size-title), calc(2.4vw + var(--font-size-heading-offset)), calc(28px + var(--font-size-heading-offset)))',
   lineHeight: '1.8',
   overflowWrap: 'anywhere',
   textAlign: 'center',
@@ -105,7 +106,8 @@ const popupHeader = style({
 })
 
 const popupTitle = style({
-  fontSize: 'clamp(28px, 4.5vw, 52px)',
+  fontSize:
+    'clamp(calc(28px + var(--font-size-heading-offset)), calc(4.5vw + var(--font-size-heading-offset)), calc(52px + var(--font-size-heading-offset)))',
   letterSpacing: '-0.035em',
 })
 
@@ -113,8 +115,8 @@ const popupBody = style({
   display: 'grid',
   placeItems: 'center',
   alignContent: 'center',
-  gap: '28px',
-  padding: 'clamp(24px, 6vw, 88px)',
+  gap: 'calc(28px * var(--layout-spacing))',
+  padding: 'calc(clamp(24px, 6vw, 88px) * var(--layout-spacing))',
   background:
     'radial-gradient(circle at 50% 40%, color-mix(in srgb, var(--accent-muted) 88%, transparent), transparent 48%)',
 })
@@ -125,7 +127,7 @@ const popupLevel = style({
   minHeight: '30px',
   padding: '0 12px',
   color: 'var(--accent)',
-  fontSize: '11px',
+  fontSize: 'var(--font-size-secondary)',
   fontWeight: '800',
   letterSpacing: '0.08em',
   background: 'var(--accent-muted)',
@@ -142,20 +144,20 @@ const batchHeader = style({
 })
 
 const batchBody = style({
-  padding: '16px',
+  padding: 'calc(16px * var(--layout-spacing))',
   background: 'var(--surface-muted)',
 })
 
 const batchList = style({
   display: 'grid',
-  gap: '12px',
+  gap: 'calc(12px * var(--layout-spacing))',
 })
 
 const batchItem = style({
   minWidth: '0',
   display: 'grid',
-  gap: '10px',
-  padding: '16px',
+  gap: 'calc(10px * var(--layout-spacing))',
+  padding: 'calc(16px * var(--layout-spacing))',
   background: 'var(--surface-elevated)',
   border: '1px solid var(--border-subtle)',
   borderRadius: '12px',
@@ -168,19 +170,19 @@ const batchItemHeader = style({
   justifyContent: 'space-between',
   gap: '12px',
   color: 'var(--text-tertiary)',
-  fontSize: '10px',
+  fontSize: 'var(--font-size-caption)',
 })
 
 const batchItemTitle = style({
   margin: '0',
   overflowWrap: 'anywhere',
-  fontSize: '15px',
+  fontSize: 'var(--font-size-subtitle)',
 })
 
 const batchItemContent = style({
   margin: '0',
   color: 'var(--text-secondary)',
-  fontSize: '12px',
+  fontSize: 'var(--font-size-secondary)',
   lineHeight: '1.7',
   overflowWrap: 'anywhere',
   whiteSpace: 'pre-wrap',
@@ -203,7 +205,7 @@ const batchFooter = style({
   alignItems: 'center',
   justifyContent: 'space-between',
   color: 'var(--text-tertiary)',
-  fontSize: '11px',
+  fontSize: 'var(--font-size-secondary)',
 })
 
 const batchFooterActions = style([
