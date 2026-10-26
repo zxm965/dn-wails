@@ -1,20 +1,28 @@
 name: Build and publish desktop release
+run-name: Release ${{ inputs.tag || github.ref_name }}
 
 on:
   push:
     tags:
       - 'v*'
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Existing release tag (vMAJOR.MINOR.PATCH)
+        required: true
+        type: string
 
 permissions:
   contents: write
 
 concurrency:
-  group: release-${{ github.ref }}
+  group: release-refs/tags/${{ inputs.tag || github.ref_name }}
   cancel-in-progress: false
 
 env:
   NODE_OPTIONS: --max-old-space-size=4096
-  GITEE_REPOSITORY: zxm965/dn-wails
+  RELEASE_TAG: ${{ inputs.tag || github.ref_name }}
+  RELEASE_REPOSITORY: zxm965/dn-wails
 
 jobs:
   quality:
@@ -23,6 +31,8 @@ jobs:
     steps:
       - name: Check out source
         uses: actions/checkout@v7.0.1
+        with:
+          ref: refs/tags/${{ inputs.tag || github.ref_name }}
 
       - name: Set up pnpm
         uses: pnpm/action-setup@v6.1.0
@@ -49,7 +59,7 @@ jobs:
         run: go install github.com/wailsapp/wails/v3/cmd/wails3@v3.0.0-beta.33
 
       - name: Check release tag
-        run: node scripts/configure-release.mjs "$GITHUB_REF_NAME"
+        run: node scripts/configure-release.mjs "$RELEASE_TAG"
 
       - name: Generate Wails bindings
         run: wails3 generate bindings -clean=true -ts
@@ -84,6 +94,8 @@ jobs:
     steps:
       - name: Check out source
         uses: actions/checkout@v7.0.1
+        with:
+          ref: refs/tags/${{ inputs.tag || github.ref_name }}
 
       - name: Set up pnpm
         uses: pnpm/action-setup@v6.1.0
@@ -144,7 +156,7 @@ jobs:
       - name: Configure release version
         shell: bash
         run: |
-          node scripts/configure-release.mjs "${{ github.ref_name }}"
+          node scripts/configure-release.mjs "$RELEASE_TAG"
           wails3 task common:update:build-assets
 
       - name: Prepare embedded runtime configuration
@@ -157,8 +169,8 @@ jobs:
         if: runner.os == 'macOS'
         shell: bash
         run: |
-          version="${GITHUB_REF_NAME#v}"
-          ldflags="-X cull-pear/internal/buildinfo.Version=$version -X cull-pear/internal/buildinfo.Repository=$GITEE_REPOSITORY"
+          version="${RELEASE_TAG#v}"
+          ldflags="-X cull-pear/internal/buildinfo.Version=$version -X cull-pear/internal/buildinfo.Repository=$RELEASE_REPOSITORY"
           wails3 task darwin:package:universal LD_FLAGS="$ldflags"
           app_bundle="bin/$(node scripts/app-display-name.mjs).app"
           ditto -c -k --sequesterRsrc --keepParent "$app_bundle" bin/cull-pear-darwin-universal.zip
@@ -168,8 +180,8 @@ jobs:
         if: runner.os == 'Windows'
         shell: pwsh
         run: |
-          $version = $env:GITHUB_REF_NAME.TrimStart('v')
-          $ldflags = "-X cull-pear/internal/buildinfo.Version=$version -X cull-pear/internal/buildinfo.Repository=$env:GITEE_REPOSITORY"
+          $version = $env:RELEASE_TAG.TrimStart('v')
+          $ldflags = "-X cull-pear/internal/buildinfo.Version=$version -X cull-pear/internal/buildinfo.Repository=$env:RELEASE_REPOSITORY"
           wails3 task windows:package ARCH=amd64 INSTALL_SCOPE=user LD_FLAGS=$ldflags
           if ($LASTEXITCODE -ne 0) { throw "Windows NSIS packaging failed with exit code $LASTEXITCODE" }
 
@@ -209,7 +221,7 @@ jobs:
           if-no-files-found: error
 
   release:
-    name: Publish GitHub and Gitee Releases
+    name: Publish GitHub Release
     needs: build
     runs-on: ubuntu-latest
     environment: RELEASE
@@ -217,6 +229,7 @@ jobs:
       - name: Check out source
         uses: actions/checkout@v7.0.1
         with:
+          ref: refs/tags/${{ inputs.tag || github.ref_name }}
           fetch-depth: 0
 
       - name: Set up Node.js
@@ -233,10 +246,9 @@ jobs:
       - name: Generate GitHub update manifest
         run: |
           node scripts/generate-update-manifest.mjs \
-            "$GITHUB_REF_NAME" \
-            "$GITEE_REPOSITORY" \
-            release \
-            https://github.com
+            "$RELEASE_TAG" \
+            "$RELEASE_REPOSITORY" \
+            release
 
       - name: Generate GitHub checksums
         shell: bash
@@ -247,34 +259,8 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          if gh release view "$GITHUB_REF_NAME" >/dev/null 2>&1; then
-            gh release upload "$GITHUB_REF_NAME" release/* --clobber
+          if gh release view "$RELEASE_TAG" >/dev/null 2>&1; then
+            gh release upload "$RELEASE_TAG" release/* --clobber
           else
-            gh release create "$GITHUB_REF_NAME" release/* --verify-tag --generate-notes --title "$GITHUB_REF_NAME"
+            gh release create "$RELEASE_TAG" release/* --verify-tag --generate-notes --title "$RELEASE_TAG"
           fi
-
-      - name: Generate Gitee update manifest
-        run: |
-          node scripts/generate-update-manifest.mjs \
-            "$GITHUB_REF_NAME" \
-            "$GITEE_REPOSITORY" \
-            release \
-            https://gitee.com
-
-      - name: Generate Gitee checksums
-        shell: bash
-        run: find release -maxdepth 1 -type f ! -name SHA256SUMS.txt -print0 | sort -z | xargs -0 sha256sum > release/SHA256SUMS.txt
-
-      - name: Publish Gitee release
-        shell: bash
-        env:
-          GH_TOKEN: ${{ github.token }}
-          GITEE_TOKEN: ${{ secrets.GITEE_TOKEN }}
-          RELEASE_NOTES_FILE: ${{ runner.temp }}/gitee-release-notes.md
-        run: |
-          gh release view "$GITHUB_REF_NAME" --json body --jq '.body' > "$RELEASE_NOTES_FILE"
-          node scripts/publish-gitee-release.mjs \
-            "$GITHUB_REF_NAME" \
-            "$GITEE_REPOSITORY" \
-            release \
-            "$GITHUB_SHA"

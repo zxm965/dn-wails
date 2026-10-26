@@ -14,15 +14,12 @@ const optionalAssetNames = ['cull-pear-windows-amd64.exe']
 const tag = process.argv[2]?.trim() ?? ''
 const repository = process.argv[3]?.trim() ?? ''
 const releaseDirectory = resolve(process.argv[4]?.trim() || 'release')
-const releaseBaseURL = (process.argv[5]?.trim() || 'https://github.com').replace(/\/+$/, '')
+const releaseBaseURL = 'https://github.com'
 
 const versionMatch = tag.match(/^v(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)$/)
 if (!versionMatch) throw new Error(`Release tag must use vMAJOR.MINOR.PATCH, received: ${tag || '(empty)'}`)
 if (!/^[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+$/.test(repository)) {
   throw new Error(`Repository must use OWNER/NAME, received: ${repository || '(empty)'}`)
-}
-if (releaseBaseURL !== 'https://github.com' && releaseBaseURL !== 'https://gitee.com') {
-  throw new Error(`Unsupported release base URL: ${releaseBaseURL || '(empty)'}`)
 }
 
 const publishedAtInput = process.env.RELEASE_PUBLISHED_AT?.trim() || new Date().toISOString()

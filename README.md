@@ -75,14 +75,16 @@ wails3 task dev
 
 ## 发布与更新
 
-项目 Git 仓库以 `https://gitee.com/zxm965/dn-wails.git` 为准。推送 `vMAJOR.MINOR.PATCH` 标签后，现有 GitHub Actions 工作流使用 Wails v3 Taskfile 构建 macOS universal ZIP、DMG、Windows amd64 应用本体和用户级 NSIS 安装器，并同时发布 GitHub、Gitee Release。客户端通过数据库配置的 `update_endpoint` 基础地址分别请求 `/latest` 获取 GitHub Release 元数据、请求 `/download?version=...&filename=...` 下载资源，当前 macOS 自动更新使用 DMG：
+项目 Git 仓库以 `https://gitee.com/zxm965/dn-wails.git` 为准。推送 `vMAJOR.MINOR.PATCH` 标签后，现有 GitHub Actions 工作流使用 Wails v3 Taskfile 构建 macOS universal ZIP、DMG、Windows amd64 应用本体和用户级 NSIS 安装器，并发布 GitHub Release。客户端通过数据库配置的 `update_endpoint` 基础地址分别请求 `/latest` 获取 GitHub Release 元数据、请求 `/download?version=...&filename=...` 下载资源，当前 macOS 自动更新使用 DMG：
 
 ```bash
 git tag v1.0.0
 git push origin v1.0.0
 ```
 
-GitHub 仓库需要配置具有 Gitee Release 写权限的 `GITEE_TOKEN` Actions Secret，Gitee 仓库需要允许未登录用户读取 Release。Gitee 普通项目单个 Release 附件上限为 100 MB，构建产物超过限制时发布工作流会失败并给出明确错误。
+发布流程只上传 GitHub Release，不再同步 Gitee Release，也不再依赖 `GITEE_TOKEN`；客户端下载继续通过更新代理访问 GitHub 资源。
+
+若需使用修正后的工作流重新发布已有版本，在 GitHub Actions 的 `Build and publish desktop release` 中选择 `Run workflow`，分支选 `main`，`tag` 填已有稳定标签（例如 `v0.0.47`）。工作流检出该标签的代码并覆盖对应 Release 的同名资源，不创建或移动标签。
 
 当前 Wails v3 仍是 beta，桌面原生行为和平台打包需要在目标系统上充分验证。默认发布尚未配置正式 Apple/Windows 代码签名。
 
