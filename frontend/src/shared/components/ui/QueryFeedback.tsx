@@ -1,3 +1,5 @@
+import type { ReactNode } from 'react'
+
 import { Button } from './Button'
 import { Skeleton } from './Layout'
 
@@ -77,12 +79,14 @@ export function QueryFeedback({
   hasData,
   onRetry,
   layout = 'list',
+  loadingContent,
 }: {
   loading: boolean
   error: string
   hasData: boolean
   onRetry: () => void
   layout?: SkeletonLayout
+  loadingContent?: ReactNode
 }) {
   if (error)
     return (
@@ -103,7 +107,7 @@ export function QueryFeedback({
   return (
     <div className={styles.loading} role='status' aria-label='正在加载列表'>
       <div className={styles.content} aria-hidden='true'>
-        <LoadingContent layout={layout} />
+        {loadingContent ?? <LoadingContent layout={layout} />}
       </div>
     </div>
   )

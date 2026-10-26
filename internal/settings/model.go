@@ -82,8 +82,12 @@ type AppSettings struct {
 
 func Default() AppSettings {
 	return AppSettings{
-		Version:    CurrentVersion,
-		DragonNest: DragonNest{LocalShortcutKey: DefaultLocalShortcutKey},
+		Version: CurrentVersion,
+		DragonNest: DragonNest{
+			LocalShortcutKey:      DefaultLocalShortcutKey,
+			GlobalShortcutEnabled: true,
+			GameShortcutMode:      true,
+		},
 		Appearance: Appearance{
 			ThemeMode:      ThemeSystem,
 			Accent:         AccentGreen,

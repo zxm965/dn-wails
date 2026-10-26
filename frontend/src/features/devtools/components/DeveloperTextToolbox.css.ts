@@ -61,7 +61,6 @@ const textToolboxMenu = style([
         gridTemplateColumns: 'repeat(4, minmax(112px, 1fr))',
         overflowX: 'auto',
         paddingBottom: '3px',
-        scrollbarWidth: 'thin',
       },
     },
   },

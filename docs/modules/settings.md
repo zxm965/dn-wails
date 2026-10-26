@@ -42,8 +42,8 @@ AppSettings
 │   └── menuOrder: Record<string, string[]>（可选，按分组/父菜单 key 保存顺序）
 ├── dragonNest
 │   ├── localShortcutKey（保留字段名，全局键位）
-│   ├── globalShortcutEnabled（可选，默认关闭）
-│   ├── gameShortcutMode（可选，Windows Raw Input）
+│   ├── globalShortcutEnabled（可选，新建/重置默认开启）
+│   ├── gameShortcutMode（可选，新建/重置默认开启，Windows Raw Input）
 │   ├── targetPath
 │   └── launcherPath（可选，应用启动文件）
 └── window
@@ -85,7 +85,7 @@ React SettingsProvider → GetSettings
 
 React 组件通过 `useSettings` 读取和更新设置。所有配置项取消独立保存按钮，菜单、主题、强调色、密度、按钮尺寸、字号组合、通知和窗口行为在控件变化时立即更新并自动持久化。主题和强调色使用共享 `RadioGroup`，默认按钮尺寸使用三枚带 `sm/md/lg` 尺寸的共享 `Button`，字号组合使用共享 `RadioGroup` 并显示标题、正文、辅助说明的实时预览，布尔设置使用共享 `Switch`，下拉选项使用共享 `Select`；主题与字号分段选择器使用 28px 选项高度，连同字号预览和按钮尺寸选择器限制为最大 300px 宽，窄容器下自动收缩；按钮尺寸选择器固定 36px 容器高度，保留 sm/md/lg 真实尺寸预览，切换时不引发布局跳动。设置页不直接渲染原生交互控件。Go 模块通过 `SettingsService` 获取当前快照，不直接读写 JSON 文件。
 
-左侧菜单使用 `menuConfig.ts` 作为渲染、偏好选项和显隐读取的共同配置。`menuVisibility` 只保存用户按唯一 key 做出的覆盖值；未保存的 key 使用配置中的 `defaultVisible`。当前 `dn-system` 和 `devtools` 默认隐藏，独立的 `quick-notes`、`calendar`、`tasks` 和 `site-messages` 默认显示，`settings` 始终显示且不提供关闭开关。隐藏当前入口后，React Router 导航守卫会替换为第一个可见路由。进程工具在 Windows 操作 DN、macOS 测试 Firefox，提供可配置全局快捷键 F1–F12 或 Ctrl+Shift+F4（默认 F4，需显式启用），Windows 可切换 Raw Input 游戏兼容模式，详见[全局快捷键](shortcut.md)，进程页提供始终置顶小窗入口；`AppSettings.dragonNest` 持久化全局启用状态、游戏兼容模式、键位和成功终止后的 `targetPath`，以及扫描记忆或弹窗配置的 `launcherPath`（Windows DNLauncher.exe / macOS Firefox 可执行文件）；后者为 v11 的可选新增字段，未配置时保持空值，不重置快捷键。两个路径由后端进程用例维护并广播设置事件，普通偏好更新保留后端最新路径，避免旧窗口快照覆盖。实验室仅保留入口显隐开关，进入后固定显示文本工具与桌面实验室；桌面实验室不再提供独立配置，不读取或迁移历史独立开关。新增可配置菜单时补充同一配置项即可进入设置列表。
+左侧菜单使用 `menuConfig.ts` 作为渲染、偏好选项和显隐读取的共同配置。`menuVisibility` 只保存用户按唯一 key 做出的覆盖值；未保存的 key 使用配置中的 `defaultVisible`。当前 `dn-system` 和 `devtools` 默认隐藏，独立的 `quick-notes`、`calendar`、`tasks` 和 `site-messages` 默认显示，`settings` 始终显示且不提供关闭开关。隐藏当前入口后，React Router 导航守卫会替换为第一个可见路由。进程工具在 Windows 操作 DN、macOS 测试 Firefox，提供可配置全局快捷键 F1–F12 或 Ctrl+Shift+F4（默认 F4，新建/重置设置默认开启全局快捷键和游戏兼容模式，已有偏好保持不变），Windows 可切换 Raw Input 游戏兼容模式，详见[全局快捷键](shortcut.md)，进程页提供始终置顶小窗入口；`AppSettings.dragonNest` 持久化全局启用状态、游戏兼容模式、键位和成功终止后的 `targetPath`，以及扫描记忆或弹窗配置的 `launcherPath`（Windows DNLauncher.exe / macOS Firefox 可执行文件）；后者为 v11 的可选新增字段，未配置时保持空值，不重置快捷键。两个路径由后端进程用例维护并广播设置事件，普通偏好更新保留后端最新路径，避免旧窗口快照覆盖。实验室仅保留入口显隐开关，进入后固定显示文本工具与桌面实验室；桌面实验室不再提供独立配置，不读取或迁移历史独立开关。新增可配置菜单时补充同一配置项即可进入设置列表。
 
 菜单排序通过 `MenuPreferences → SettingsProvider → settingsApi → Wails UpdateSettings → internal/application/settings.go → internal/settings.Service → Storage` 保存，返回结果与 `settings:changed` typed event 同步到各窗口；DTO 新增 `navigation.menuOrder` 后重新生成绑定，设置版本仍为 v11。未配置顺序直接使用默认配置，不增加历史迁移，也不恢复已删除的桌面实验室独立开关。
 
@@ -112,11 +112,14 @@ React 组件通过 `useSettings` 读取和更新设置。所有配置项取消�
 
 ## 响应式处理
 
+- 概览采用紧凑布局：页面上下留白与卡片内边距为 16px，卡片间距为 12px，服务行内边距为 8px，均随界面密度调整；服务状态在内容宽度大于 560px 时保留双列。默认字号、诊断收起且无额外错误信息时，初始窗口及 1024 × 768 最小窗口内完整展示概览，无需纵向滚动；窄内容、诊断展开或额外错误信息仍允许自然滚动，不裁切内容或隐藏滚动条。
+
 - 概览品牌、运行状态及操作区允许换行，版本与平台保留两列槽位；诊断详情在 620px 以下双列、360px 以下单列，字段溢出省略并通过 title 提供完整文本，错误信息可换行。
 
 - 页签保持单行，空间不足时先隐藏说明和编号，极窄宽度允许页签条内部横向滚动，不造成整页横向滚动；页签使用固定 `md` 按钮和 Base UI 的键盘导航及面板关联。
 - 设置页以自身内容宽度作为 Container Query 条件，侧边栏展开或收起时都能正确切换布局。
 - 设置使用局部紧凑页头，操作自动换行；设置网格在 700px 以下由双列变为单列。
+- 概览页隐藏保存状态与恢复操作时仍保留其布局占位，并通过 `inert`、`aria-hidden` 移出交互与读屏；各分类共用相同页头高度，避免“设置”标题和页签随切换跳动。保存状态预留 7em 宽度，切换“正在同步…”时不改变换行位置。
 - 页头展示“修改自动保存/正在同步”状态；恢复默认按钮在极窄宽度下改为全宽。
 - 恢复默认操作不固定尺寸，跟随用户配置的默认按钮尺寸。
 - 主题分段、强调色、下拉框、滑块和开关行不得超出卡片；说明文字允许换行。

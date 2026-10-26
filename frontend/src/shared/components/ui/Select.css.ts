@@ -129,7 +129,6 @@ const uiSelectList = style({
   maxHeight: 'min(calc(var(--available-height) - 12px), 300px)',
   overflowY: 'auto',
   overscrollBehavior: 'contain',
-  scrollbarWidth: 'thin',
 })
 
 const uiSelectItem = style({

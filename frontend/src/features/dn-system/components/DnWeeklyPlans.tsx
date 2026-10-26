@@ -55,6 +55,7 @@ import {
   WEEKLY_FLAGS,
   type WeeklyFlagKey,
 } from '../model/dnSystem'
+import { DnWeeklyPlanSkeleton } from './DnWeeklyPlanSkeleton'
 
 import { styles } from './DnSystem.css'
 
@@ -305,6 +306,7 @@ export function DnWeeklyPlans({ onNavigateRoles }: { onNavigateRoles: () => void
         <CardContent>
           <QueryFeedback
             layout='cards'
+            loadingContent={<DnWeeklyPlanSkeleton />}
             loading={loading || rolesLoading}
             error={loadError || rolesError}
             hasData={items.length > 0}

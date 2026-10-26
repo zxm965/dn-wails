@@ -53,8 +53,8 @@ main.tsx 的 ?window=dn-process 分支 → SettingsProvider → DnProcessWindow
 设置继续使用 v11，保留 `dragonNest.localShortcutKey` 字段名以免丢失已有键位，语义改为所选全局键位：
 
 - `localShortcutKey`：F1–F12 或 `Ctrl+Shift+F4`，默认 F4。Windows 标准模式明确拒绝保留给调试器的 F12；游戏兼容可观察 F12。
-- `globalShortcutEnabled`：可选 bool，默认 false；新安装和已有 v11 文件均需在进程页点击“启用全局快捷键”，启用后保存并随应用启动注册。
-- `gameShortcutMode`：可选 bool，默认 false；Windows 为 true 时使用 Raw Input，macOS 忽略此模式并使用 Wails Carbon hotkey，Linux 不支持进程操作。
+- `globalShortcutEnabled`：可选 bool，新安装及恢复默认设置时为 true，运行时就绪后自动注册默认 F4；已有 v11 文件保留原值（历史省略字段仍视为 false），手动停用后重启保持停用。
+- `gameShortcutMode`：可选 bool，新安装及恢复默认设置时为 true，已有偏好保持不变（历史省略字段仍视为 false）；Windows 为 true 时使用 Raw Input，macOS 忽略此模式并使用 Wails Carbon hotkey，Linux 不支持进程操作。
 - `targetPath`、`launcherPath`：继续分别表示终止目标和启动器，普通设置保存保留后端最新路径。
 
 `GetDragonNestShortcutStatus()` 和 `RetryDragonNestShortcut()` 返回 `shortcut.Status`；typed event `dn-shortcut:changed` 使用同一结构：`revision`、`enabled`、`key`、`gameMode`、`registered`、`registrationError`、`triggerCount`、`lastTriggeredAt`、`running`、`lastError`、`lastProcess`。
@@ -83,7 +83,7 @@ main.tsx 的 ?window=dn-process 分支 → SettingsProvider → DnProcessWindow
 
 Windows 实机验收（启动应用前需授权）：
 
-1. 主窗口进程页确认目标，启用全局快捷键；检查“已就绪”。
+1. 使用新建或重置设置，在主窗口进程页确认目标、默认 F4 和游戏兼容模式，检查快捷键自动注册为“已就绪”；已有设置则按保存的开关与模式注册。
 2. 切到记事本、最小化主窗口、小窗失焦分别按 F4，确认次数与结果更新；长按仅触发一次。
 3. 游戏置于前台，分别测试标准全局、游戏兼容、Ctrl+Shift+F4，以及窗口化/无边框/独占全屏；记录收到次数、最近触发时间、结果和日志 `shortcut:` 行。
 4. 次数为零表示输入未到达，次数增加但失败表示进程操作问题；拒绝访问时再比较普通与管理员运行。

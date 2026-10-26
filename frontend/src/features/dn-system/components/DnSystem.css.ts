@@ -150,10 +150,10 @@ const dnDangerAction = style({
 
 const dnPlanGrid = style({
   display: 'grid',
-  gridTemplateColumns: 'repeat(auto-fill, minmax(min(320px, 100%), 360px))',
+  gridTemplateColumns: 'repeat(auto-fill, minmax(min(280px, 100%), 320px))',
   alignItems: 'start',
   justifyContent: 'start',
-  gap: 'calc(14px * var(--layout-spacing))',
+  gap: 'calc(12px * var(--layout-spacing))',
 })
 
 const dnPlanCard = style([
@@ -162,9 +162,12 @@ const dnPlanCard = style([
     minWidth: '0',
     display: 'grid',
     alignContent: 'start',
-    gap: 'calc(14px * var(--layout-spacing))',
+    gap: 'calc(10px * var(--layout-spacing))',
     overflow: 'hidden',
-    padding: 'calc(16px * var(--layout-spacing))',
+    padding: 'calc(12px * var(--layout-spacing))',
+    containerName: 'dn-plan-card',
+    containerType: 'inline-size',
+    lineHeight: 1.4,
     background:
       'linear-gradient(150deg, color-mix(in srgb, var(--accent-muted) 26%, var(--surface-elevated)) 0%, color-mix(in srgb, var(--surface-muted) 44%, var(--surface-elevated)) 46%, color-mix(in srgb, var(--surface-muted) 28%, transparent) 100%)',
     border: '1px solid var(--border-subtle)',
@@ -195,14 +198,14 @@ const dnPlanCard = style([
 const dnPlanCardHeader = style({
   minWidth: '0',
   display: 'grid',
-  gridTemplateColumns: '40px minmax(0, 1fr) auto',
+  gridTemplateColumns: '32px minmax(0, 1fr) auto',
   alignItems: 'center',
-  gap: 'calc(11px * var(--layout-spacing))',
+  gap: 'calc(8px * var(--layout-spacing))',
 })
 
 const dnPlanAvatar = style({
-  width: '40px',
-  height: '40px',
+  width: '32px',
+  height: '32px',
   display: 'grid',
   placeItems: 'center',
   color: 'var(--accent)',
@@ -220,20 +223,16 @@ const dnPlanIdentity = style({
 })
 
 const dnPlanRoleName = style({
-  overflow: 'hidden',
   fontSize: 'var(--font-size-body)',
   fontWeight: '850',
   lineHeight: '1.25',
-  textOverflow: 'ellipsis',
-  whiteSpace: 'nowrap',
+  overflowWrap: 'anywhere',
 })
 
 const dnPlanProfession = style({
-  overflow: 'hidden',
   color: 'var(--text-tertiary)',
   fontSize: 'var(--font-size-secondary)',
-  textOverflow: 'ellipsis',
-  whiteSpace: 'nowrap',
+  overflowWrap: 'anywhere',
 })
 
 const isUpdating = style({
@@ -259,10 +258,11 @@ const dnRowActions = style({
 
 const dnPlanRemark = style({
   margin: '0',
-  padding: '9px 11px',
+  padding: 'calc(6px * var(--layout-spacing)) calc(8px * var(--layout-spacing))',
   color: 'var(--text-secondary)',
   fontSize: 'var(--font-size-secondary)',
   lineHeight: '1.55',
+  overflowWrap: 'anywhere',
   background: 'color-mix(in srgb, var(--surface-muted) 74%, transparent)',
   borderLeft: '2px solid color-mix(in srgb, var(--accent) 52%, transparent)',
   borderRadius: '4px 9px 9px 4px',
@@ -305,8 +305,8 @@ const dnAlertWarning = style({
 
 const dnPlanCommissionPanel = style({
   display: 'grid',
-  gap: 'calc(11px * var(--layout-spacing))',
-  padding: 'calc(13px * var(--layout-spacing))',
+  gap: 'calc(7px * var(--layout-spacing))',
+  padding: 'calc(9px * var(--layout-spacing))',
   background: 'color-mix(in srgb, var(--surface-elevated) 56%, transparent)',
   border: '1px solid var(--border-subtle)',
   borderRadius: '12px',
@@ -338,7 +338,7 @@ const dnPlanCommissionMeta = style({
 
 const dnPlanCommissionCount = style({
   color: 'var(--accent)',
-  fontSize: 'calc(28px + var(--font-size-heading-offset))',
+  fontSize: 'calc(24px + var(--font-size-heading-offset))',
   fontWeight: '900',
   lineHeight: '1',
   letterSpacing: '-0.04em',
@@ -371,7 +371,7 @@ const dnPlanCounterCopy = style({
 
 const dnPlanWeeklySection = style({
   display: 'grid',
-  gap: 'calc(9px * var(--layout-spacing))',
+  gap: 'calc(6px * var(--layout-spacing))',
 })
 
 const dnPlanWeeklyHeading = style({
@@ -411,11 +411,11 @@ const dnPlanFlags = style([
   {
     display: 'grid',
     gridTemplateColumns: 'repeat(3, minmax(0, 1fr))',
-    gap: '6px',
+    gap: '4px',
   },
   {
     '@container': {
-      'dn-page (max-width: 410px)': {
+      'dn-plan-card (max-width: 280px)': {
         gridTemplateColumns: '1fr',
       },
     },
@@ -427,8 +427,8 @@ const dnPlanFlag = style({
   display: 'flex',
   alignItems: 'center',
   justifyContent: 'space-between',
-  gap: '8px',
-  padding: '8px',
+  gap: '4px',
+  padding: 'calc(6px * var(--layout-spacing))',
   background: 'color-mix(in srgb, var(--surface-muted) 76%, transparent)',
   border: '1px solid transparent',
   borderRadius: '10px',
@@ -468,10 +468,11 @@ const dnPlanFlagStatus = style({
 
 const dnPlanActions = style({
   display: 'flex',
+  flexWrap: 'wrap',
   alignItems: 'center',
   justifyContent: 'space-between',
-  gap: '10px',
-  paddingTop: '11px',
+  gap: '6px',
+  paddingTop: 'calc(7px * var(--layout-spacing))',
   borderTop: '1px solid var(--border-subtle)',
 })
 

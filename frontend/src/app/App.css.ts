@@ -21,16 +21,16 @@ const appContent = style({
   minWidth: '0',
   minHeight: '0',
   flex: '1',
-  overflowX: 'hidden',
-  overflowY: 'auto',
-  containerName: 'app-content',
-  containerType: 'inline-size',
-  overscrollBehavior: 'contain',
-  scrollbarGutter: 'stable',
   background: 'radial-gradient(circle at 92% 0%, var(--accent-muted), transparent 28%), var(--app-background)',
 })
 
+const contentViewport = style({
+  containerName: 'app-content',
+  containerType: 'size',
+})
+
 export const styles = {
+  contentViewport,
   'app-shell': appShell,
   'app-workspace': appWorkspace,
   'app-content': appContent,

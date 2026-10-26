@@ -26,6 +26,9 @@ globalStyle(':root', {
     '--text-primary': '#f5f8fb',
     '--text-secondary': 'rgba(245, 248, 251, 0.7)',
     '--text-tertiary': 'rgba(245, 248, 251, 0.48)',
+    '--scrollbar-thumb': 'rgba(255, 255, 255, 0.24)',
+    '--scrollbar-thumb-hover': 'rgba(255, 255, 255, 0.4)',
+    '--scrollbar-thumb-active': 'rgba(255, 255, 255, 0.56)',
     '--focus-ring': 'rgba(87, 190, 255, 0.92)',
     '--switch-background': 'rgba(255, 255, 255, 0.18)',
     '--danger-text': '#ff918a',
@@ -61,6 +64,9 @@ globalStyle(":root[data-theme='light']", {
     '--text-primary': '#172231',
     '--text-secondary': 'rgba(23, 34, 49, 0.7)',
     '--text-tertiary': 'rgba(23, 34, 49, 0.48)',
+    '--scrollbar-thumb': 'rgba(0, 0, 0, 0.24)',
+    '--scrollbar-thumb-hover': 'rgba(0, 0, 0, 0.4)',
+    '--scrollbar-thumb-active': 'rgba(0, 0, 0, 0.56)',
     '--switch-background': 'rgba(23, 34, 49, 0.2)',
     '--danger-text': '#b93831',
     '--danger-background': 'rgba(215, 66, 57, 0.08)',
@@ -120,6 +126,61 @@ globalStyle(":root[data-button-size='lg']", {
 
 globalStyle('*', {
   boxSizing: 'border-box',
+  scrollbarWidth: 'thin',
+  scrollbarColor: 'var(--scrollbar-thumb) transparent',
+  '@supports': {
+    // Standard scrollbar properties override the WebKit pseudo-elements when non-auto.
+    'selector(::-webkit-scrollbar)': {
+      scrollbarWidth: 'auto',
+      scrollbarColor: 'auto',
+    },
+  },
+  '@media': {
+    '(forced-colors: active)': { scrollbarWidth: 'auto', scrollbarColor: 'auto' },
+  },
+})
+
+globalStyle('::-webkit-scrollbar', {
+  width: '10px',
+  height: '10px',
+})
+
+globalStyle('::-webkit-scrollbar-track, ::-webkit-scrollbar-corner', {
+  background: 'transparent',
+})
+
+globalStyle('::-webkit-scrollbar-thumb', {
+  minWidth: '32px',
+  minHeight: '32px',
+  border: '3px solid transparent',
+  borderRadius: '999px',
+  backgroundColor: 'var(--scrollbar-thumb)',
+  backgroundClip: 'padding-box',
+  '@media': {
+    '(forced-colors: active)': { backgroundColor: 'CanvasText' },
+  },
+})
+
+globalStyle('::-webkit-scrollbar-thumb:hover', {
+  borderWidth: '2px',
+  backgroundColor: 'var(--scrollbar-thumb-hover)',
+  '@media': {
+    '(forced-colors: active)': { backgroundColor: 'Highlight' },
+  },
+})
+
+globalStyle('::-webkit-scrollbar-thumb:active', {
+  borderWidth: '2px',
+  backgroundColor: 'var(--scrollbar-thumb-active)',
+  '@media': {
+    '(forced-colors: active)': { backgroundColor: 'Highlight' },
+  },
+})
+
+globalStyle('::-webkit-scrollbar-button', {
+  display: 'none',
+  width: 0,
+  height: 0,
 })
 
 globalStyle('html,\nbody,\n#root', {

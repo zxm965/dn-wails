@@ -10,6 +10,7 @@
 - `frontend/src/features/settings/context/SettingsProvider.tsx`：计算有效主题并同步 DOM，外观状态不再使用独立 Provider。
 - `frontend/src/app/styles/global.css.ts`：通过 vanilla-extract 全局 API 维护字体、重置、主题变量和强调色变量。
 - `frontend/src/features/settings/components/SettingsPanel.tsx`：外观设置界面。
+- `frontend/src/shared/components/ui/ScrollArea.tsx`、`ScrollArea.css.ts`：主内容区覆盖式滚动容器、滑块与原生滚动交互。
 
 ## 配置契约
 
@@ -65,6 +66,10 @@ SettingsProvider 读取设置
 - reduced motion 继续由各组件自己的媒体查询处理。
 
 ## 即时应用
+
+主内容区通过 `App → shared/components/ui/ScrollArea → Base UI ScrollArea` 使用覆盖式纵向滚动条：Viewport 隐藏原生滚动条且不预留 gutter，轨道绝对定位在内容右侧，显示、隐藏和拖动均不改变可用宽度；仅存在溢出时挂载滑块，悬停、滚动或区域内键盘聚焦时显示，空闲时淡出，reduced motion 下立即切换。Base UI 负责尺寸观察、位置同步、拖动和滚轮事件清理，设置页仍通过实际滚动祖先保存和恢复位置。`ScrollArea.css.ts` 维护局部样式，不添加全局滚动监听。
+
+滚动条颜色通过 `--scrollbar-thumb/hover/active` 统一控制：浅色主题半透明黑色，深色主题半透明白色，强制颜色模式使用系统颜色。页面内其他原生滚动区域（侧栏、弹窗、下拉列表与横向列表）采用全局细圆角滑块与透明轨道，支持 WebKit/WebView2，其他引擎回退为标准细滚动条；这类区域仍保留原生滚动布局。系统原生窗口滚动条不受影响。
 
 - `SettingsProvider` 在调用 Go 保存前先更新内存快照，因此主题、强调色、密度、按钮尺寸和全局默认字号组合会在控件变化的同一轮渲染中生效。
 - 持久化请求按顺序执行；最新请求失败时重新读取后端快照并展示错误。

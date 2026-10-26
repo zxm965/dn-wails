@@ -103,8 +103,8 @@ export const DEFAULT_SETTINGS: AppSettings = {
   },
   dragonNest: {
     localShortcutKey: 'F4',
-    globalShortcutEnabled: false,
-    gameShortcutMode: false,
+    globalShortcutEnabled: true,
+    gameShortcutMode: true,
     targetPath: '',
     launcherPath: '',
   },

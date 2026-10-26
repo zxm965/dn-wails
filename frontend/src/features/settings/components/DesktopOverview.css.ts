@@ -3,8 +3,8 @@ import { style } from '@vanilla-extract/css'
 const card = style({
   minWidth: 0,
   display: 'grid',
-  gap: 'calc(16px * var(--layout-spacing))',
-  padding: 'var(--panel-padding)',
+  gap: 'calc(12px * var(--layout-spacing))',
+  padding: 'calc(16px * var(--layout-spacing))',
   borderRadius: 'var(--panel-radius)',
   background:
     'linear-gradient(135deg, color-mix(in srgb, var(--surface-elevated) 92%, var(--accent) 8%), var(--surface-elevated))',
@@ -22,7 +22,7 @@ const summary = style({
 })
 const identity = style({ display: 'flex', alignItems: 'center', minWidth: 0, gap: 12 })
 const identityCopy = style({ minWidth: 0 })
-const logo = style({ width: 44, height: 44, flexShrink: 0 })
+const logo = style({ width: 36, height: 36, flexShrink: 0 })
 const name = style({ margin: 0, fontSize: 'var(--font-size-title)', overflowWrap: 'anywhere' })
 const author = style({
   margin: '5px 0 0',
@@ -78,7 +78,7 @@ const diagnosticsPanel = style({
   display: 'grid',
   gridTemplateRows: '0fr',
   minWidth: 0,
-  marginTop: 'calc(-16px * var(--layout-spacing))',
+  marginTop: 'calc(-12px * var(--layout-spacing))',
   opacity: 0,
   visibility: 'hidden',
   transition:

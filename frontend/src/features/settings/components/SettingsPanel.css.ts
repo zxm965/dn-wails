@@ -3,9 +3,9 @@ import { globalStyle, style } from '@vanilla-extract/css'
 const settingsPanel = style({
   width: 'min(var(--page-content-max-width), 100%)',
   display: 'grid',
-  gap: 'calc(16px * var(--layout-spacing))',
+  gap: 'calc(12px * var(--layout-spacing))',
   margin: '0 auto',
-  padding: 'var(--page-padding-start) var(--page-padding-inline) var(--page-padding-end)',
+  padding: 'calc(16px * var(--layout-spacing)) var(--page-padding-inline)',
   containerName: 'settings-panel',
   containerType: 'inline-size',
 })
@@ -19,6 +19,7 @@ const settingsState = style({
 
 const settingsSaveStatus = style({
   margin: '0',
+  minWidth: '7em',
   color: 'var(--text-tertiary)',
   fontSize: 'var(--font-size-secondary)',
   whiteSpace: 'nowrap',
@@ -77,8 +78,21 @@ const settingsSection = style({
   boxShadow: 'var(--surface-shadow)',
 })
 
+const overview = style({
+  display: 'grid',
+  minWidth: 0,
+  gap: 'calc(12px * var(--layout-spacing))',
+})
+
+const updateSection = style({
+  padding: 'calc(16px * var(--layout-spacing))',
+})
+
 const settingsSectionTitle = style({
   marginBottom: 'calc(22px * var(--layout-spacing))',
+  selectors: {
+    [`${updateSection} &`]: { marginBottom: 'calc(12px * var(--layout-spacing))' },
+  },
 })
 
 const settingsGrid = style([
@@ -257,9 +271,18 @@ const header = style({
   minWidth: 0,
 })
 const title = style({ margin: 0, fontSize: 'var(--font-size-title)' })
-const headerActions = style({ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 12, minWidth: 0 })
+const headerActions = style({
+  display: 'flex',
+  flexWrap: 'wrap',
+  alignItems: 'center',
+  gap: 12,
+  minWidth: 0,
+  selectors: { '&[data-hidden="true"]': { visibility: 'hidden' } },
+})
 
 export const styles = {
+  overview,
+  updateSection,
   header,
   title,
   headerActions,

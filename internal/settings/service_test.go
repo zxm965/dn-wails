@@ -224,11 +224,11 @@ func TestGlobalShortcutPreferencesPersist(t *testing.T) {
 		t.Fatal(err)
 	}
 	value := service.Get()
-	if value.DragonNest.GlobalShortcutEnabled || value.DragonNest.GameShortcutMode {
-		t.Fatal("new global shortcut must require explicit enablement")
+	if !value.DragonNest.GlobalShortcutEnabled || !value.DragonNest.GameShortcutMode {
+		t.Fatal("new settings must enable global shortcut and game mode")
 	}
-	value.DragonNest.GlobalShortcutEnabled = true
-	value.DragonNest.GameShortcutMode = true
+	value.DragonNest.GlobalShortcutEnabled = false
+	value.DragonNest.GameShortcutMode = false
 	value.DragonNest.LocalShortcutKey = "Ctrl+Shift+F4"
 	if _, err := service.Update(value); err != nil {
 		t.Fatal(err)
@@ -239,6 +239,20 @@ func TestGlobalShortcutPreferencesPersist(t *testing.T) {
 	}
 	if reloaded.Get().DragonNest != value.DragonNest {
 		t.Fatal("global shortcut preferences not persisted")
+	}
+	reset, err := reloaded.Reset()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !reset.DragonNest.GlobalShortcutEnabled || !reset.DragonNest.GameShortcutMode ||
+		reset.DragonNest.LocalShortcutKey != DefaultLocalShortcutKey {
+		t.Fatal("reset must restore enabled global shortcut and game mode with F4")
+	}
+	if err := service.Initialize(); err != nil {
+		t.Fatal(err)
+	}
+	if service.Get().DragonNest != reset.DragonNest {
+		t.Fatal("reset shortcut defaults not persisted")
 	}
 }
 

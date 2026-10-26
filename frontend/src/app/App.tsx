@@ -11,7 +11,7 @@ import { SiteMessageCenter, SiteMessageProvider, SiteMessages } from '@/features
 import { TaskReminderMonitor, TasksPanel } from '@/features/tasks'
 import { AppSidebar } from '@/shared/components/app-sidebar'
 import { TitleBar } from '@/shared/components/titlebar'
-import { ListState } from '@/shared/components/ui'
+import { ListState, ScrollArea } from '@/shared/components/ui'
 import { createScopedClassNames } from '@/shared/lib/classNames'
 import {
   APP_ROUTES,
@@ -33,7 +33,7 @@ import { styles } from './App.css'
 const cx = createScopedClassNames(styles)
 
 export default function App() {
-  const contentRef = useRef<HTMLElement>(null)
+  const contentRef = useRef<HTMLDivElement>(null)
   const { settings, isLoading: isSettingsLoading } = useSettings()
   const account = useAccount()
   const navigate = useNavigate()
@@ -113,7 +113,12 @@ export default function App() {
             menuOrder={settings.navigation.menuOrder}
             onNavigate={navigateToView}
           />
-          <main ref={contentRef} className={cx('app-content')}>
+          <ScrollArea
+            render={<main />}
+            className={cx('app-content')}
+            viewportClassName={styles.contentViewport}
+            viewportRef={contentRef}
+          >
             <Routes>
               <Route path='/' element={<Navigate replace to={getAppViewPath(fallbackView)} />} />
               {APP_VIEWS.map((view) => (
@@ -121,7 +126,7 @@ export default function App() {
               ))}
               <Route path='*' element={<Navigate replace to={getAppViewPath(fallbackView)} />} />
             </Routes>
-          </main>
+          </ScrollArea>
         </div>
       </div>
     </SiteMessageProvider>

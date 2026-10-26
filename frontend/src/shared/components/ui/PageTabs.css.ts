@@ -15,7 +15,6 @@ const list = style({
   display: 'flex',
   flexWrap: 'nowrap',
   overflowX: 'auto',
-  scrollbarWidth: 'thin',
   gap: '5px',
   padding: '5px',
   background: 'color-mix(in srgb, var(--surface-elevated) 90%, transparent)',

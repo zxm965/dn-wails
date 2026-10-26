@@ -9,7 +9,7 @@ const runtimeStatusPanel = style({
 })
 
 const runtimeServiceSection = style({
-  padding: 'calc(clamp(16px, 2vw, 20px) * var(--layout-spacing))',
+  padding: 'calc(16px * var(--layout-spacing))',
   background: 'var(--surface-elevated)',
   border: '1px solid var(--border-subtle)',
   borderRadius: 'var(--panel-radius)',
@@ -20,11 +20,11 @@ const runtimeServiceGrid = style([
   {
     display: 'grid',
     gridTemplateColumns: 'repeat(2, minmax(0, 1fr))',
-    gap: 'calc(9px * var(--layout-spacing))',
+    gap: 'calc(8px * var(--layout-spacing))',
   },
   {
     '@container': {
-      'runtime-status (max-width: 720px)': {
+      'runtime-status (max-width: 560px)': {
         gridTemplateColumns: '1fr',
       },
     },
@@ -53,10 +53,10 @@ const runtimeServiceCard = style([
   {
     minWidth: '0',
     display: 'grid',
-    gridTemplateColumns: '34px minmax(0, 1fr) auto',
+    gridTemplateColumns: '28px minmax(0, 1fr) auto',
     alignItems: 'center',
-    gap: 'calc(11px * var(--layout-spacing))',
-    padding: 'calc(12px * var(--layout-spacing))',
+    gap: 'calc(8px * var(--layout-spacing))',
+    padding: 'calc(8px * var(--layout-spacing))',
     background: 'color-mix(in srgb, var(--surface-muted) 62%, transparent)',
     border: '1px solid var(--border-subtle)',
     borderRadius: '12px',
@@ -64,7 +64,7 @@ const runtimeServiceCard = style([
   {
     '@container': {
       'runtime-status (max-width: 420px)': {
-        gridTemplateColumns: '34px minmax(0, 1fr)',
+        gridTemplateColumns: '28px minmax(0, 1fr)',
       },
     },
   },
@@ -88,8 +88,8 @@ const isError = style({
 })
 
 const runtimeServiceIcon = style({
-  width: '34px',
-  height: '34px',
+  width: '28px',
+  height: '28px',
   display: 'grid',
   placeItems: 'center',
   color: 'var(--accent)',

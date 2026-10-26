@@ -126,9 +126,9 @@ export function SettingsPanel() {
       label: '概览',
       description: '版本、运行与更新',
       content: (
-        <>
+        <div className={styles.overview}>
           <RuntimeStatusPanel onOpenSettings={openPreferences} />
-          <section className={cx('settings-section')}>
+          <section className={cx('settings-section', 'updateSection')}>
             <div className={cx('settings-section-title')}>
               <h2>应用更新</h2>
               <p>启动时会自动检查正式版本，也可以在这里手动检查最新版本。</p>
@@ -172,7 +172,7 @@ export function SettingsPanel() {
               </Button>
             </div>
           </section>
-        </>
+        </div>
       ),
     },
     {
@@ -371,16 +371,19 @@ export function SettingsPanel() {
     <div ref={panelRef} className={cx('settings-panel')}>
       <header className={styles.header}>
         <h1 className={styles.title}>设置</h1>
-        {activeCategory !== 'overview' && (
-          <div className={styles.headerActions}>
-            <span className={cx('settings-save-status')} aria-live='polite'>
-              {isSaving ? '正在同步…' : '修改后自动保存'}
-            </span>
-            <Button variant='outline' onClick={handleReset} disabled={isSaving}>
-              恢复全部默认设置
-            </Button>
-          </div>
-        )}
+        <div
+          className={styles.headerActions}
+          data-hidden={activeCategory === 'overview'}
+          aria-hidden={activeCategory === 'overview'}
+          inert={activeCategory === 'overview'}
+        >
+          <span className={cx('settings-save-status')} aria-live='polite'>
+            {isSaving ? '正在同步…' : '修改后自动保存'}
+          </span>
+          <Button variant='outline' onClick={handleReset} disabled={isSaving}>
+            恢复全部默认设置
+          </Button>
+        </div>
       </header>
 
       {settingsError && (

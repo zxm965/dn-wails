@@ -12,7 +12,7 @@ const calendarPage = style([
   {
     width: '100%',
     minWidth: '0',
-    height: '100%',
+    height: '100cqh',
     minHeight: '0',
     display: 'grid',
     gridTemplateRows: 'minmax(min-content, 1fr) minmax(0, max-content)',

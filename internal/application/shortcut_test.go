@@ -181,7 +181,6 @@ func (n *globalShortcutNativeStub) Start(key string, gameMode bool, fire func(),
 
 func TestGlobalShortcutReadySettingsAndBackgroundExecution(t *testing.T) {
 	current := settings.Default()
-	current.DragonNest.GlobalShortcutEnabled = true
 	current.DragonNest.TargetPath = `C:\Games\DragonNest.exe`
 	preferences := &shortcutSettingsStub{current: current}
 	process := &shortcutDnProcessStub{}
@@ -193,6 +192,9 @@ func TestGlobalShortcutReadySettingsAndBackgroundExecution(t *testing.T) {
 	}
 	app.runtimeReady = true
 	app.syncDragonNestShortcut()
+	if native.starts != 1 || native.key != "F4" || !native.gameMode {
+		t.Fatal("default shortcut and game mode not registered after runtime ready")
+	}
 	// No React window or frontend key event participates in this execution.
 	native.fire()
 	if !process.terminated || process.configuredPath != current.DragonNest.TargetPath ||
@@ -201,7 +203,7 @@ func TestGlobalShortcutReadySettingsAndBackgroundExecution(t *testing.T) {
 	}
 	next := preferences.Get()
 	next.DragonNest.LocalShortcutKey = "Ctrl+Shift+F4"
-	next.DragonNest.GameShortcutMode = true
+	next.DragonNest.GameShortcutMode = false
 	preferences.updateErr = errors.New("disk full")
 	if _, err := app.UpdateSettings(next); err == nil || native.starts != 1 {
 		t.Fatal("failed persistence changed active shortcut")
@@ -210,14 +212,15 @@ func TestGlobalShortcutReadySettingsAndBackgroundExecution(t *testing.T) {
 	if _, err := app.UpdateSettings(next); err != nil {
 		t.Fatal(err)
 	}
-	if native.key != "Ctrl+Shift+F4" || !native.gameMode || native.starts != 2 || native.stops != 1 {
+	if native.key != "Ctrl+Shift+F4" || native.gameMode || native.starts != 2 || native.stops != 1 {
 		t.Fatal("configuration not applied")
 	}
 	if _, err := app.ResetSettings(); err != nil {
 		t.Fatal(err)
 	}
-	if app.GetDragonNestShortcutStatus().Enabled || native.stops != 2 {
-		t.Fatal("reset did not disable global shortcut")
+	if !app.GetDragonNestShortcutStatus().Enabled || native.key != "F4" || !native.gameMode ||
+		native.starts != 3 || native.stops != 2 {
+		t.Fatal("reset did not restore enabled global shortcut and game mode")
 	}
 }
 
