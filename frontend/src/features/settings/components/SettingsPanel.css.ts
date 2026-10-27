@@ -42,6 +42,16 @@ const settingsUpdateContent = style([
   },
 ])
 
+const updateActions = style({
+  display: 'flex',
+  flexWrap: 'wrap',
+  gap: 8,
+  flexShrink: 0,
+  '@container': {
+    'settings-panel (max-width: 380px)': { flexDirection: 'column', alignItems: 'stretch' },
+  },
+})
+
 const settingsUpdateError = style({
   margin: '12px 0 0',
   color: 'var(--danger-text)',
@@ -281,6 +291,7 @@ const headerActions = style({
 })
 
 export const styles = {
+  updateActions,
   overview,
   updateSection,
   header,

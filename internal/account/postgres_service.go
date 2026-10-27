@@ -15,6 +15,7 @@ import (
 	"sync"
 	"time"
 
+	"cull-pear/internal/platform/postgres"
 	"cull-pear/internal/storage"
 
 	"github.com/jackc/pgx/v5"
@@ -61,17 +62,9 @@ type PostgresService struct {
 }
 
 func NewPostgresService(databaseURL string, store storage.Store) (*PostgresService, error) {
-	config, err := pgxpool.ParseConfig(strings.TrimSpace(databaseURL))
+	pool, err := postgres.NewPool(databaseURL, "account", 2)
 	if err != nil {
-		return nil, fmt.Errorf("parse account database connection: %w", err)
-	}
-	config.MaxConns = 2
-	config.MinConns = 0
-	config.MaxConnIdleTime = 5 * time.Minute
-	config.MaxConnLifetime = 30 * time.Minute
-	pool, err := pgxpool.NewWithConfig(context.Background(), config)
-	if err != nil {
-		return nil, fmt.Errorf("create account database pool: %w", err)
+		return nil, err
 	}
 	return &PostgresService{pool: pool, store: store}, nil
 }

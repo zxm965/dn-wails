@@ -11,8 +11,11 @@
 - `internal/quicknotes/unavailable_service.go`：数据库未配置时的明确降级实现，并向运行状态报告不可用。
 - `internal/application/quicknotes.go`：提供给前端的 Wails 门面方法。
 - `frontend/src/features/quick-notes/api/`：生成绑定适配和前端类型。
-- `frontend/src/features/quick-notes/components/`：笔记列表、搜索、Markdown 预览、编辑器和自动保存状态。
+- `frontend/src/features/quick-notes/components/`：笔记列表、搜索、编辑器和自动保存状态。
+- `frontend/src/shared/components/markdown-preview/`：笔记与更新日志共用的 Markdown 展示，链接交由调用方处理。
 - `frontend/src/shared/navigation/menuConfig.ts`：注册不带分组标题的“快速笔记”入口。
+
+连接池配置复用 [PostgreSQL 基础设施](postgres.md)；`Initialize` 在 Ping 后与 `Health` 调用同一 schema 检查，并沿用各自的请求超时。缺表统一返回包装后的 `ErrUnavailable`，查询失败保留错误链。
 
 ## 依赖关系
 

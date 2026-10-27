@@ -2,13 +2,13 @@ import { createContext, type ReactNode, useCallback, useContext, useEffect, useM
 
 import { useAccount } from '@/features/account'
 import { useFeedback } from '@/shared/feedback'
+import { getErrorMessage } from '@/shared/lib/errorMessage'
 import { openExternalURL } from '@/shared/native-kit'
 import { getAppViewFromPath, type AppView } from '@/shared/navigation'
 
 import {
   checkOfficialMessagesOnLogin,
   claimMessageNotifications,
-  getErrorMessage,
   getMessageInbox,
   markAllMessagesRead,
   markMessageNotified,

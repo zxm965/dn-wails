@@ -24,11 +24,11 @@ import {
 import { useFeedback } from '@/shared/feedback'
 import { useRequestGuard } from '@/shared/hooks/useRequestGuard'
 import { createScopedClassNames } from '@/shared/lib/classNames'
+import { getErrorMessage } from '@/shared/lib/errorMessage'
 import { pickFiles } from '@/shared/native-kit'
 
 import {
   changePassword,
-  getAccountErrorMessage,
   getProfile,
   importAvatar,
   updateProfile,
@@ -90,7 +90,7 @@ export function AccountPanel() {
         if (showNotice) notify({ title: '资料已重新加载', tone: 'success' })
       } catch (error) {
         if (!isCurrent()) return
-        notify({ title: '资料加载失败', message: getAccountErrorMessage(error, '请稍后重试。'), tone: 'error' })
+        notify({ title: '资料加载失败', message: getErrorMessage(error, '请稍后重试。'), tone: 'error' })
       } finally {
         if (isCurrent()) setLoading(false)
       }
@@ -127,7 +127,7 @@ export function AccountPanel() {
     } catch (error) {
       notify({
         title: '头像导入失败',
-        message: getAccountErrorMessage(error, '请选择 5MB 内的常见图片。'),
+        message: getErrorMessage(error, '请选择 5MB 内的常见图片。'),
         tone: 'error',
       })
     } finally {
@@ -147,7 +147,7 @@ export function AccountPanel() {
       syncForm(await updateProfile(form))
       notify({ title: '个人资料已更新', tone: 'success' })
     } catch (error) {
-      notify({ title: '资料保存失败', message: getAccountErrorMessage(error, '请检查输入。'), tone: 'error' })
+      notify({ title: '资料保存失败', message: getErrorMessage(error, '请检查输入。'), tone: 'error' })
     } finally {
       setSaving(false)
     }
@@ -173,7 +173,7 @@ export function AccountPanel() {
       setPasswordForm({ currentPassword: '', newPassword: '', confirmPassword: '' })
       notify({ title: '密码已更新', tone: 'success' })
     } catch (error) {
-      notify({ title: '修改密码失败', message: getAccountErrorMessage(error, '请检查当前密码。'), tone: 'error' })
+      notify({ title: '修改密码失败', message: getErrorMessage(error, '请检查当前密码。'), tone: 'error' })
     } finally {
       setPasswordSaving(false)
     }
@@ -190,7 +190,7 @@ export function AccountPanel() {
       await logoutUser()
       notify({ title: '已退出账号', tone: 'success' })
     } catch (error) {
-      notify({ title: '退出登录失败', message: getAccountErrorMessage(error, '请稍后重试。'), tone: 'error' })
+      notify({ title: '退出登录失败', message: getErrorMessage(error, '请稍后重试。'), tone: 'error' })
     }
   }
 

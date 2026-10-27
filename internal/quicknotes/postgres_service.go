@@ -4,8 +4,9 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"strings"
 	"time"
+
+	"cull-pear/internal/platform/postgres"
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -21,17 +22,9 @@ type PostgresService struct {
 }
 
 func NewPostgresService(databaseURL string, identity UserIdentity) (*PostgresService, error) {
-	config, err := pgxpool.ParseConfig(strings.TrimSpace(databaseURL))
+	pool, err := postgres.NewPool(databaseURL, "quick notes", 2)
 	if err != nil {
-		return nil, fmt.Errorf("parse quick notes database connection: %w", err)
-	}
-	config.MaxConns = 2
-	config.MinConns = 0
-	config.MaxConnIdleTime = 5 * time.Minute
-	config.MaxConnLifetime = 30 * time.Minute
-	pool, err := pgxpool.NewWithConfig(context.Background(), config)
-	if err != nil {
-		return nil, fmt.Errorf("create quick notes database pool: %w", err)
+		return nil, err
 	}
 	return &PostgresService{pool: pool, identity: identity}, nil
 }
@@ -42,14 +35,7 @@ func (s *PostgresService) Initialize() error {
 	if err := s.pool.Ping(ctx); err != nil {
 		return fmt.Errorf("connect quick notes database: %w", err)
 	}
-	var tableExists bool
-	if err := s.pool.QueryRow(ctx, `select to_regclass('public.app_quick_note') is not null`).Scan(&tableExists); err != nil {
-		return fmt.Errorf("inspect quick notes schema: %w", err)
-	}
-	if !tableExists {
-		return fmt.Errorf("%w: database table app_quick_note is not initialized", ErrUnavailable)
-	}
-	return nil
+	return s.checkSchema(ctx)
 }
 
 func (s *PostgresService) Close() error {
@@ -61,6 +47,10 @@ func (s *PostgresService) Health() error {
 	ctx, cancel := databaseContext()
 	defer cancel()
 
+	return s.checkSchema(ctx)
+}
+
+func (s *PostgresService) checkSchema(ctx context.Context) error {
 	var schemaReady bool
 	if err := s.pool.QueryRow(ctx, `select to_regclass('public.app_quick_note') is not null`).Scan(&schemaReady); err != nil {
 		return fmt.Errorf("check quick notes database health: %w", err)

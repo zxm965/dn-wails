@@ -15,8 +15,9 @@ import {
 } from '@/shared/components/ui'
 import { useFeedback } from '@/shared/feedback'
 import { createScopedClassNames } from '@/shared/lib/classNames'
+import { getErrorMessage } from '@/shared/lib/errorMessage'
 
-import { getErrorMessage, type SiteMessage } from '../api/siteMessagesApi'
+import { type SiteMessage } from '../api/siteMessagesApi'
 import { useSiteMessages } from '../context/SiteMessageProvider'
 
 import { styles } from './SiteMessageCenter.css'

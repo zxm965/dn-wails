@@ -7,35 +7,14 @@
 ## 目录结构
 
 ```text
-.
-├── Taskfile.yml                    # Wails v3 构建任务入口
-├── build/
-│   ├── config.yml                 # Wails v3 开发与平台元数据配置
-│   ├── darwin/                    # macOS 打包资源与任务
-│   └── windows/                   # Windows NSIS 资源与任务
-├── database/schema/               # PostgreSQL 当前结构初始化
-├── main.go                        # 组合根：App、Window、Service 与 SystemTray
-├── internal/
-│   ├── application/               # 暴露给前端的 Wails v3 Service 门面
-│   ├── account/                   # 全局账号、持久会话与 PostgreSQL 身份服务
-│   ├── appupdate/                 # Release 元数据、版本比较与安装规则
-│   ├── buildinfo/                 # 构建期版本和发布元数据
-│   ├── diagnostics/               # 日志与运行诊断
-│   ├── dn/                        # DN 角色、周计划、消息与官网同步
-│   ├── lifecycle/                 # 应用生命周期状态
-│   ├── nativekit/                 # 原生能力规则与类型
-│   ├── notification/              # 系统通知规则与类型
-│   ├── quicknotes/                # 云端快速笔记规则与 PostgreSQL 持久化
-│   ├── tasks/                     # 云端任务、重复计划与 PostgreSQL 持久化
-│   ├── settings/                  # 类型化应用设置
-│   ├── singleinstance/            # 单实例启动数据处理
-│   ├── storage/                   # 用户配置文件存储
-│   ├── windowmanager/             # 主窗口状态与关闭策略
-│   └── platform/                  # Wails v3 与操作系统适配
-├── frontend/
-│   ├── bindings/                  # Wails v3 自动生成绑定，禁止手动修改
-│   └── src/                       # React 功能模块与共享基础设施
-└── docs/                          # 架构与模块文档
+├── main.go              # 应用组合根
+├── internal/            # Wails 门面、业务服务与平台适配
+├── frontend/            # React 应用及生成绑定
+├── database/schema/     # PostgreSQL 结构初始化
+├── Taskfile.yml         # 构建任务入口
+├── build/               # 桌面平台构建任务与资源
+├── scripts/             # 版本、元数据与发布脚本
+└── docs/                # 架构与模块文档
 ```
 
 详细边界见 [docs/architecture.md](docs/architecture.md)。
@@ -75,17 +54,13 @@ wails3 task dev
 
 ## 发布与更新
 
-项目 Git 仓库以 `https://gitee.com/zxm965/dn-wails.git` 为准。推送 `vMAJOR.MINOR.PATCH` 标签后，现有 GitHub Actions 工作流使用 Wails v3 Taskfile 构建 macOS universal ZIP、DMG、Windows amd64 应用本体和用户级 NSIS 安装器，并发布 GitHub Release。客户端通过数据库配置的 `update_endpoint` 基础地址分别请求 `/latest` 获取 GitHub Release 元数据、请求 `/download?version=...&filename=...` 下载资源，当前 macOS 自动更新使用 DMG：
+项目 Git 仓库为 `https://gitee.com/zxm965/dn-wails.git`；稳定版本标签触发 GitHub Actions，构建 macOS universal 与 Windows amd64 并发布 GitHub Release。
 
 ```bash
 git tag v1.0.0
 git push origin v1.0.0
 ```
 
-发布流程只上传 GitHub Release，不再同步 Gitee Release，也不再依赖 `GITEE_TOKEN`；客户端下载继续通过更新代理访问 GitHub 资源。
+每次发布前在 [CHANGELOG.md](CHANGELOG.md) 汇总有效改动并归档到目标版本；发布工作流将日志写入 Release 正文，客户端在更新提示及手动检查时展示。
 
-若需使用修正后的工作流重新发布已有版本，在 GitHub Actions 的 `Build and publish desktop release` 中选择 `Run workflow`，分支选 `main`，`tag` 填已有稳定标签（例如 `v0.0.47`）。工作流检出该标签的代码并覆盖对应 Release 的同名资源，不创建或移动标签。
-
-当前 Wails v3 仍是 beta，桌面原生行为和平台打包需要在目标系统上充分验证。默认发布尚未配置正式 Apple/Windows 代码签名。
-
-发布平台仅维护 macOS universal 和 Windows amd64；双端构建说明见 [build/README.md](build/README.md)。
+发布配置、已有标签重新发布及客户端下载协议见[应用更新与发布](docs/modules/app-update.md)；平台构建命令与资源说明见 [build/README.md](build/README.md)。默认发布尚未配置正式 Apple/Windows 代码签名，原生行为仍需在目标系统验证。

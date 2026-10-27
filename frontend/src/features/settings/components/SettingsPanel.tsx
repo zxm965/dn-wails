@@ -49,6 +49,7 @@ export function SettingsPanel() {
     isInstalling,
     progress: updateProgress,
     checkForUpdates,
+    showReleaseNotes,
   } = useAppUpdate()
   const { notify, confirm } = useFeedback()
 
@@ -160,16 +161,24 @@ export function SettingsPanel() {
                   </div>
                 )}
               </div>
-              <Button
-                type='button'
-                variant={updateStatus?.updateAvailable ? 'primary' : 'outline'}
-                disabled={
-                  isUpdateLoading || isChecking || isInstalling || !updateInfo?.configured || !updateInfo.canInstall
-                }
-                onClick={() => void checkForUpdates(true)}
-              >
-                {isInstalling ? '正在安装…' : isChecking ? '正在检查…' : '检查最新版'}
-              </Button>
+              <div className={styles.updateActions}>
+                <Button
+                  type='button'
+                  variant='outline'
+                  disabled={!updateStatus || isChecking || isInstalling}
+                  onClick={showReleaseNotes}
+                >
+                  查看更新日志
+                </Button>
+                <Button
+                  type='button'
+                  variant={updateStatus?.updateAvailable ? 'primary' : 'outline'}
+                  disabled={isUpdateLoading || isChecking || isInstalling || !updateInfo?.configured}
+                  onClick={() => void checkForUpdates(true)}
+                >
+                  {isInstalling ? '正在安装…' : isChecking ? '正在检查…' : '检查最新版'}
+                </Button>
+              </div>
             </div>
           </section>
         </div>

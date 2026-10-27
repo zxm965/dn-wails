@@ -13,6 +13,8 @@
 - `frontend/src/features/settings/context/SettingsProvider.tsx`：将默认尺寸同步到 `html[data-button-size]`。
 - `ControlSize`：供 Select、Input 和 PasswordInput 复用同一组 `sm/md/lg` 尺寸值。
 
+`shared/theme/controlSizes.ts` 维护 sm/md/lg 的高度规则对象；Button、Input 和 Select 各自在同名 `.css.ts` 中生成局部尺寸类，保留独立样式映射及默认尺寸行为。
+
 ## 尺寸契约
 
 ```ts

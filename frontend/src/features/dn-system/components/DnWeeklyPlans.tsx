@@ -1,5 +1,5 @@
-import { Minus, Pencil, Plus, RefreshCw, Search, Sparkles, Trash2 } from 'lucide-react'
-import { type FormEvent, type ReactNode, useCallback, useEffect, useMemo, useState } from 'react'
+import { Minus, Pencil, Plus, RefreshCw, Sparkles, Trash2 } from 'lucide-react'
+import { type FormEvent, useCallback, useEffect, useMemo, useState } from 'react'
 
 import {
   Badge,
@@ -30,10 +30,10 @@ import { QueryFeedback } from '@/shared/components/ui/QueryFeedback'
 import { useFeedback } from '@/shared/feedback'
 import { useRequestGuard } from '@/shared/hooks/useRequestGuard'
 import { createScopedClassNames } from '@/shared/lib/classNames'
+import { getErrorMessage } from '@/shared/lib/errorMessage'
 
 import {
   deleteWeeklyPlan,
-  getErrorMessage,
   initializeWeeklyPlans,
   listRoleOptions,
   listWeeklyPlans,
@@ -46,7 +46,6 @@ import {
 } from '../api/dnSystemApi'
 import {
   MANUAL_WEEKLY_COMMISSION_TOTAL,
-  PROFESSION_OPTIONS,
   linkedCommissionRemaining,
   normalizeRemainingCommissionCount,
   priorityMeta,
@@ -55,6 +54,8 @@ import {
   WEEKLY_FLAGS,
   type WeeklyFlagKey,
 } from '../model/dnSystem'
+import { DnField } from './DnField'
+import { DnFilterBar } from './DnFilterBar'
 import { DnWeeklyPlanSkeleton } from './DnWeeklyPlanSkeleton'
 
 import { styles } from './DnSystem.css'
@@ -274,34 +275,14 @@ export function DnWeeklyPlans({ onNavigateRoles }: { onNavigateRoles: () => void
 
       <Card>
         <CardHeader>
-          <div className={cx('dn-filter-grid dn-weekly-filter-grid')}>
-            <Field label='角色'>
-              <Input
-                value={filters.roleName}
-                placeholder='角色名'
-                onChange={(event) => setFilters((current) => ({ ...current, roleName: event.target.value }))}
-              />
-            </Field>
-            <Field label='职业'>
-              <Select
-                value={filters.profession}
-                options={[
-                  { value: '', label: '全部' },
-                  ...PROFESSION_OPTIONS.map((item) => ({ value: item.label, label: item.label })),
-                ]}
-                onValueChange={(profession) => setFilters((current) => ({ ...current, profession }))}
-              />
-            </Field>
-            <div className={cx('dn-filter-actions')}>
-              <Button variant='secondary' disabled={loading} onClick={applyFilters}>
-                <Search aria-hidden='true' />
-                搜索
-              </Button>
-              <Button variant='outline' onClick={resetFilters}>
-                重置
-              </Button>
-            </div>
-          </div>
+          <DnFilterBar
+            filters={filters}
+            variant='weekly'
+            loading={loading}
+            onChange={(patch) => setFilters((current) => ({ ...current, ...patch }))}
+            onSearch={applyFilters}
+            onReset={resetFilters}
+          />
         </CardHeader>
         <CardContent>
           <QueryFeedback
@@ -368,15 +349,6 @@ export function DnWeeklyPlans({ onNavigateRoles }: { onNavigateRoles: () => void
         onSubmit={submitEditor}
       />
     </div>
-  )
-}
-
-function Field({ label, children }: { label: string; children: ReactNode }) {
-  return (
-    <label className={cx('dn-field')}>
-      <Label>{label}</Label>
-      {children}
-    </label>
   )
 }
 
@@ -571,7 +543,7 @@ function PlanEditor({
             </DialogHeader>
             <DialogBody className={cx('dn-plan-editor')}>
               <div className={cx('dn-form-grid')}>
-                <Field label='角色职业'>
+                <DnField label='角色职业'>
                   <Select
                     value={form.roleProfessionId}
                     options={roles.map((role) => ({
@@ -580,15 +552,15 @@ function PlanEditor({
                     }))}
                     onValueChange={(roleProfessionId) => update('roleProfessionId', roleProfessionId)}
                   />
-                </Field>
-                <Field label='排序'>
+                </DnField>
+                <DnField label='排序'>
                   <Input
                     type='number'
                     min={0}
                     value={form.sortOrder}
                     onChange={(event) => update('sortOrder', Number(event.target.value || 0))}
                   />
-                </Field>
+                </DnField>
               </div>
 
               <section>

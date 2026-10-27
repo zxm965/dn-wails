@@ -1,5 +1,7 @@
 import { globalStyle, keyframes, style, styleVariants } from '@vanilla-extract/css'
 
+import { controlSizeRules } from '@/shared/theme/controlSizes'
+
 const rippleKeyframes = keyframes({
   to: {
     opacity: '0',
@@ -104,20 +106,7 @@ const variants = styleVariants({
   },
 })
 
-const sizes = styleVariants({
-  sm: {
-    height: 'var(--button-height-sm)',
-    minHeight: 'var(--button-height-sm)',
-  },
-  md: {
-    height: 'var(--button-height-md)',
-    minHeight: 'var(--button-height-md)',
-  },
-  lg: {
-    height: 'var(--button-height-lg)',
-    minHeight: 'var(--button-height-lg)',
-  },
-})
+const sizes = styleVariants(controlSizeRules)
 
 const ripple = style({
   position: 'absolute',

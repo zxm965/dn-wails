@@ -39,6 +39,8 @@ Toast 支持 `info`、`success`、`warning`、`error`。`duration: 0` 表示不�
 业务组件 → useFeedback.confirm → Base UI Alert Dialog → Promise<boolean>
 ```
 
+公共错误文本由 `shared/lib/errorMessage.ts` 的 `getErrorMessage(error, fallback)` 提取：非空 `Error.message` 原样显示，其余返回调用方兜底文案。账号、DN、消息、笔记与任务共用该函数；应用更新保留非空字符串错误的专有处理，再委托公共函数处理其他值。此函数不捕获或吞掉 API 错误。
+
 ## 边界
 
 - API 和 Hook 层不得吞掉原始错误；Feedback 只负责用户可见提示。

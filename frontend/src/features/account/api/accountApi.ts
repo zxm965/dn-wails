@@ -80,7 +80,3 @@ export function changePassword(input: PasswordInput): Promise<void> {
 export function importAvatar(path: string): Promise<string> {
   return ImportAvatar(path)
 }
-
-export function getAccountErrorMessage(error: unknown, fallback: string): string {
-  return error instanceof Error && error.message ? error.message : fallback
-}

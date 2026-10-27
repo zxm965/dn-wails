@@ -2,11 +2,13 @@ import { Columns3, Eye, FileText, Pencil, Pin, PinOff, Plus, Save, Search, Trash
 import { useCallback, useEffect, useMemo, useRef, useState, type KeyboardEvent } from 'react'
 
 import { useAccount } from '@/features/account'
+import { MarkdownPreview } from '@/shared/components/markdown-preview'
 import { Button, Input, ListState, PageHeader, Textarea } from '@/shared/components/ui'
 import { QueryFeedback } from '@/shared/components/ui/QueryFeedback'
 import { useFeedback } from '@/shared/feedback'
 import { useRequestGuard } from '@/shared/hooks/useRequestGuard'
 import { createScopedClassNames } from '@/shared/lib/classNames'
+import { getErrorMessage } from '@/shared/lib/errorMessage'
 import { openExternalURL } from '@/shared/native-kit'
 
 import {
@@ -17,7 +19,6 @@ import {
   type QuickNoteInput,
 } from '../api/quickNotesApi'
 import { getNoteSession } from '../lib/noteSessions'
-import { MarkdownPreview } from './MarkdownPreview'
 
 import { styles } from './QuickNotesPanel.css'
 
@@ -48,10 +49,6 @@ function formatUpdatedAt(value: string): string {
     minute: '2-digit',
     hour12: false,
   }).format(date)
-}
-
-function errorMessage(error: unknown, fallback: string): string {
-  return error instanceof Error && error.message ? error.message : fallback
 }
 
 export function QuickNotesPanel() {
@@ -114,7 +111,7 @@ export function QuickNotesPanel() {
       if (selectedIDRef.current === note.id) {
         setSaveStatus('error')
       }
-      notify({ title: '笔记保存失败', message: errorMessage(error, '请稍后重试。'), tone: 'error' })
+      notify({ title: '笔记保存失败', message: getErrorMessage(error, '请稍后重试。'), tone: 'error' })
     }
   }
 
@@ -158,7 +155,7 @@ export function QuickNotesPanel() {
       setNotes((items) => sortNotes([...items, created]))
       activateNote(created, 'edit')
     } catch (error) {
-      notify({ title: '新建笔记失败', message: errorMessage(error, '请稍后重试。'), tone: 'error' })
+      notify({ title: '新建笔记失败', message: getErrorMessage(error, '请稍后重试。'), tone: 'error' })
     } finally {
       setCreating(false)
     }
@@ -183,7 +180,7 @@ export function QuickNotesPanel() {
       activateNote(remaining[0] ?? null)
       notify({ title: '笔记已删除', tone: 'success' })
     } catch (error) {
-      notify({ title: '删除失败', message: errorMessage(error, '请稍后重试。'), tone: 'error' })
+      notify({ title: '删除失败', message: getErrorMessage(error, '请稍后重试。'), tone: 'error' })
     }
   }
 
@@ -203,7 +200,7 @@ export function QuickNotesPanel() {
     try {
       await openExternalURL(url)
     } catch (error) {
-      notify({ title: '链接打开失败', message: errorMessage(error, '请稍后重试。'), tone: 'error' })
+      notify({ title: '链接打开失败', message: getErrorMessage(error, '请稍后重试。'), tone: 'error' })
     }
   }
 
@@ -228,7 +225,7 @@ export function QuickNotesPanel() {
         (selected ? merged.get(selected) : undefined) ?? queue.drafts.values().next().value ?? sorted[0] ?? null
       activateNote(next)
     } catch (error) {
-      if (isCurrent()) setLoadError(errorMessage(error, '快速笔记加载失败。'))
+      if (isCurrent()) setLoadError(getErrorMessage(error, '快速笔记加载失败。'))
     } finally {
       if (isCurrent()) setLoading(false)
     }
@@ -259,7 +256,7 @@ export function QuickNotesPanel() {
         void queue.flush(current).catch((error: unknown) => {
           notify({
             title: '笔记未保存',
-            message: errorMessage(error, '草稿已在本次会话中保留，请返回笔记重试。'),
+            message: getErrorMessage(error, '草稿已在本次会话中保留，请返回笔记重试。'),
             tone: 'error',
           })
         })

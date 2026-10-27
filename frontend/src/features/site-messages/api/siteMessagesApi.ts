@@ -94,10 +94,6 @@ export interface OfficialMessageSyncResult {
   syncedAt: string
 }
 
-export function getErrorMessage(error: unknown, fallback: string): string {
-  return error instanceof Error && error.message ? error.message : fallback
-}
-
 export async function listMessages(query: SiteMessageQuery): Promise<SiteMessageList> {
   return ListSiteMessages(WailsDn.SiteMessageQuery.createFrom(query)) as Promise<SiteMessageList>
 }

@@ -19,6 +19,8 @@ Google 邮件、Calendar、Chat、Docs、Drive 的来源链接、协作分配和
 - `frontend/src/features/tasks/components/TaskReminderMonitor.tsx`：登录期间轮询已到期任务并复用系统通知模块发送提醒。
 - `frontend/src/shared/navigation/`：注册需要登录且默认显示的“任务清单”页面。
 
+连接池配置复用 [PostgreSQL 基础设施](postgres.md)；任务表检查与账号隔离仍由本模块负责。
+
 ## 依赖关系
 
 ```text

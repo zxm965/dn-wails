@@ -1,6 +1,10 @@
 import { globalStyle, style } from '@vanilla-extract/css'
 
 import { styles as buttonStyles } from '../../../shared/components/ui/Button.css'
+import { styles as fieldStyles } from './DnField.css'
+import { styles as filterStyles } from './DnFilterBar.css'
+
+const dnFilterActions = filterStyles.actions
 
 const dnPage = style({
   width: 'min(var(--page-content-max-width), 100%)',
@@ -32,52 +36,6 @@ const dnCardHeaderCopy = style({
   fontSize: 'var(--font-size-secondary)',
 })
 
-const dnFilterGrid = style({
-  display: 'grid',
-  alignItems: 'end',
-  gap: 'calc(12px * var(--layout-spacing))',
-})
-
-const dnRoleFilterGrid = style([
-  {
-    gridTemplateColumns: 'minmax(140px, 1fr) minmax(150px, 1fr) minmax(120px, 0.7fr) auto',
-  },
-  {
-    '@container': {
-      'dn-page (max-width: 880px)': {
-        gridTemplateColumns: 'repeat(2, minmax(0, 1fr))',
-      },
-    },
-  },
-  {
-    '@container': {
-      'dn-page (max-width: 620px)': {
-        gridTemplateColumns: '1fr',
-      },
-    },
-  },
-])
-
-const dnWeeklyFilterGrid = style([
-  {
-    gridTemplateColumns: 'minmax(130px, 1fr) minmax(140px, 1fr) minmax(110px, 0.7fr) auto',
-  },
-  {
-    '@container': {
-      'dn-page (max-width: 880px)': {
-        gridTemplateColumns: 'repeat(2, minmax(0, 1fr))',
-      },
-    },
-  },
-  {
-    '@container': {
-      'dn-page (max-width: 620px)': {
-        gridTemplateColumns: '1fr',
-      },
-    },
-  },
-])
-
 const siteMessageFilters = style([
   {
     display: 'grid',
@@ -89,34 +47,6 @@ const siteMessageFilters = style([
     '@container': {
       'dn-page (max-width: 620px)': {
         gridTemplateColumns: '1fr',
-      },
-    },
-  },
-])
-
-const dnField = style({
-  minWidth: '0',
-  display: 'grid',
-  gap: '7px',
-})
-
-const dnFilterActions = style([
-  {
-    display: 'flex',
-    gap: '8px',
-  },
-  {
-    '@container': {
-      'dn-page (max-width: 880px)': {
-        alignSelf: 'end',
-      },
-    },
-  },
-  {
-    '@container': {
-      'dn-page (max-width: 410px)': {
-        alignItems: 'stretch',
-        flexDirection: 'column',
       },
     },
   },
@@ -687,12 +617,9 @@ export const styles = {
   'dn-page': dnPage,
   'dn-card-heading-row': dnCardHeadingRow,
   'dn-card-header-copy': dnCardHeaderCopy,
-  'dn-filter-grid': dnFilterGrid,
-  'dn-role-filter-grid': dnRoleFilterGrid,
-  'dn-weekly-filter-grid': dnWeeklyFilterGrid,
   'site-message-filters': siteMessageFilters,
-  'dn-field': dnField,
-  'dn-filter-actions': dnFilterActions,
+  'dn-field': fieldStyles.root,
+  'dn-filter-actions': filterStyles.actions,
   'dn-table-wrap': dnTableWrap,
   'dn-table': dnTable,
   'dn-table-remark': dnTableRemark,

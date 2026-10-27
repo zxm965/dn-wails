@@ -41,6 +41,7 @@ import { useFeedback } from '@/shared/feedback'
 import { useSessionScroll } from '@/shared/hooks/useSessionScroll'
 import { useSessionState } from '@/shared/hooks/useSessionState'
 import { createScopedClassNames } from '@/shared/lib/classNames'
+import { getErrorMessage } from '@/shared/lib/errorMessage'
 
 import {
   deleteCompletedTasks,
@@ -111,10 +112,6 @@ function emptyTask(listId: number, parentId = 0): TaskInput {
     starred: false,
     repeat: { ...emptyRepeat },
   }
-}
-
-function errorMessage(error: unknown, fallback: string): string {
-  return error instanceof Error && error.message ? error.message : fallback
 }
 
 function sortTaskItems(items: TaskItem[], mode: SortMode): TaskItem[] {
@@ -219,7 +216,7 @@ export function TasksPanel() {
       })
       setLoadError('')
     } catch (error) {
-      setLoadError(errorMessage(error, '任务加载失败。'))
+      setLoadError(getErrorMessage(error, '任务加载失败。'))
     } finally {
       setLoading(false)
     }
@@ -250,7 +247,7 @@ export function TasksPanel() {
       setWorkspace((current) => ({ ...current, tasks: [...current.tasks, created] }))
       setQuickTitle('')
     } catch (error) {
-      notify({ title: '任务创建失败', message: errorMessage(error, '请稍后重试。'), tone: 'error' })
+      notify({ title: '任务创建失败', message: getErrorMessage(error, '请稍后重试。'), tone: 'error' })
     } finally {
       setWorking(false)
     }
@@ -268,7 +265,7 @@ export function TasksPanel() {
       setPersistedEditorTask(undefined)
       notify({ title: input.id ? '任务已更新' : '任务已添加', tone: 'success' })
     } catch (error) {
-      notify({ title: '任务保存失败', message: errorMessage(error, '请稍后重试。'), tone: 'error' })
+      notify({ title: '任务保存失败', message: getErrorMessage(error, '请稍后重试。'), tone: 'error' })
     } finally {
       setWorking(false)
     }
@@ -280,7 +277,7 @@ export function TasksPanel() {
       setWorkspace(next)
       notify({ title: task.completedAt ? '任务已恢复' : '任务已完成', tone: 'success' })
     } catch (error) {
-      notify({ title: '任务状态更新失败', message: errorMessage(error, '请稍后重试。'), tone: 'error' })
+      notify({ title: '任务状态更新失败', message: getErrorMessage(error, '请稍后重试。'), tone: 'error' })
     }
   }
 
@@ -292,7 +289,7 @@ export function TasksPanel() {
         tasks: current.tasks.map((item) => (item.id === saved.id ? saved : item)),
       }))
     } catch (error) {
-      notify({ title: '星标更新失败', message: errorMessage(error, '请稍后重试。'), tone: 'error' })
+      notify({ title: '星标更新失败', message: getErrorMessage(error, '请稍后重试。'), tone: 'error' })
     }
   }
 
@@ -312,7 +309,7 @@ export function TasksPanel() {
       setPersistedEditorTask(undefined)
       notify({ title: '任务已删除', tone: 'success' })
     } catch (error) {
-      notify({ title: '任务删除失败', message: errorMessage(error, '请稍后重试。'), tone: 'error' })
+      notify({ title: '任务删除失败', message: getErrorMessage(error, '请稍后重试。'), tone: 'error' })
     } finally {
       setWorking(false)
     }
@@ -332,7 +329,7 @@ export function TasksPanel() {
       await load()
       notify({ title: `已删除 ${count} 条已完成任务`, tone: 'success' })
     } catch (error) {
-      notify({ title: '清理失败', message: errorMessage(error, '请稍后重试。'), tone: 'error' })
+      notify({ title: '清理失败', message: getErrorMessage(error, '请稍后重试。'), tone: 'error' })
     }
   }
 
@@ -356,7 +353,7 @@ export function TasksPanel() {
       setSelectedList(saved.id)
       setListDialogOpen(false)
     } catch (error) {
-      notify({ title: '清单保存失败', message: errorMessage(error, '请稍后重试。'), tone: 'error' })
+      notify({ title: '清单保存失败', message: getErrorMessage(error, '请稍后重试。'), tone: 'error' })
     } finally {
       setWorking(false)
     }
@@ -376,7 +373,7 @@ export function TasksPanel() {
       setListDialogOpen(false)
       notify({ title: '清单已删除', tone: 'success' })
     } catch (error) {
-      notify({ title: '清单删除失败', message: errorMessage(error, '请稍后重试。'), tone: 'error' })
+      notify({ title: '清单删除失败', message: getErrorMessage(error, '请稍后重试。'), tone: 'error' })
     }
   }
 
@@ -391,7 +388,7 @@ export function TasksPanel() {
       await reorderTaskLists(next.map((item) => item.id))
     } catch (error) {
       await load()
-      notify({ title: '清单排序失败', message: errorMessage(error, '请稍后重试。'), tone: 'error' })
+      notify({ title: '清单排序失败', message: getErrorMessage(error, '请稍后重试。'), tone: 'error' })
     }
   }
 
@@ -421,7 +418,7 @@ export function TasksPanel() {
       )
       await load()
     } catch (error) {
-      notify({ title: '任务排序失败', message: errorMessage(error, '请稍后重试。'), tone: 'error' })
+      notify({ title: '任务排序失败', message: getErrorMessage(error, '请稍后重试。'), tone: 'error' })
     }
   }
 

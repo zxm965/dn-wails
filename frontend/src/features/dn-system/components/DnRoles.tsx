@@ -1,5 +1,5 @@
-import { Pencil, Plus, RefreshCw, Search, Trash2 } from 'lucide-react'
-import { type FormEvent, type ReactNode, useCallback, useEffect, useState } from 'react'
+import { Pencil, Plus, RefreshCw, Trash2 } from 'lucide-react'
+import { type FormEvent, useCallback, useEffect, useState } from 'react'
 
 import {
   Badge,
@@ -16,7 +16,6 @@ import {
   DialogHeader,
   DialogTitle,
   Input,
-  Label,
   ListState,
   PageHeader,
   Pagination,
@@ -28,10 +27,10 @@ import { QueryFeedback } from '@/shared/components/ui/QueryFeedback'
 import { useFeedback } from '@/shared/feedback'
 import { useRequestGuard } from '@/shared/hooks/useRequestGuard'
 import { createScopedClassNames } from '@/shared/lib/classNames'
+import { getErrorMessage } from '@/shared/lib/errorMessage'
 
 import {
   deleteRole,
-  getErrorMessage,
   listRoles,
   saveRole,
   type ListMeta,
@@ -39,6 +38,8 @@ import {
   type RoleProfessionInput,
 } from '../api/dnSystemApi'
 import { PRIORITY_OPTIONS, PROFESSION_OPTIONS, priorityMeta } from '../model/dnSystem'
+import { DnField } from './DnField'
+import { DnFilterBar } from './DnFilterBar'
 
 import { styles } from './DnSystem.css'
 
@@ -170,37 +171,14 @@ export function DnRoles() {
 
       <Card>
         <CardHeader>
-          <div className={cx('dn-filter-grid dn-role-filter-grid')}>
-            <Field label='角色'>
-              <Input
-                value={filters.roleName}
-                placeholder='角色名'
-                onChange={(event) => setFilters((current) => ({ ...current, roleName: event.target.value }))}
-              />
-            </Field>
-            <Field label='职业'>
-              <Select
-                value={filters.profession}
-                options={[
-                  { value: '', label: '全部' },
-                  ...PROFESSION_OPTIONS.map((item) => ({
-                    value: item.label,
-                    label: `${item.label}（${item.group}）`,
-                  })),
-                ]}
-                onValueChange={(profession) => setFilters((current) => ({ ...current, profession }))}
-              />
-            </Field>
-            <div className={cx('dn-filter-actions')}>
-              <Button variant='secondary' disabled={loading} onClick={applyFilters}>
-                <Search aria-hidden='true' />
-                搜索
-              </Button>
-              <Button variant='outline' onClick={resetFilters}>
-                重置
-              </Button>
-            </div>
-          </div>
+          <DnFilterBar
+            filters={filters}
+            variant='roles'
+            loading={loading}
+            onChange={(patch) => setFilters((current) => ({ ...current, ...patch }))}
+            onSearch={applyFilters}
+            onReset={resetFilters}
+          />
         </CardHeader>
         <CardContent>
           <QueryFeedback
@@ -229,14 +207,14 @@ export function DnRoles() {
               <DialogDescription>角色名在本地工作区内不能重复。</DialogDescription>
             </DialogHeader>
             <DialogBody className={cx('dn-form-grid')}>
-              <Field label='角色名'>
+              <DnField label='角色名'>
                 <Input
                   autoFocus
                   value={form.roleName}
                   onChange={(event) => setForm((current) => ({ ...current, roleName: event.target.value }))}
                 />
-              </Field>
-              <Field label='职业'>
+              </DnField>
+              <DnField label='职业'>
                 <Select
                   value={form.profession}
                   options={[
@@ -248,15 +226,15 @@ export function DnRoles() {
                   ]}
                   onValueChange={(profession) => setForm((current) => ({ ...current, profession }))}
                 />
-              </Field>
-              <Field label='角色权重'>
+              </DnField>
+              <DnField label='角色权重'>
                 <Select
                   value={form.priority}
                   options={PRIORITY_OPTIONS.map((item) => ({ value: item.value, label: item.label }))}
                   onValueChange={(priority) => setForm((current) => ({ ...current, priority }))}
                 />
-              </Field>
-              <Field label='排序'>
+              </DnField>
+              <DnField label='排序'>
                 <Input
                   type='number'
                   min={0}
@@ -265,13 +243,13 @@ export function DnRoles() {
                     setForm((current) => ({ ...current, sortOrder: Number(event.target.value || 0) }))
                   }
                 />
-              </Field>
-              <Field label='备注' className={cx('dn-form-full')}>
+              </DnField>
+              <DnField label='备注' className={cx('dn-form-full')}>
                 <Textarea
                   value={form.remark}
                   onChange={(event) => setForm((current) => ({ ...current, remark: event.target.value }))}
                 />
-              </Field>
+              </DnField>
             </DialogBody>
             <DialogFooter>
               <Button type='button' variant='outline' disabled={saving} onClick={() => setEditorOpen(false)}>
@@ -285,15 +263,6 @@ export function DnRoles() {
         </DialogContent>
       </Dialog>
     </div>
-  )
-}
-
-function Field({ label, className, children }: { label: string; className?: string; children: ReactNode }) {
-  return (
-    <label className={cx(`dn-field${className ? ` ${className}` : ''}`)}>
-      <Label>{label}</Label>
-      {children}
-    </label>
   )
 }
 

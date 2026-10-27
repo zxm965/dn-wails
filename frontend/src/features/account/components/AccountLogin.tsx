@@ -17,8 +17,8 @@ import {
 } from '@/shared/components/ui'
 import { useFeedback } from '@/shared/feedback'
 import { createScopedClassNames } from '@/shared/lib/classNames'
+import { getErrorMessage } from '@/shared/lib/errorMessage'
 
-import { getAccountErrorMessage } from '../api/accountApi'
 import { useAccount } from '../context/AccountProvider'
 
 import { styles } from './AccountLogin.css'
@@ -61,7 +61,7 @@ export function AccountLogin({ onAuthenticated }: { onAuthenticated?: () => void
       notify({ title: '登录成功', tone: 'success' })
       onAuthenticated?.()
     } catch (error) {
-      notify({ title: '登录失败', message: getAccountErrorMessage(error, '请检查账号和密码。'), tone: 'error' })
+      notify({ title: '登录失败', message: getErrorMessage(error, '请检查账号和密码。'), tone: 'error' })
     } finally {
       setBusy(null)
     }
@@ -90,7 +90,7 @@ export function AccountLogin({ onAuthenticated }: { onAuthenticated?: () => void
       notify({ title: '注册成功，已自动登录', tone: 'success' })
       onAuthenticated?.()
     } catch (error) {
-      notify({ title: '注册失败', message: getAccountErrorMessage(error, '请检查注册信息。'), tone: 'error' })
+      notify({ title: '注册失败', message: getErrorMessage(error, '请检查注册信息。'), tone: 'error' })
     } finally {
       setBusy(null)
     }

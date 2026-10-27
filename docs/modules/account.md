@@ -16,6 +16,8 @@
 - `frontend/src/features/account/components/`：登录注册页、个人信息页和标题栏头像入口。
 - `frontend/src/shared/navigation/routeConfig.ts`：声明页面标题、导航类型和 `requiresAuth`。
 
+连接池通过 [PostgreSQL 基础设施](postgres.md) 创建，账号服务继续独立持有、初始化和关闭连接池。
+
 ## 依赖关系
 
 ```text

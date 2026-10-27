@@ -26,6 +26,10 @@ Go 服务通过 `pgxpool` 直连 PostgreSQL；本地构建从 `.env.local` 读�
 - `frontend/src/features/site-messages/`：独立站内消息页面、消息盒子、Provider 和 API 适配，详见[站内消息模块](site-messages.md)。
 - `frontend/src/shared/navigation/menuConfig.ts`：龙之谷父入口、周常/角色/进程三个子菜单和独立站内消息菜单的显隐偏好配置。
 
+连接池配置复用 [PostgreSQL 基础设施](postgres.md)，保留 DN 的独立连接上限。
+
+角色与周常页面共用模块内 `DnFilterBar` 和 `DnField`：筛选输入、搜索/重置与响应式样式集中维护；角色页职业选项保留分组名称，周常页保留简短名称。页面各自持有输入/已应用筛选、分页、加载和错误状态；周常额外的角色 ID 字段通过局部更新保留。
+
 ## 依赖关系
 
 ```text

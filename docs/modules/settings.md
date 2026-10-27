@@ -11,7 +11,7 @@
 - `internal/application/settings.go`：Wails 设置绑定门面。
 - `frontend/src/features/settings/api/`：生成类型转换和 API 封装。
 - `frontend/src/features/settings/context/`：全局设置状态，并将外观设置同步到 DOM。
-- `frontend/src/features/settings/components/SettingsPanel.tsx`：顶部页签设置界面，首次进入“概览”，该页包含精简应用信息、服务状态和应用更新；后续恢复会话内上次分类与滚动位置。
+- `frontend/src/features/settings/components/SettingsPanel.tsx`：顶部页签设置界面，首次进入“概览”，该页包含精简应用信息、服务状态和应用更新（手动检查与最近发布的更新日志查看入口）；后续恢复会话内上次分类与滚动位置。
 - `frontend/src/features/settings/components/MenuPreferences.tsx`、`MenuPreferences.css.ts`：菜单显隐、组内拖动排序、键盘排序与顺序恢复。
 - `frontend/src/features/settings/components/DesktopOverview.tsx`、`DesktopOverview.css.ts`：应用标识、版本、构建平台、Go 版本、生命周期与日志摘要整合为一张卡片，并提供刷新、复制摘要与打开日志入口。
 - `frontend/src/features/settings/components/RuntimeStatusPanel.tsx`、`RuntimeStatusPanel.css.ts`：统一加载运行快照、处理刷新/复制/日志动作，将快照传入 DesktopOverview，下方仅渲染六项服务检查，不重复外观/窗口/通知配置摘要。

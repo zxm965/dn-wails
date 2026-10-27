@@ -107,7 +107,7 @@ func TestServiceTreatsSameOrOlderReleaseAsCurrent(t *testing.T) {
 				UpdateEndpoint: "https://updates.example.com/github/releases",
 				Platform:       "darwin",
 				Arch:           "arm64",
-			}, &sourceStub{release: Release{Version: latest}}, &installerStub{supported: true})
+			}, &sourceStub{release: Release{Version: latest, Notes: "## 更新日志\n\n- 保留已发布版本说明"}}, &installerStub{supported: true})
 
 			status, err := service.Check(context.Background())
 			if err != nil {
@@ -115,6 +115,9 @@ func TestServiceTreatsSameOrOlderReleaseAsCurrent(t *testing.T) {
 			}
 			if status.UpdateAvailable {
 				t.Fatalf("expected %s not to update 1.2.3", latest)
+			}
+			if status.ReleaseNotes != "## 更新日志\n\n- 保留已发布版本说明" {
+				t.Fatalf("release notes missing without an update: %q", status.ReleaseNotes)
 			}
 		})
 	}

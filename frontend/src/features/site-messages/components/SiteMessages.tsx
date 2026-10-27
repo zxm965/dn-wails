@@ -40,12 +40,12 @@ import { QueryFeedback } from '@/shared/components/ui/QueryFeedback'
 import { useFeedback } from '@/shared/feedback'
 import { useRequestGuard } from '@/shared/hooks/useRequestGuard'
 import { createScopedClassNames } from '@/shared/lib/classNames'
+import { getErrorMessage } from '@/shared/lib/errorMessage'
 import { openExternalURL } from '@/shared/native-kit'
 import { getAppViewFromPath, type AppView } from '@/shared/navigation'
 
 import {
   deleteMessage,
-  getErrorMessage,
   listMessages,
   publishMessage,
   syncOfficialMessages,

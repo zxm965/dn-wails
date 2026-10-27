@@ -5,9 +5,10 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
-	"strings"
 	"sync"
 	"time"
+
+	"cull-pear/internal/platform/postgres"
 
 	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -27,17 +28,9 @@ type PostgresService struct {
 }
 
 func NewPostgresService(databaseURL string, identity UserIdentity) (*PostgresService, error) {
-	config, err := pgxpool.ParseConfig(strings.TrimSpace(databaseURL))
+	pool, err := postgres.NewPool(databaseURL, "DN", 4)
 	if err != nil {
-		return nil, fmt.Errorf("parse DN database connection: %w", err)
-	}
-	config.MaxConns = 4
-	config.MinConns = 0
-	config.MaxConnIdleTime = 5 * time.Minute
-	config.MaxConnLifetime = 30 * time.Minute
-	pool, err := pgxpool.NewWithConfig(context.Background(), config)
-	if err != nil {
-		return nil, fmt.Errorf("create DN database pool: %w", err)
+		return nil, err
 	}
 	return &PostgresService{
 		pool:       pool,

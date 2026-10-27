@@ -2,6 +2,8 @@ import { Events } from '@wailsio/runtime'
 import { createContext, type ReactNode, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react'
 
 import { useFeedback } from '@/shared/feedback'
+import { getErrorMessage } from '@/shared/lib/errorMessage'
+import { openExternalURL } from '@/shared/native-kit'
 
 import {
   checkForApplicationUpdate,
@@ -11,6 +13,7 @@ import {
   type ApplicationUpdateProgress,
   type ApplicationUpdateStatus,
 } from '../api/appUpdateApi'
+import { UpdateReleaseDialog } from '../components/UpdateReleaseDialog'
 
 interface AppUpdateContextValue {
   info: ApplicationUpdateInfo | null
@@ -20,15 +23,15 @@ interface AppUpdateContextValue {
   isChecking: boolean
   isInstalling: boolean
   progress: ApplicationUpdateProgress | null
+  showReleaseNotes: () => void
   checkForUpdates: (manual?: boolean) => Promise<ApplicationUpdateStatus | null>
 }
 
 const AppUpdateContext = createContext<AppUpdateContextValue | null>(null)
 
 function errorMessage(error: unknown, fallback: string): string {
-  if (error instanceof Error && error.message) return error.message
   if (typeof error === 'string' && error.trim()) return error
-  return fallback
+  return getErrorMessage(error, fallback)
 }
 
 function isApplicationUpdateProgress(value: unknown): value is ApplicationUpdateProgress {
@@ -44,7 +47,7 @@ function isApplicationUpdateProgress(value: unknown): value is ApplicationUpdate
 }
 
 export function AppUpdateProvider({ children }: { children: ReactNode }) {
-  const { confirm, notify } = useFeedback()
+  const { notify } = useFeedback()
   const [info, setInfo] = useState<ApplicationUpdateInfo | null>(null)
   const [status, setStatus] = useState<ApplicationUpdateStatus | null>(null)
   const [error, setError] = useState('')
@@ -52,11 +55,47 @@ export function AppUpdateProvider({ children }: { children: ReactNode }) {
   const [isChecking, setIsChecking] = useState(false)
   const [isInstalling, setIsInstalling] = useState(false)
   const [progress, setProgress] = useState<ApplicationUpdateProgress | null>(null)
+  const [dialog, setDialog] = useState<{ status: ApplicationUpdateStatus; confirmUpdate: boolean } | null>(null)
+  const decisionRef = useRef<((accepted: boolean) => void) | null>(null)
+  const mountedRef = useRef(true)
+  const manualCheckRequestedRef = useRef(false)
   const autoCheckStartedRef = useRef(false)
   const operationRef = useRef<Promise<ApplicationUpdateStatus | null> | null>(null)
 
+  const finishDialog = useCallback((accepted: boolean) => {
+    setDialog(null)
+    const resolve = decisionRef.current
+    decisionRef.current = null
+    resolve?.(accepted)
+  }, [])
+
+  const showReleaseNotes = useCallback(() => {
+    if (status && !operationRef.current && !isInstalling) {
+      setDialog({ status, confirmUpdate: false })
+    }
+  }, [isInstalling, status])
+
+  const openReleaseLink = useCallback(
+    (url: string) => {
+      void openExternalURL(url).catch((linkError: unknown) => {
+        notify({ title: '链接打开失败', message: errorMessage(linkError, '请稍后重试。'), tone: 'error' })
+      })
+    },
+    [notify],
+  )
+
+  useEffect(() => {
+    mountedRef.current = true
+    return () => {
+      mountedRef.current = false
+      decisionRef.current?.(false)
+      decisionRef.current = null
+    }
+  }, [])
+
   const checkForUpdates = useCallback(
     (manual = true) => {
+      if (manual) manualCheckRequestedRef.current = true
       if (operationRef.current) return operationRef.current
 
       const operation = (async () => {
@@ -64,23 +103,17 @@ export function AppUpdateProvider({ children }: { children: ReactNode }) {
         setError('')
         try {
           const nextStatus = await checkForApplicationUpdate()
+          if (!mountedRef.current) return null
           setStatus(nextStatus)
+          setIsChecking(false)
           if (!nextStatus.updateAvailable) {
-            if (manual) {
-              notify({
-                title: '当前已是最新版',
-                message: `当前版本 ${nextStatus.currentVersion}`,
-                tone: 'success',
-              })
-            }
+            if (manualCheckRequestedRef.current) setDialog({ status: nextStatus, confirmUpdate: false })
             return nextStatus
           }
 
-          const accepted = await confirm({
-            title: `发现新版本 ${nextStatus.latestVersion}`,
-            message: `当前版本为 ${nextStatus.currentVersion}。是否立即下载并安装新版本？下载完成后应用将自动安装更新并重启。`,
-            confirmLabel: '立即更新',
-            cancelLabel: '稍后再说',
+          const accepted = await new Promise<boolean>((resolve) => {
+            decisionRef.current = resolve
+            setDialog({ status: nextStatus, confirmUpdate: true })
           })
           if (!accepted) return nextStatus
 
@@ -116,22 +149,24 @@ export function AppUpdateProvider({ children }: { children: ReactNode }) {
           }
           return nextStatus
         } catch (checkError: unknown) {
+          if (!mountedRef.current) return null
           const message = errorMessage(checkError, '检查应用更新失败。')
           setError(message)
-          if (manual) {
+          if (manualCheckRequestedRef.current) {
             notify({ title: '检查更新失败', message, tone: 'error' })
           }
           return null
         } finally {
-          setIsChecking(false)
+          if (mountedRef.current) setIsChecking(false)
           operationRef.current = null
+          manualCheckRequestedRef.current = false
         }
       })()
 
       operationRef.current = operation
       return operation
     },
-    [confirm, notify],
+    [notify],
   )
 
   useEffect(() => {
@@ -168,11 +203,24 @@ export function AppUpdateProvider({ children }: { children: ReactNode }) {
   }, [])
 
   const value = useMemo<AppUpdateContextValue>(
-    () => ({ info, status, error, isLoading, isChecking, isInstalling, progress, checkForUpdates }),
-    [checkForUpdates, error, info, isChecking, isInstalling, isLoading, progress, status],
+    () => ({ info, status, error, isLoading, isChecking, isInstalling, progress, checkForUpdates, showReleaseNotes }),
+    [checkForUpdates, error, info, isChecking, isInstalling, isLoading, progress, status, showReleaseNotes],
   )
 
-  return <AppUpdateContext.Provider value={value}>{children}</AppUpdateContext.Provider>
+  return (
+    <AppUpdateContext.Provider value={value}>
+      {children}
+      {dialog && (
+        <UpdateReleaseDialog
+          status={dialog.status}
+          confirmUpdate={dialog.confirmUpdate}
+          canInstall={info?.canInstall ?? false}
+          onDecision={finishDialog}
+          onOpenLink={openReleaseLink}
+        />
+      )}
+    </AppUpdateContext.Provider>
+  )
 }
 
 export function useAppUpdate(): AppUpdateContextValue {

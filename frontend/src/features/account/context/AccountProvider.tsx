@@ -1,7 +1,8 @@
 import { createContext, type ReactNode, useCallback, useContext, useEffect, useMemo, useState } from 'react'
 
+import { getErrorMessage } from '@/shared/lib/errorMessage'
+
 import {
-  getAccountErrorMessage,
   getAuthState,
   loginUser,
   logoutUser,
@@ -38,7 +39,7 @@ export function AccountProvider({ children }: { children: ReactNode }) {
       return nextUser
     } catch (error) {
       setUserState(null)
-      setErrorMessage(getAccountErrorMessage(error, '账号服务当前不可用，请稍后重试。'))
+      setErrorMessage(getErrorMessage(error, '账号服务当前不可用，请稍后重试。'))
       throw error
     }
   }, [])

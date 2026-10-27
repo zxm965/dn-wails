@@ -101,10 +101,6 @@ export interface WeeklyPlanSyncResult {
   total: number
 }
 
-export function getErrorMessage(error: unknown, fallback: string): string {
-  return error instanceof Error && error.message ? error.message : fallback
-}
-
 export async function listRoles(query: RoleProfessionQuery): Promise<ListData<RoleProfession>> {
   return ListDnRoles(WailsDn.RoleProfessionQuery.createFrom(query))
 }

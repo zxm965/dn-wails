@@ -19,7 +19,11 @@
 - `internal/platform/appupdate/update_result.go`：读取持久更新结果，将失败或中断原因通过版本信息返回，供下次启动展示。
 - `internal/platform/appupdate/windows_update_integration_test.go`：通过隔离的临时程序验证更新交接；启动测试程序遇到 Linux 并发执行时的 `ETXTBSY` 会在两秒内重试，其他启动错误立即返回，不改变生产更新行为。
 - `internal/application/update.go`：向前端暴露版本信息、检查和安装三个 Wails 用例，并转发下载进度事件。
-- `frontend/src/features/app-update/`：根级更新状态、启动自动检查、确认弹窗、下载进度和错误反馈。
+- `frontend/src/features/app-update/context/AppUpdateProvider.tsx`：根级更新状态、启动自动检查、更新确认、日志查看、下载进度和错误反馈。
+- `frontend/src/features/app-update/components/UpdateReleaseDialog.tsx`：显示版本、发布时间与 Markdown 日志，区分更新确认和只读查看。
+- `frontend/src/shared/components/markdown-preview/`：与快速笔记共用的安全 Markdown 展示，不执行原始 HTML。
+- `CHANGELOG.md`：按版本维护最终有效更新内容；未发布内容放在 `[Unreleased]`。
+- `scripts/generate-release-notes.mjs`：提取指定稳定版本的唯一非空日志，供质量检查和 Release 发布使用。
 - `frontend/src/features/settings/components/DesktopOverview.tsx`：展示当前版本，不展示更新源地址等发布配置。
 - `frontend/src/features/settings/components/SettingsPanel.tsx`：在设置“概览”页签展示更新状态和手动检查按钮。
 - `.github/workflows/release.yml`：标签触发或按已有标签手动触发的双平台质量检查、构建以及 GitHub Release 发布。
@@ -57,7 +61,7 @@ React AppUpdateProvider
 5. macOS 使用 `wails3 task darwin:package:universal` 构建名为 `Cull Pear.app` 的 universal 应用包，再生成 `cull-pear-*` 发布 ZIP 和供当前客户端自动更新、手动安装的 DMG。
 6. Windows runner 安装 NSIS 后使用 `wails3 task windows:package ARCH=amd64 INSTALL_SCOPE=user` 构建用户级安装器；任务通过 `build/windows/nsis/compile.ps1` 显式调用 `makensis` 并验证安装器已生成。发布同时保留纯应用 `cull-pear-windows-amd64.exe`，供人工诊断或直接运行；自动更新仍只选择 NSIS 安装器。
 7. 两端资源成功后为所有发布文件计算大小与 SHA-256，并生成 GitHub Release 对应的附加元数据和 `SHA256SUMS.txt`。
-8. 创建或更新 GitHub Release，并上传应用安装资源和校验文件；客户端通过转发接口读取 GitHub Release JSON。
+8. 从 `CHANGELOG.md` 提取当前标签对应日志并写入 GitHub Release 正文，再上传应用安装资源和校验文件；客户端通过转发接口读取正文。
 
 ### 检查与安装
 
@@ -66,7 +70,7 @@ React AppUpdateProvider
 3. HTTP 客户端将配置的 `update_endpoint` 规范化为 `/latest`，读取 GitHub Release JSON。
 4. 更新源校验仓库标识、版本号、Release URL、资源名称、大小和 SHA-256；客户端忽略 `browser_download_url`，按 Release 标签和资源名称将下载地址拼接为 `update_endpoint` 对应的 `/download?version=...&filename=...`。
 5. 业务服务比较 `MAJOR.MINOR.PATCH`，只在远端版本更高时返回可更新状态。
-6. 自动检查和手动检查发现新版后都通过统一确认窗口询问用户，只有用户确认后才下载和安装。
+6. 自动检查和手动检查发现新版后都打开带版本日志的专用确认窗口，只有点击“立即更新”才下载和安装；关闭、Escape 或“稍后再说”均不安装。手动检查没有新版时打开只读日志，自动检查没有新版时保持安静。设置页可再次查看最近成功检查的日志。
 7. 用户确认后重新读取 Release 元数据，确保确认期间版本未发生变化。
 8. 当前客户端按平台精确选择 DMG 或 NSIS 安装器，由 Go HTTP 客户端携带安装 ID、当前版本和平台 User-Agent 请求下载；下载后校验 Release 元数据声明的字节数和 SHA-256。Windows 还必须在下载前取得同一 Release 中纯应用 EXE 的 SHA-256，作为安装后校验依据，缺少该资源或摘要时保留应用并拒绝更新。
 9. 校验成功后启动平台更新助手；macOS 挂载 DMG 并在当前应用退出后替换 `.app`。Windows 将版本、原 EXE 路径、固定目标 `cull-pear.exe`、安装器及目标 EXE 摘要写入临时 JSON 配置，避免路径通过脚本文本插值。Go 同时捕获 PowerShell 的标准输出与标准错误，涵盖脚本加载前的失败。
@@ -77,6 +81,15 @@ React AppUpdateProvider
 14. 日志保存在 `%APPDATA%\cull-pear\update-logs\`，最近结果保存在 `%APPDATA%\cull-pear\update-result.json`，包含 `status`、`version`、`message`、`logPath`。启动时 `Info.lastUpdateError` 返回失败或中断说明；前端保留设置页错误并提示，暂停本次启动的自动更新，用户仍可手动重试。成功结果不产生错误。
 
 安装开始后，下载器按实际读取字节数回调进度。`internal/appupdate.Service` 将进度归一化为版本、阶段、已下载字节、总字节和百分比，`internal/application.App` 通过 `app-update:progress` 事件转发给前端。`AppUpdateProvider` 负责订阅并清理事件，设置页展示下载进度；确认弹窗、准备完成提示和设置页统一说明应用将自动安装更新并重启，macOS 保留原有自动重启流程。
+
+### 更新日志
+
+- `CHANGELOG.md` 对应版本章节 → GitHub Release `body` → `/latest` → `Release.Notes` → `Status.releaseNotes` → 前端 API → 更新弹窗；Go DTO 和绑定保持不变。
+- 发布前按 `AGENTS.md` 将当前有效内容从 `[Unreleased]` 归档为目标版本；日志缺失、重复或为空时生成脚本报错并阻止新版本发布。已有 Release 重发时同步正文；没有日志文件的历史标签保持原有发布行为。
+- 日志支持已有 Markdown 组件的标题、列表、强调、代码块和链接；HTML 作为文本处理，危险链接不生成可点击地址，外部链接经 Native Kit 打开且失败有提示。
+- 长日志在弹窗正文内滚动，操作区保持可见；无正文明确提示“此版本暂未提供更新日志”，不伪造说明。
+- “查看更新日志”展示最近成功检查的最新发布版本，不提供历史版本列表；首次尚无检查结果时禁用。检查失败保留上次可读日志，开发构建仍不请求更新。
+- 检查与安装继续合并并发操作；查看日志不会安装。更新确认等待期间可关闭，卸载 Provider 时释放待处理确认。
 
 ### 开源实现参考
 
@@ -171,6 +184,8 @@ interface GitHubReleaseEndpoint {
 - GitHub Secret 只能保护构建前和构建过程中的值；发布后的桌面二进制可被分析，因此数据库账号必须最小权限、限制来源并支持轮换。
 - 当前工作流只做 macOS ad-hoc 签名，Windows 也未配置 Authenticode。正式外部分发前需要配置 Apple Developer ID/公证和 Windows 代码签名，否则系统可能显示来源或信誉警告。
 
+Release 工作流用 YAML 锚点复用 quality/build 的工具初始化与冻结安装步骤；Node.js 版本集中在工作流环境变量中，pnpm 版本读取 `frontend/package.json`，Wails CLI 版本通过 `go list -m` 读取当前检出代码的 `go.mod`。初始化不依赖新建的本地 Action，保留对旧标签重新发布的支持。
+
 ## 接入与发布
 
 默认更新源使用数据库记录 `app_code = cull-pear`、`update_endpoint = https://nexus.i96.me/github/releases`、`expected_repository = zxm965/dn-wails`；数据库不可用时使用 `internal/buildinfo` 中的仓库与端点兜底。GitHub 仓库需要启用 Actions，并授予 Release 工作流 `contents: write` 权限。发布流程不再同步 Gitee Release，也不需要 `GITEE_TOKEN`。Build 与 Release job 使用 GitHub Environment `RELEASE`，其中 build job 还需要 `DATABASE_URL` Secret。构建使用锁定的 Wails v3 CLI，并重新生成 bindings。
@@ -190,6 +205,7 @@ git push origin v1.0.0
 ```bash
 go test ./internal/appupdate ./internal/platform/appupdate ./internal/application
 go test ./...
+node --test scripts/tests/release-notes.test.mjs
 cd frontend
 pnpm fmt:check
 pnpm lint

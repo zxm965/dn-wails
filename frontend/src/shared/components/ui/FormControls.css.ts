@@ -1,5 +1,7 @@
 import { globalStyle, style, styleVariants } from '@vanilla-extract/css'
 
+import { controlSizeRules } from '@/shared/theme/controlSizes'
+
 const uiLabel = style({
   display: 'inline-flex',
   alignItems: 'center',
@@ -34,20 +36,7 @@ const uiInput = style({
   },
 })
 
-const sizes = styleVariants({
-  sm: {
-    height: 'var(--button-height-sm)',
-    minHeight: 'var(--button-height-sm)',
-  },
-  md: {
-    height: 'var(--button-height-md)',
-    minHeight: 'var(--button-height-md)',
-  },
-  lg: {
-    height: 'var(--button-height-lg)',
-    minHeight: 'var(--button-height-lg)',
-  },
-})
+const sizes = styleVariants(controlSizeRules)
 
 const uiPasswordInput = style({
   position: 'relative',

@@ -10,7 +10,7 @@
 
 发布仅维护 macOS（universal）与 Windows（amd64）桌面端；构建入口固定使用 pnpm。macOS 在 macOS 主机构建，Windows 使用纯 Go 构建并可交叉编译；不维护 Linux、移动端、服务端或 Docker 构建模板。非目标平台的 Go 不可用适配仍用于明确降级与包级检查。
 
-依赖基线（2026-10-20）：Wails Go 模块、前端 runtime 和 CI CLI 统一为 `v3.0.0-beta.33`；lucide-react 更新为 `1.59.0`；pnpm 使用 `frontend/package.json` 的 `packageManager` 版本 `12.14.0`，CI 从同一文件读取。前后端已声明依赖更新至本次核对的最新发布版本，TypeScript 按要求保留 `7.0.2`；依赖解析结果分别由 `pnpm-lock.yaml` 与 `go.sum` 记录。
+依赖基线（2026-10-27）：Wails Go 模块、前端 runtime 和 CI CLI 统一为正式版 `v3.0.0`；Go 工具链使用 `1.26.10`（保持 macOS 12 兼容，最低语言版本仍为 `1.26.0`），CI Node.js 使用 `26.12.1`。lucide-react、React Router、Vite、oxfmt 和 oxlint 分别更新为 `1.61.0`、`8.5.0`、`8.3.5`、`0.74.0` 和 `1.89.0`；其余前后端已声明依赖经核对保持最新稳定版本（含 TypeScript `7.0.2`）。pnpm 使用 `frontend/package.json` 的 `packageManager` 版本 `12.15.0`，CI 从同一文件读取；依赖解析结果分别由 `pnpm-lock.yaml` 与 `go.sum` 记录。
 
 ## 后端依赖方向
 
@@ -113,24 +113,12 @@ app
 
 约定：
 
-- `app` 负责应用壳、全局样式与顶层模块装配。
-- `AppProviders` 集中组合顶层依赖；外观同步归入 `SettingsProvider`，Toast 和确认框归入单个 `InteractionProvider`；表单与详情弹窗由业务组件直接组合受控 `Dialog`。账号、应用更新和路由因职责与依赖不同继续保持独立。
-- Vite 通过 `@vanilla-extract/vite-plugin` 在构建期提取静态 CSS；源码不保留普通 `.css` 文件。
-- 全局字体、重置和主题令牌集中在 `app/styles/*.css.ts`；组件和页面使用就近共置的同名 `.css.ts`。
-- 组件局部规则优先使用 `style`，仅全局根节点、第三方状态和必要的复杂关系使用 `globalStyle`；共享 UI 不使用集中式 `ui.css.ts`。
-- 桌面应用壳采用“顶部标题栏 + 左侧菜单 + 右侧视图区域”的固定布局，只有系统设置入口显示分组标题。
-- 前端使用 React Router 8 的 `HashRouter` 管理页面地址，避免桌面 WebView 刷新时依赖服务端路径回退。左侧菜单由 `shared/navigation/menuConfig.ts` 统一维护唯一 key、可选分组、页面、图标和默认显隐；`routeConfig.ts` 统一维护路径、页面标题、导航类型和 `requiresAuth`。侧栏渲染、偏好设置、启动页选择和应用壳路由守卫共同读取共享导航配置，并通过 `getOrderedMenuGroups` 应用持久化的分组内菜单顺序。日历位于首位并作为默认入口；日历、笔记、任务和消息默认显示，龙之谷与实验室默认隐藏，设置始终可见；进入实验室后固定提供文本工具与桌面实验室，桌面验证不再使用独立子偏好。菜单文字左对齐，名称变更不修改路由路径或持久化 key。
-- `AccountProvider` 在应用根部恢复本地会话；需要登录的页面由 `App.tsx` 根据路由元数据统一保护，业务功能不自行实现登录状态管理。
-- 主要视图统一使用共享 `PageHeader`，保持紧凑渐变页头、标题基线、说明文字和操作区响应式行为一致。
-- 设置使用“概览 / 外观 / 菜单 / 通知 / 窗口”顶部单行页签，默认进入概览；概览汇总应用快照、运行状态与版本更新，运行诊断沿用 shared/diagnostics 和原有 Wails 门面。实验室保留文本工具和可选桌面验证，两页共用 PageTabs。
-- 所有页面必须支持响应式布局；页面优先基于右侧内容区域使用 Container Queries，避免侧边栏宽度导致视口媒体查询失真。
-- 页面主体统一使用 `--page-content-max-width` 控制最大宽度，并复用全局间距变量，确保菜单切换时左右基线稳定；同时至少覆盖常规桌面宽度、`1024 × 768` 最小窗口和极窄内容宽度。
-- 应用内按钮统一使用 `Button`，尺寸限定为 `sm=28px`、`md=32px`、`lg=36px`；普通操作跟随偏好设置中的默认尺寸（默认 `md`），结构性或固定语义按钮显式指定尺寸，业务模块不得自行定义其他按钮高度。
-- Dialog、Alert Dialog、Toast、Card、表单控件、Tabs、Progress、Avatar、分页和空状态统一从 `shared/components/ui` 使用；共享 UI 只依赖主题令牌和通用基础设施，不依赖业务模块。
-- `features/<feature>` 拥有该功能的请求适配、状态和 UI；跨功能引用应通过模块的 `index.ts`。
-- `shared` 只放无业务归属、可稳定复用的组件与工具，禁止反向依赖 `features`。
-- `frontend/bindings` 是 Wails v3 生成目录；业务代码通过功能模块下的 `api` 文件引用它。
-- `@/` 指向 `frontend/src`，`@bindings/` 指向 `frontend/bindings`。
+- `app` 负责应用壳和顶层 Provider 装配；`features/<feature>` 拥有业务 API、状态和 UI；`shared` 提供无业务归属的基础设施，不反向依赖功能模块。
+- 跨功能引用通过模块 `index.ts`；生成绑定只由 API 层访问。`@/` 指向 `frontend/src`，`@bindings/` 指向 `frontend/bindings`。
+- 样式由 vanilla-extract 在构建期提取；全局主题放在 `app/styles`，组件样式就近共置。具体编码与响应式约束见 [AGENTS.md](../AGENTS.md)，控件契约见[通用 UI](modules/ui-components.md)和[按钮尺寸](modules/button-system.md)。
+- 应用壳、菜单、路由与登录守卫见[桌面应用壳](modules/desktop-shell.md)；设置页与偏好持久化见[设置中心](modules/settings.md)。
+- 通知与确认通过统一 Interaction Provider；公共错误消息提取规则见[应用内反馈](modules/feedback.md)。
+- 数据库适配共享连接池创建配置，但由各业务服务独立持有和关闭，见 [PostgreSQL 基础设施](modules/postgres.md)。
 
 ## 新增功能流程
 
@@ -164,6 +152,7 @@ app
 - [系统通知](modules/system-notification.md)
 - [设置中心](modules/settings.md)
 - [本地存储](modules/storage.md)
+- [PostgreSQL 基础设施](modules/postgres.md)
 - [应用内反馈](modules/feedback.md)
 - [Native Kit](modules/native-kit.md)
 - [日志与诊断](modules/diagnostics.md)
