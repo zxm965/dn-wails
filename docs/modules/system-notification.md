@@ -123,3 +123,9 @@ cd frontend && pnpm build
 ```
 
 权限弹窗、系统通知外观和点击唤醒需要人工桌面验证。
+
+## React 回调与生命周期
+
+通知能力在挂载时检查一次；原生激活监听也仅订阅一次，通过 Effect Event 读取最新 `onActivated`，回调身份变化不重建监听。发送和授权操作保持普通函数，卸载时取消激活订阅。
+
+回归检查：`cd frontend && node --test tests/*.test.mjs`；这些模拟与构建检查不替代原生桌面交互验证。

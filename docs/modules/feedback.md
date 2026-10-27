@@ -53,6 +53,8 @@ Toast 支持 `info`、`success`、`warning`、`error`。`duration: 0` 表示不�
 
 ## 验证
 
+`InteractionProvider` 的确认、通知、关闭回调与 Context 值由 React Compiler 自动缓存，不再手写 `useCallback` / `useMemo`；确认 Promise 的替换、完成和卸载清理行为保持不变。编译接入回归：`cd frontend && node --test tests/reactCompiler.test.mjs`。
+
 ```bash
 cd frontend
 pnpm fmt:check

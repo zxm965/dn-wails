@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useEffect, useEffectEvent, useRef, useState } from 'react'
 
 import { isWindows } from '@/shared/lib/platform'
 
@@ -24,24 +24,25 @@ export function useDnShortcut(): DnShortcutState {
   const [retrying, setRetrying] = useState(false)
   const mounted = useRef(false)
   const retryInFlight = useRef(false)
-  const accept = useCallback((next: DnShortcutStatus) => {
+  const accept = (next: DnShortcutStatus) => {
     if (!mounted.current) return
     setState((previous) => (!previous || next.revision >= previous.revision ? next : previous))
     setError('')
-  }, [])
+  }
+  const onStatusReceived = useEffectEvent(accept)
   useEffect(() => {
     mounted.current = true
     let disposed = false
     let request = 0
     const unsubscribe = onDragonNestShortcutChanged((next) => {
       request++
-      accept(next)
+      onStatusReceived(next)
     })
     const refresh = () => {
       const current = ++request
       void getDragonNestShortcutStatus().then(
         (next) => {
-          if (!disposed && current === request) accept(next)
+          if (!disposed && current === request) onStatusReceived(next)
         },
         (failure: unknown) => {
           if (!disposed && current === request) setError(getProcessErrorMessage(failure, '无法读取快捷键状态'))
@@ -56,8 +57,8 @@ export function useDnShortcut(): DnShortcutState {
       unsubscribe()
       window.removeEventListener('focus', refresh)
     }
-  }, [accept])
-  const retry = useCallback(async () => {
+  }, [])
+  const retry = async () => {
     if (retryInFlight.current) return
     retryInFlight.current = true
     setRetrying(true)
@@ -69,7 +70,7 @@ export function useDnShortcut(): DnShortcutState {
       retryInFlight.current = false
       if (mounted.current) setRetrying(false)
     }
-  }, [accept])
+  }
 
   const source = state?.gameMode && isWindows() ? '游戏兼容 · Raw Input' : '标准全局'
   const summary = error

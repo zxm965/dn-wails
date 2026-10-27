@@ -1,5 +1,5 @@
 import { Pencil, Plus, RefreshCw, Trash2 } from 'lucide-react'
-import { type FormEvent, useCallback, useEffect, useState } from 'react'
+import { type FormEvent, useEffect, useEffectEvent, useState } from 'react'
 
 import {
   Badge,
@@ -63,29 +63,27 @@ export function DnRoles() {
   const [editorOpen, setEditorOpen] = useState(false)
   const [form, setForm] = useState<RoleProfessionInput>(emptyForm)
 
-  const load = useCallback(
-    async (page: number) => {
-      const isCurrent = beginRequest()
-      setRequestedPage(page)
-      setLoadError('')
-      setLoading(true)
-      try {
-        const data = await listRoles({ ...appliedFilters, page, pageSize: 15 })
-        if (!isCurrent()) return
-        setItems(data.items)
-        setMeta(data.meta)
-      } catch (error) {
-        if (isCurrent()) setLoadError(getErrorMessage(error, '角色加载失败，请重试。'))
-      } finally {
-        if (isCurrent()) setLoading(false)
-      }
-    },
-    [appliedFilters, beginRequest],
-  )
+  const load = async (page: number) => {
+    const isCurrent = beginRequest()
+    setRequestedPage(page)
+    setLoadError('')
+    setLoading(true)
+    try {
+      const data = await listRoles({ ...appliedFilters, page, pageSize: 15 })
+      if (!isCurrent()) return
+      setItems(data.items)
+      setMeta(data.meta)
+    } catch (error) {
+      if (isCurrent()) setLoadError(getErrorMessage(error, '角色加载失败，请重试。'))
+    } finally {
+      if (isCurrent()) setLoading(false)
+    }
+  }
 
+  const onFiltersChanged = useEffectEvent(load)
   useEffect(() => {
-    void load(1)
-  }, [load])
+    void onFiltersChanged(1)
+  }, [appliedFilters])
 
   function openCreate() {
     setForm({ ...emptyForm })

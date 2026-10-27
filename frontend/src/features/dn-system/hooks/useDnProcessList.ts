@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useEffect, useEffectEvent, useRef, useState } from 'react'
 
 import {
   PROCESS_CONTROL_SUPPORTED,
@@ -27,7 +27,7 @@ export function useDnProcessList(): DnProcessList {
   const active = useRef(false)
   const cancelWait = useRef<(() => void) | null>(null)
 
-  const scan = useCallback(async (waitForProcess: boolean): Promise<boolean> => {
+  const scan = async (waitForProcess: boolean): Promise<boolean> => {
     if (!active.current || !PROCESS_CONTROL_SUPPORTED) return false
     cancelWait.current?.()
     const request = ++requestId.current
@@ -66,16 +66,17 @@ export function useDnProcessList(): DnProcessList {
       if (request === requestId.current) setScanning(false)
     }
     return false
-  }, [])
+  }
 
-  const refresh = useCallback(async () => {
+  const refresh = async () => {
     await scan(false)
-  }, [scan])
+  }
+  const onScan = useEffectEvent(scan)
   useEffect(() => {
     active.current = true
-    const unsubscribe = onDragonNestProcessesChanged((waitForProcess) => void scan(waitForProcess))
-    const onFocus = () => void scan(false)
-    void scan(false)
+    const unsubscribe = onDragonNestProcessesChanged((waitForProcess) => void onScan(waitForProcess))
+    const onFocus = () => void onScan(false)
+    void onScan(false)
     window.addEventListener('focus', onFocus)
     return () => {
       active.current = false
@@ -84,7 +85,7 @@ export function useDnProcessList(): DnProcessList {
       unsubscribe()
       window.removeEventListener('focus', onFocus)
     }
-  }, [scan])
+  }, [])
 
   return { items, scanning, error, scanned, scannedAt, refresh }
 }

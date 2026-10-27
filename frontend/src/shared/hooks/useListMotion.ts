@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useLayoutEffect, useRef, type RefObject } from 'react'
+import { useEffect, useEffectEvent, useLayoutEffect, useRef, type RefObject } from 'react'
 
 interface Position {
   x: number
@@ -18,7 +18,7 @@ export function useListMotion(order: string, dropOrigin?: RefObject<ListMotionOr
   const animations = useRef(new Map<HTMLElement, Animation>())
 
   const lastOrder = useRef(order)
-  const capture = useCallback(() => {
+  const capture = useEffectEvent(() => {
     const root = ref.current
     if (!root) return
     const origin = root.getBoundingClientRect()
@@ -35,7 +35,7 @@ export function useListMotion(order: string, dropOrigin?: RefObject<ListMotionOr
       })
     }
     positions.current = next
-  }, [])
+  })
 
   useLayoutEffect(() => {
     if (lastOrder.current === order) {
@@ -114,6 +114,6 @@ export function useListMotion(order: string, dropOrigin?: RefObject<ListMotionOr
       window.removeEventListener('resize', capture)
       cancel()
     }
-  }, [capture])
+  }, [])
   return ref
 }

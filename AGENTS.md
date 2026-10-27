@@ -86,6 +86,7 @@ main
 ## React 与 TypeScript 约定
 
 - 使用函数组件和 Hooks，不新增类组件。
+- 前端已启用 React Compiler；业务源码不手写 `useMemo` 或 `useCallback`，使用普通派生表达式和函数。Effect 必须按真实业务输入声明依赖，不能依赖编译器缓存保证正确性；订阅、轮询和初始化中的非响应式回调使用 `useEffectEvent`，仅在 Effect 及其事件回调中调用，不传给业务组件作为普通事件处理器。
 - Props、Hook 参数、Hook 返回值和 API 数据必须显式建模。
 - 禁止在业务代码中随意使用 `any`；优先使用 `unknown`、类型守卫、联合类型或明确接口。自动生成文件不受此限制。
 - `useEffect` 只用于生命周期、事件订阅和外部系统同步，并必须处理必要的清理逻辑。

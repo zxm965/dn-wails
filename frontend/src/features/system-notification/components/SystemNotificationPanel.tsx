@@ -1,5 +1,5 @@
 import { BellRing, Send, ShieldCheck } from 'lucide-react'
-import { type FormEvent, useCallback, useMemo, useState } from 'react'
+import { type FormEvent, useState } from 'react'
 
 import { useSettings } from '@/features/settings'
 import { Badge, Button, Input, Label, Textarea } from '@/shared/components/ui'
@@ -28,21 +28,21 @@ export function SystemNotificationPanel({ embedded = false }: SystemNotification
   const [isSending, setIsSending] = useState(false)
   const [isRequestingPermission, setIsRequestingPermission] = useState(false)
 
-  const handleActivated = useCallback((activation: NotificationActivation) => {
+  const handleActivated = (activation: NotificationActivation) => {
     if (activation.conversationId === DEMO_CONVERSATION_ID) {
       setFeedback('已通过系统通知返回当前会话。')
     }
-  }, [])
+  }
 
   const { capability, error, requestPermission, notifyMessage } = useSystemNotification({
     onActivated: handleActivated,
   })
 
-  const avatarText = useMemo(() => sender.trim().slice(0, 1) || '消', [sender])
+  const avatarText = sender.trim().slice(0, 1) || '消'
 
   const notificationPolicyReady = settings.notifications.enabled && !settings.notifications.doNotDisturb
 
-  const statusCopy = useMemo(() => {
+  const statusCopy = (() => {
     if (!settings.notifications.enabled) {
       return { label: '应用通知已关闭', className: 'is-warning' }
     }
@@ -62,7 +62,7 @@ export function SystemNotificationPanel({ embedded = false }: SystemNotification
       default:
         return { label: '正在检测通知能力', className: 'is-loading' }
     }
-  }, [capability, settings.notifications.doNotDisturb, settings.notifications.enabled])
+  })()
 
   async function handlePermissionRequest() {
     setIsRequestingPermission(true)

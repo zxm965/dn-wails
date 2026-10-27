@@ -1,4 +1,4 @@
-import { createContext, type ReactNode, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react'
+import { createContext, type ReactNode, useContext, useEffect, useEffectEvent, useRef, useState } from 'react'
 
 import {
   DEFAULT_SETTINGS,
@@ -63,13 +63,13 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
   const revisionRef = useRef(0)
   const pendingWritesRef = useRef(0)
 
-  const applyLocalSettings = useCallback((next: AppSettings) => {
+  const applyLocalSettings = (next: AppSettings) => {
     const cloned = cloneSettings(next)
     settingsRef.current = cloned
     setSettings(cloned)
-  }, [])
+  }
 
-  const refreshSettings = useCallback(async () => {
+  const refreshSettings = async () => {
     const revision = revisionRef.current
     setIsLoading(true)
     setError('')
@@ -81,21 +81,19 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
     } finally {
       setIsLoading(false)
     }
-  }, [applyLocalSettings])
+  }
 
-  useEffect(
-    () =>
-      onSettingsChanged((next) => {
-        if (pendingWritesRef.current > 0) return
-        revisionRef.current++
-        applyLocalSettings(next)
-      }),
-    [applyLocalSettings],
-  )
+  const onSettingsReceived = useEffectEvent((next: AppSettings) => {
+    if (pendingWritesRef.current > 0) return
+    revisionRef.current++
+    applyLocalSettings(next)
+  })
+  useEffect(() => onSettingsChanged((next) => onSettingsReceived(next)), [])
 
+  const onInitialSettings = useEffectEvent(refreshSettings)
   useEffect(() => {
-    void refreshSettings()
-  }, [refreshSettings])
+    void onInitialSettings()
+  }, [])
 
   useEffect(() => {
     const media = window.matchMedia('(prefers-color-scheme: dark)')
@@ -104,10 +102,8 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
     return () => media.removeEventListener('change', handleChange)
   }, [])
 
-  const effectiveTheme = useMemo<EffectiveTheme>(
-    () => (settings.appearance.themeMode === 'system' ? systemMode : settings.appearance.themeMode),
-    [settings.appearance.themeMode, systemMode],
-  )
+  const effectiveTheme: EffectiveTheme =
+    settings.appearance.themeMode === 'system' ? systemMode : settings.appearance.themeMode
 
   useEffect(() => {
     const root = document.documentElement
@@ -118,67 +114,66 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
     root.dataset.fontSize = settings.appearance.fontSizePreset
   }, [effectiveTheme, settings.appearance])
 
-  const schedulePersist = useCallback(
-    (next: AppSettings, persist: () => Promise<AppSettings>) => {
-      const revision = ++revisionRef.current
-      applyLocalSettings(next)
-      pendingWritesRef.current++
-      setIsSaving(true)
-      setError('')
+  const schedulePersist = (next: AppSettings, persist: () => Promise<AppSettings>) => {
+    const revision = ++revisionRef.current
+    applyLocalSettings(next)
+    pendingWritesRef.current++
+    setIsSaving(true)
+    setError('')
 
-      const operation = queueRef.current
-        .catch(() => undefined)
-        .then(persist)
-        .then((updated) => {
-          if (revision === revisionRef.current) {
-            applyLocalSettings(updated)
+    const operation = queueRef.current
+      .catch(() => undefined)
+      .then(persist)
+      .then((updated) => {
+        if (revision === revisionRef.current) {
+          applyLocalSettings(updated)
+        }
+        return updated
+      })
+      .catch(async (saveError: unknown) => {
+        setError(errorMessage(saveError))
+        if (revision === revisionRef.current) {
+          try {
+            applyLocalSettings(await loadSettings())
+          } catch {
+            // Keep the optimistic value visible while the original persistence error is shown.
           }
-          return updated
-        })
-        .catch(async (saveError: unknown) => {
-          setError(errorMessage(saveError))
-          if (revision === revisionRef.current) {
-            try {
-              applyLocalSettings(await loadSettings())
-            } catch {
-              // Keep the optimistic value visible while the original persistence error is shown.
-            }
-          }
-          throw saveError
-        })
-        .finally(() => {
-          pendingWritesRef.current--
-          if (pendingWritesRef.current === 0) {
-            setIsSaving(false)
-          }
-        })
+        }
+        throw saveError
+      })
+      .finally(() => {
+        pendingWritesRef.current--
+        if (pendingWritesRef.current === 0) {
+          setIsSaving(false)
+        }
+      })
 
-      queueRef.current = operation.then(
-        () => undefined,
-        () => undefined,
-      )
-      return operation
-    },
-    [applyLocalSettings],
-  )
+    queueRef.current = operation.then(
+      () => undefined,
+      () => undefined,
+    )
+    return operation
+  }
 
-  const updateSettings = useCallback(
-    (updater: SettingsUpdater) => {
-      const next = typeof updater === 'function' ? updater(cloneSettings(settingsRef.current)) : cloneSettings(updater)
-      return schedulePersist(next, () => saveSettings(next))
-    },
-    [schedulePersist],
-  )
+  const updateSettings = (updater: SettingsUpdater) => {
+    const next = typeof updater === 'function' ? updater(cloneSettings(settingsRef.current)) : cloneSettings(updater)
+    return schedulePersist(next, () => saveSettings(next))
+  }
 
-  const resetSettings = useCallback(() => {
+  const resetSettings = () => {
     const defaults = cloneSettings(DEFAULT_SETTINGS)
     return schedulePersist(defaults, restoreDefaultSettings)
-  }, [schedulePersist])
+  }
 
-  const value = useMemo<SettingsContextValue>(
-    () => ({ settings, isLoading, isSaving, error, updateSettings, resetSettings, refreshSettings }),
-    [error, isLoading, isSaving, refreshSettings, resetSettings, settings, updateSettings],
-  )
+  const value: SettingsContextValue = {
+    settings,
+    isLoading,
+    isSaving,
+    error,
+    updateSettings,
+    resetSettings,
+    refreshSettings,
+  }
 
   return <SettingsContext.Provider value={value}>{children}</SettingsContext.Provider>
 }

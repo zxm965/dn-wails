@@ -1,5 +1,5 @@
 import { Minus, Pencil, Plus, RefreshCw, Sparkles, Trash2 } from 'lucide-react'
-import { type FormEvent, useCallback, useEffect, useMemo, useState } from 'react'
+import { type FormEvent, useEffect, useEffectEvent, useState } from 'react'
 
 import {
   Badge,
@@ -97,7 +97,7 @@ export function DnWeeklyPlans({ onNavigateRoles }: { onNavigateRoles: () => void
   const [editorOpen, setEditorOpen] = useState(false)
   const [form, setForm] = useState<WeeklyPlanInput | null>(null)
 
-  const loadRoles = useCallback(async () => {
+  const loadRoles = async () => {
     const isCurrent = beginRolesRequest()
     setRolesLoading(true)
     setRolesError('')
@@ -109,40 +109,39 @@ export function DnWeeklyPlans({ onNavigateRoles }: { onNavigateRoles: () => void
     } finally {
       if (isCurrent()) setRolesLoading(false)
     }
-  }, [beginRolesRequest])
+  }
 
-  const loadPlans = useCallback(
-    async (page: number) => {
-      const isCurrent = beginRequest()
-      setRequestedPage(page)
-      setLoadError('')
-      setLoading(true)
-      try {
-        const data = await listWeeklyPlans({ ...appliedFilters, page, pageSize: 20 })
-        if (!isCurrent()) return
-        setItems(data.items)
-        setMeta(data.meta)
-      } catch (error) {
-        if (isCurrent()) setLoadError(getErrorMessage(error, '周计划加载失败，请重试。'))
-      } finally {
-        if (isCurrent()) setLoading(false)
-      }
-    },
-    [appliedFilters, beginRequest],
-  )
+  const loadPlans = async (page: number) => {
+    const isCurrent = beginRequest()
+    setRequestedPage(page)
+    setLoadError('')
+    setLoading(true)
+    try {
+      const data = await listWeeklyPlans({ ...appliedFilters, page, pageSize: 20 })
+      if (!isCurrent()) return
+      setItems(data.items)
+      setMeta(data.meta)
+    } catch (error) {
+      if (isCurrent()) setLoadError(getErrorMessage(error, '周计划加载失败，请重试。'))
+    } finally {
+      if (isCurrent()) setLoading(false)
+    }
+  }
 
+  const onInitialRolesLoad = useEffectEvent(loadRoles)
   useEffect(() => {
-    void loadRoles()
-  }, [loadRoles])
+    void onInitialRolesLoad()
+  }, [])
 
+  const onFiltersChanged = useEffectEvent(loadPlans)
   useEffect(() => {
-    void loadPlans(1)
-  }, [loadPlans])
+    void onFiltersChanged(1)
+  }, [appliedFilters])
 
-  const showWeeklyRefreshTip = useMemo(() => {
+  const [showWeeklyRefreshTip] = useState(() => {
     const now = new Date()
     return (now.getDay() === 6 && now.getHours() >= 9) || (now.getDay() === 0 && now.getHours() < 9)
-  }, [])
+  })
 
   async function quickUpdate(plan: WeeklyPlan, patch: Partial<WeeklyPlanInput>) {
     setUpdatingIds((current) => new Set(current).add(plan.id))

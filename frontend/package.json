@@ -25,11 +25,15 @@
     "sonner": "^2.0.8"
   },
   "devDependencies": {
+    "@babel/core": "^7.29.7",
+    "@rolldown/plugin-babel": "^0.2.4",
+    "@types/babel__core": "^7.20.5",
     "@types/node": "^26.6.5",
     "@types/react": "^19.3.0",
     "@types/react-dom": "^19.3.0",
     "@vanilla-extract/vite-plugin": "^5.2.6",
     "@vitejs/plugin-react": "^6.1.2",
+    "babel-plugin-react-compiler": "^1.0.0",
     "oxfmt": "^0.74.0",
     "oxlint": "^1.89.0",
     "typescript": "^7.0.2",

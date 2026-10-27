@@ -1,7 +1,8 @@
 import { fileURLToPath, URL } from 'node:url'
 
+import babel from '@rolldown/plugin-babel'
 import { vanillaExtractPlugin } from '@vanilla-extract/vite-plugin'
-import react from '@vitejs/plugin-react'
+import react, { reactCompilerPreset } from '@vitejs/plugin-react'
 import wails from '@wailsio/runtime/plugins/vite'
 import { defineConfig } from 'vite'
 
@@ -16,7 +17,7 @@ if (!Number.isInteger(devServerPort) || devServerPort < 1 || devServerPort > 655
 export default defineConfig({
   envDir: projectRoot,
   envPrefix: 'APP_',
-  plugins: [wails('./bindings'), vanillaExtractPlugin(), react()],
+  plugins: [wails('./bindings'), vanillaExtractPlugin(), react(), babel({ presets: [reactCompilerPreset()] })],
   server: {
     host: '127.0.0.1',
     port: devServerPort,

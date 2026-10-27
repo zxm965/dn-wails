@@ -1,4 +1,4 @@
-import { createContext, type ReactNode, useCallback, useContext, useEffect, useMemo, useState } from 'react'
+import { createContext, type ReactNode, useContext, useEffect, useEffectEvent, useState } from 'react'
 
 import { getErrorMessage } from '@/shared/lib/errorMessage'
 
@@ -30,7 +30,7 @@ export function AccountProvider({ children }: { children: ReactNode }) {
   const [errorMessage, setErrorMessage] = useState('')
   const [user, setUserState] = useState<Profile | null>(null)
 
-  const refresh = useCallback(async () => {
+  const refresh = async () => {
     try {
       const state = await getAuthState()
       const nextUser = state.authenticated ? state.user : null
@@ -42,41 +42,40 @@ export function AccountProvider({ children }: { children: ReactNode }) {
       setErrorMessage(getErrorMessage(error, '账号服务当前不可用，请稍后重试。'))
       throw error
     }
-  }, [])
+  }
+
+  const onRestoreSession = useEffectEvent(refresh)
 
   useEffect(() => {
-    void refresh()
+    void onRestoreSession()
       .catch(() => undefined)
       .finally(() => setLoading(false))
-  }, [refresh])
+  }, [])
 
-  const login = useCallback(async (input: LoginInput) => {
+  const login = async (input: LoginInput) => {
     const nextUser = await loginUser(input)
     setUserState(nextUser)
     setErrorMessage('')
     return nextUser
-  }, [])
+  }
 
-  const register = useCallback(async (input: RegistrationInput) => {
+  const register = async (input: RegistrationInput) => {
     const nextUser = await registerUser(input)
     setUserState(nextUser)
     setErrorMessage('')
     return nextUser
-  }, [])
+  }
 
-  const logout = useCallback(async () => {
+  const logout = async () => {
     await logoutUser()
     setUserState(null)
-  }, [])
+  }
 
-  const setUser = useCallback((nextUser: Profile) => {
+  const setUser = (nextUser: Profile) => {
     setUserState(nextUser)
-  }, [])
+  }
 
-  const value = useMemo<AccountContextValue>(
-    () => ({ loading, errorMessage, user, refresh, login, register, logout, setUser }),
-    [errorMessage, loading, login, logout, refresh, register, setUser, user],
-  )
+  const value: AccountContextValue = { loading, errorMessage, user, refresh, login, register, logout, setUser }
 
   return <AccountContext.Provider value={value}>{children}</AccountContext.Provider>
 }

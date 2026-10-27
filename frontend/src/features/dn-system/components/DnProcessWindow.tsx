@@ -1,5 +1,4 @@
 import { Play, RefreshCw, Skull } from 'lucide-react'
-import { useCallback } from 'react'
 
 import { Button, SpinnerIcon } from '@/shared/components/ui'
 
@@ -15,10 +14,10 @@ export function DnProcessWindow() {
   const statusText = !PROCESS_CONTROL_SUPPORTED ? '当前系统暂不支持' : processes.error || status
   const actionsDisabled =
     busy || !PROCESS_CONTROL_SUPPORTED || !processes.scanned || processes.scanning || Boolean(processes.error)
-  const refresh = useCallback(() => {
+  const refresh = () => {
     clearStatus()
     void processes.refresh()
-  }, [clearStatus, processes.refresh])
+  }
 
   return (
     <main className={styles.window}>

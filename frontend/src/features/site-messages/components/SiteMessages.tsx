@@ -10,7 +10,7 @@ import {
   Trash2,
   TriangleAlert,
 } from 'lucide-react'
-import { type FormEvent, useCallback, useEffect, useRef, useState } from 'react'
+import { type FormEvent, useEffect, useEffectEvent, useRef, useState } from 'react'
 
 import { useAccount } from '@/features/account'
 import {
@@ -100,38 +100,36 @@ export function SiteMessages({ onNavigate }: { onNavigate: (target: AppView) => 
   const [editingMessage, setEditingMessage] = useState<SiteMessage | null>(null)
   const [form, setForm] = useState<SiteMessageInput>({ ...emptyForm })
 
-  const load = useCallback(
-    async (page: number) => {
-      const isCurrent = beginRequest()
-      setRequestedPage(page)
-      setLoadError('')
-      setLoading(true)
-      try {
-        const data = await listMessages({ ...appliedFilters, page, pageSize: 10, manage: isAdmin })
-        if (!isCurrent()) return
-        setItems(data.items)
-        setMeta(data.meta)
-        if (data.syncError) {
-          notify({ title: '官网消息同步暂时失败', message: data.syncError, tone: 'warning' })
-        }
-      } catch (error) {
-        if (isCurrent()) setLoadError(getErrorMessage(error, '消息加载失败，请重试。'))
-      } finally {
-        if (isCurrent()) setLoading(false)
+  const load = async (page: number) => {
+    const isCurrent = beginRequest()
+    setRequestedPage(page)
+    setLoadError('')
+    setLoading(true)
+    try {
+      const data = await listMessages({ ...appliedFilters, page, pageSize: 10, manage: isAdmin })
+      if (!isCurrent()) return
+      setItems(data.items)
+      setMeta(data.meta)
+      if (data.syncError) {
+        notify({ title: '官网消息同步暂时失败', message: data.syncError, tone: 'warning' })
       }
-    },
-    [appliedFilters, isAdmin, notify, beginRequest],
-  )
+    } catch (error) {
+      if (isCurrent()) setLoadError(getErrorMessage(error, '消息加载失败，请重试。'))
+    } finally {
+      if (isCurrent()) setLoading(false)
+    }
+  }
 
+  const onListReload = useEffectEvent(load)
   useEffect(() => {
-    void load(1)
-  }, [load])
+    void onListReload(1)
+  }, [appliedFilters, isAdmin])
 
   useEffect(() => {
     if (observedReadRevision.current === readRevision) return
     observedReadRevision.current = readRevision
-    void load(meta.page)
-  }, [readRevision, load, meta.page])
+    void onListReload(meta.page)
+  }, [readRevision, meta.page])
 
   async function openMessage(message: SiteMessage) {
     setActiveMessage(message)

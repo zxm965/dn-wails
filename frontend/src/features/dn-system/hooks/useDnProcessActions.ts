@@ -1,4 +1,4 @@
-import { useCallback, useRef, useState } from 'react'
+import { useRef, useState } from 'react'
 
 import { useSettings } from '@/features/settings'
 
@@ -31,11 +31,11 @@ export function useDnProcessActions(): DnProcessActions {
   const running = useRef(false)
   const [operation, setOperation] = useState<'launch' | 'terminate' | null>(null)
   const [status, setStatus] = useState('')
-  const clearStatus = useCallback(() => {
+  const clearStatus = () => {
     if (!running.current) setStatus('')
-  }, [])
+  }
 
-  const run = useCallback(async (target?: DragonNestProcess) => {
+  const run = async (target?: DragonNestProcess) => {
     if (running.current || !PROCESS_CONTROL_SUPPORTED) return null
     running.current = true
     setOperation('terminate')
@@ -51,9 +51,9 @@ export function useDnProcessActions(): DnProcessActions {
       running.current = false
       setOperation(null)
     }
-  }, [])
+  }
 
-  const launch = useCallback(async () => {
+  const launch = async () => {
     if (running.current || !PROCESS_CONTROL_SUPPORTED) return
     running.current = true
     setOperation('launch')
@@ -67,7 +67,7 @@ export function useDnProcessActions(): DnProcessActions {
       running.current = false
       setOperation(null)
     }
-  }, [])
+  }
 
   return {
     globalShortcut,

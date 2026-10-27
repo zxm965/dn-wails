@@ -1,5 +1,5 @@
 import { Events } from '@wailsio/runtime'
-import { useCallback, useEffect, useState } from 'react'
+import { useEffect, useEffectEvent, useState } from 'react'
 
 import {
   getSystemNotificationStatus,
@@ -41,7 +41,7 @@ export function useSystemNotification({ onActivated }: UseSystemNotificationOpti
   const [capability, setCapability] = useState<NotificationCapability>('loading')
   const [error, setError] = useState('')
 
-  const refreshStatus = useCallback(async () => {
+  const refreshStatus = async () => {
     setError('')
 
     try {
@@ -56,21 +56,23 @@ export function useSystemNotification({ onActivated }: UseSystemNotificationOpti
       setCapability('error')
       setError(errorMessage(statusError))
     }
+  }
+
+  const onInitialStatus = useEffectEvent(refreshStatus)
+  useEffect(() => {
+    void onInitialStatus()
   }, [])
 
-  useEffect(() => {
-    void refreshStatus()
-  }, [refreshStatus])
-
+  const onNotificationActivated = useEffectEvent((activation: NotificationActivation) => onActivated?.(activation))
   useEffect(() => {
     return Events.On(SYSTEM_NOTIFICATION_ACTIVATED_EVENT, (event) => {
       if (isNotificationActivation(event.data)) {
-        onActivated?.(event.data)
+        onNotificationActivated(event.data)
       }
     })
-  }, [onActivated])
+  }, [])
 
-  const requestPermission = useCallback(async () => {
+  const requestPermission = async () => {
     setError('')
 
     try {
@@ -82,9 +84,9 @@ export function useSystemNotification({ onActivated }: UseSystemNotificationOpti
       setError(errorMessage(permissionError))
       return false
     }
-  }, [])
+  }
 
-  const notifyMessage = useCallback(async (request: MessageNotificationRequest) => {
+  const notifyMessage = async (request: MessageNotificationRequest) => {
     setError('')
 
     try {
@@ -93,7 +95,7 @@ export function useSystemNotification({ onActivated }: UseSystemNotificationOpti
       setError(errorMessage(notificationError))
       throw notificationError
     }
-  }, [])
+  }
 
   return {
     capability,

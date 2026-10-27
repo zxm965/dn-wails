@@ -15,7 +15,6 @@ test('old requests and requests completed after unmount cannot publish', () => {
   let cleanup
   const hook = loadHook('../src/shared/hooks/useRequestGuard.ts', 'useRequestGuard', {
     useRef: (current) => ({ current }),
-    useCallback: (callback) => callback,
     useEffect: (effect) => {
       cleanup = effect()
     },
@@ -32,7 +31,6 @@ test('old requests and requests completed after unmount cannot publish', () => {
 test('session state restores after remount, isolates keys and keeps functional updates', () => {
   const hook = loadHook('../src/shared/hooks/useSessionState.ts', 'useSessionState', {
     useState: (initial) => [initial(), () => {}],
-    useCallback: (callback) => callback,
   })
   const [, update] = hook('account:1', 0)
   update(7)

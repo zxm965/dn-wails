@@ -1,5 +1,5 @@
 import { KeyRound, LogOut, RefreshCw, Upload } from 'lucide-react'
-import { type FormEvent, useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { type FormEvent, useEffect, useEffectEvent, useRef, useState } from 'react'
 
 import {
   Avatar,
@@ -58,56 +58,48 @@ export function AccountPanel() {
   const [passwordSaving, setPasswordSaving] = useState(false)
   const [passwordForm, setPasswordForm] = useState({ currentPassword: '', newPassword: '', confirmPassword: '' })
 
-  const syncForm = useCallback(
-    (next: Profile) => {
-      const value = { name: next.name, email: next.email, avatar: next.avatar }
-      setProfile(next)
-      setUser(next)
-      setForm(value)
-      setInitialForm(value)
-    },
-    [setUser],
-  )
+  const syncForm = (next: Profile) => {
+    const value = { name: next.name, email: next.email, avatar: next.avatar }
+    setProfile(next)
+    setUser(next)
+    setForm(value)
+    setInitialForm(value)
+  }
 
-  const load = useCallback(
-    async (showNotice = false) => {
-      if (
-        showNotice &&
-        dirtyRef.current &&
-        !(await confirm({
-          title: '重新加载资料？',
-          message: '当前未保存的修改将被服务器资料替换。',
-          confirmLabel: '重新加载',
-        }))
-      )
-        return
-      const isCurrent = beginRequest()
-      setLoading(true)
-      try {
-        const next = await getProfile()
-        if (!isCurrent()) return
-        syncForm(next)
-        if (showNotice) notify({ title: '资料已重新加载', tone: 'success' })
-      } catch (error) {
-        if (!isCurrent()) return
-        notify({ title: '资料加载失败', message: getErrorMessage(error, '请稍后重试。'), tone: 'error' })
-      } finally {
-        if (isCurrent()) setLoading(false)
-      }
-    },
-    [notify, syncForm, confirm, beginRequest],
-  )
+  const load = async (showNotice = false) => {
+    if (
+      showNotice &&
+      dirtyRef.current &&
+      !(await confirm({
+        title: '重新加载资料？',
+        message: '当前未保存的修改将被服务器资料替换。',
+        confirmLabel: '重新加载',
+      }))
+    )
+      return
+    const isCurrent = beginRequest()
+    setLoading(true)
+    try {
+      const next = await getProfile()
+      if (!isCurrent()) return
+      syncForm(next)
+      if (showNotice) notify({ title: '资料已重新加载', tone: 'success' })
+    } catch (error) {
+      if (!isCurrent()) return
+      notify({ title: '资料加载失败', message: getErrorMessage(error, '请稍后重试。'), tone: 'error' })
+    } finally {
+      if (isCurrent()) setLoading(false)
+    }
+  }
 
+  const onInitialLoad = useEffectEvent(load)
   useEffect(() => {
-    void load()
-  }, [load])
+    void onInitialLoad()
+  }, [])
 
   const dirty = form.name !== initialForm.name || form.email !== initialForm.email || form.avatar !== initialForm.avatar
   dirtyRef.current = dirty
-  const initial = useMemo(
-    () => (form.name || form.email || profile?.account || 'U').trim().charAt(0).toUpperCase(),
-    [form.email, form.name, profile?.account],
-  )
+  const initial = (form.name || form.email || profile?.account || 'U').trim().charAt(0).toUpperCase()
 
   async function chooseAvatar() {
     setImporting(true)

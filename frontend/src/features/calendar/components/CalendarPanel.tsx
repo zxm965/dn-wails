@@ -1,5 +1,5 @@
 import { CalendarDays, ChevronLeft, ChevronRight } from 'lucide-react'
-import { useLayoutEffect, useMemo, useRef, useState, type MouseEvent } from 'react'
+import { useLayoutEffect, useRef, useState, type MouseEvent } from 'react'
 
 import { Button, Select } from '@/shared/components/ui'
 import { useFeedback } from '@/shared/feedback'
@@ -111,7 +111,7 @@ export function CalendarPanel() {
   const pendingFocus = useRef<string | null>(null)
   const [displayed, setDisplayed] = useState(() => ({ year: today.getFullYear(), month: today.getMonth() + 1 }))
   const [selectedDateKey, setSelectedDateKey] = useState(() => toDateKey(today))
-  const days = useMemo(() => buildCalendarMonth(displayed.year, displayed.month, today), [displayed, today])
+  const days = buildCalendarMonth(displayed.year, displayed.month, today)
   const monthDays = days.filter((day) => day.isCurrentMonth)
   const selectedDay = days.find((day) => day.dateKey === selectedDateKey) ?? monthDays[0]
   const scheduleInfo = getHolidayScheduleInfo(displayed.year)

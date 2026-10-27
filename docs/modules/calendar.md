@@ -89,6 +89,8 @@ interface CalendarDay {
 
 ## 验证方式
 
+`CalendarPanel` 的月份数据直接通过 `buildCalendarMonth` 派生，不手写缓存；当前编译器不保证缓存此调用，可能在普通重渲染时重复计算。月份切换、跨日刷新和焦点恢复逻辑保持不变。编译与跨日回归：`cd frontend && node --test tests/reactCompiler.test.mjs tests/viewState.test.mjs`。
+
 ```bash
 cd frontend
 pnpm fmt:check

@@ -1,4 +1,4 @@
-import { createContext, type ReactNode, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react'
+import { createContext, type ReactNode, useContext, useEffect, useRef, useState } from 'react'
 import { toast } from 'sonner'
 
 import {
@@ -45,21 +45,21 @@ export function InteractionProvider({ children }: { children: ReactNode }) {
   const [confirmation, setConfirmation] = useState<ConfirmOptions | null>(null)
   const resolverRef = useRef<((confirmed: boolean) => void) | null>(null)
 
-  const finishConfirmation = useCallback((confirmed: boolean) => {
+  function finishConfirmation(confirmed: boolean) {
     resolverRef.current?.(confirmed)
     resolverRef.current = null
     setConfirmation(null)
-  }, [])
+  }
 
-  const confirm = useCallback((options: ConfirmOptions) => {
+  function confirm(options: ConfirmOptions): Promise<boolean> {
     resolverRef.current?.(false)
     setConfirmation(options)
     return new Promise<boolean>((resolve) => {
       resolverRef.current = resolve
     })
-  }, [])
+  }
 
-  const notify = useCallback((options: ToastOptions) => {
+  function notify(options: ToastOptions): string {
     const id = createFeedbackID()
     const toastOptions = {
       id,
@@ -77,11 +77,11 @@ export function InteractionProvider({ children }: { children: ReactNode }) {
       toast.info(options.title, toastOptions)
     }
     return id
-  }, [])
+  }
 
-  const dismiss = useCallback((id: string) => {
+  function dismiss(id: string) {
     toast.dismiss(id)
-  }, [])
+  }
 
   useEffect(
     () => () => {
@@ -91,7 +91,7 @@ export function InteractionProvider({ children }: { children: ReactNode }) {
     [],
   )
 
-  const value = useMemo<FeedbackController>(() => ({ notify, dismiss, confirm }), [confirm, dismiss, notify])
+  const value: FeedbackController = { notify, dismiss, confirm }
 
   return (
     <InteractionContext.Provider value={value}>

@@ -110,3 +110,9 @@ pnpm build
 ```
 
 侧边栏、登录守卫、标题栏头像、滚动和窗口控制需要人工桌面验证。
+
+## React 回调与生命周期
+
+共享会话状态与请求保护 Hook 返回普通函数；消费方的 Effect 使用实际业务输入控制生命周期，不依赖返回函数身份。列表动画的布局测量通过 Effect Event 供布局 Effect、ResizeObserver 和窗口事件调用，监听仅在挂载时建立并在卸载时清理。
+
+回归检查：`cd frontend && node --test tests/*.test.mjs`；这些模拟与构建检查不替代原生桌面交互验证。

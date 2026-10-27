@@ -1,5 +1,5 @@
 import { Columns3, Eye, FileText, Pencil, Pin, PinOff, Plus, Save, Search, Trash2 } from 'lucide-react'
-import { useCallback, useEffect, useMemo, useRef, useState, type KeyboardEvent } from 'react'
+import { useEffect, useEffectEvent, useRef, useState, type KeyboardEvent } from 'react'
 
 import { useAccount } from '@/features/account'
 import { MarkdownPreview } from '@/shared/components/markdown-preview'
@@ -70,11 +70,10 @@ export function QuickNotesPanel() {
   const selectedIDRef = useRef<number | null>(draft?.id ?? null)
   const savedFingerprints = useRef(new Map<number, string>())
 
-  const filteredNotes = useMemo(() => {
-    const keyword = search.trim().toLocaleLowerCase()
-    if (!keyword) return notes
-    return notes.filter((note) => `${note.title}\n${note.content}`.toLocaleLowerCase().includes(keyword))
-  }, [notes, search])
+  const keyword = search.trim().toLocaleLowerCase()
+  const filteredNotes = keyword
+    ? notes.filter((note) => `${note.title}\n${note.content}`.toLocaleLowerCase().includes(keyword))
+    : notes
 
   function activateNote(note: QuickNote | null, nextViewMode: NoteViewMode = 'preview') {
     selectedIDRef.current = note?.id ?? null
@@ -204,7 +203,7 @@ export function QuickNotesPanel() {
     }
   }
 
-  const load = useCallback(async () => {
+  const load = async () => {
     const isCurrent = beginRequest()
     setLoading(true)
     setLoadError('')
@@ -229,11 +228,12 @@ export function QuickNotesPanel() {
     } finally {
       if (isCurrent()) setLoading(false)
     }
-  }, [queue, beginRequest])
+  }
 
+  const onSessionLoad = useEffectEvent(load)
   useEffect(() => {
-    void load()
-  }, [load])
+    void onSessionLoad()
+  }, [queue])
 
   useEffect(() => {
     if (

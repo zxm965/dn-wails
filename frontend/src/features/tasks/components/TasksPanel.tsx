@@ -19,7 +19,7 @@ import {
   Star,
   Trash2,
 } from 'lucide-react'
-import { useEffect, useMemo, useRef, useState, type DragEvent, type FormEvent, type KeyboardEvent } from 'react'
+import { useEffect, useRef, useState, type DragEvent, type FormEvent, type KeyboardEvent } from 'react'
 
 import { useAccount } from '@/features/account'
 import {
@@ -180,29 +180,18 @@ export function TasksPanel() {
   const selectedListID = activeList?.id ?? workspace.lists[0]?.id ?? 0
   const keyword = search.trim().toLocaleLowerCase()
 
-  const visibleTasks = useMemo(() => {
-    const source = workspace.tasks.filter((task) => {
-      if (selectedList === 'starred') return task.starred
-      return task.listId === selectedList
-    })
-    return source.filter((task) => !keyword || `${task.title}\n${task.details}`.toLocaleLowerCase().includes(keyword))
-  }, [keyword, selectedList, workspace.tasks])
+  const visibleTasks = workspace.tasks.filter((task) => {
+    const inSelectedList = selectedList === 'starred' ? task.starred : task.listId === selectedList
+    return inSelectedList && (!keyword || `${task.title}\n${task.details}`.toLocaleLowerCase().includes(keyword))
+  })
 
-  const pendingTasks = useMemo(
-    () =>
-      sortTaskItems(
-        visibleTasks.filter((task) => !task.completedAt && (selectedList === 'starred' || task.parentId === 0)),
-        sortMode,
-      ),
-    [selectedList, sortMode, visibleTasks],
+  const pendingTasks = sortTaskItems(
+    visibleTasks.filter((task) => !task.completedAt && (selectedList === 'starred' || task.parentId === 0)),
+    sortMode,
   )
-  const completedTasks = useMemo(
-    () =>
-      sortTaskItems(
-        visibleTasks.filter((task) => task.completedAt && (selectedList === 'starred' || task.parentId === 0)),
-        sortMode,
-      ),
-    [selectedList, sortMode, visibleTasks],
+  const completedTasks = sortTaskItems(
+    visibleTasks.filter((task) => task.completedAt && (selectedList === 'starred' || task.parentId === 0)),
+    sortMode,
   )
 
   async function load() {

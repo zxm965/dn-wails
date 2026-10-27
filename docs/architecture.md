@@ -120,6 +120,16 @@ app
 - 通知与确认通过统一 Interaction Provider；公共错误消息提取规则见[应用内反馈](modules/feedback.md)。
 - 数据库适配共享连接池创建配置，但由各业务服务独立持有和关闭，见 [PostgreSQL 基础设施](modules/postgres.md)。
 
+## React Compiler
+
+`frontend/vite.config.ts` 通过 `@rolldown/plugin-babel` 和 `@vitejs/plugin-react` 的 `reactCompilerPreset` 启用稳定版 React Compiler，开发与生产构建共用配置，使用 React 19 自带的 `react/compiler-runtime`。Babel 保持在 7.x：当前 Compiler 1.0.0 与 Babel 8 组合会跳过带默认值解构参数的组件，7.x 已验证可编译这些组件。
+
+业务源码已移除全部手写的 `useMemo` 和 `useCallback`，使用普通派生表达式、函数和显式类型的 Context 值。编译器负责能够推断的缓存；含 `try/finally` 等不支持语法的函数仍可能跳过优化，月份计算等调用也不保证自动缓存。业务正确性不依赖缓存，后续性能评估应以真实交互测量为准。
+
+Effect 的生命周期由账号 ID、已应用筛选、通知能力、启用状态和笔记会话等真实输入驱动。初始化、订阅及轮询中需要读取最新回调的部分使用 `useEffectEvent`，普通按钮与对外操作仍使用普通函数；不能将 Effect Event 加入依赖数组、传给子组件，或用它隐藏应触发重新同步的业务输入。异步请求的过期结果保护与卸载清理仍保留。
+
+`cd frontend && node --test tests/*.test.mjs` 包含以下检查：源码不得再使用上述手动记忆化 Hook；真实 Vite 内存构建确认 Compiler runtime 和支持自动缓存的目标值；不经 Compiler 的重复渲染模拟检查初始化次数、筛选变化、回调更新、账号切换、轮询和订阅清理。测试不启动服务，不连接数据库，也不替代真实 WebView 与原生交互验证。
+
 ## 新增功能流程
 
 1. 在 `internal/<feature>` 实现并测试业务能力。

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef } from 'react'
+import { useEffect, useRef } from 'react'
 
 /** Only the latest request may publish; unmount invalidates all pending results. */
 export function useRequestGuard() {
@@ -9,8 +9,8 @@ export function useRequestGuard() {
     },
     [],
   )
-  return useCallback(() => {
+  return () => {
     const request = ++sequence.current
     return () => request === sequence.current
-  }, [])
+  }
 }

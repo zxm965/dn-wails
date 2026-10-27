@@ -231,3 +231,9 @@ Windows 助手使用 `CREATE_NO_WINDOW | CREATE_NEW_PROCESS_GROUP`，为 Windows
 `.github/workflows/windows-updater-tests.yml` 在 main 分支相关文件变动时先执行 Windows PowerShell 5.1 和真实 NSIS 集成测试，也支持手动触发，允许创建发布标签前取得原生平台验证结果。Windows 发布构建仍在打包前强制执行同组测试。真实 NSIS 测试额外持有拒绝原地写入但允许改名的 Windows 内核文件句柄，先断言旧 EXE 无法覆盖，再验证安装器仍能改名并成功安装；测试使用唯一的产品注册信息、临时目标和测试应用，完成后精确清理测试快捷方式及卸载注册项，不执行会触及真实安装身份的生产卸载程序。任何测试失败均阻止后续构建和 Release 发布。
 
 实际挂载 DMG 并替换 macOS `.app`、真实 Wails 窗口启动、Windows 在线更新静默安装与自动重启、首次手动安装向导及完成页启动选项、系统执行策略和签名提示仍必须分别在对应桌面系统上人工验证。
+
+## React 回调与生命周期
+
+版本信息在挂载时读取一次，返回结果通过 Effect Event 触发自动检查；下载进度或 Context 重渲染不重启初始化。原有自动检查标记、并发操作保护、卸载状态及进度事件取消订阅继续保留。
+
+回归检查：`cd frontend && node --test tests/*.test.mjs`；这些模拟与构建检查不替代原生桌面交互验证。

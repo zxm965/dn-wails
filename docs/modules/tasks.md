@@ -153,6 +153,8 @@ psql "$DATABASE_URL" -f database/schema/tasks.sql
 
 ## 验证
 
+任务筛选、排序与编辑器清单选项使用普通派生表达式，编译器按可推断范围自动优化。提醒轮询只随 `enabled` 和通知能力变化而重建，通过 Effect Event 调用最新通知发送函数，避免普通重渲染重复领取提醒。回归：`cd frontend && node --test tests/reactCompiler.test.mjs tests/effectLifecycle.test.mjs`。
+
 ```bash
 gofmt -w internal/tasks/*.go internal/application/tasks.go
 go test ./...

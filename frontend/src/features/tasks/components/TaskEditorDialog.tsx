@@ -1,5 +1,5 @@
 import { CalendarClock, Flag, ListTodo, Repeat2, Star, Trash2 } from 'lucide-react'
-import { useEffect, useMemo, useState, type FormEvent } from 'react'
+import { useEffect, useState, type FormEvent } from 'react'
 
 import {
   Button,
@@ -78,7 +78,7 @@ export function TaskEditorDialog({
   const [draft, setDraft] = useState<TaskInput | null>(task)
   const isSubtask = Boolean(draft?.parentId)
   const canMove = !persistedTask || persistedTask.repeat.frequency === 'none'
-  const listOptions = useMemo(() => lists.map((list) => ({ value: list.id, label: list.title })), [lists])
+  const listOptions = lists.map((list) => ({ value: list.id, label: list.title }))
 
   useEffect(() => {
     setDraft(task)

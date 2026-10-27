@@ -1,17 +1,16 @@
-import { useCallback, useEffect } from 'react'
+import { useEffect, useEffectEvent } from 'react'
 
 import { useSystemNotification } from '@/features/system-notification'
 
 import { claimDueTaskReminders } from '../api/tasksApi'
 
 export function TaskReminderMonitor({ enabled, onOpenTasks }: { enabled: boolean; onOpenTasks: () => void }) {
-  const handleActivated = useCallback(
-    (activation: { conversationId?: string }) => {
-      if (activation.conversationId?.startsWith('task:')) onOpenTasks()
-    },
-    [onOpenTasks],
-  )
+  const handleActivated = (activation: { conversationId?: string }) => {
+    if (activation.conversationId?.startsWith('task:')) onOpenTasks()
+  }
   const { capability, notifyMessage } = useSystemNotification({ onActivated: handleActivated })
+
+  const onNotifyReminder = useEffectEvent(notifyMessage)
 
   useEffect(() => {
     if (!enabled || capability !== 'ready') return
@@ -25,7 +24,7 @@ export function TaskReminderMonitor({ enabled, onOpenTasks }: { enabled: boolean
         const reminders = await claimDueTaskReminders()
         if (!active) return
         for (const task of reminders) {
-          await notifyMessage({
+          await onNotifyReminder({
             id: `task-${task.id}`,
             sender: '任务提醒',
             content: task.title,
@@ -45,7 +44,7 @@ export function TaskReminderMonitor({ enabled, onOpenTasks }: { enabled: boolean
       active = false
       window.clearInterval(timer)
     }
-  }, [capability, enabled, notifyMessage])
+  }, [capability, enabled])
 
   return null
 }

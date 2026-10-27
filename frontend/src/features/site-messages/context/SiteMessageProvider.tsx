@@ -1,4 +1,4 @@
-import { createContext, type ReactNode, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react'
+import { createContext, type ReactNode, useContext, useEffect, useEffectEvent, useRef, useState } from 'react'
 
 import { useAccount } from '@/features/account'
 import { useFeedback } from '@/shared/feedback'
@@ -73,17 +73,17 @@ export function SiteMessageProvider({
     popupOpenRef.current = popupOpen
   }, [popupOpen])
 
-  const showMessages = useCallback((messages: SiteMessage[]) => {
+  const showMessages = (messages: SiteMessage[]) => {
     if (!messages.length) return
     setCenterOpen(false)
     setPopupMessages(messages)
     popupOpenRef.current = true
     setPopupOpen(true)
-  }, [])
+  }
 
-  const showMessage = useCallback((message: SiteMessage) => showMessages([message]), [showMessages])
+  const showMessage = (message: SiteMessage) => showMessages([message])
 
-  const acknowledgeMessage = useCallback((message: SiteMessage): Promise<void> => {
+  const acknowledgeMessage = (message: SiteMessage): Promise<void> => {
     if (!message.popup) return Promise.resolve()
     const existing = notificationAcknowledgements.current.get(message.id)
     if (existing) return existing
@@ -93,9 +93,9 @@ export function SiteMessageProvider({
     })
     notificationAcknowledgements.current.set(message.id, request)
     return request
-  }, [])
+  }
 
-  const claimPopup = useCallback(async () => {
+  const claimPopup = async () => {
     if (!userId || ownerRef.current !== userId || popupOpenRef.current) return
     try {
       const claimed = await claimMessageNotifications(20)
@@ -103,16 +103,17 @@ export function SiteMessageProvider({
     } catch {
       // Inbox refresh remains available even when claiming a popup fails.
     }
-  }, [showMessages, userId])
+  }
 
+  const onAcknowledgePopup = useEffectEvent(acknowledgeMessage)
   useEffect(() => {
     if (!popupOpen) return
     void Promise.allSettled(
-      popupMessages.filter((message) => message.popup).map((message) => acknowledgeMessage(message)),
+      popupMessages.filter((message) => message.popup).map((message) => onAcknowledgePopup(message)),
     )
-  }, [acknowledgeMessage, popupMessages, popupOpen])
+  }, [popupMessages, popupOpen])
 
-  const refreshInbox = useCallback(async () => {
+  const refreshInbox = async () => {
     if (!userId || ownerRef.current !== userId) return
     if (refreshPromise.current) return refreshPromise.current
     setLoading(true)
@@ -146,7 +147,16 @@ export function SiteMessageProvider({
     })()
     refreshPromise.current = request
     return request
-  }, [notify, userId])
+  }
+
+  const onSyncInbox = useEffectEvent(async (ownerId: number) => {
+    if (ownerRef.current !== ownerId) return
+    await refreshInbox()
+    if (ownerRef.current === ownerId) await claimPopup()
+  })
+  const onSyncError = useEffectEvent((error: unknown) => {
+    notify({ title: '官网消息同步暂时失败', message: getErrorMessage(error, '请稍后再试。'), tone: 'warning' })
+  })
 
   useEffect(() => {
     revision.current += 1
@@ -164,46 +174,49 @@ export function SiteMessageProvider({
     notificationAcknowledgements.current.clear()
     if (!userId) return
 
+    let active = true
     void checkOfficialMessagesOnLogin()
       .catch((error) => {
-        notify({ title: '官网消息同步暂时失败', message: getErrorMessage(error, '请稍后再试。'), tone: 'warning' })
+        if (active) onSyncError(error)
       })
-      .then(refreshInbox)
-      .then(claimPopup)
-    const timer = window.setInterval(() => void refreshInbox().then(claimPopup), 5 * 60 * 1000)
-    return () => window.clearInterval(timer)
-  }, [claimPopup, notify, refreshInbox, userId])
+      .then(() => {
+        if (active) return onSyncInbox(userId)
+      })
+    const timer = window.setInterval(() => void onSyncInbox(userId), 5 * 60 * 1000)
+    return () => {
+      active = false
+      window.clearInterval(timer)
+    }
+  }, [userId])
 
+  const onCenterOpened = useEffectEvent(refreshInbox)
   useEffect(() => {
-    if (centerOpen) void refreshInbox()
-  }, [centerOpen, refreshInbox])
+    if (centerOpen) void onCenterOpened()
+  }, [centerOpen, userId])
 
-  const markRead = useCallback(
-    (message: SiteMessage): Promise<SiteMessage> => {
-      if (message.isRead || readIds.current.has(message.id)) return Promise.resolve({ ...message, isRead: true })
-      const existing = readRequests.current.get(message.id)
-      if (existing) return existing
-      const request = markMessageRead(message.id)
-        .then((updated) => {
-          if (ownerRef.current !== userId) return updated
-          readIds.current.add(message.id)
-          revision.current += 1
-          setReadRevision((value) => value + 1)
-          setInboxItems((current) => current.filter((item) => item.id !== message.id))
-          setUnreadCount((current) => Math.max(0, current - 1))
-          void refreshInbox()
-          return updated
-        })
-        .finally(() => {
-          if (ownerRef.current === userId) readRequests.current.delete(message.id)
-        })
-      readRequests.current.set(message.id, request)
-      return request
-    },
-    [userId, refreshInbox],
-  )
+  const markRead = (message: SiteMessage): Promise<SiteMessage> => {
+    if (message.isRead || readIds.current.has(message.id)) return Promise.resolve({ ...message, isRead: true })
+    const existing = readRequests.current.get(message.id)
+    if (existing) return existing
+    const request = markMessageRead(message.id)
+      .then((updated) => {
+        if (ownerRef.current !== userId) return updated
+        readIds.current.add(message.id)
+        revision.current += 1
+        setReadRevision((value) => value + 1)
+        setInboxItems((current) => current.filter((item) => item.id !== message.id))
+        setUnreadCount((current) => Math.max(0, current - 1))
+        void refreshInbox()
+        return updated
+      })
+      .finally(() => {
+        if (ownerRef.current === userId) readRequests.current.delete(message.id)
+      })
+    readRequests.current.set(message.id, request)
+    return request
+  }
 
-  const markAll = useCallback(async () => {
+  const markAll = async () => {
     const count = await markAllMessagesRead()
     if (ownerRef.current !== userId) return count
     revision.current += 1
@@ -212,41 +225,35 @@ export function SiteMessageProvider({
     setUnreadCount(0)
     void refreshInbox()
     return count
-  }, [userId, refreshInbox])
+  }
 
-  const followMessage = useCallback(
-    async (message: SiteMessage) => {
-      const updated = await markRead(message)
-      if (!updated.actionUrl) return
-      const target = getAppViewFromPath(updated.actionUrl)
-      if (target) {
-        onNavigate(target)
-        return
-      }
-      if (/^https?:\/\//i.test(updated.actionUrl)) {
-        await openExternalURL(updated.actionUrl)
-      } else {
-        throw new Error('该消息指向的应用内页面不可用。')
-      }
-    },
-    [markRead, onNavigate],
-  )
+  const followMessage = async (message: SiteMessage) => {
+    const updated = await markRead(message)
+    if (!updated.actionUrl) return
+    const target = getAppViewFromPath(updated.actionUrl)
+    if (target) {
+      onNavigate(target)
+      return
+    }
+    if (/^https?:\/\//i.test(updated.actionUrl)) {
+      await openExternalURL(updated.actionUrl)
+    } else {
+      throw new Error('该消息指向的应用内页面不可用。')
+    }
+  }
 
-  const openInboxMessage = useCallback(
-    (message: SiteMessage) => {
-      if (message.actionUrl) {
-        setCenterOpen(false)
-        void followMessage(message).catch((error) => {
-          notify({ title: '消息处理失败', message: getErrorMessage(error, '请稍后重试。'), tone: 'error' })
-        })
-        return
-      }
-      showMessage(message)
-    },
-    [followMessage, notify, showMessage],
-  )
+  const openInboxMessage = (message: SiteMessage) => {
+    if (message.actionUrl) {
+      setCenterOpen(false)
+      void followMessage(message).catch((error) => {
+        notify({ title: '消息处理失败', message: getErrorMessage(error, '请稍后重试。'), tone: 'error' })
+      })
+      return
+    }
+    showMessage(message)
+  }
 
-  const dismissPopup = useCallback(() => {
+  const dismissPopup = () => {
     const current = popupMessages
     popupOpenRef.current = false
     setPopupOpen(false)
@@ -256,69 +263,45 @@ export function SiteMessageProvider({
         // A failed acknowledgement intentionally leaves the message claimable on a later refresh or login.
       })
     }
-  }, [acknowledgeMessage, popupMessages])
+  }
 
-  const showAllMessages = useCallback(() => {
+  const showAllMessages = () => {
     setCenterOpen(false)
     onNavigate('site-messages')
-  }, [onNavigate])
+  }
 
-  const followPopupMessage = useCallback(
-    async (message: SiteMessage) => {
-      setActionLoading(true)
-      try {
-        await followMessage(message)
-        dismissPopup()
-      } catch (error) {
-        notify({ title: '消息处理失败', message: getErrorMessage(error, '请稍后重试。'), tone: 'error' })
-      } finally {
-        setActionLoading(false)
-      }
-    },
-    [dismissPopup, followMessage, notify],
-  )
+  const followPopupMessage = async (message: SiteMessage) => {
+    setActionLoading(true)
+    try {
+      await followMessage(message)
+      dismissPopup()
+    } catch (error) {
+      notify({ title: '消息处理失败', message: getErrorMessage(error, '请稍后重试。'), tone: 'error' })
+    } finally {
+      setActionLoading(false)
+    }
+  }
 
-  const value = useMemo<SiteMessageContextValue>(
-    () => ({
-      inboxItems,
-      unreadCount,
-      readRevision,
-      markRead,
-      loading,
-      centerOpen,
-      activeMessage,
-      popupMessages,
-      popupOpen,
-      actionLoading,
-      lastSyncedAt,
-      setCenterOpen,
-      refreshInbox,
-      openInboxMessage,
-      showAllMessages,
-      markAll,
-      dismissPopup,
-      followPopupMessage,
-    }),
-    [
-      actionLoading,
-      activeMessage,
-      centerOpen,
-      dismissPopup,
-      followPopupMessage,
-      inboxItems,
-      lastSyncedAt,
-      loading,
-      markAll,
-      markRead,
-      readRevision,
-      openInboxMessage,
-      popupOpen,
-      popupMessages,
-      refreshInbox,
-      showAllMessages,
-      unreadCount,
-    ],
-  )
+  const value: SiteMessageContextValue = {
+    inboxItems,
+    unreadCount,
+    readRevision,
+    markRead,
+    loading,
+    centerOpen,
+    activeMessage,
+    popupMessages,
+    popupOpen,
+    actionLoading,
+    lastSyncedAt,
+    setCenterOpen,
+    refreshInbox,
+    openInboxMessage,
+    showAllMessages,
+    markAll,
+    dismissPopup,
+    followPopupMessage,
+  }
 
   return <SiteMessageContext.Provider value={value}>{children}</SiteMessageContext.Provider>
 }
