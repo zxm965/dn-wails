@@ -1,5 +1,6 @@
 import {
   CalendarCheck,
+  Package,
   CalendarDays,
   Skull,
   Mails,
@@ -132,11 +133,12 @@ export const MENU_GROUPS = defineMenuGroups([
         defaultVisible: false,
         defaultView: 'dn-weekly',
         preference: {
-          description: '显示周常、角色和进程入口。',
+          description: '显示周常、角色、进程和工坊入口。',
         },
         children: [
           { key: 'dn-weekly', view: 'dn-weekly', label: '周常', icon: CalendarCheck },
           { key: 'dn-roles', view: 'dn-roles', label: '角色', icon: UsersRound },
+          { key: 'dn-patches', view: 'dn-patches', label: '工坊', icon: Package },
           { key: 'dn-kill-process', view: 'dn-kill-process', label: '进程', icon: Skull },
         ],
       },

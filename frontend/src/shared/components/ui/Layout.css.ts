@@ -14,7 +14,8 @@ const uiPageHeader = style([
     justifyContent: 'space-between',
     gap: 'calc(20px * var(--layout-spacing))',
     overflow: 'hidden',
-    padding: 'calc(clamp(17px, 2.4vw, 22px) * var(--layout-spacing))',
+    minHeight: 'calc(76px * var(--layout-spacing))',
+    padding: 'calc(12px * var(--layout-spacing)) calc(18px * var(--layout-spacing))',
     background:
       'radial-gradient(circle at 14% 0%, var(--accent-muted), transparent 34%), linear-gradient(135deg, var(--surface-elevated), color-mix(in srgb, var(--surface-elevated) 90%, var(--accent) 10%))',
     border: '1px solid var(--border-subtle)',
@@ -45,14 +46,22 @@ const uiPageHeader = style([
   },
 ])
 
-const uiPageHeaderEyebrow = style({
-  display: 'block',
-  marginBottom: '6px',
+const pageHeaderCopy = style({ position: 'relative', zIndex: 1, minWidth: 0 })
+const pageHeaderTitle = style({
+  margin: 0,
   color: 'var(--accent)',
   fontSize: 'var(--font-size-caption)',
-  fontWeight: '800',
-  letterSpacing: '0.15em',
-  textTransform: 'uppercase',
+  fontWeight: 800,
+  letterSpacing: '0.08em',
+  lineHeight: 1.5,
+  overflowWrap: 'anywhere',
+})
+const pageHeaderDescription = style({
+  margin: '5px 0 0',
+  color: 'var(--text-secondary)',
+  fontSize: 'var(--font-size-secondary)',
+  lineHeight: 1.5,
+  overflowWrap: 'anywhere',
 })
 
 const uiPageHeaderActions = style([
@@ -125,40 +134,14 @@ const uiSkeleton = style([
 
 export const styles = {
   'ui-page-header': uiPageHeader,
-  'ui-page-header-eyebrow': uiPageHeaderEyebrow,
+  pageHeaderCopy,
+  pageHeaderTitle,
+  pageHeaderDescription,
   'ui-page-header-actions': uiPageHeaderActions,
   'ui-pagination': uiPagination,
   'ui-list-state': uiListState,
   'ui-skeleton': uiSkeleton,
 } as const
-
-globalStyle(
-  `${uiPageHeader} h1,
-${uiPageHeader} p`,
-  {
-    margin: '0',
-  },
-)
-
-globalStyle(`${uiPageHeader} > div:first-child`, {
-  position: 'relative',
-  zIndex: '1',
-  minWidth: '0',
-})
-
-globalStyle(`${uiPageHeader} h1`, {
-  fontSize:
-    'clamp(calc(23px + var(--font-size-heading-offset)), calc(3.2vw + var(--font-size-heading-offset)), calc(31px + var(--font-size-heading-offset)))',
-  letterSpacing: '-0.025em',
-  lineHeight: '1.08',
-})
-
-globalStyle(`${uiPageHeader} p`, {
-  marginTop: '7px',
-  color: 'var(--text-secondary)',
-  fontSize: 'var(--font-size-secondary)',
-  lineHeight: '1.5',
-})
 
 globalStyle(`${uiPagination} > div`, {
   display: 'flex',

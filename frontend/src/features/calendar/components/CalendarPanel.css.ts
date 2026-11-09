@@ -8,37 +8,20 @@ const isWorkday = style({})
 const isHighlighted = style({})
 const isSelected = style({})
 
-const calendarPage = style([
-  {
-    width: '100%',
-    minWidth: '0',
-    height: '100cqh',
-    minHeight: '0',
-    display: 'grid',
-    gridTemplateRows: 'minmax(min-content, 1fr) minmax(0, max-content)',
-    gap: 'calc(16px * var(--layout-spacing))',
-    margin: '0 auto',
-    padding:
-      'calc(clamp(18px, 2.4cqw, 24px) * var(--layout-spacing)) calc(clamp(28px, 4.5cqw, 52px) * var(--layout-spacing)) calc(clamp(22px, 2.8cqw, 30px) * var(--layout-spacing))',
-    containerName: 'calendar-page',
-    containerType: 'inline-size',
-    WebkitUserSelect: 'none',
-    userSelect: 'none',
-  },
-  {
-    '@container': {
-      'app-content (max-width: 620px)': {
-        gap: 'calc(12px * var(--layout-spacing))',
-        padding:
-          'calc(14px * var(--layout-spacing)) calc(16px * var(--layout-spacing)) calc(20px * var(--layout-spacing))',
-      },
-      'app-content (max-width: 390px)': {
-        paddingRight: 'calc(12px * var(--layout-spacing))',
-        paddingLeft: 'calc(12px * var(--layout-spacing))',
-      },
-    },
-  },
-])
+const calendarPage = style({
+  width: 'min(var(--page-content-max-width), 100%)',
+  minWidth: 0,
+  minHeight: '100cqh',
+  display: 'grid',
+  gridTemplateRows: 'auto minmax(min-content, 1fr) minmax(0, max-content)',
+  gap: 'calc(18px * var(--layout-spacing))',
+  margin: '0 auto',
+  padding: 'var(--page-padding-start) var(--page-padding-inline) var(--page-padding-end)',
+  containerName: 'calendar-page',
+  containerType: 'inline-size',
+  WebkitUserSelect: 'none',
+  userSelect: 'none',
+})
 
 const calendarPanel = style([
   {

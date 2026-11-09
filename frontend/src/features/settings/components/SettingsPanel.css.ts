@@ -5,7 +5,7 @@ const settingsPanel = style({
   display: 'grid',
   gap: 'calc(12px * var(--layout-spacing))',
   margin: '0 auto',
-  padding: 'calc(16px * var(--layout-spacing)) var(--page-padding-inline)',
+  padding: 'var(--page-padding-start) var(--page-padding-inline) var(--page-padding-end)',
   containerName: 'settings-panel',
   containerType: 'inline-size',
 })
@@ -272,15 +272,6 @@ const fontPreviewDescription = style({
   overflowWrap: 'anywhere',
 })
 
-const header = style({
-  display: 'flex',
-  flexWrap: 'wrap',
-  alignItems: 'center',
-  justifyContent: 'space-between',
-  gap: 12,
-  minWidth: 0,
-})
-const title = style({ margin: 0, fontSize: 'var(--font-size-title)' })
 const headerActions = style({
   display: 'flex',
   flexWrap: 'wrap',
@@ -294,8 +285,6 @@ export const styles = {
   updateActions,
   overview,
   updateSection,
-  header,
-  title,
   headerActions,
   compactOptions,
   fontPreview,

@@ -43,7 +43,7 @@ Base UI 的弹层和组合组件使用 `render={<Button />}`，避免业务模�
 - Select 触发器、Input 和 PasswordInput 使用与 Button 一致的默认高度，也支持显式 `sm/md/lg` 尺寸；Textarea 保持多行输入的最小高度。选项弹层通过 Portal 避免被卡片裁切，并在窄窗口下限制为可视区域宽高；长列表直接通过滚轮、触控板或键盘滚动，不渲染额外的上下滚动按钮。
 - RadioGroup、Slider、Checkbox 和 Switch 统一使用 Base UI 的受控状态与隐藏表单输入，业务模块不直接渲染原生 radio、range 或 checkbox。
 - Dialog 在窄窗口下贴近底部并让操作按钮纵向全宽；内容区域独立滚动。
-- PageHeader 统一主要视图的紧凑渐变背景、eyebrow、标题、说明和操作区，并在 Container Query 下自动切换为纵向布局。
+- PageHeader 全局统一为两行：上方以小号强调色 h1 展示菜单名称，下方以辅助字号展示功能说明；移除大标题和独立 eyebrow。共用渐变背景、紧凑内边距和最小高度，操作按钮仍置于右侧，窄内容区自动换行。标题、说明均使用局部样式类。
 - reduced motion 下关闭 Dialog、进度、Switch、Spinner 和 Skeleton 动画。
 
 ## 接入方式

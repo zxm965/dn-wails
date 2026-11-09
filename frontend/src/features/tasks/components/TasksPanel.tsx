@@ -523,7 +523,7 @@ export function TasksPanel() {
   return (
     <div className={cx('tasks-page')} onKeyDown={handleShortcut}>
       <PageHeader
-        title='任务清单'
+        title='任务'
         subtitle='用清单、日期、重复计划和子任务管理每一件待办事项。'
         actions={
           <>

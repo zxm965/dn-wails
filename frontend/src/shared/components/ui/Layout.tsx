@@ -10,20 +10,18 @@ import { styles } from './Layout.css'
 const cx = createScopedClassNames(styles)
 
 export interface PageHeaderProps {
-  eyebrow?: string
   title: string
   subtitle?: string
   actions?: ReactNode
   className?: string
 }
 
-export function PageHeader({ eyebrow, title, subtitle, actions, className }: PageHeaderProps) {
+export function PageHeader({ title, subtitle, actions, className }: PageHeaderProps) {
   return (
     <header className={classNames(cx('ui-page-header'), className)}>
-      <div>
-        {eyebrow && <span className={cx('ui-page-header-eyebrow')}>{eyebrow}</span>}
-        <h1>{title}</h1>
-        {subtitle && <p>{subtitle}</p>}
+      <div className={styles.pageHeaderCopy}>
+        <h1 className={styles.pageHeaderTitle}>{title}</h1>
+        {subtitle && <p className={styles.pageHeaderDescription}>{subtitle}</p>}
       </div>
       {actions && <div className={cx('ui-page-header-actions')}>{actions}</div>}
     </header>

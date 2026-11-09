@@ -11,6 +11,7 @@ export const APP_ROUTES = {
   tasks: { path: '/tasks', title: '任务', requiresAuth: true, navigation: 'menu' },
   account: { path: '/account', title: '个人信息', requiresAuth: true, navigation: 'standalone' },
   'dn-weekly': { path: '/dn/weekly', title: '龙之谷 · 周常', requiresAuth: true, navigation: 'menu' },
+  'dn-patches': { path: '/dn/patches', title: '龙之谷 · 工坊', requiresAuth: false, navigation: 'menu' },
   'dn-roles': { path: '/dn/roles', title: '龙之谷 · 角色', requiresAuth: true, navigation: 'menu' },
   'dn-kill-process': {
     path: '/dn/process',

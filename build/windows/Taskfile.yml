@@ -18,6 +18,8 @@ tasks:
             ref: .DEV
       - task: common:generate:icons
     preconditions:
+      - sh: 'node "{{.ROOT_DIR}}/scripts/check-font-runtime.mjs" windows "{{.ARCH | default ARCH}}" "{{.DEV | default "false"}}"'
+        msg: "The standalone font runtime is required for production builds. See docs/modules/font-patch.md."
       - sh: '{{if eq .OBFUSCATED "true"}}command -v garble >/dev/null 2>&1{{else}}true{{end}}'
         msg: "garble is required for obfuscated builds. Install it with: go install mvdan.cc/garble@v0.17.0 (requires Go 1.26+). See https://github.com/burrowers/garble/releases for version/toolchain compatibility."
     cmds:

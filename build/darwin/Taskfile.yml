@@ -18,6 +18,8 @@ tasks:
             ref: .DEV
       - task: common:generate:icons
     preconditions:
+      - sh: 'node "{{.ROOT_DIR}}/scripts/check-font-runtime.mjs" darwin "{{.ARCH | default ARCH}}" "{{.DEV | default "false"}}"'
+        msg: "The standalone font runtime is required for production builds. See docs/modules/font-patch.md."
       - sh: 'test "{{OS}}" = "darwin"'
         msg: "macOS builds require a macOS host."
       - sh: '{{if eq .OBFUSCATED "true"}}command -v garble >/dev/null 2>&1{{else}}true{{end}}'

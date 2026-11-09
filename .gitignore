@@ -8,3 +8,8 @@ node_modules
 frontend/dist
 .env.local
 .env.*.local
+
+# Generated standalone font converter runtimes
+internal/platform/fontpatch/runtime/*.zip
+.font-patch-venv/
+__pycache__/

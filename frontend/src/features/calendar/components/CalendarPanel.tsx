@@ -1,7 +1,7 @@
 import { CalendarDays, ChevronLeft, ChevronRight } from 'lucide-react'
 import { useLayoutEffect, useRef, useState, type MouseEvent } from 'react'
 
-import { Button, Select } from '@/shared/components/ui'
+import { Button, PageHeader, Select } from '@/shared/components/ui'
 import { useFeedback } from '@/shared/feedback'
 import { createScopedClassNames } from '@/shared/lib/classNames'
 import { openExternalURL } from '@/shared/native-kit'
@@ -157,6 +157,7 @@ export function CalendarPanel() {
 
   return (
     <div ref={panelRef} className={cx('calendar-page')}>
+      <PageHeader title='日历' subtitle='查看公历、农历、法定节假日与调休安排。' />
       {selectedDay && <CalendarSummary day={selectedDay} monthDays={monthDays} onSelect={setSelectedDateKey} />}
       <section className={cx('calendar-panel')} aria-labelledby='calendar-heading'>
         <header className={cx('calendar-toolbar')}>
@@ -165,9 +166,9 @@ export function CalendarPanel() {
               <CalendarDays className={cx('calendar-heading-icon-svg')} />
             </span>
             <div>
-              <h1 id='calendar-heading' className={cx('calendar-heading-title')}>
+              <h2 id='calendar-heading' className={cx('calendar-heading-title')}>
                 {displayed.year} 年 {displayed.month} 月
-              </h1>
+              </h2>
               <p className={cx('calendar-heading-text')}>
                 {scheduleInfo.available
                   ? '已载入国务院节假日安排'

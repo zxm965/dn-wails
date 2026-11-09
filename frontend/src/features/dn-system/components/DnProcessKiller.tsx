@@ -70,9 +70,8 @@ export function DnProcessKiller() {
   return (
     <div className={cx('dn-process-page')}>
       <PageHeader
-        eyebrow='应用工具'
-        title={`${PROCESS_TARGET.displayName} 进程`}
-        subtitle='快速启动应用，或扫描并结束进程；扫描会记住启动路径。'
+        title='进程'
+        subtitle={`快速启动 ${PROCESS_TARGET.displayName}，或扫描并结束进程；扫描会记住启动路径。`}
       />
 
       <Card className={cx('dn-process-card')}>

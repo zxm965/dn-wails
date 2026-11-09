@@ -275,7 +275,7 @@ export function QuickNotesPanel() {
   return (
     <div className={cx('quick-notes-page')} onKeyDown={handleShortcut}>
       <PageHeader
-        title='快速笔记'
+        title='笔记'
         subtitle='随手记录内容，自动保存到云端账号。'
         actions={
           <Button disabled={creating || loading} onClick={() => void createNote()}>

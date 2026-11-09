@@ -6,7 +6,7 @@ const processPage = style({
   display: 'grid',
   gap: '12px',
   margin: '0 auto',
-  padding: '16px var(--page-padding-inline)',
+  padding: 'var(--page-padding-start) var(--page-padding-inline) var(--page-padding-end)',
   containerName: 'dn-process-page',
   containerType: 'inline-size',
 })

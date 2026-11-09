@@ -94,9 +94,53 @@ jobs:
       - name: Check Go packages
         run: go test ./...
 
+  font-runtime:
+    name: Font runtime ${{ matrix.system }}-${{ matrix.arch }}
+    needs: quality
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - runner: macos-15-intel
+            system: darwin
+            arch: amd64
+          - runner: macos-latest
+            system: darwin
+            arch: arm64
+          - runner: windows-latest
+            system: windows
+            arch: amd64
+    runs-on: ${{ matrix.runner }}
+    steps:
+      - *checkout-release
+      - *setup-go
+      - name: Set up font build Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: '3.13'
+      - name: Build standalone font runtime
+        shell: bash
+        env:
+          MACOSX_DEPLOYMENT_TARGET: '12.0'
+        run: |
+          python -m pip install -r tools/font-patch/requirements.txt
+          python scripts/build-font-patch.py
+          python -m unittest discover -s tools/font-patch/tests -q
+      - name: Verify native TTF and OTF build and export
+        shell: bash
+        env:
+          DN_REQUIRE_FONT_RUNTIME: '1'
+        run: go test ./internal/fontpatch ./internal/platform/fontpatch -count=1 -timeout 3m
+      - name: Upload font runtime
+        uses: actions/upload-artifact@v7.0.2
+        with:
+          name: font-runtime-${{ matrix.system }}-${{ matrix.arch }}
+          path: internal/platform/fontpatch/runtime/${{ matrix.system }}-${{ matrix.arch }}.zip
+          if-no-files-found: error
+
   build:
     name: Build ${{ matrix.name }}
-    needs: quality
+    needs: [quality, font-runtime]
     environment: RELEASE
     strategy:
       fail-fast: false
@@ -105,9 +149,11 @@ jobs:
           - name: macOS universal
             runner: macos-latest
             artifact: release-macos
+            font_runtime: darwin
           - name: Windows amd64
             runner: windows-latest
             artifact: release-windows
+            font_runtime: windows
     runs-on: ${{ matrix.runner }}
     steps:
       - *checkout-release
@@ -121,6 +167,13 @@ jobs:
       - *install-frontend
 
       - *install-wails
+
+      - name: Download bundled font runtimes
+        uses: actions/download-artifact@v8.0.2
+        with:
+          pattern: font-runtime-${{ matrix.font_runtime }}-*
+          merge-multiple: true
+          path: internal/platform/fontpatch/runtime
 
       - name: Install NSIS
         if: runner.os == 'Windows'
@@ -243,6 +296,7 @@ jobs:
       - name: Download packages
         uses: actions/download-artifact@v8.0.2
         with:
+          pattern: release-*
           path: release
           merge-multiple: true
 

@@ -199,6 +199,7 @@ type ProcessWindow interface {
 }
 
 type Dependencies struct {
+	FontPatch          FontPatchService
 	Shortcut           shortcut.Native
 	Runtime            *wailsapplication.App
 	ProcessWindow      ProcessWindow
@@ -220,6 +221,7 @@ type Dependencies struct {
 
 // App is the Wails v3 service exposed to the frontend.
 type App struct {
+	fontPatchService          FontPatchService
 	runtime                   *wailsapplication.App
 	processWindow             ProcessWindow
 	systemNotificationService SystemNotificationService
@@ -250,6 +252,7 @@ type App struct {
 
 func New(dependencies Dependencies) *App {
 	app := &App{
+		fontPatchService:          dependencies.FontPatch,
 		runtime:                   dependencies.Runtime,
 		processWindow:             dependencies.ProcessWindow,
 		systemNotificationService: dependencies.SystemNotification,
@@ -391,6 +394,11 @@ func (a *App) QuitApplication() error {
 }
 
 func (a *App) ServiceShutdown() error {
+	if a.fontPatchService != nil {
+		if err := a.fontPatchService.Close(); err != nil {
+			log.Printf("close font patch service: %v", err)
+		}
+	}
 	a.shortcut.Shutdown()
 	a.lifecycleService.Stop()
 	if err := a.tasksService.Close(); err != nil {

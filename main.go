@@ -17,12 +17,14 @@ import (
 	"cull-pear/internal/diagnostics"
 	"cull-pear/internal/dn"
 	"cull-pear/internal/dnprocess"
+	"cull-pear/internal/fontpatch"
 	"cull-pear/internal/installation"
 	"cull-pear/internal/lifecycle"
 	"cull-pear/internal/nativekit"
 	"cull-pear/internal/notification"
 	platformappupdate "cull-pear/internal/platform/appupdate"
 	platformdnprocess "cull-pear/internal/platform/dnprocess"
+	platformfontpatch "cull-pear/internal/platform/fontpatch"
 	platformnativekit "cull-pear/internal/platform/nativekit"
 	platformnotification "cull-pear/internal/platform/notification"
 	platformshortcut "cull-pear/internal/platform/shortcut"
@@ -222,6 +224,7 @@ func main() {
 		QuickNotes:         quickNotesService,
 		Tasks:              tasksService,
 		DnProcess:          dnProcessService,
+		FontPatch:          fontpatch.NewService(platformfontpatch.New()),
 	})
 	wailsApp.RegisterService(application.NewService(facade))
 

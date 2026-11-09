@@ -1,7 +1,7 @@
 import { useRef } from 'react'
 
 import { useAppUpdate } from '@/features/app-update'
-import { Button, PageTabs, RadioGroup, Select, Switch, type PageTab } from '@/shared/components/ui'
+import { Button, PageHeader, PageTabs, RadioGroup, Select, Switch, type PageTab } from '@/shared/components/ui'
 import { useFeedback } from '@/shared/feedback'
 import { createScopedClassNames } from '@/shared/lib/classNames'
 import { FONT_SIZE_PRESETS, type FontSizePreset } from '@/shared/theme/typography'
@@ -378,22 +378,25 @@ export function SettingsPanel() {
 
   return (
     <div ref={panelRef} className={cx('settings-panel')}>
-      <header className={styles.header}>
-        <h1 className={styles.title}>设置</h1>
-        <div
-          className={styles.headerActions}
-          data-hidden={activeCategory === 'overview'}
-          aria-hidden={activeCategory === 'overview'}
-          inert={activeCategory === 'overview'}
-        >
-          <span className={cx('settings-save-status')} aria-live='polite'>
-            {isSaving ? '正在同步…' : '修改后自动保存'}
-          </span>
-          <Button variant='outline' onClick={handleReset} disabled={isSaving}>
-            恢复全部默认设置
-          </Button>
-        </div>
-      </header>
+      <PageHeader
+        title='设置'
+        subtitle='管理外观、菜单、通知与应用偏好。'
+        actions={
+          <div
+            className={styles.headerActions}
+            data-hidden={activeCategory === 'overview'}
+            aria-hidden={activeCategory === 'overview'}
+            inert={activeCategory === 'overview'}
+          >
+            <span className={cx('settings-save-status')} aria-live='polite'>
+              {isSaving ? '正在同步…' : '修改后自动保存'}
+            </span>
+            <Button variant='outline' onClick={handleReset} disabled={isSaving}>
+              恢复全部默认设置
+            </Button>
+          </div>
+        }
+      />
 
       {settingsError && (
         <p className={cx('settings-error')} role='alert'>

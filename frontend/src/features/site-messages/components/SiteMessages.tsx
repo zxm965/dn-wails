@@ -274,7 +274,7 @@ export function SiteMessages({ onNavigate }: { onNavigate: (target: AppView) => 
   return (
     <div className={cx('dn-page')}>
       <PageHeader
-        title='站内消息'
+        title='消息'
         subtitle='查看桌面工作区公告与提醒。'
         actions={
           <>

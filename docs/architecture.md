@@ -142,6 +142,7 @@ Effect 的生命周期由账号 ID、已应用筛选、通知能力、启用状�
 
 ## 模块文档
 
+- [工坊：字体补丁](modules/font-patch.md)
 - [应用全局配置](modules/app-config.md)
 - [按钮尺寸系统](modules/button-system.md)
 - [通用 UI 组件](modules/ui-components.md)

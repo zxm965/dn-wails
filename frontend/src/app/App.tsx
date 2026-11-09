@@ -5,6 +5,7 @@ import { AccountLogin, AccountPanel, AccountTitleBarButton, useAccount } from '@
 import { CalendarPanel } from '@/features/calendar'
 import { DevToolsPanel } from '@/features/devtools'
 import { DnRoles, DnProcessKiller, DnWeeklyPlans } from '@/features/dn-system'
+import { FontPatchPanel } from '@/features/font-patch'
 import { QuickNotesPanel } from '@/features/quick-notes'
 import { SettingsPanel, useSettings } from '@/features/settings'
 import { SiteMessageCenter, SiteMessageProvider, SiteMessages } from '@/features/site-messages'
@@ -74,6 +75,7 @@ export default function App() {
     if (view === 'dn-weekly')
       return <DnWeeklyPlans key={account.user?.id} onNavigateRoles={() => navigateToView('dn-roles')} />
     if (view === 'dn-roles') return <DnRoles key={account.user?.id} />
+    if (view === 'dn-patches') return <FontPatchPanel />
     if (view === 'dn-kill-process') return <DnProcessKiller />
     if (view === 'site-messages') return <SiteMessages key={account.user?.id} onNavigate={navigateToView} />
     if (view === 'settings') return <SettingsPanel />
