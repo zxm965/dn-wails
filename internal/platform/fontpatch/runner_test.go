@@ -8,6 +8,7 @@ import (
 	"crypto/sha256"
 	"encoding/binary"
 	"encoding/hex"
+	"encoding/json"
 	"errors"
 	"io"
 	"os"
@@ -37,6 +38,88 @@ func TestUnpackRejectsEscapesAndSymlinks(t *testing.T) {
 				t.Fatal("accepted unsafe entry")
 			}
 		})
+	}
+}
+
+func duplicateRuntime(t *testing.T, manifest string) []byte {
+	t.Helper()
+	var buffer bytes.Buffer
+	archive := zip.NewWriter(&buffer)
+	header := &zip.FileHeader{Name: "_internal/Python"}
+	header.SetMode(0700)
+	writer, err := archive.CreateHeader(header)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := writer.Write([]byte("native runtime")); err != nil {
+		t.Fatal(err)
+	}
+	writer, err = archive.Create("runtime-files.json")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := writer.Write([]byte(manifest)); err != nil {
+		t.Fatal(err)
+	}
+	if err := archive.Close(); err != nil {
+		t.Fatal(err)
+	}
+	return buffer.Bytes()
+}
+
+func TestUnpackRestoresDuplicateFilesWithoutSymlinks(t *testing.T) {
+	data := duplicateRuntime(t, `{"version":1,"duplicates":[{"path":"_internal/Python.framework/Python","source":"_internal/Python"}]}`)
+	root := t.TempDir()
+	if err := unpack(context.Background(), data, root); err != nil {
+		t.Fatal(err)
+	}
+	original, err := os.Stat(filepath.Join(root, "_internal/Python"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	path := filepath.Join(root, "_internal/Python.framework/Python")
+	alias, err := os.Lstat(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	content, err := os.ReadFile(path)
+	if err != nil || string(content) != "native runtime" || !alias.Mode().IsRegular() || alias.Mode().Perm() != original.Mode().Perm() {
+		t.Fatalf("incorrect alias: %v, %q, %v", alias, content, err)
+	}
+}
+
+func TestUnpackRejectsInvalidDuplicateManifest(t *testing.T) {
+	for _, pair := range [][2]string{
+		{"../outside", "_internal/Python"},
+		{"/absolute", "_internal/Python"},
+		{"C:/drive", "_internal/Python"},
+		{`folder\escape`, "_internal/Python"},
+		{"folder/../alias", "_internal/Python"},
+		{"alias", "../outside"},
+		{"alias", "missing"},
+		{"alias", "_internal"},
+		{"_internal/Python", "_internal/Python"},
+		{"runtime-files.json", "_internal/Python"},
+	} {
+		t.Run(pair[0]+"-"+pair[1], func(t *testing.T) {
+			entry, err := json.Marshal(map[string]string{"path": pair[0], "source": pair[1]})
+			if err != nil {
+				t.Fatal(err)
+			}
+			data := duplicateRuntime(t, `{"version":1,"duplicates":[`+string(entry)+`]}`)
+			if err := unpack(context.Background(), data, t.TempDir()); err == nil {
+				t.Fatal("accepted unsafe duplicate")
+			}
+		})
+	}
+	for _, manifest := range []string{
+		`{`, `{"version":2}`, `{"duplicates":[]}`,
+		`{"version":1,"duplicates":[{"path":"a","source":"_internal/Python"},{"path":"b","source":"a"}]}`,
+		`{"version":1,"duplicates":[{"path":"a","source":"_internal/Python"},{"path":"a","source":"_internal/Python"}]}`,
+	} {
+		if err := unpack(context.Background(), duplicateRuntime(t, manifest), t.TempDir()); err == nil {
+			t.Fatalf("accepted invalid manifest %s", manifest)
+		}
 	}
 }
 

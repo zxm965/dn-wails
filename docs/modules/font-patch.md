@@ -44,7 +44,7 @@ Wails 方法：
 - 缺字检查只覆盖固定中英文样本文字，不代表全量游戏文本。字体替换不等于修改 UI 字号，游戏内加载和排版仍需实测。
 - 取消、超时或构建失败会删除本次临时目录并保留上一成功结果；重置、新构建成功和应用关闭清理已持有的临时产物。
 - 下载使用排他创建；已有同名文件返回错误，不覆盖源文件或历史下载。导出失败或取消会清理部分写出的文件。
-- 运行时 ZIP 只接受相对普通文件路径，拒绝目录穿越和符号链接，限制总展开体积；进程输出限制为 64 KiB。
+- 运行时 ZIP 只接受相对普通文件路径，拒绝目录穿越和符号链接，限制总展开体积；进程输出限制为 64 KiB。重复文件清单只能引用 ZIP 内已有普通文件，不允许别名链或覆盖已有文件；恢复别名时优先使用硬链接，不支持硬链接的文件系统回退到排他复制。
 - 未含当前 CPU/系统运行时的开发构建显示组件不可用；正式发布必须先生成所有目标运行时。生产构建入口会拒绝缺少目标运行时的安装包，用户无需自行补装组件。
 
 ## 开发与发布
@@ -61,12 +61,17 @@ Windows 使用 `.font-patch-venv\Scripts\python.exe`。生成后的 `internal/pl
 
 发布流水线分别在原生 Windows amd64、macOS arm64 和 macOS amd64 机器上冻结引擎并执行端到端测试；macOS universal 应用内含两种架构，Windows 单文件 EXE 和安装版均直接内嵌引擎。运行时包括 Python、fontTools 和 PyInstaller 的许可文本。
 
+为控制安装包体积，Go 使用按系统和架构选择的嵌入文件，每个 macOS universal 切片只携带自己的运行时。目录中的 `<系统>-<架构>.txt` 是开发占位文件，不代表引擎可用，生产检查仍要求对应 ZIP。PyInstaller 仅补充动态加载的 `fontTools.ttLib.tables` 表处理器，其余模块按实际导入收集；不再全量收集 fontTools 源码、C 源文件和工具数据。排除本地转换不使用的 TLS 模块和 OpenSSL 哈希后端，SHA256 继续由 CPython 内置实现提供，不改变摘要算法或校验。
+
+`scripts/font_runtime_archive.py` 按内容和可执行权限去重，ZIP 每份相同内容只保存一次，并通过版本为 1 的 `runtime-files.json` 记录其他路径。这可消除 PyInstaller 在 macOS Python.framework 内产生的多份动态库副本，同时保留运行时所需的完整路径结构。解包仍兼容没有清单的旧运行时。精简后的引擎继续随应用离线分发，不要求用户安装或下载组件。
+
 所有发布 job 在检出标签前统一设置 Git `core.autocrlf=false`、`core.eol=lf`，防止 Windows 自动换行转换改变源码快照的 SHA256；仍按原始字节严格校验，不重新生成或跳过清单。该步骤属于工作流本身，因此从 main 手动发布已有标签也能修复旧标签的检出行为，无需移动标签。
 
 ## 验证
 
 ```sh
 .font-patch-venv/bin/python -m unittest discover -s tools/font-patch/tests -q
+.font-patch-venv/bin/python -m unittest discover -s scripts/tests -p 'test_font_runtime_archive.py' -v
 DN_REQUIRE_FONT_RUNTIME=1 go test ./internal/fontpatch ./internal/platform/fontpatch -count=1 -timeout 3m
 go test ./...
 cd frontend

@@ -2,7 +2,6 @@
 import hashlib
 import json
 from importlib.metadata import distribution as package_distribution
-import os
 from pathlib import Path
 import platform
 import subprocess
@@ -10,7 +9,8 @@ import shutil
 import sys
 import sysconfig
 import tempfile
-import zipfile
+
+from font_runtime_archive import write_runtime_archive
 
 root = Path(__file__).resolve().parents[1]
 source = root / "tools" / "font-patch"
@@ -26,7 +26,15 @@ destination.parent.mkdir(parents=True, exist_ok=True)
 with tempfile.TemporaryDirectory(prefix="font-patch-build-") as temp:
     work = Path(temp)
     subprocess.run([sys.executable, "-m", "PyInstaller", "--noconfirm", "--clean", "--onedir",
-                    "--name", "dn-font-patch", "--collect-all", "fontTools", "--noupx",
+                    "--name", "dn-font-patch", "--noupx",
+                    # Font table handlers are loaded dynamically by their tags.
+                    # Keep all table handlers, but not the fontTools CLI, source,
+                    # test data, or optional dependencies of unrelated tools.
+                    "--collect-submodules", "fontTools.ttLib.tables",
+                    # Conversion is local-only. hashlib falls back to CPython's
+                    # built-in hash implementations, avoiding OpenSSL binaries.
+                    "--exclude-module", "ssl", "--exclude-module", "_ssl",
+                    "--exclude-module", "_hashlib",
                     "--distpath", str(work / "dist"), "--workpath", str(work / "work"),
                     "--specpath", str(work), str(source / "worker.py")], check=True)
     distribution = work / "dist" / "dn-font-patch"
@@ -50,12 +58,9 @@ with tempfile.TemporaryDirectory(prefix="font-patch-build-") as temp:
     probe = subprocess.run([str(executable)], input=b'{}', capture_output=True, timeout=30)
     if probe.returncode != 1 or not json.loads(probe.stdout).get("error"):
         raise SystemExit("Frozen font runtime smoke test failed")
-    # Dereference PyInstaller symlinks; Go extraction accepts only regular files.
+    # Store identical files once, including PyInstaller's framework aliases.
+    # The Go runner restores aliases as regular files, never symbolic links.
     staged = destination.with_suffix(".zip.tmp")
-    with zipfile.ZipFile(staged, "w", zipfile.ZIP_DEFLATED, compresslevel=9) as archive:
-        for directory, _, files in os.walk(distribution, followlinks=True):
-            for name in sorted(files):
-                path = Path(directory) / name
-                archive.write(path, path.relative_to(distribution))
+    write_runtime_archive(distribution, staged)
     staged.replace(destination)
-print(destination)
+print(f"{destination}: {destination.stat().st_size / 1024**2:.2f} MiB")

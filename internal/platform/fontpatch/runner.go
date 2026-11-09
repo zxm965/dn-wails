@@ -5,7 +5,6 @@ import (
 	"bytes"
 	"context"
 	"crypto/rand"
-	"embed"
 	"encoding/hex"
 	"encoding/json"
 	"errors"
@@ -20,9 +19,6 @@ import (
 
 	"cull-pear/internal/fontpatch"
 )
-
-//go:embed runtime/*
-var bundles embed.FS
 
 type Runner struct {
 	mu      sync.Mutex
@@ -213,16 +209,25 @@ func unpack(ctx context.Context, data []byte, directory string) error {
 		return err
 	}
 	var total uint64
+	files := make(map[string]*zip.File)
+	var manifest *zip.File
 	for _, file := range archive.File {
 		if err := ctx.Err(); err != nil {
 			return err
 		}
-		if !filepath.IsLocal(file.Name) || strings.Contains(file.Name, "\\") || strings.Contains(file.Name, ":") || file.Mode()&os.ModeSymlink != 0 {
+		if !runtimePath(file.Name) || (!file.Mode().IsRegular() && !file.FileInfo().IsDir()) {
 			return errors.New("字体工具包含不合法路径")
 		}
-		total += file.UncompressedSize64
-		if total > 512<<20 {
+		if file.UncompressedSize64 > 512<<20-total {
 			return errors.New("字体工具大小超出限制")
+		}
+		total += file.UncompressedSize64
+		if file.Name == "runtime-files.json" {
+			if manifest != nil || !file.Mode().IsRegular() || file.UncompressedSize64 > 1<<20 {
+				return errors.New("字体工具文件清单不合法")
+			}
+			manifest = file
+			continue
 		}
 		path := filepath.Join(directory, file.Name)
 		if file.FileInfo().IsDir() {
@@ -253,8 +258,70 @@ func unpack(ctx context.Context, data []byte, directory string) error {
 		if err := errors.Join(copyErr, closeErr); err != nil {
 			return err
 		}
+		files[file.Name] = file
+	}
+	if manifest == nil {
+		return nil // Support existing bundles without deduplication metadata.
+	}
+	input, err := manifest.Open()
+	if err != nil {
+		return err
+	}
+	defer input.Close()
+	payload, err := io.ReadAll(io.LimitReader(input, 1<<20+1))
+	if err != nil {
+		return err
+	}
+	var entries struct {
+		Version    int `json:"version"`
+		Duplicates []struct {
+			Path   string `json:"path"`
+			Source string `json:"source"`
+		} `json:"duplicates"`
+	}
+	if len(payload) > 1<<20 || json.Unmarshal(payload, &entries) != nil || entries.Version != 1 {
+		return errors.New("字体工具文件清单不合法")
+	}
+	for _, entry := range entries.Duplicates {
+		if err := ctx.Err(); err != nil {
+			return err
+		}
+		// Only an original regular ZIP entry can be a source: no external
+		// paths, symbolic links, alias chains, or replacement of existing files.
+		source, exists := files[entry.Source]
+		if !exists || !runtimePath(entry.Source) || !runtimePath(entry.Path) || entry.Path == "runtime-files.json" {
+			return errors.New("字体工具重复文件路径不合法")
+		}
+		if source.UncompressedSize64 > 512<<20-total {
+			return errors.New("字体工具大小超出限制")
+		}
+		total += source.UncompressedSize64
+		target := filepath.Join(directory, entry.Path)
+		if err := os.MkdirAll(filepath.Dir(target), 0700); err != nil {
+			return err
+		}
+		original := filepath.Join(directory, entry.Source)
+		if err := os.Link(original, target); err != nil {
+			// Filesystems without hard links still work; copyFile is exclusive.
+			if err := copyFile(ctx, original, target, 512<<20); err != nil {
+				return err
+			}
+			mode := os.FileMode(0600)
+			if source.Mode()&0111 != 0 {
+				mode = 0700
+			}
+			if err := os.Chmod(target, mode); err != nil {
+				return err
+			}
+		}
 	}
 	return nil
+}
+
+func runtimePath(name string) bool {
+	return filepath.IsLocal(name) && name != "." &&
+		!strings.Contains(name, "\\") && !strings.Contains(name, ":") &&
+		filepath.ToSlash(filepath.Clean(name)) == strings.TrimSuffix(name, "/")
 }
 
 func copyFile(ctx context.Context, source, destination string, limit int64) (err error) {
