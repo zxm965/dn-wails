@@ -30,6 +30,13 @@ jobs:
     name: Quality checks
     runs-on: macos-latest
     steps:
+      - &configure-checkout
+        name: Preserve source bytes on checkout
+        shell: bash
+        run: |
+          git config --global core.autocrlf false
+          git config --global core.eol lf
+
       - &checkout-release
         name: Check out source
         uses: actions/checkout@v7.0.1
@@ -112,6 +119,7 @@ jobs:
             arch: amd64
     runs-on: ${{ matrix.runner }}
     steps:
+      - *configure-checkout
       - *checkout-release
       - *setup-go
       - name: Set up font build Python
@@ -156,6 +164,7 @@ jobs:
             font_runtime: windows
     runs-on: ${{ matrix.runner }}
     steps:
+      - *configure-checkout
       - *checkout-release
 
       - *setup-pnpm
@@ -280,6 +289,7 @@ jobs:
     runs-on: ubuntu-latest
     environment: RELEASE
     steps:
+      - *configure-checkout
       - name: Check out source
         uses: actions/checkout@v7.0.1
         with:

@@ -61,6 +61,8 @@ Windows 使用 `.font-patch-venv\Scripts\python.exe`。生成后的 `internal/pl
 
 发布流水线分别在原生 Windows amd64、macOS arm64 和 macOS amd64 机器上冻结引擎并执行端到端测试；macOS universal 应用内含两种架构，Windows 单文件 EXE 和安装版均直接内嵌引擎。运行时包括 Python、fontTools 和 PyInstaller 的许可文本。
 
+所有发布 job 在检出标签前统一设置 Git `core.autocrlf=false`、`core.eol=lf`，防止 Windows 自动换行转换改变源码快照的 SHA256；仍按原始字节严格校验，不重新生成或跳过清单。该步骤属于工作流本身，因此从 main 手动发布已有标签也能修复旧标签的检出行为，无需移动标签。
+
 ## 验证
 
 ```sh
