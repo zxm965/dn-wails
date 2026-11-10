@@ -5,6 +5,8 @@ import (
 	"bytes"
 	"context"
 	"crypto/rand"
+	"crypto/sha256"
+	"encoding/base64"
 	"encoding/hex"
 	"encoding/json"
 	"errors"
@@ -21,11 +23,14 @@ import (
 )
 
 type Runner struct {
-	mu      sync.Mutex
-	root    string
-	id      string
-	zipPath string
-	closed  bool
+	mu         sync.Mutex
+	root       string
+	id         string
+	zipPath    string
+	fontPath   string
+	fontSHA256 string
+	draft      *draftState
+	closed     bool
 }
 
 func New() *Runner { return &Runner{} }
@@ -44,58 +49,29 @@ func (r *Runner) Available() bool {
 func (r *Runner) Build(ctx context.Context, source string) (fontpatch.Result, error) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
+	return r.build(ctx, source, fontpatch.Options{ScalePercent: 100}, "")
+}
+
+func (r *Runner) build(ctx context.Context, source string, options fontpatch.Options, expectedSHA string) (fontpatch.Result, error) {
 	if r.closed {
 		return fontpatch.Result{}, fontpatch.ErrUnavailable
 	}
-	info, err := os.Stat(source)
-	if err != nil || !info.Mode().IsRegular() {
-		return fontpatch.Result{}, fontpatch.ErrInvalidFont
-	}
-	if info.Size() > 64<<20 || info.Size() == 0 {
-		return fontpatch.Result{}, errors.New("字体文件必须非空且不超过 64 MiB")
-	}
-	data, err := bundles.ReadFile(bundleName())
-	if err != nil {
-		return fontpatch.Result{}, fontpatch.ErrUnavailable
-	}
-	root, err := os.MkdirTemp("", "dn-font-patch-")
+	root, inputPath, executable, err := newFontWorkspace(ctx, source)
 	if err != nil {
 		return fontpatch.Result{}, err
 	}
-	canonicalRoot, err := filepath.EvalSymlinks(root)
-	if err != nil {
-		os.RemoveAll(root)
-		return fontpatch.Result{}, err
-	}
-	root = canonicalRoot
 	success := false
 	defer func() {
 		if !success {
 			os.RemoveAll(root)
 		}
 	}()
-	runtimeDir := filepath.Join(root, "runtime")
-	if err := unpack(ctx, data, runtimeDir); err != nil {
-		return fontpatch.Result{}, fmt.Errorf("准备字体工具失败：%w", err)
-	}
-	executable := filepath.Join(runtimeDir, "dn-font-patch")
-	if runtime.GOOS == "windows" {
-		executable += ".exe"
-	}
-	// Snapshot the upload before conversion so subsequent source edits cannot
-	// change what is inspected, packed and reported; never write the original.
-	inputDir := filepath.Join(root, "input")
-	if err := os.Mkdir(inputDir, 0700); err != nil {
-		return fontpatch.Result{}, err
-	}
-	inputPath := filepath.Join(inputDir, filepath.Base(source))
-	if err := copyFile(ctx, source, inputPath, 64<<20); err != nil {
-		return fontpatch.Result{}, err
-	}
 	request, err := json.Marshal(struct {
-		Source string `json:"source"`
-		Output string `json:"output"`
-	}{inputPath, filepath.Join(root, "build")})
+		Source      string            `json:"source"`
+		Output      string            `json:"output"`
+		Options     fontpatch.Options `json:"options"`
+		ExpectedSHA string            `json:"expectedSHA256"`
+	}{inputPath, filepath.Join(root, "build"), options, expectedSHA})
 	if err != nil {
 		return fontpatch.Result{}, err
 	}
@@ -144,12 +120,17 @@ func (r *Runner) Build(ctx context.Context, source string) (fontpatch.Result, er
 		return fontpatch.Result{}, err
 	}
 	result.ID = hex.EncodeToString(id[:])
+	fontPath := inputPath
+	if result.Converted || result.Adjusted {
+		fontPath = filepath.Join(filepath.Dir(response.Result.PakPath), "details", strings.TrimSuffix(result.Filename, ".pak")+".ttf")
+	}
 	if r.root != "" {
 		if err := os.RemoveAll(r.root); err != nil {
 			return fontpatch.Result{}, fmt.Errorf("清理上次补丁失败：%w", err)
 		}
 	}
 	r.root, r.id, r.zipPath = root, result.ID, response.Result.ZipPath
+	r.fontPath, r.fontSHA256 = fontPath, result.SHA256
 	success = true
 	return result, nil
 }
@@ -169,14 +150,44 @@ func (r *Runner) Export(ctx context.Context, id, destination string) error {
 	return nil
 }
 
+func (r *Runner) Preview(ctx context.Context, id string) (fontpatch.Preview, error) {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	if r.closed || ((r.id == "" || id != r.id) && (r.draft == nil || r.draft.info.ID != id)) {
+		return fontpatch.Preview{}, fontpatch.ErrNoResult
+	}
+	fontPath, fontSHA := r.fontPath, r.fontSHA256
+	if r.draft != nil && id == r.draft.info.ID {
+		fontPath, fontSHA = r.draft.fontPath, r.draft.info.SHA256
+	}
+	file, err := os.Open(fontPath)
+	if err != nil {
+		return fontpatch.Preview{}, err
+	}
+	defer file.Close()
+	data, err := io.ReadAll(io.LimitReader(&contextReader{ctx: ctx, reader: file}, 64<<20+1))
+	if err != nil {
+		return fontpatch.Preview{}, err
+	}
+	digest := sha256.Sum256(data)
+	if len(data) > 64<<20 || hex.EncodeToString(digest[:]) != fontSHA {
+		return fontpatch.Preview{}, errors.New("预览字体校验失败，请重新生成补丁")
+	}
+	return fontpatch.Preview{Data: base64.StdEncoding.EncodeToString(data)}, nil
+}
+
 func (r *Runner) Close() error {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 	r.closed = true
+	var err error
 	if r.root != "" {
-		return os.RemoveAll(r.root)
+		err = os.RemoveAll(r.root)
 	}
-	return nil
+	if r.draft != nil {
+		err = errors.Join(err, os.RemoveAll(r.draft.root))
+	}
+	return err
 }
 
 func (r *Runner) Reset() error {
@@ -185,12 +196,19 @@ func (r *Runner) Reset() error {
 	if r.closed {
 		return fontpatch.ErrUnavailable
 	}
+	if r.draft != nil {
+		if err := os.RemoveAll(r.draft.root); err != nil {
+			return err
+		}
+		r.draft = nil
+	}
 	if r.root != "" {
 		if err := os.RemoveAll(r.root); err != nil {
 			return fmt.Errorf("清理临时补丁失败：%w", err)
 		}
 	}
 	r.root, r.id, r.zipPath = "", "", ""
+	r.fontPath, r.fontSHA256 = "", ""
 	return nil
 }
 

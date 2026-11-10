@@ -13,9 +13,12 @@ root = Path(__file__).resolve().parents[1]
 source = Path(sys.argv[1]) / "src" / "dn_ui_patch"
 target = root / "tools" / "font-patch" / "dn_ui_patch"
 target.mkdir(parents=True, exist_ok=True)
-names = ["__init__.py", "archive.py", "build_output.py", "font_conversion.py", "font_metadata.py", "desktop.py"]
+names = ["__init__.py", "archive.py", "build_output.py", "font_conversion.py", "font_metadata.py"]
 manifest = {}
 for name in names:
     shutil.copyfile(source / name, target / name)
+    manifest[name] = hashlib.sha256((target / name).read_bytes()).hexdigest()
+# Desktop preview/confirmation and adjustment are maintained in dn-wails.
+for name in ("desktop.py", "font_adjustment.py"):
     manifest[name] = hashlib.sha256((target / name).read_bytes()).hexdigest()
 (target.parent / "source-manifest.json").write_text(json.dumps(manifest, indent=2) + "\n", encoding="utf-8")

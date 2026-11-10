@@ -22,6 +22,20 @@ func (p *stubPlatform) Close() error                                 { return ni
 
 func (p *stubPlatform) Reset() error { return nil }
 
+func (p *stubPlatform) Preview(context.Context, string) (Preview, error) {
+	return Preview{Data: "preview"}, nil
+}
+
+func (p *stubPlatform) Prepare(context.Context, string, Options) (Draft, error) {
+	return Draft{ID: "draft"}, nil
+}
+func (p *stubPlatform) Adjust(context.Context, string, Options) (Draft, error) {
+	return Draft{ID: "adjusted"}, nil
+}
+func (p *stubPlatform) Confirm(ctx context.Context, id string) (Result, error) {
+	return p.build(ctx, id)
+}
+
 func TestBuildValidatesInputAndKeepsPreviousResultOnFailure(t *testing.T) {
 	p := &stubPlatform{available: true, build: func(context.Context, string) (Result, error) { return Result{ID: "first"}, nil }}
 	s := NewService(p)

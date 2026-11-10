@@ -5,6 +5,109 @@
 // @ts-ignore: Unused imports
 import { Create as $Create } from "@wailsio/runtime";
 
+export class Draft {
+    "id": string;
+    "fontName": string;
+    "sourceName": string;
+    "converted": boolean;
+    "adjusted": boolean;
+    "missingCharacters": string;
+    "glyphCount": number;
+    "sha256": string;
+    "options": Options;
+
+    /** Creates a new Draft instance. */
+    constructor($$source: Partial<Draft> = {}) {
+        if (!("id" in $$source)) {
+            this["id"] = "";
+        }
+        if (!("fontName" in $$source)) {
+            this["fontName"] = "";
+        }
+        if (!("sourceName" in $$source)) {
+            this["sourceName"] = "";
+        }
+        if (!("converted" in $$source)) {
+            this["converted"] = false;
+        }
+        if (!("adjusted" in $$source)) {
+            this["adjusted"] = false;
+        }
+        if (!("missingCharacters" in $$source)) {
+            this["missingCharacters"] = "";
+        }
+        if (!("glyphCount" in $$source)) {
+            this["glyphCount"] = 0;
+        }
+        if (!("sha256" in $$source)) {
+            this["sha256"] = "";
+        }
+        if (!("options" in $$source)) {
+            this["options"] = (new Options());
+        }
+
+        Object.assign(this, $$source);
+    }
+
+    /**
+     * Creates a new Draft instance from a string or object.
+     */
+    static createFrom($$source: any = {}): Draft {
+        const $$createField8_0 = $$createType0;
+        let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
+        if ("options" in $$parsedSource) {
+            $$parsedSource["options"] = $$createField8_0($$parsedSource["options"]);
+        }
+        return new Draft($$parsedSource as Partial<Draft>);
+    }
+}
+
+export class Options {
+    "scalePercent": number;
+    "weight": number;
+
+    /** Creates a new Options instance. */
+    constructor($$source: Partial<Options> = {}) {
+        if (!("scalePercent" in $$source)) {
+            this["scalePercent"] = 0;
+        }
+        if (!("weight" in $$source)) {
+            this["weight"] = 0;
+        }
+
+        Object.assign(this, $$source);
+    }
+
+    /**
+     * Creates a new Options instance from a string or object.
+     */
+    static createFrom($$source: any = {}): Options {
+        let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
+        return new Options($$parsedSource as Partial<Options>);
+    }
+}
+
+export class Preview {
+    "data": string;
+
+    /** Creates a new Preview instance. */
+    constructor($$source: Partial<Preview> = {}) {
+        if (!("data" in $$source)) {
+            this["data"] = "";
+        }
+
+        Object.assign(this, $$source);
+    }
+
+    /**
+     * Creates a new Preview instance from a string or object.
+     */
+    static createFrom($$source: any = {}): Preview {
+        let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
+        return new Preview($$parsedSource as Partial<Preview>);
+    }
+}
+
 export class Result {
     "id": string;
     "fontName": string;
@@ -18,6 +121,9 @@ export class Result {
     "sha256": string;
     "containerVerified": boolean;
     "gameVerified": boolean;
+    "adjusted": boolean;
+    "options": Options;
+    "draftId": string;
 
     /** Creates a new Result instance. */
     constructor($$source: Partial<Result> = {}) {
@@ -57,6 +163,15 @@ export class Result {
         if (!("gameVerified" in $$source)) {
             this["gameVerified"] = false;
         }
+        if (!("adjusted" in $$source)) {
+            this["adjusted"] = false;
+        }
+        if (!("options" in $$source)) {
+            this["options"] = (new Options());
+        }
+        if (!("draftId" in $$source)) {
+            this["draftId"] = "";
+        }
 
         Object.assign(this, $$source);
     }
@@ -65,7 +180,11 @@ export class Result {
      * Creates a new Result instance from a string or object.
      */
     static createFrom($$source: any = {}): Result {
+        const $$createField13_0 = $$createType0;
         let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
+        if ("options" in $$parsedSource) {
+            $$parsedSource["options"] = $$createField13_0($$parsedSource["options"]);
+        }
         return new Result($$parsedSource as Partial<Result>);
     }
 }
@@ -75,6 +194,8 @@ export class Status {
     "busy": boolean;
     "result": Result | null;
     "error": string;
+    "draft": Draft | null;
+    "phase": string;
 
     /** Creates a new Status instance. */
     constructor($$source: Partial<Status> = {}) {
@@ -90,6 +211,12 @@ export class Status {
         if (!("error" in $$source)) {
             this["error"] = "";
         }
+        if (!("draft" in $$source)) {
+            this["draft"] = null;
+        }
+        if (!("phase" in $$source)) {
+            this["phase"] = "";
+        }
 
         Object.assign(this, $$source);
     }
@@ -98,15 +225,22 @@ export class Status {
      * Creates a new Status instance from a string or object.
      */
     static createFrom($$source: any = {}): Status {
-        const $$createField2_0 = $$createType1;
+        const $$createField2_0 = $$createType2;
+        const $$createField4_0 = $$createType4;
         let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
         if ("result" in $$parsedSource) {
             $$parsedSource["result"] = $$createField2_0($$parsedSource["result"]);
+        }
+        if ("draft" in $$parsedSource) {
+            $$parsedSource["draft"] = $$createField4_0($$parsedSource["draft"]);
         }
         return new Status($$parsedSource as Partial<Status>);
     }
 }
 
 // Private type creation functions
-const $$createType0 = Result.createFrom;
-const $$createType1 = $Create.Nullable($$createType0);
+const $$createType0 = Options.createFrom;
+const $$createType1 = Result.createFrom;
+const $$createType2 = $Create.Nullable($$createType1);
+const $$createType3 = Draft.createFrom;
+const $$createType4 = $Create.Nullable($$createType3);

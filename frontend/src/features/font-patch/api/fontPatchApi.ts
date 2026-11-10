@@ -4,13 +4,30 @@ import {
   GetFontPatchStatus,
   SaveFontPatch,
   ResetFontPatch,
+  PrepareFontPatch,
+  AdjustFontPatch,
+  GetFontPatchPreview,
 } from '@bindings/cull-pear/internal/application/app'
-import type { Result, Status } from '@bindings/cull-pear/internal/fontpatch/models'
+import type { Result, Status, Draft, Options, Preview } from '@bindings/cull-pear/internal/fontpatch/models'
 
 import { chooseSavePath, pickFiles } from '@/shared/native-kit'
 
 export type FontPatchResult = Result
 export type FontPatchStatus = Status
+export type FontPatchDraft = Draft
+export type FontPatchOptions = Options
+
+export function prepareFontPatch(path: string, options: FontPatchOptions): Promise<FontPatchDraft> {
+  return PrepareFontPatch(path, options)
+}
+
+export function adjustFontPatch(id: string, options: FontPatchOptions): Promise<FontPatchDraft> {
+  return AdjustFontPatch(id, options)
+}
+
+export function getFontPatchPreview(id: string): Promise<Preview> {
+  return GetFontPatchPreview(id)
+}
 
 export function getFontPatchStatus(): Promise<FontPatchStatus> {
   return GetFontPatchStatus()
@@ -18,7 +35,7 @@ export function getFontPatchStatus(): Promise<FontPatchStatus> {
 
 export async function pickFont(): Promise<string | undefined> {
   const paths = await pickFiles({
-    title: '上传字体并生成补丁',
+    title: '选择字体并预览',
     filters: [{ displayName: '字体文件（TTF / OTF）', pattern: '*.ttf;*.otf' }],
   })
   return paths[0]

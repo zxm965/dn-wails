@@ -13,8 +13,13 @@ import {
   saveFontPatch,
   resetFontPatch,
   type FontPatchResult,
+  type FontPatchDraft,
+  type FontPatchOptions,
+  prepareFontPatch,
+  adjustFontPatch,
 } from '../api/fontPatchApi'
 import { getFontDisplayName } from '../model/fontName'
+import { FontPreview } from './FontPreview'
 
 import { styles } from './FontPatchPanel.css'
 
@@ -26,6 +31,10 @@ export function FontPatchPanel() {
   const [available, setAvailable] = useState(false)
   const [loading, setLoading] = useState(true)
   const [busy, setBusy] = useState(false)
+  const [building, setBuilding] = useState(false)
+  const [draft, setDraft] = useState<FontPatchDraft | null>(null)
+  const [options, setOptions] = useState<FontPatchOptions>({ scalePercent: 100, weight: 0 })
+  const [failedAdjustment, setFailedAdjustment] = useState('')
   const [picking, setPicking] = useState(false)
   const [saving, setSaving] = useState(false)
   const [resetting, setResetting] = useState(false)
@@ -34,7 +43,11 @@ export function FontPatchPanel() {
   const [error, setError] = useState('')
   const [savedPath, setSavedPath] = useState('')
   const operation = useRef(false)
+  const pendingTask = useRef<{ cancelRequested: boolean } | null>(null)
   const dropArea = useRef<HTMLDivElement>(null)
+  const dirty =
+    !!draft && (options.scalePercent !== draft.options.scalePercent || options.weight !== draft.options.weight)
+  const adjustmentKey = draft ? `${draft.id}:${options.scalePercent}:${options.weight}` : ''
   const disabled = loading || !available || busy || picking || saving || resetting
 
   // Recover the backend task/result when navigating away and back. Polling is
@@ -48,8 +61,18 @@ export function FontPatchPanel() {
         if (disposed) return
         setAvailable(status.available)
         setBusy(status.busy)
+        setBuilding(status.phase === 'build')
+        if (status.busy) pendingTask.current ??= { cancelRequested: false }
+        else {
+          pendingTask.current = null
+          setCanceling(false)
+        }
         if (status.error) setError(status.error)
         if (status.result) setResult(status.result)
+        if (status.draft) {
+          setDraft(status.draft)
+          setOptions(status.draft.options)
+        }
         if (status.busy) timer = setTimeout(() => void refresh(), 1000)
       } catch (cause) {
         if (!disposed) setError(getErrorMessage(cause, '无法读取字体工具状态。'))
@@ -64,20 +87,99 @@ export function FontPatchPanel() {
     }
   }, [])
 
-  async function generate(path: string) {
+  async function prepare(path: string) {
     setError('')
     if (!/\.(ttf|otf)$/i.test(path)) {
       setError('请选择 TTF 或静态 OTF 字体文件。')
       return
     }
+    const task = { cancelRequested: false }
+    pendingTask.current = task
     setBusy(true)
     setSavedPath('')
     try {
-      setResult(await buildFontPatch(path))
+      const initialOptions = { scalePercent: 100, weight: 0 }
+      const prepared = await prepareFontPatch(path, initialOptions)
+      setDraft(prepared)
+      setOptions(initialOptions)
+      setFailedAdjustment('')
+      setResult(null)
     } catch (cause) {
-      setError(getErrorMessage(cause, '补丁生成失败，请检查字体文件后重试。'))
+      if (task.cancelRequested && draft) {
+        setOptions(draft.options)
+        setFailedAdjustment('')
+      }
+      setError(
+        task.cancelRequested
+          ? '已取消处理，可重新上传字体。'
+          : getErrorMessage(cause, '字体预览失败，请检查字体文件后重试。'),
+      )
     } finally {
+      pendingTask.current = null
       setBusy(false)
+      setCanceling(false)
+    }
+  }
+
+  useEffect(() => {
+    if (!draft || !dirty || busy || disabled || failedAdjustment === adjustmentKey) return
+    const timer = setTimeout(() => {
+      if (operation.current) return
+      operation.current = true
+      const task = { cancelRequested: false }
+      pendingTask.current = task
+      setBusy(true)
+      setError('')
+      setSavedPath('')
+      void adjustFontPatch(draft.id, options)
+        .then((next) => {
+          setDraft(next)
+          setFailedAdjustment('')
+          if (task.cancelRequested) setOptions(next.options)
+        })
+        .catch((cause: unknown) => {
+          if (task.cancelRequested) {
+            // Discard queued slider changes as well as the canceled adjustment.
+            setOptions(draft.options)
+            setFailedAdjustment('')
+            setError('已取消调整，已恢复上一次预览。')
+          } else {
+            setError(getErrorMessage(cause, '预览调整失败，请减小调整幅度后重试。'))
+            setFailedAdjustment(adjustmentKey)
+          }
+        })
+        .finally(() => {
+          pendingTask.current = null
+          operation.current = false
+          setBusy(false)
+          setCanceling(false)
+        })
+    }, 350)
+    return () => clearTimeout(timer)
+  }, [draft, dirty, busy, disabled, options, failedAdjustment, adjustmentKey])
+
+  async function confirm() {
+    if (!draft || dirty || disabled || operation.current) return
+    operation.current = true
+    const task = { cancelRequested: false }
+    pendingTask.current = task
+    setBusy(true)
+    setBuilding(true)
+    setError('')
+    setSavedPath('')
+    try {
+      setResult(await buildFontPatch(draft.id))
+    } catch (cause) {
+      setError(
+        task.cancelRequested
+          ? '已取消生成，预览已保留，可重新确认生成。'
+          : getErrorMessage(cause, '补丁生成失败，请重试。'),
+      )
+    } finally {
+      pendingTask.current = null
+      operation.current = false
+      setBusy(false)
+      setBuilding(false)
       setCanceling(false)
     }
   }
@@ -90,7 +192,7 @@ export function FontPatchPanel() {
     try {
       const path = await pickFont()
       setPicking(false)
-      if (path) await generate(path)
+      if (path) await prepare(path)
     } catch (cause) {
       setError(getErrorMessage(cause, '无法打开字体文件。'))
     } finally {
@@ -110,7 +212,7 @@ export function FontPatchPanel() {
     }
     operation.current = true
     try {
-      await generate(paths[0])
+      await prepare(paths[0])
     } finally {
       operation.current = false
     }
@@ -141,6 +243,9 @@ export function FontPatchPanel() {
     try {
       await resetFontPatch()
       setResult(null)
+      setDraft(null)
+      setOptions({ scalePercent: 100, weight: 0 })
+      setFailedAdjustment('')
       setError('')
       setSavedPath('')
       setCanceling(false)
@@ -153,45 +258,71 @@ export function FontPatchPanel() {
   }
 
   async function cancel() {
+    const task = pendingTask.current
+    if (!task || task.cancelRequested) return
+    task.cancelRequested = true
     setCanceling(true)
     try {
       await cancelFontPatch()
+      // Keep the cancellation state until the running request (or recovery
+      // polling) completes; acknowledging cancel does not mean work has stopped.
     } catch (cause) {
-      setError(getErrorMessage(cause, '取消失败，请稍后重试。'))
-    } finally {
+      if (pendingTask.current !== task) return
+      task.cancelRequested = false
       setCanceling(false)
+      setError(getErrorMessage(cause, '取消失败，请稍后重试。'))
     }
   }
 
   return (
     <div className={styles.page}>
-      <PageHeader title='工坊' subtitle='上传喜欢的字体，自动生成龙之谷字体补丁。' />
+      <PageHeader title='工坊' subtitle='上传字体预览并调整效果，确认后生成龙之谷字体补丁。' />
       <Card className={styles.card}>
         <CardContent>
           <div className={styles.upload} ref={dropArea} data-file-drop-target aria-busy={busy}>
             <FileType2 className={styles.icon} aria-hidden='true' />
             <div className={styles.uploadCopy}>
-              <h2 className={styles.title}>把喜欢的字体带进游戏</h2>
-              <p className={styles.description}>选择或拖入一个 TTF / 静态 OTF 文件，自动生成补丁。</p>
+              <h2 className={styles.title}>字体补丁</h2>
+              <p className={styles.description}>选择或拖入 TTF / 静态 OTF，先预览，确认后生成。</p>
             </div>
-            <div className={styles.actions}>
+            <div className={styles.uploadActions}>
               <Button disabled={disabled} onClick={() => void upload()}>
                 <SpinnerIcon icon={Upload} spinning={busy || picking} aria-hidden='true' />
-                {busy ? '正在生成补丁…' : picking ? '正在选择…' : '上传字体'}
+                {busy
+                  ? building
+                    ? '正在生成补丁…'
+                    : '正在准备预览…'
+                  : picking
+                    ? '正在选择…'
+                    : draft
+                      ? '更换字体'
+                      : '上传字体'}
               </Button>
-              {busy && (
-                <Button variant='outline' disabled={canceling} onClick={() => void cancel()}>
-                  {canceling ? '正在取消…' : '取消生成'}
-                </Button>
-              )}
+              <Button
+                className={styles.cancelSlot}
+                variant='outline'
+                disabled={!busy || canceling}
+                aria-hidden={!busy}
+                tabIndex={busy ? 0 : -1}
+                onClick={() => void cancel()}
+              >
+                {canceling ? '正在取消…' : '取消处理'}
+              </Button>
             </div>
-            <p className={styles.uploadHint} role='status'>
-              {loading
-                ? '正在检查字体工具…'
-                : busy
-                  ? '正在检查字体、转换并打包，请稍候。'
-                  : '单文件 ≤ 64 MiB · 本机处理'}
-            </p>
+            <div className={styles.uploadFooter}>
+              <p className={styles.uploadHint} role='status'>
+                {loading
+                  ? '正在检查字体工具…'
+                  : busy
+                    ? building
+                      ? '正在将已确认的预览打包，请稍候。'
+                      : '正在更新字体预览，尚未生成补丁。'
+                    : '单文件 ≤ 64 MiB · 本机处理'}
+              </p>
+              <p className={styles.uploadFeedback} role='status' aria-live='polite'>
+                {error}
+              </p>
+            </div>
           </div>
         </CardContent>
       </Card>
@@ -200,24 +331,51 @@ export function FontPatchPanel() {
           字体工具暂不可用，当前安装包缺少必要组件。
         </p>
       )}
-      {error && (
-        <p className={styles.notice} role='alert'>
-          {error}
-        </p>
+      {draft && (
+        <Card className={styles.card}>
+          <CardContent>
+            <div className={styles.resultHeader}>
+              <h2 className={styles.title}>{getFontDisplayName(draft)}</h2>
+              <Button variant='outline' disabled={disabled} onClick={() => void reset()}>
+                <SpinnerIcon icon={RotateCcw} spinning={resetting} aria-hidden='true' />
+                {resetting ? '正在重置…' : '重置'}
+              </Button>
+            </div>
+            <p className={styles.filename}>
+              {draft.sourceName} · {draft.glyphCount.toLocaleString()} 个字形
+            </p>
+            <FontPreview
+              draft={draft}
+              options={options}
+              busy={busy}
+              locked={loading || picking || resetting || saving || building || canceling}
+              dirty={dirty}
+              adjustmentFailed={failedAdjustment === adjustmentKey}
+              building={building}
+              confirmed={result?.draftId === draft.id}
+              onOptionsChange={setOptions}
+              onConfirm={() => void confirm()}
+            />
+            {failedAdjustment === adjustmentKey && (
+              <Button variant='outline' disabled={disabled} onClick={() => setFailedAdjustment('')}>
+                重试调整预览
+              </Button>
+            )}
+            {draft.missingCharacters && (
+              <p className={styles.hint}>样本文字缺字：{draft.missingCharacters}。缺失字符可能由系统字体替代。</p>
+            )}
+          </CardContent>
+        </Card>
       )}
-      {result && (
+      {result && draft && result.draftId === draft.id && !dirty && (
         <Card className={styles.card}>
           <CardContent>
             <div className={styles.resultHeader}>
               <div className={styles.resultTitle}>
                 <CheckCircle2 aria-hidden='true' />
-                <h2 className={styles.title}>{getFontDisplayName(result)}</h2>
+                <h2 className={styles.title}>补丁已生成</h2>
               </div>
               <div className={styles.actions}>
-                <Button variant='outline' disabled={disabled} onClick={() => void reset()}>
-                  <SpinnerIcon icon={RotateCcw} spinning={resetting} aria-hidden='true' />
-                  {resetting ? '正在重置…' : '重置'}
-                </Button>
                 <Button disabled={disabled} onClick={() => void save()}>
                   <SpinnerIcon icon={Download} spinning={saving} aria-hidden='true' />
                   {saving ? '正在保存…' : '下载补丁'}
@@ -232,7 +390,13 @@ export function FontPatchPanel() {
               </div>
               <div>
                 <dt className={styles.detailLabel}>字体处理</dt>
-                <dd className={styles.detailValue}>{result.converted ? 'OTF 已转换为 TrueType' : 'TTF 原样封包'}</dd>
+                <dd className={styles.detailValue}>
+                  {result.adjusted
+                    ? `字形 ${result.options.scalePercent}% · 粗细 ${result.options.weight} 档`
+                    : result.converted
+                      ? 'OTF 已转换为 TrueType'
+                      : 'TTF 原样封包'}
+                </dd>
               </div>
               <div>
                 <dt className={styles.detailLabel}>字形数量</dt>

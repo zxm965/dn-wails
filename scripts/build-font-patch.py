@@ -31,6 +31,7 @@ with tempfile.TemporaryDirectory(prefix="font-patch-build-") as temp:
                     # Keep all table handlers, but not the fontTools CLI, source,
                     # test data, or optional dependencies of unrelated tools.
                     "--collect-submodules", "fontTools.ttLib.tables",
+                    "--collect-binaries", "freetype",
                     # Conversion is local-only. hashlib falls back to CPython's
                     # built-in hash implementations, avoiding OpenSSL binaries.
                     "--exclude-module", "ssl", "--exclude-module", "_ssl",
@@ -40,13 +41,20 @@ with tempfile.TemporaryDirectory(prefix="font-patch-build-") as temp:
     distribution = work / "dist" / "dn-font-patch"
     licenses = distribution / "licenses"
     licenses.mkdir()
-    for package in ("fonttools", "pyinstaller"):
+    for package in ("fonttools", "pyinstaller", "freetype-py"):
         metadata = package_distribution(package)
         for name in metadata.files or []:
-            if ".dist-info/licenses/" in str(name):
+            if ".dist-info/licenses/" in str(name) or (".dist-info/" in str(name) and Path(str(name)).name.lower().startswith(("license", "copying"))):
                 target = licenses / package / Path(str(name)).name
                 target.parent.mkdir(parents=True, exist_ok=True)
                 shutil.copyfile(metadata.locate_file(name), target)
+    shutil.copytree(source / "licenses", licenses / "freetype-native")
+    import freetype
+    native_library = Path(freetype.__file__).parent / freetype.raw.library_name
+    if not native_library.is_file() or Path(freetype.raw._lib._name).resolve() != native_library.resolve():
+        raise SystemExit("freetype-py must supply its bundled native library; install the binary wheel")
+    if not (distribution / "_internal" / "freetype" / freetype.raw.library_name).is_file():
+        raise SystemExit("Frozen runtime is missing bundled FreeType")
     python_license = Path(sysconfig.get_path("stdlib")) / "LICENSE.txt"
     if not python_license.is_file():
         python_license = Path(sys.base_prefix) / "LICENSE.txt"

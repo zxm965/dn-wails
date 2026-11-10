@@ -14,20 +14,47 @@ from .archive import Archive, Entry, PatchError, digest, write_archive
 from .font_conversion import prepare_ttf
 from .font_metadata import describe_font, read_font
 from .build_output import publish_build
+from .font_adjustment import adjust_font, validate_options
 
 FONT_PATH = "resource/fonts/mysh.ttf"
 
 
-def build(source: Path, output: Path, padding_mib: int = 500) -> dict:
+def prepare(source: Path, options=None):
+    options = options or {}
+    scale, weight = options.get("scalePercent", 100), options.get("weight", 0)
+    validate_options(scale, weight)
     if source.suffix.lower() not in (".ttf", ".otf") or not source.is_file():
         raise PatchError("请选择 TTF 或静态 CFF OTF 字体文件")
-    if output.exists():
-        raise PatchError("构建目录已存在")
     original = read_font(source)
     data, conversion = prepare_ttf(original)
+    describe_font(data)  # Reject unsupported fonts before modifying outlines.
+    data, adjustment = adjust_font(data, scale, weight)
     if len(data) > 64 * 1024 * 1024:
         raise PatchError("转换后字体不能超过 64 MiB")
     metadata = describe_font(data)
+    return original, data, conversion, adjustment, metadata
+
+
+def preview(source: Path, output: Path, options=None) -> dict:
+    _, data, conversion, adjustment, metadata = prepare(source, options)
+    output.mkdir(parents=True, exist_ok=False)
+    font = output / "preview.ttf"
+    font.write_bytes(data)
+    names = metadata["names"]
+    return {"fontName": (names.get("4") or names.get("1") or [source.stem])[0],
+            "sourceName": source.name, "fontPath": str(font.resolve()),
+            "converted": conversion["performed"], "adjusted": adjustment["performed"],
+            "options": {"scalePercent": adjustment["scalePercent"], "weight": adjustment["weight"]},
+            "missingCharacters": "".join(metadata["sample_missing_characters"]),
+            "glyphCount": metadata["glyph_count"], "sha256": metadata["sha256"]}
+
+
+def build(source: Path, output: Path, padding_mib: int = 500, options=None, expected_sha256="") -> dict:
+    if output.exists():
+        raise PatchError("构建目录已存在")
+    original, data, conversion, adjustment, metadata = prepare(source, options)
+    if expected_sha256 and metadata["sha256"] != expected_sha256:
+        raise PatchError("预览字体已变化，请重新预览后确认")
     slug = re.sub(r"[^\w-]+", "-", source.stem, flags=re.UNICODE).strip("-_")[:60] or "font"
     filename = f"0dnResource-Font-{slug}.pak"
     stage = output / "stage"
@@ -40,10 +67,11 @@ def build(source: Path, output: Path, padding_mib: int = 500) -> dict:
     if zlib.decompress(archive.payload(stored)) != data:
         raise PatchError("封包后字体回读校验失败")
     report.update({"feature": "fonts", "font": metadata, "conversion": conversion,
-                   "input_sha256": digest(original), "font_bytes_preserved": not conversion["performed"],
+                   "adjustment": adjustment,
+                   "input_sha256": digest(original), "font_bytes_preserved": not conversion["performed"] and not adjustment["performed"],
                    "packaged_font_bytes_verified": True, "choose_one": True,
                    "exclusive_group": "main-font", "profile": "cn-mysh-zlib-v11"})
-    if conversion["performed"]:
+    if conversion["performed"] or adjustment["performed"]:
         converted = pak.with_suffix(".ttf")
         converted.write_bytes(data)
         report["converted_ttf"] = str(converted.resolve())
@@ -57,6 +85,8 @@ def build(source: Path, output: Path, padding_mib: int = 500) -> dict:
             "sourceName": source.name, "filename": filename, "pakPath": str(result_pak),
             "zipPath": str(result_zip), "pakBytes": result_pak.stat().st_size,
             "zipBytes": result_zip.stat().st_size, "converted": conversion["performed"],
+            "adjusted": adjustment["performed"],
+            "options": {"scalePercent": adjustment["scalePercent"], "weight": adjustment["weight"]},
             "missingCharacters": "".join(metadata["sample_missing_characters"]),
             "glyphCount": metadata["glyph_count"], "sha256": metadata["sha256"],
             "containerVerified": True, "gameVerified": False}
@@ -65,7 +95,11 @@ def build(source: Path, output: Path, padding_mib: int = 500) -> dict:
 def main():
     try:
         request = json.loads(sys.stdin.buffer.read(65537))
-        result = build(Path(request["source"]), Path(request["output"]))
+        if request.get("action") == "preview":
+            result = preview(Path(request["source"]), Path(request["output"]), request.get("options"))
+        else:
+            result = build(Path(request["source"]), Path(request["output"]), options=request.get("options"),
+                           expected_sha256=request.get("expectedSHA256", ""))
         response = {"result": result, "error": ""}
     except Exception as error:
         response = {"error": str(error)[:2000] or "字体构建失败"}
