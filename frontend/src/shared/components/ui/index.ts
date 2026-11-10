@@ -15,3 +15,5 @@ export * from './Slider'
 export * from './Spinner'
 export * from './Tabs'
 export * from './Toaster'
+
+export { DecisionDialog } from './DecisionDialog'

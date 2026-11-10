@@ -22,9 +22,7 @@ const displaySize = style({ display: 'flex', gap: 6, alignItems: 'center', color
 const sizeInput = style({ width: 66, minWidth: 0 })
 const textInput = style({ minHeight: 56, resize: 'vertical', maxHeight: 120 })
 const sample = style({
-  height: 128,
-  minHeight: 128,
-  overflow: 'auto',
+  height: 'auto',
   borderRadius: 10,
   padding: '12px 16px',
   background: 'var(--accent-muted)',
@@ -49,6 +47,7 @@ const footer = style({
 const hint = style({
   margin: 0,
   flex: '1 1 260px',
+  overflowWrap: 'anywhere',
   fontSize: 'var(--font-size-secondary)',
   lineHeight: 1.5,
   color: 'var(--text-tertiary)',

@@ -23,14 +23,17 @@ import (
 )
 
 type Runner struct {
-	mu         sync.Mutex
-	root       string
-	id         string
-	zipPath    string
-	fontPath   string
-	fontSHA256 string
-	draft      *draftState
-	closed     bool
+	mu             sync.Mutex
+	root           string
+	id             string
+	zipPath        string
+	fontPath       string
+	fontSHA256     string
+	fontCodepoints []int
+	runtimeRoot    string
+	executable     string
+	draft          *draftState
+	closed         bool
 }
 
 func New() *Runner { return &Runner{} }
@@ -56,7 +59,11 @@ func (r *Runner) build(ctx context.Context, source string, options fontpatch.Opt
 	if r.closed {
 		return fontpatch.Result{}, fontpatch.ErrUnavailable
 	}
-	root, inputPath, executable, err := newFontWorkspace(ctx, source)
+	executable, err := r.ensureRuntime(ctx)
+	if err != nil {
+		return fontpatch.Result{}, err
+	}
+	root, inputPath, err := newFontWorkspace(ctx, source)
 	if err != nil {
 		return fontpatch.Result{}, err
 	}
@@ -115,6 +122,16 @@ func (r *Runner) build(ctx context.Context, source string, options fontpatch.Opt
 			return fontpatch.Result{}, errors.New("补丁输出文件缺失")
 		}
 	}
+	codepoints, err := readSupportedCodepoints(ctx, filepath.Join(root, "build", "coverage.json"))
+	if err != nil {
+		return fontpatch.Result{}, err
+	}
+	if err := validateCoverage(result.GBKCoverage); err != nil {
+		return fontpatch.Result{}, err
+	}
+	if err := ctx.Err(); err != nil {
+		return fontpatch.Result{}, err
+	}
 	var id [16]byte
 	if _, err := rand.Read(id[:]); err != nil {
 		return fontpatch.Result{}, err
@@ -131,6 +148,7 @@ func (r *Runner) build(ctx context.Context, source string, options fontpatch.Opt
 	}
 	r.root, r.id, r.zipPath = root, result.ID, response.Result.ZipPath
 	r.fontPath, r.fontSHA256 = fontPath, result.SHA256
+	r.fontCodepoints = codepoints
 	success = true
 	return result, nil
 }
@@ -157,8 +175,10 @@ func (r *Runner) Preview(ctx context.Context, id string) (fontpatch.Preview, err
 		return fontpatch.Preview{}, fontpatch.ErrNoResult
 	}
 	fontPath, fontSHA := r.fontPath, r.fontSHA256
+	codepoints := r.fontCodepoints
 	if r.draft != nil && id == r.draft.info.ID {
 		fontPath, fontSHA = r.draft.fontPath, r.draft.info.SHA256
+		codepoints = r.draft.codepoints
 	}
 	file, err := os.Open(fontPath)
 	if err != nil {
@@ -173,7 +193,7 @@ func (r *Runner) Preview(ctx context.Context, id string) (fontpatch.Preview, err
 	if len(data) > 64<<20 || hex.EncodeToString(digest[:]) != fontSHA {
 		return fontpatch.Preview{}, errors.New("预览字体校验失败，请重新生成补丁")
 	}
-	return fontpatch.Preview{Data: base64.StdEncoding.EncodeToString(data)}, nil
+	return fontpatch.Preview{Data: base64.StdEncoding.EncodeToString(data), SupportedCodepoints: append([]int{}, codepoints...)}, nil
 }
 
 func (r *Runner) Close() error {
@@ -187,7 +207,7 @@ func (r *Runner) Close() error {
 	if r.draft != nil {
 		err = errors.Join(err, os.RemoveAll(r.draft.root))
 	}
-	return err
+	return errors.Join(err, r.clearRuntime())
 }
 
 func (r *Runner) Reset() error {
@@ -209,7 +229,8 @@ func (r *Runner) Reset() error {
 	}
 	r.root, r.id, r.zipPath = "", "", ""
 	r.fontPath, r.fontSHA256 = "", ""
-	return nil
+	r.fontCodepoints = nil
+	return r.clearRuntime()
 }
 
 type limitedBuffer struct{ bytes.Buffer }

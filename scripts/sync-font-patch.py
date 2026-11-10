@@ -19,6 +19,6 @@ for name in names:
     shutil.copyfile(source / name, target / name)
     manifest[name] = hashlib.sha256((target / name).read_bytes()).hexdigest()
 # Desktop preview/confirmation and adjustment are maintained in dn-wails.
-for name in ("desktop.py", "font_adjustment.py"):
+for name in ("desktop.py", "font_adjustment.py", "font_coverage.py"):
     manifest[name] = hashlib.sha256((target / name).read_bytes()).hexdigest()
 (target.parent / "source-manifest.json").write_text(json.dumps(manifest, indent=2) + "\n", encoding="utf-8")

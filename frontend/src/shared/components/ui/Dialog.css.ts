@@ -9,8 +9,10 @@ const uiDialogBackdrop = style([
     zIndex: '1100',
     background: 'rgba(4, 9, 15, 0.62)',
     backdropFilter: 'blur(8px)',
-    transition: 'opacity 140ms ease',
+    opacity: 1,
+    transition: 'opacity 220ms ease',
     selectors: {
+      '&[data-ending-style]': { transitionDuration: '160ms' },
       '&[data-starting-style], &[data-ending-style]': {
         opacity: '0',
       },
@@ -64,7 +66,9 @@ const uiDialog = style([
     borderRadius: '16px',
     boxShadow: '0 28px 80px rgba(0, 0, 0, 0.34)',
     outline: 'none',
-    transition: 'opacity 160ms ease,\n    transform 160ms ease',
+    opacity: 1,
+    transform: 'translateY(0) scale(1)',
+    transition: 'opacity 220ms ease, transform 220ms cubic-bezier(0.2, 0.8, 0.2, 1)',
     selectors: {
       "&[data-size='sm']": {
         width: 'min(100%, 430px)',
@@ -78,6 +82,7 @@ const uiDialog = style([
         maxHeight: 'none',
         borderRadius: '0',
       },
+      '&[data-ending-style]': { transitionDuration: '160ms' },
       '&[data-starting-style], &[data-ending-style]': {
         opacity: '0',
         transform: 'translateY(10px) scale(0.985)',

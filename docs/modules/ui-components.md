@@ -8,6 +8,7 @@
 
 - `frontend/src/shared/components/ui/Button.tsx`、`Button.css.ts`：所有按钮的唯一底层实现、尺寸、变体和波纹。
 - `frontend/src/shared/components/ui/Dialog.tsx`、`Dialog.css.ts`：Base UI Dialog 封装及其局部样式。
+- `frontend/src/shared/components/ui/DecisionDialog.tsx`：内部管理条件挂载弹窗的打开、关闭及结果回调；通过 `kind` 复用普通弹窗或确认框，关闭动画结束后才通知调用方，防止业务条件卸载截断动画。
 - `frontend/src/shared/components/ui/AlertDialog.tsx`、`AlertDialog.css.ts`：确认对话框及自身尺寸样式，复用 Dialog 基础样式。
 - `frontend/src/shared/components/ui/FormControls.tsx`、`FormControls.css.ts`：Input、PasswordInput、Textarea、Label、Checkbox、Switch；单行输入控件支持与 Button 一致的 `sm/md/lg` 尺寸。
 - `frontend/src/shared/components/ui/Select.tsx`、`Select.css.ts`：基于 Base UI 的类型化下拉选择，负责触发器、Portal 弹层、键盘导航、选中状态和滚动边界；原生表单控件文件不再渲染 `<select>`。
@@ -42,6 +43,7 @@ Base UI 的弹层和组合组件使用 `render={<Button />}`，避免业务模�
 - 所有组件读取 `--surface-*`、`--text-*`、`--border-*`、`--accent`、`--danger-*` 和全局间距变量。
 - Select 触发器、Input 和 PasswordInput 使用与 Button 一致的默认高度，也支持显式 `sm/md/lg` 尺寸；Textarea 保持多行输入的最小高度。选项弹层通过 Portal 避免被卡片裁切，并在窄窗口下限制为可视区域宽高；长列表直接通过滚轮、触控板或键盘滚动，不渲染额外的上下滚动按钮。
 - RadioGroup、Slider、Checkbox 和 Switch 统一使用 Base UI 的受控状态与隐藏表单输入，业务模块不直接渲染原生 radio、range 或 checkbox。
+- Dialog 与 AlertDialog 的遮罩淡入、弹窗轻微位移和缩放统一为打开 220ms、关闭 160ms；`DecisionDialog` 在下一动画帧打开，关闭阶段保留内容，仅回调一次最终决定，不在业务调用方添加延时或动画状态。
 - Dialog 在窄窗口下贴近底部并让操作按钮纵向全宽；内容区域独立滚动。
 - PageHeader 全局统一为两行：上方以小号强调色 h1 展示菜单名称，下方以辅助字号展示功能说明；移除大标题和独立 eyebrow。共用渐变背景、紧凑内边距和最小高度，操作按钮仍置于右侧，窄内容区自动换行。标题、说明均使用局部样式类。
 - reduced motion 下关闭 Dialog、进度、Switch、Spinner 和 Skeleton 动画。

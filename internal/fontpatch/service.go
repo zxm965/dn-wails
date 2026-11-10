@@ -18,21 +18,29 @@ var (
 )
 
 type Result struct {
-	ID                string  `json:"id"`
-	FontName          string  `json:"fontName"`
-	SourceName        string  `json:"sourceName"`
-	Filename          string  `json:"filename"`
-	PakBytes          int64   `json:"pakBytes"`
-	ZipBytes          int64   `json:"zipBytes"`
-	Converted         bool    `json:"converted"`
-	MissingCharacters string  `json:"missingCharacters"`
-	GlyphCount        int     `json:"glyphCount"`
-	SHA256            string  `json:"sha256"`
-	ContainerVerified bool    `json:"containerVerified"`
-	GameVerified      bool    `json:"gameVerified"`
-	Adjusted          bool    `json:"adjusted"`
-	Options           Options `json:"options"`
-	DraftID           string  `json:"draftId"`
+	GBKCoverage       GBKCoverage `json:"gbkCoverage"`
+	ID                string      `json:"id"`
+	FontName          string      `json:"fontName"`
+	SourceName        string      `json:"sourceName"`
+	Filename          string      `json:"filename"`
+	PakBytes          int64       `json:"pakBytes"`
+	ZipBytes          int64       `json:"zipBytes"`
+	Converted         bool        `json:"converted"`
+	MissingCharacters string      `json:"missingCharacters"`
+	GlyphCount        int         `json:"glyphCount"`
+	SHA256            string      `json:"sha256"`
+	ContainerVerified bool        `json:"containerVerified"`
+	GameVerified      bool        `json:"gameVerified"`
+	Adjusted          bool        `json:"adjusted"`
+	Options           Options     `json:"options"`
+	DraftID           string      `json:"draftId"`
+}
+
+type GBKCoverage struct {
+	Total         int    `json:"total"`
+	Covered       int    `json:"covered"`
+	Missing       int    `json:"missing"`
+	MissingSample string `json:"missingSample"`
 }
 
 type Options struct {
@@ -48,15 +56,16 @@ func (o Options) Validate() error {
 }
 
 type Draft struct {
-	ID                string  `json:"id"`
-	FontName          string  `json:"fontName"`
-	SourceName        string  `json:"sourceName"`
-	Converted         bool    `json:"converted"`
-	Adjusted          bool    `json:"adjusted"`
-	MissingCharacters string  `json:"missingCharacters"`
-	GlyphCount        int     `json:"glyphCount"`
-	SHA256            string  `json:"sha256"`
-	Options           Options `json:"options"`
+	GBKCoverage       GBKCoverage `json:"gbkCoverage"`
+	ID                string      `json:"id"`
+	FontName          string      `json:"fontName"`
+	SourceName        string      `json:"sourceName"`
+	Converted         bool        `json:"converted"`
+	Adjusted          bool        `json:"adjusted"`
+	MissingCharacters string      `json:"missingCharacters"`
+	GlyphCount        int         `json:"glyphCount"`
+	SHA256            string      `json:"sha256"`
+	Options           Options     `json:"options"`
 }
 
 type Status struct {
@@ -69,7 +78,8 @@ type Status struct {
 }
 
 type Preview struct {
-	Data string `json:"data"`
+	SupportedCodepoints []int  `json:"supportedCodepoints"`
+	Data                string `json:"data"`
 }
 
 type Platform interface {

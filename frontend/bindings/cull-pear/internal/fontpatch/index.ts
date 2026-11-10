@@ -3,6 +3,7 @@
 
 export {
     Draft,
+    GBKCoverage,
     Options,
     Preview,
     Result,

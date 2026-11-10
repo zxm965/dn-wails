@@ -18,6 +18,7 @@ import {
   prepareFontPatch,
   adjustFontPatch,
 } from '../api/fontPatchApi'
+import { coveragePercent } from '../model/fontCoverage'
 import { getFontDisplayName } from '../model/fontName'
 import { FontPreview } from './FontPreview'
 
@@ -276,7 +277,10 @@ export function FontPatchPanel() {
 
   return (
     <div className={styles.page}>
-      <PageHeader title='工坊' subtitle='上传字体预览并调整效果，确认后生成龙之谷字体补丁。' />
+      <PageHeader
+        title='工坊'
+        subtitle='一次只安装一个字体补丁；更换字体不等于统一调整界面字号，游戏内的加载与排版效果仍需实测。'
+      />
       <Card className={styles.card}>
         <CardContent>
           <div className={styles.upload} ref={dropArea} data-file-drop-target aria-busy={busy}>
@@ -284,6 +288,7 @@ export function FontPatchPanel() {
             <div className={styles.uploadCopy}>
               <h2 className={styles.title}>字体补丁</h2>
               <p className={styles.description}>选择或拖入 TTF / 静态 OTF，先预览，确认后生成。</p>
+              <p className={styles.hint}>请使用覆盖 GBK 字符集的字体文件，否则可能出现字符缺失、不显示或乱码。</p>
             </div>
             <div className={styles.uploadActions}>
               <Button disabled={disabled} onClick={() => void upload()}>
@@ -361,9 +366,14 @@ export function FontPatchPanel() {
                 重试调整预览
               </Button>
             )}
-            {draft.missingCharacters && (
-              <p className={styles.hint}>样本文字缺字：{draft.missingCharacters}。缺失字符可能由系统字体替代。</p>
-            )}
+            <p className={styles.hint}>
+              GBK 字符覆盖率 {coveragePercent(draft.gbkCoverage.covered, draft.gbkCoverage.total)}% （
+              {draft.gbkCoverage.covered.toLocaleString()} / {draft.gbkCoverage.total.toLocaleString()}）， 缺失{' '}
+              {draft.gbkCoverage.missing.toLocaleString()} 个。
+              {draft.gbkCoverage.missing > 0
+                ? ' 建议换用覆盖更完整的字体。'
+                : ' 字符映射检查通过，游戏内显示仍需实测。'}
+            </p>
           </CardContent>
         </Card>
       )}
@@ -423,9 +433,6 @@ export function FontPatchPanel() {
           </CardContent>
         </Card>
       )}
-      <p className={styles.hint}>
-        一次只安装一个字体补丁；更换字体不等于统一调整界面字号，游戏内的加载与排版效果仍需实测。
-      </p>
     </div>
   )
 }

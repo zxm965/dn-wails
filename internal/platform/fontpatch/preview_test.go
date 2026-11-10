@@ -10,6 +10,7 @@ import (
 	"io/fs"
 	"os"
 	"path/filepath"
+	"reflect"
 	"testing"
 	"time"
 
@@ -62,6 +63,19 @@ func TestPreviewAdjustConfirmUsesSnapshotAndGeneratesOnlyOnConfirmation(t *testi
 			if extension == "ttf" && !bytes.Equal(before, original) {
 				t.Fatal("default TTF preview changed input")
 			}
+			if draft.GBKCoverage.Total < 21000 || draft.GBKCoverage.Missing == 0 || len(data.SupportedCodepoints) == 0 {
+				t.Fatal("missing actual coverage data")
+			}
+			sessionRoot, inputPath, executable := runner.draft.root, runner.draft.source, runner.executable
+			oldOutput := runner.draft.outputRoot
+			inputInfo, err := os.Stat(inputPath)
+			if err != nil {
+				t.Fatal(err)
+			}
+			runtimeInfo, err := os.Stat(executable)
+			if err != nil {
+				t.Fatal(err)
+			}
 			// Editing/deleting the user's original after upload must not affect adjustments.
 			if err := os.Remove(source); err != nil {
 				t.Fatal(err)
@@ -69,6 +83,23 @@ func TestPreviewAdjustConfirmUsesSnapshotAndGeneratesOnlyOnConfirmation(t *testi
 			adjusted, err := service.Adjust(ctx, draft.ID, fontpatch.Options{ScalePercent: 110, Weight: 2})
 			if err != nil {
 				t.Fatal(err)
+			}
+			newInputInfo, inputErr := os.Stat(runner.draft.source)
+			newRuntimeInfo, runtimeErr := os.Stat(runner.executable)
+			if inputErr != nil || runtimeErr != nil || runner.draft.root != sessionRoot || runner.draft.source != inputPath || runner.executable != executable || !os.SameFile(inputInfo, newInputInfo) || !os.SameFile(runtimeInfo, newRuntimeInfo) {
+				t.Fatal("adjustment did not reuse runtime and immutable input")
+			}
+			if _, err := os.Stat(oldOutput); !errors.Is(err, os.ErrNotExist) {
+				t.Fatal("old preview output retained")
+			}
+			canceled, cancel := context.WithCancel(ctx)
+			cancel()
+			if _, err := service.Adjust(canceled, adjusted.ID, fontpatch.Options{ScalePercent: 120}); !errors.Is(err, context.Canceled) {
+				t.Fatal("canceled adjustment succeeded", err)
+			}
+			outputs, err := filepath.Glob(filepath.Join(sessionRoot, "preview-*"))
+			if err != nil || len(outputs) != 1 || runner.draft.info.ID != adjusted.ID {
+				t.Fatal("cancellation lost draft or leaked output")
 			}
 			if !adjusted.Adjusted || adjusted.SHA256 == draft.SHA256 {
 				t.Fatal("no real outline change")
@@ -104,18 +135,21 @@ func TestPreviewAdjustConfirmUsesSnapshotAndGeneratesOnlyOnConfirmation(t *testi
 				t.Fatalf("confirmation did not use preview: %+v", result)
 			}
 			actual, err := service.Preview(ctx, result.ID)
-			if err != nil || actual.Data != data.Data {
+			if err != nil || actual.Data != data.Data || !reflect.DeepEqual(actual.SupportedCodepoints, data.SupportedCodepoints) || result.GBKCoverage != adjusted.GBKCoverage {
 				t.Fatal("packed font differs from preview", err)
 			}
 			restored, err := service.Adjust(ctx, adjusted.ID, fontpatch.Options{ScalePercent: 100})
 			if err != nil || restored.SHA256 != draft.SHA256 {
 				t.Fatal("adjustments accumulated instead of restoring original", err)
 			}
-			previewRoot, resultRoot := runner.draft.root, runner.root
+			previewRoot, resultRoot, runtimeRoot := runner.draft.root, runner.root, runner.runtimeRoot
+			if runner.executable != executable {
+				t.Fatal("confirmation re-extracted runtime")
+			}
 			if err := service.Reset(); err != nil {
 				t.Fatal(err)
 			}
-			for _, path := range []string{previewRoot, resultRoot} {
+			for _, path := range []string{previewRoot, resultRoot, runtimeRoot} {
 				if _, err := os.Stat(path); !errors.Is(err, os.ErrNotExist) {
 					t.Fatal("reset left temporary data")
 				}

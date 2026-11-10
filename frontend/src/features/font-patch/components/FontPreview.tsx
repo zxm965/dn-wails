@@ -5,6 +5,7 @@ import { Button, Input, Slider, SpinnerIcon, Textarea } from '@/shared/component
 import { getErrorMessage } from '@/shared/lib/errorMessage'
 
 import { getFontPatchPreview, type FontPatchDraft, type FontPatchOptions } from '../api/fontPatchApi'
+import { missingPreviewCharacters } from '../model/fontCoverage'
 
 import { styles } from './FontPreview.css'
 
@@ -37,11 +38,13 @@ export function FontPreview({
   const sizeId = useId()
   const [sample, setSample] = useState('龙之谷 · 冒险从这里开始\nDragon Nest  Aa Bb  0123456789')
   const [displaySize, setDisplaySize] = useState(24)
-  const [loaded, setLoaded] = useState<{ id: string; family: string } | null>(null)
+  const [loaded, setLoaded] = useState<{ id: string; family: string; supported: ReadonlySet<number> } | null>(null)
   const [failure, setFailure] = useState<{ id: string; message: string } | null>(null)
   const [retry, setRetry] = useState(0)
   const ready = loaded?.id === draft.id
   const loadError = failure?.id === draft.id ? failure.message : ''
+  const previewText = sample || '龙之谷 Dragon Nest 0123456789'
+  const missing = ready && loaded ? missingPreviewCharacters(previewText, loaded.supported) : ''
 
   useEffect(() => {
     if (busy) return
@@ -59,7 +62,7 @@ export function FontPreview({
         await face.load()
         if (disposed) return
         document.fonts.add(face)
-        setLoaded({ id: draft.id, family })
+        setLoaded({ id: draft.id, family, supported: new Set(preview.supportedCodepoints) })
         setFailure(null)
       } catch (cause) {
         if (!disposed) setFailure({ id: draft.id, message: getErrorMessage(cause, '无法显示此字体的预览。') })
@@ -151,7 +154,7 @@ export function FontPreview({
       <div className={styles.sample} aria-busy={busy || (!adjustmentFailed && !loadError && (!ready || dirty))}>
         {ready && !busy && !dirty ? (
           <p className={styles.rendered} style={{ fontFamily: `"${loaded.family}"`, fontSize: displaySize }}>
-            {sample || '龙之谷 Dragon Nest 0123456789'}
+            {previewText}
           </p>
         ) : (
           <p className={styles.status} role='status'>
@@ -174,6 +177,11 @@ export function FontPreview({
           <RefreshCw aria-hidden='true' />
           重试显示
         </Button>
+      )}
+      {missing && (
+        <p className={styles.hint} role='status'>
+          当前预览文字缺字：{missing}。这些字符可能由系统字体替代，显示正常不代表补丁字体已包含。
+        </p>
       )}
       <div className={styles.footer}>
         <p className={styles.hint}>

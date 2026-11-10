@@ -36,7 +36,7 @@ Toast 支持 `info`、`success`、`warning`、`error`。`duration: 0` 表示不�
 
 ```text
 业务组件 → useFeedback.notify → Sonner Toast → 自动或手动关闭
-业务组件 → useFeedback.confirm → Base UI Alert Dialog → Promise<boolean>
+业务组件 → useFeedback.confirm → DecisionDialog（Alert Dialog）→ 关闭动画完成 → Promise<boolean>
 ```
 
 公共错误文本由 `shared/lib/errorMessage.ts` 的 `getErrorMessage(error, fallback)` 提取：非空 `Error.message` 原样显示，其余返回调用方兜底文案。账号、DN、消息、笔记与任务共用该函数；应用更新保留非空字符串错误的专有处理，再委托公共函数处理其他值。此函数不捕获或吞掉 API 错误。
@@ -45,7 +45,7 @@ Toast 支持 `info`、`success`、`warning`、`error`。`duration: 0` 表示不�
 
 - API 和 Hook 层不得吞掉原始错误；Feedback 只负责用户可见提示。
 - 确认窗口默认不可通过遮罩或 Escape 关闭，确保 Promise 获得明确结果。
-- Interaction Provider 卸载时会结束未完成的确认 Promise。
+- 每次确认分配独立请求编号，并作为弹窗 key；替换请求时旧 Promise 返回 false，旧弹窗迟到的退出回调只匹配自己的编号，不能影响新请求。Interaction Provider 卸载时结束未完成的确认 Promise。
 - 表单和详情由业务组件直接组合受控 `Dialog`，不维护额外的全局 Overlay 栈。
 - 原生系统对话框属于 Native Kit，不由本模块替代。
 - 窄窗口下 Toast 使用左右安全间距并占满可用宽度；确认按钮在极窄宽度下改为纵向全宽布局。
@@ -57,6 +57,7 @@ Toast 支持 `info`、`success`、`warning`、`error`。`duration: 0` 表示不�
 
 ```bash
 cd frontend
+node --test tests/confirmationRequests.test.mjs
 pnpm fmt:check
 pnpm lint
 pnpm build

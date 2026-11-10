@@ -6,6 +6,7 @@
 import { Create as $Create } from "@wailsio/runtime";
 
 export class Draft {
+    "gbkCoverage": GBKCoverage;
     "id": string;
     "fontName": string;
     "sourceName": string;
@@ -18,6 +19,9 @@ export class Draft {
 
     /** Creates a new Draft instance. */
     constructor($$source: Partial<Draft> = {}) {
+        if (!("gbkCoverage" in $$source)) {
+            this["gbkCoverage"] = (new GBKCoverage());
+        }
         if (!("id" in $$source)) {
             this["id"] = "";
         }
@@ -53,12 +57,49 @@ export class Draft {
      * Creates a new Draft instance from a string or object.
      */
     static createFrom($$source: any = {}): Draft {
-        const $$createField8_0 = $$createType0;
+        const $$createField0_0 = $$createType0;
+        const $$createField9_0 = $$createType1;
         let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
+        if ("gbkCoverage" in $$parsedSource) {
+            $$parsedSource["gbkCoverage"] = $$createField0_0($$parsedSource["gbkCoverage"]);
+        }
         if ("options" in $$parsedSource) {
-            $$parsedSource["options"] = $$createField8_0($$parsedSource["options"]);
+            $$parsedSource["options"] = $$createField9_0($$parsedSource["options"]);
         }
         return new Draft($$parsedSource as Partial<Draft>);
+    }
+}
+
+export class GBKCoverage {
+    "total": number;
+    "covered": number;
+    "missing": number;
+    "missingSample": string;
+
+    /** Creates a new GBKCoverage instance. */
+    constructor($$source: Partial<GBKCoverage> = {}) {
+        if (!("total" in $$source)) {
+            this["total"] = 0;
+        }
+        if (!("covered" in $$source)) {
+            this["covered"] = 0;
+        }
+        if (!("missing" in $$source)) {
+            this["missing"] = 0;
+        }
+        if (!("missingSample" in $$source)) {
+            this["missingSample"] = "";
+        }
+
+        Object.assign(this, $$source);
+    }
+
+    /**
+     * Creates a new GBKCoverage instance from a string or object.
+     */
+    static createFrom($$source: any = {}): GBKCoverage {
+        let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
+        return new GBKCoverage($$parsedSource as Partial<GBKCoverage>);
     }
 }
 
@@ -88,10 +129,14 @@ export class Options {
 }
 
 export class Preview {
+    "supportedCodepoints": number[];
     "data": string;
 
     /** Creates a new Preview instance. */
     constructor($$source: Partial<Preview> = {}) {
+        if (!("supportedCodepoints" in $$source)) {
+            this["supportedCodepoints"] = [];
+        }
         if (!("data" in $$source)) {
             this["data"] = "";
         }
@@ -103,12 +148,17 @@ export class Preview {
      * Creates a new Preview instance from a string or object.
      */
     static createFrom($$source: any = {}): Preview {
+        const $$createField0_0 = $$createType2;
         let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
+        if ("supportedCodepoints" in $$parsedSource) {
+            $$parsedSource["supportedCodepoints"] = $$createField0_0($$parsedSource["supportedCodepoints"]);
+        }
         return new Preview($$parsedSource as Partial<Preview>);
     }
 }
 
 export class Result {
+    "gbkCoverage": GBKCoverage;
     "id": string;
     "fontName": string;
     "sourceName": string;
@@ -127,6 +177,9 @@ export class Result {
 
     /** Creates a new Result instance. */
     constructor($$source: Partial<Result> = {}) {
+        if (!("gbkCoverage" in $$source)) {
+            this["gbkCoverage"] = (new GBKCoverage());
+        }
         if (!("id" in $$source)) {
             this["id"] = "";
         }
@@ -180,10 +233,14 @@ export class Result {
      * Creates a new Result instance from a string or object.
      */
     static createFrom($$source: any = {}): Result {
-        const $$createField13_0 = $$createType0;
+        const $$createField0_0 = $$createType0;
+        const $$createField14_0 = $$createType1;
         let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
+        if ("gbkCoverage" in $$parsedSource) {
+            $$parsedSource["gbkCoverage"] = $$createField0_0($$parsedSource["gbkCoverage"]);
+        }
         if ("options" in $$parsedSource) {
-            $$parsedSource["options"] = $$createField13_0($$parsedSource["options"]);
+            $$parsedSource["options"] = $$createField14_0($$parsedSource["options"]);
         }
         return new Result($$parsedSource as Partial<Result>);
     }
@@ -225,8 +282,8 @@ export class Status {
      * Creates a new Status instance from a string or object.
      */
     static createFrom($$source: any = {}): Status {
-        const $$createField2_0 = $$createType2;
-        const $$createField4_0 = $$createType4;
+        const $$createField2_0 = $$createType4;
+        const $$createField4_0 = $$createType6;
         let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
         if ("result" in $$parsedSource) {
             $$parsedSource["result"] = $$createField2_0($$parsedSource["result"]);
@@ -239,8 +296,10 @@ export class Status {
 }
 
 // Private type creation functions
-const $$createType0 = Options.createFrom;
-const $$createType1 = Result.createFrom;
-const $$createType2 = $Create.Nullable($$createType1);
-const $$createType3 = Draft.createFrom;
+const $$createType0 = GBKCoverage.createFrom;
+const $$createType1 = Options.createFrom;
+const $$createType2 = $Create.Array($Create.Any);
+const $$createType3 = Result.createFrom;
 const $$createType4 = $Create.Nullable($$createType3);
+const $$createType5 = Draft.createFrom;
+const $$createType6 = $Create.Nullable($$createType5);

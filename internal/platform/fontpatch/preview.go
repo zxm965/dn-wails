@@ -11,27 +11,23 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
-	"runtime"
 
 	"cull-pear/internal/fontpatch"
 )
 
 type draftState struct {
-	root, source, fontPath string
-	info                   fontpatch.Draft
+	root, source, fontPath, outputRoot string
+	codepoints                         []int
+	info                               fontpatch.Draft
 }
 
-func newFontWorkspace(ctx context.Context, source string) (root, input, executable string, err error) {
+func newFontWorkspace(ctx context.Context, source string) (root, input string, err error) {
 	info, err := os.Stat(source)
 	if err != nil || !info.Mode().IsRegular() {
-		return "", "", "", fontpatch.ErrInvalidFont
+		return "", "", fontpatch.ErrInvalidFont
 	}
 	if info.Size() == 0 || info.Size() > 64<<20 {
-		return "", "", "", errors.New("字体文件必须非空且不超过 64 MiB")
-	}
-	data, err := bundles.ReadFile(bundleName())
-	if err != nil {
-		return "", "", "", fontpatch.ErrUnavailable
+		return "", "", errors.New("字体文件必须非空且不超过 64 MiB")
 	}
 	root, err = os.MkdirTemp("", "dn-font-patch-")
 	if err != nil {
@@ -47,14 +43,6 @@ func newFontWorkspace(ctx context.Context, source string) (root, input, executab
 	if err != nil {
 		return
 	}
-	runtimeDir := filepath.Join(root, "runtime")
-	if err = unpack(ctx, data, runtimeDir); err != nil {
-		return
-	}
-	executable = filepath.Join(runtimeDir, "dn-font-patch")
-	if runtime.GOOS == "windows" {
-		executable += ".exe"
-	}
 	inputDir := filepath.Join(root, "input")
 	if err = os.Mkdir(inputDir, 0700); err != nil {
 		return
@@ -67,7 +55,7 @@ func newFontWorkspace(ctx context.Context, source string) (root, input, executab
 func (r *Runner) Prepare(ctx context.Context, source string, options fontpatch.Options) (fontpatch.Draft, error) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
-	return r.prepare(ctx, source, options)
+	return r.prepare(ctx, source, options, false)
 }
 
 func (r *Runner) Adjust(ctx context.Context, id string, options fontpatch.Options) (fontpatch.Draft, error) {
@@ -77,32 +65,51 @@ func (r *Runner) Adjust(ctx context.Context, id string, options fontpatch.Option
 		return fontpatch.Draft{}, fontpatch.ErrNoResult
 	}
 	// Always start from the immutable original, never from adjusted outlines.
-	return r.prepare(ctx, r.draft.source, options)
+	return r.prepare(ctx, r.draft.source, options, true)
 }
 
-func (r *Runner) prepare(ctx context.Context, source string, options fontpatch.Options) (fontpatch.Draft, error) {
+func (r *Runner) prepare(ctx context.Context, source string, options fontpatch.Options, reuse bool) (fontpatch.Draft, error) {
 	if r.closed {
 		return fontpatch.Draft{}, fontpatch.ErrUnavailable
 	}
 	if err := options.Validate(); err != nil {
 		return fontpatch.Draft{}, err
 	}
-	root, input, executable, err := newFontWorkspace(ctx, source)
+	executable, err := r.ensureRuntime(ctx)
 	if err != nil {
 		return fontpatch.Draft{}, err
 	}
+	var root, input string
+	if reuse {
+		root, input = r.draft.root, r.draft.source
+	} else {
+		root, input, err = newFontWorkspace(ctx, source)
+		if err != nil {
+			return fontpatch.Draft{}, err
+		}
+	}
 	success := false
+	var outputRoot string
 	defer func() {
 		if !success {
-			os.RemoveAll(root)
+			if reuse {
+				os.RemoveAll(outputRoot)
+			} else {
+				os.RemoveAll(root)
+			}
 		}
 	}()
+	outputRoot, err = os.MkdirTemp(root, "preview-")
+	if err != nil {
+		return fontpatch.Draft{}, err
+	}
+	output := filepath.Join(outputRoot, "font")
 	request, err := json.Marshal(struct {
 		Action  string            `json:"action"`
 		Source  string            `json:"source"`
 		Output  string            `json:"output"`
 		Options fontpatch.Options `json:"options"`
-	}{"preview", input, filepath.Join(root, "preview"), options})
+	}{"preview", input, output, options})
 	if err != nil {
 		return fontpatch.Draft{}, err
 	}
@@ -131,13 +138,23 @@ func (r *Runner) prepare(ctx context.Context, source string, options fontpatch.O
 	if runErr != nil {
 		return fontpatch.Draft{}, fmt.Errorf("字体预览失败：%w", runErr)
 	}
-	fontPath := filepath.Join(root, "preview", "preview.ttf")
+	fontPath := filepath.Join(output, "preview.ttf")
 	if response.Result.FontPath != fontPath || len(response.Result.SHA256) != 64 || response.Result.Options != options {
 		return fontpatch.Draft{}, errors.New("字体工具预览结果不完整")
 	}
 	info, err := os.Lstat(fontPath)
 	if err != nil || !info.Mode().IsRegular() || info.Size() == 0 || info.Size() > 64<<20 {
 		return fontpatch.Draft{}, errors.New("预览字体文件不合法")
+	}
+	codepoints, err := readSupportedCodepoints(ctx, filepath.Join(output, "coverage.json"))
+	if err != nil {
+		return fontpatch.Draft{}, err
+	}
+	if err := validateCoverage(response.Result.GBKCoverage); err != nil {
+		return fontpatch.Draft{}, err
+	}
+	if err := ctx.Err(); err != nil {
+		return fontpatch.Draft{}, err
 	}
 	var id [16]byte
 	if _, err := rand.Read(id[:]); err != nil {
@@ -146,11 +163,15 @@ func (r *Runner) prepare(ctx context.Context, source string, options fontpatch.O
 	draft := response.Result.Draft
 	draft.ID = hex.EncodeToString(id[:])
 	if r.draft != nil {
-		if err := os.RemoveAll(r.draft.root); err != nil {
+		oldRoot := r.draft.root
+		if reuse {
+			oldRoot = r.draft.outputRoot
+		}
+		if err := os.RemoveAll(oldRoot); err != nil {
 			return fontpatch.Draft{}, err
 		}
 	}
-	r.draft = &draftState{root: root, source: input, fontPath: fontPath, info: draft}
+	r.draft = &draftState{root: root, source: input, fontPath: fontPath, outputRoot: outputRoot, codepoints: codepoints, info: draft}
 	success = true
 	return draft, nil
 }

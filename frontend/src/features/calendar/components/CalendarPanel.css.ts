@@ -11,9 +11,10 @@ const isSelected = style({})
 const calendarPage = style({
   width: 'min(var(--page-content-max-width), 100%)',
   minWidth: 0,
-  minHeight: '100cqh',
+  height: '100cqh',
+  minHeight: 0,
   display: 'grid',
-  gridTemplateRows: 'auto minmax(min-content, 1fr) minmax(0, max-content)',
+  gridTemplateRows: 'minmax(min-content, 1fr) minmax(0, max-content)',
   gap: 'calc(18px * var(--layout-spacing))',
   margin: '0 auto',
   padding: 'var(--page-padding-start) var(--page-padding-inline) var(--page-padding-end)',

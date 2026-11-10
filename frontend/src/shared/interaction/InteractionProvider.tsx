@@ -1,8 +1,8 @@
-import { createContext, type ReactNode, useContext, useEffect, useRef, useState } from 'react'
+import { createContext, type ReactNode, useContext, useEffect, useState } from 'react'
 import { toast } from 'sonner'
 
 import {
-  AlertDialog,
+  DecisionDialog,
   AlertDialogContent,
   AlertDialogDescription,
   AlertDialogFooter,
@@ -11,6 +11,8 @@ import {
   Button,
   Toaster,
 } from '@/shared/components/ui'
+
+import { createConfirmationRequests } from './confirmationRequests'
 
 export type FeedbackTone = 'info' | 'success' | 'warning' | 'error'
 
@@ -42,21 +44,17 @@ function createFeedbackID(): string {
 }
 
 export function InteractionProvider({ children }: { children: ReactNode }) {
-  const [confirmation, setConfirmation] = useState<ConfirmOptions | null>(null)
-  const resolverRef = useRef<((confirmed: boolean) => void) | null>(null)
+  const [confirmation, setConfirmation] = useState<(ConfirmOptions & { id: number }) | null>(null)
+  const [requests] = useState(createConfirmationRequests)
 
-  function finishConfirmation(confirmed: boolean) {
-    resolverRef.current?.(confirmed)
-    resolverRef.current = null
-    setConfirmation(null)
+  function finishConfirmation(id: number, confirmed: boolean) {
+    if (requests.finish(id, confirmed)) setConfirmation(null)
   }
 
   function confirm(options: ConfirmOptions): Promise<boolean> {
-    resolverRef.current?.(false)
-    setConfirmation(options)
-    return new Promise<boolean>((resolve) => {
-      resolverRef.current = resolve
-    })
+    const request = requests.start()
+    setConfirmation({ ...options, id: request.id })
+    return request.promise
   }
 
   function notify(options: ToastOptions): string {
@@ -83,13 +81,7 @@ export function InteractionProvider({ children }: { children: ReactNode }) {
     toast.dismiss(id)
   }
 
-  useEffect(
-    () => () => {
-      resolverRef.current?.(false)
-      resolverRef.current = null
-    },
-    [],
-  )
+  useEffect(() => () => requests.cancel(), [requests])
 
   const value: FeedbackController = { notify, dismiss, confirm }
 
@@ -98,33 +90,32 @@ export function InteractionProvider({ children }: { children: ReactNode }) {
       {children}
       <Toaster />
       {confirmation && (
-        <AlertDialog
-          open
-          onOpenChange={(open) => {
-            if (!open && resolverRef.current) {
-              finishConfirmation(false)
-            }
-          }}
+        <DecisionDialog
+          key={confirmation.id}
+          kind='alert'
+          onDecision={(accepted) => finishConfirmation(confirmation.id, accepted)}
         >
-          <AlertDialogContent>
-            <AlertDialogHeader>
-              <AlertDialogTitle>{confirmation.title}</AlertDialogTitle>
-              <AlertDialogDescription>{confirmation.message}</AlertDialogDescription>
-            </AlertDialogHeader>
-            <AlertDialogFooter>
-              <Button variant='outline' type='button' onClick={() => finishConfirmation(false)}>
-                {confirmation.cancelLabel ?? '取消'}
-              </Button>
-              <Button
-                variant={confirmation.tone === 'danger' ? 'danger' : 'primary'}
-                type='button'
-                onClick={() => finishConfirmation(true)}
-              >
-                {confirmation.confirmLabel ?? '确认'}
-              </Button>
-            </AlertDialogFooter>
-          </AlertDialogContent>
-        </AlertDialog>
+          {(close) => (
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>{confirmation.title}</AlertDialogTitle>
+                <AlertDialogDescription>{confirmation.message}</AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <Button variant='outline' type='button' onClick={() => close(false)}>
+                  {confirmation.cancelLabel ?? '取消'}
+                </Button>
+                <Button
+                  variant={confirmation.tone === 'danger' ? 'danger' : 'primary'}
+                  type='button'
+                  onClick={() => close(true)}
+                >
+                  {confirmation.confirmLabel ?? '确认'}
+                </Button>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          )}
+        </DecisionDialog>
       )}
     </InteractionContext.Provider>
   )

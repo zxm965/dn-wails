@@ -1,7 +1,7 @@
 import { MarkdownPreview } from '@/shared/components/markdown-preview'
 import {
   Button,
-  Dialog,
+  DecisionDialog,
   DialogBody,
   DialogContent,
   DialogDescription,
@@ -41,48 +41,45 @@ export function UpdateReleaseDialog({
         : '没有可用更新'
 
   return (
-    <Dialog
-      open
-      onOpenChange={(open) => {
-        if (!open) onDecision(false)
-      }}
-    >
-      <DialogContent className={styles.dialog}>
-        <DialogHeader>
-          <DialogTitle className={styles.title}>{title}</DialogTitle>
-          <DialogDescription>
-            当前版本 {status.currentVersion} · 最新发布 {status.latestVersion}
-            {confirmUpdate && '。更新完成后应用将自动安装并重启。'}
-          </DialogDescription>
-        </DialogHeader>
-        <DialogBody className={styles.body}>
-          <div className={styles.heading}>
-            <h3 className={styles.sectionTitle}>更新日志</h3>
-            {publishedDate && (
-              <time dateTime={status.publishedAt} className={styles.date}>
-                {publishedDate}
-              </time>
+    <DecisionDialog onDecision={onDecision}>
+      {(close) => (
+        <DialogContent className={styles.dialog}>
+          <DialogHeader>
+            <DialogTitle className={styles.title}>{title}</DialogTitle>
+            <DialogDescription>
+              当前版本 {status.currentVersion} · 最新发布 {status.latestVersion}
+              {confirmUpdate && '。更新完成后应用将自动安装并重启。'}
+            </DialogDescription>
+          </DialogHeader>
+          <DialogBody className={styles.body}>
+            <div className={styles.heading}>
+              <h3 className={styles.sectionTitle}>更新日志</h3>
+              {publishedDate && (
+                <time dateTime={status.publishedAt} className={styles.date}>
+                  {publishedDate}
+                </time>
+              )}
+            </div>
+            {status.releaseName && <p className={styles.releaseName}>{status.releaseName}</p>}
+            {notes ? (
+              <MarkdownPreview content={notes} className={styles.notes} onOpenLink={onOpenLink} />
+            ) : (
+              <p className={styles.empty}>此版本暂未提供更新日志。</p>
             )}
-          </div>
-          {status.releaseName && <p className={styles.releaseName}>{status.releaseName}</p>}
-          {notes ? (
-            <MarkdownPreview content={notes} className={styles.notes} onOpenLink={onOpenLink} />
-          ) : (
-            <p className={styles.empty}>此版本暂未提供更新日志。</p>
-          )}
-          {confirmUpdate && !canInstall && <p className={styles.empty}>当前环境不支持自动安装更新。</p>}
-        </DialogBody>
-        <DialogFooter>
-          <Button autoFocus variant='outline' onClick={() => onDecision(false)}>
-            {confirmUpdate ? '稍后再说' : '关闭'}
-          </Button>
-          {confirmUpdate && (
-            <Button disabled={!canInstall} onClick={() => onDecision(true)}>
-              立即更新
+            {confirmUpdate && !canInstall && <p className={styles.empty}>当前环境不支持自动安装更新。</p>}
+          </DialogBody>
+          <DialogFooter>
+            <Button autoFocus variant='outline' onClick={() => close(false)}>
+              {confirmUpdate ? '稍后再说' : '关闭'}
             </Button>
-          )}
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+            {confirmUpdate && (
+              <Button disabled={!canInstall} onClick={() => close(true)}>
+                立即更新
+              </Button>
+            )}
+          </DialogFooter>
+        </DialogContent>
+      )}
+    </DecisionDialog>
   )
 }

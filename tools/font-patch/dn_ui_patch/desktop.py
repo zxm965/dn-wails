@@ -15,6 +15,7 @@ from .font_conversion import prepare_ttf
 from .font_metadata import describe_font, read_font
 from .build_output import publish_build
 from .font_adjustment import adjust_font, validate_options
+from .font_coverage import inspect_coverage
 
 FONT_PATH = "resource/fonts/mysh.ttf"
 
@@ -40,13 +41,15 @@ def preview(source: Path, output: Path, options=None) -> dict:
     output.mkdir(parents=True, exist_ok=False)
     font = output / "preview.ttf"
     font.write_bytes(data)
+    coverage, codepoints = inspect_coverage(data)
+    (output / "coverage.json").write_text(json.dumps(codepoints), encoding="utf-8")
     names = metadata["names"]
     return {"fontName": (names.get("4") or names.get("1") or [source.stem])[0],
             "sourceName": source.name, "fontPath": str(font.resolve()),
             "converted": conversion["performed"], "adjusted": adjustment["performed"],
             "options": {"scalePercent": adjustment["scalePercent"], "weight": adjustment["weight"]},
             "missingCharacters": "".join(metadata["sample_missing_characters"]),
-            "glyphCount": metadata["glyph_count"], "sha256": metadata["sha256"]}
+            "glyphCount": metadata["glyph_count"], "sha256": metadata["sha256"], "gbkCoverage": coverage}
 
 
 def build(source: Path, output: Path, padding_mib: int = 500, options=None, expected_sha256="") -> dict:
@@ -66,6 +69,8 @@ def build(source: Path, output: Path, padding_mib: int = 500, options=None, expe
     stored = archive.entry(FONT_PATH)
     if zlib.decompress(archive.payload(stored)) != data:
         raise PatchError("封包后字体回读校验失败")
+    coverage, codepoints = inspect_coverage(data)
+    metadata["gbk_coverage"] = coverage
     report.update({"feature": "fonts", "font": metadata, "conversion": conversion,
                    "adjustment": adjustment,
                    "input_sha256": digest(original), "font_bytes_preserved": not conversion["performed"] and not adjustment["performed"],
@@ -78,6 +83,7 @@ def build(source: Path, output: Path, padding_mib: int = 500, options=None, expe
     Path(str(pak) + ".report.json").write_text(json.dumps(report, ensure_ascii=False, indent=2), encoding="utf-8")
     published = publish_build(stage, output / "result", report, [source])
     stage.rmdir()
+    (output / "coverage.json").write_text(json.dumps(codepoints), encoding="utf-8")
     result_pak = Path(published["output"])
     result_zip = Path(published["zip_files"][0])
     names = metadata["names"]
@@ -89,7 +95,7 @@ def build(source: Path, output: Path, padding_mib: int = 500, options=None, expe
             "options": {"scalePercent": adjustment["scalePercent"], "weight": adjustment["weight"]},
             "missingCharacters": "".join(metadata["sample_missing_characters"]),
             "glyphCount": metadata["glyph_count"], "sha256": metadata["sha256"],
-            "containerVerified": True, "gameVerified": False}
+            "containerVerified": True, "gameVerified": False, "gbkCoverage": coverage}
 
 
 def main():
