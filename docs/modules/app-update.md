@@ -10,6 +10,7 @@
 - `scripts/resolve-development-version.mjs`：开发构建读取最近的稳定 Git 标签并追加 `-dev`，无标签时回退到 `build/config.yml`。
 - `internal/appupdate/`：版本比较、发布资源选择、更新状态和安装用例，不依赖 Wails 或具体操作系统。
 - `internal/platform/appupdate/endpoint.go`：按配置的 `update_endpoint` 访问 `/latest` 读取 GitHub Release JSON，并按版本与文件名拼接 `/download` 地址；下载时注入持久安装身份请求头并校验资源。
+- `internal/platform/appupdate/download.go`：保留中断下载的缓存，使用 `Range` 续传，校验响应范围、完整文件大小和 SHA-256 后再交给安装器。
 - `internal/installation/`：生成和持久化下载门禁使用的 UUID v4 安装 ID、首次安装版本与最近运行版本。
 - `internal/platform/appupdate/config.go`：从 PostgreSQL 读取当前应用、渠道、平台和架构对应的更新源配置。
 - `internal/platform/appupdate/installer_darwin.go`：挂载新版 DMG，退出当前进程后替换应用包、卸载镜像并重新打开。
@@ -81,6 +82,14 @@ React AppUpdateProvider
 14. 日志保存在 `%APPDATA%\cull-pear\update-logs\`，最近结果保存在 `%APPDATA%\cull-pear\update-result.json`，包含 `status`、`version`、`message`、`logPath`。启动时 `Info.lastUpdateError` 返回失败或中断说明；前端保留设置页错误并提示，暂停本次启动的自动更新，用户仍可手动重试。成功结果不产生错误。
 
 安装开始后，下载器按实际读取字节数回调进度。`internal/appupdate.Service` 将进度归一化为版本、阶段、已下载字节、总字节和百分比，`internal/application.App` 通过 `app-update:progress` 事件转发给前端。`AppUpdateProvider` 负责订阅并清理事件，设置页展示下载进度；确认弹窗、准备完成提示和设置页统一说明应用将自动安装更新并重启，macOS 保留原有自动重启流程。
+
+### 下载续传
+
+- 未完成的文件保存在系统用户缓存目录的 `cull-pear/update-downloads/<key>.part`，缓存键同时绑定下载 URL、发布 SHA-256 和声明大小，更新版本或资源内容变化时不会复用旧片段。
+- 网络中断或应用退出时保留已写入的片段；再次确认更新（包括重启应用后）会从缓存字节数发起 `Range: bytes=N-` 请求，进度包含已缓存字节。不进行无限自动重试，也不设置下载总时限或无数据超时。
+- `206` 必须提供与偏移、剩余长度和总大小一致的 `Content-Range`；`200` 表示上游返回完整文件，清空旧片段后重新写入；续传收到 `416` 时清空缓存并仅重试一次不带 Range 的请求。
+- 使用 `Accept-Encoding: identity` 保持字节偏移稳定；完整文件仍必须通过大小和 SHA-256 校验。损坏或超大缓存会被清空，已完整缓存的文件会重新校验后复用。
+- 校验通过后复制到安装用临时目录并删除本次缓存；安装器不会收到未校验片段。其他版本的未完成缓存仍保留，可通过清理上述缓存目录释放空间。
 
 ### 更新日志
 
@@ -162,7 +171,7 @@ interface GitHubReleaseEndpoint {
 
 ## 错误与边界
 
-- 版本查询保留 HTTP 客户端的 30 秒总超时；文件下载使用独立的客户端副本，`Timeout` 为 `0`，不设置应用层总时限或无数据超时，保留原有传输、重定向和 Cookie 配置。应用生命周期取消仍会中止下载并清理不完整文件；底层网络和代理部署平台的限制仍然适用。
+- 版本查询保留 HTTP 客户端的 30 秒总超时；文件下载使用独立的客户端副本，`Timeout` 为 `0`，不设置应用层总时限或无数据超时，保留原有传输、重定向和 Cookie 配置。应用生命周期取消会中止下载并保留续传缓存；底层网络和代理部署平台的限制仍然适用。
 - 开发版本为“当前稳定 Git 标签版本 + `-dev`”，例如标签 `v1.2.3` 对应 `1.2.3-dev`；开发版本只展示，不发起自动更新请求。
 - 客户端只请求配置的公开 `update_endpoint` 对应的 `latest` 与 `download` 接口，不注入任何 Release 访问令牌；`latest` 可匿名访问，`download` 必须通过安装身份请求头的无状态格式校验。
 - 下载门禁不执行安装注册、设备认证或服务端计数限流，安装 ID 和请求头均可被专用脚本模拟；其目标是阻止普通网页直链和低成本浏览器请求，而不是提供不可绕过的授权。
@@ -173,7 +182,7 @@ interface GitHubReleaseEndpoint {
 - `update_endpoint` 必须配置为 Releases 基础地址，例如 `https://nexus.i96.me/github/releases`；客户端分别访问其 `/latest` 和 `/download` 子路径，不能把具体路由地址作为配置值。
 - `/latest` 必须返回 GitHub Release JSON；GitHub Release 的 `draft`、`prerelease` 会被视为无可用更新。Release 的 `html_url` 必须属于配置的 `expected_repository`。
 - 资源名不得包含路径或控制字符，且不得重复；`browser_download_url` 不作为客户端下载地址来源。
-- 下载只接受 HTTPS、声明大小不超过 1 GiB 且带 SHA-256 digest 的资源；大小或摘要不一致时删除临时文件并拒绝安装。
+- 下载只接受 HTTPS、声明大小不超过 1 GiB 且带 SHA-256 digest 的资源；不完整响应保留片段供重试，超出声明大小或摘要不一致时清空缓存并拒绝安装。
 - macOS 应用包所在目录必须允许当前用户写入；Windows 发布统一使用 Taskfile 的 `INSTALL_SCOPE=user`，避免自动更新请求管理员权限。
 - Windows 更新必须把 `/D=<当前 exe 所在目录>` 放在 NSIS 参数末尾；该值不加引号，因为 NSIS 会把 `/D=` 后的全部剩余命令行（包括空格）解释为安装目录。安装包没有 Authenticode 签名是独立风险：SmartScreen 可能提示，启用强制策略或 Smart App Control 的设备还可能直接阻止未知未签名程序；可见向导不能保证绕过系统执行策略。
 - Windows NSIS 卸载时删除安装身份文件但保留其他应用配置；更新安装不会执行该卸载清理。macOS 删除 `.app` 没有对应卸载钩子。

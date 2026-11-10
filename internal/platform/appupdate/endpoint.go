@@ -2,7 +2,6 @@ package appupdate
 
 import (
 	"context"
-	"crypto/sha256"
 	"encoding/hex"
 	"encoding/json"
 	"errors"
@@ -10,10 +9,10 @@ import (
 	"io"
 	"net/http"
 	"net/url"
-	"os"
 	"regexp"
 	"runtime"
 	"strings"
+	"sync"
 	"time"
 
 	coreupdate "cull-pear/internal/appupdate"
@@ -45,6 +44,8 @@ type EndpointSource struct {
 	client         *http.Client
 	downloadClient *http.Client
 	identity       ClientIdentity
+	downloadMu     sync.Mutex
+	cacheDirectory string
 }
 
 type ClientIdentity interface {
@@ -212,112 +213,6 @@ func releaseFromGitHubRelease(updateEndpoint string, repository string, release 
 		PublishedAt: publishedAt,
 		Assets:      assets,
 	}, nil
-}
-
-func (s *EndpointSource) DownloadWithProgress(ctx context.Context, asset coreupdate.Asset, destination string, onProgress coreupdate.ProgressCallback) error {
-	downloadURL, err := parseHTTPSURL(asset.DownloadURL, "download")
-	if err != nil {
-		return fmt.Errorf("download update asset: %w", err)
-	}
-	if asset.Size <= 0 || asset.Size > maxAssetSize {
-		return fmt.Errorf("download update asset: invalid asset size %d", asset.Size)
-	}
-	expectedDigest, err := parseSHA256Digest(asset.Digest)
-	if err != nil {
-		return err
-	}
-
-	request, err := http.NewRequestWithContext(ctx, http.MethodGet, downloadURL.String(), nil)
-	if err != nil {
-		return fmt.Errorf("create update download request: %w", err)
-	}
-	setUpdateHeaders(request, "application/octet-stream")
-	if err := setDownloadIdentityHeaders(request, s.identity); err != nil {
-		return fmt.Errorf("prepare update download request identity: %w", err)
-	}
-
-	response, err := s.downloadClient.Do(request)
-	if err != nil {
-		return fmt.Errorf("download update asset: %w", err)
-	}
-	defer response.Body.Close()
-	if response.StatusCode != http.StatusOK {
-		return fmt.Errorf("download update asset: unexpected HTTP status %d", response.StatusCode)
-	}
-	if response.Request == nil || response.Request.URL == nil {
-		return fmt.Errorf("download update asset: missing final URL")
-	}
-	if response.Request.URL.Scheme != "https" {
-		return fmt.Errorf("download update asset: redirect downgraded HTTPS")
-	}
-	if response.ContentLength > asset.Size || response.ContentLength > maxAssetSize {
-		return fmt.Errorf("download update asset: response exceeds declared size")
-	}
-
-	file, err := os.OpenFile(destination, os.O_CREATE|os.O_EXCL|os.O_WRONLY, 0o600)
-	if err != nil {
-		return fmt.Errorf("create update asset: %w", err)
-	}
-	removeFile := true
-	defer func() {
-		file.Close()
-		if removeFile {
-			os.Remove(destination)
-		}
-	}()
-
-	hash := sha256.New()
-	reader := io.Reader(io.LimitReader(response.Body, maxAssetSize+1))
-	if onProgress != nil {
-		reader = &progressReader{reader: reader, total: asset.Size, callback: onProgress}
-	}
-	written, copyErr := io.Copy(io.MultiWriter(file, hash), reader)
-	if copyErr != nil {
-		return fmt.Errorf("save update asset: %w", copyErr)
-	}
-	if written != asset.Size {
-		return fmt.Errorf("save update asset: expected %d bytes, received %d", asset.Size, written)
-	}
-	if err := file.Sync(); err != nil {
-		return fmt.Errorf("flush update asset: %w", err)
-	}
-	if err := file.Close(); err != nil {
-		return fmt.Errorf("close update asset: %w", err)
-	}
-	if !strings.EqualFold(hex.EncodeToString(hash.Sum(nil)), expectedDigest) {
-		return errors.New("verify update asset: SHA-256 digest mismatch")
-	}
-
-	removeFile = false
-	return nil
-}
-
-type progressReader struct {
-	reader   io.Reader
-	total    int64
-	written  int64
-	callback coreupdate.ProgressCallback
-}
-
-func (r *progressReader) Read(buffer []byte) (int, error) {
-	count, err := r.reader.Read(buffer)
-	if count > 0 {
-		r.written += int64(count)
-		percent := 0
-		if r.total > 0 {
-			percent = int(r.written * 100 / r.total)
-			if percent > 100 {
-				percent = 100
-			}
-		}
-		r.callback(coreupdate.Progress{
-			Phase:           "downloading",
-			DownloadedBytes: r.written,
-			TotalBytes:      r.total,
-			Percent:         percent,
-		})
-	}
-	return count, err
 }
 
 func setUpdateHeaders(request *http.Request, accept string) {

@@ -65,7 +65,7 @@ func TestEndpointSourceLoadsGitHubReleaseEndpoint(t *testing.T) {
 	}))
 	defer server.Close()
 
-	release, err := NewEndpointSource(server.Client(), nil).Latest(context.Background(), server.URL+"/github/releases", "zxm965/dn-wails")
+	release, err := newTestEndpointSource(t, server.Client(), nil).Latest(context.Background(), server.URL+"/github/releases", "zxm965/dn-wails")
 	if err != nil {
 		t.Fatalf("load GitHub release: %v", err)
 	}
@@ -92,7 +92,7 @@ func TestEndpointSourceDoesNotUseGitHubReleaseAssetDownloadURL(t *testing.T) {
     "size": 200
   }]
 }`)
-	release, err := NewEndpointSource(nil, nil).releaseFromMetadata("https://nexus.example.com/github/releases", "zxm965/dn-wails", data)
+	release, err := newTestEndpointSource(t, nil, nil).releaseFromMetadata("https://nexus.example.com/github/releases", "zxm965/dn-wails", data)
 	if err != nil {
 		t.Fatalf("load release metadata: %v", err)
 	}
@@ -120,7 +120,7 @@ func TestEndpointSourceRejectsMismatchedGitHubRelease(t *testing.T) {
 	}))
 	defer server.Close()
 
-	_, err := NewEndpointSource(server.Client(), nil).Latest(context.Background(), server.URL+"/github/releases", "zxm965/dn-wails")
+	_, err := newTestEndpointSource(t, server.Client(), nil).Latest(context.Background(), server.URL+"/github/releases", "zxm965/dn-wails")
 	if err == nil || !strings.Contains(err.Error(), "repository mismatch") {
 		t.Fatalf("expected release repository mismatch, got %v", err)
 	}
@@ -149,7 +149,7 @@ func TestEndpointSourceRejectsMissingMetadata(t *testing.T) {
 
 	server := httptest.NewTLSServer(http.NotFoundHandler())
 	defer server.Close()
-	_, err := NewEndpointSource(server.Client(), nil).Latest(context.Background(), server.URL+"/github/releases", "zxm965/dn-wails")
+	_, err := newTestEndpointSource(t, server.Client(), nil).Latest(context.Background(), server.URL+"/github/releases", "zxm965/dn-wails")
 	if !errors.Is(err, coreupdate.ErrNoRelease) {
 		t.Fatalf("expected no release error, got %v", err)
 	}
@@ -212,7 +212,7 @@ func TestEndpointSourceRejectsRouteSpecificUpdateEndpoint(t *testing.T) {
 		endpoint := endpoint
 		t.Run(endpoint, func(t *testing.T) {
 			t.Parallel()
-			_, err := NewEndpointSource(nil, nil).Latest(context.Background(), endpoint, "zxm965/dn-wails")
+			_, err := newTestEndpointSource(t, nil, nil).Latest(context.Background(), endpoint, "zxm965/dn-wails")
 			if err == nil || !strings.Contains(err.Error(), "releases base URL") {
 				t.Fatalf("expected route-specific endpoint to be rejected, got %v", err)
 			}
@@ -241,7 +241,7 @@ func TestEndpointSourceDownloadsAndVerifiesAsset(t *testing.T) {
 	}))
 	defer server.Close()
 
-	source := NewEndpointSource(server.Client(), validClientIdentity())
+	source := newTestEndpointSource(t, server.Client(), validClientIdentity())
 	destination := filepath.Join(t.TempDir(), "update.zip")
 	err := source.DownloadWithProgress(context.Background(), coreupdate.Asset{
 		Name:        "update.zip",
@@ -280,7 +280,7 @@ func TestEndpointSourceDownloadOutlivesMetadataTimeout(t *testing.T) {
 	defer server.Close()
 	client := server.Client()
 	client.Timeout = 100 * time.Millisecond
-	source := NewEndpointSource(client, validClientIdentity())
+	source := newTestEndpointSource(t, client, validClientIdentity())
 	destination := filepath.Join(t.TempDir(), "update.zip")
 	if err := source.DownloadWithProgress(context.Background(), coreupdate.Asset{
 		Name: "update.zip", DownloadURL: server.URL,
@@ -296,7 +296,7 @@ func TestEndpointSourceDownloadOutlivesMetadataTimeout(t *testing.T) {
 	}
 }
 
-func TestEndpointSourceDownloadCancellationRemovesPartialFile(t *testing.T) {
+func TestEndpointSourceDownloadCancellationKeepsResumeCache(t *testing.T) {
 	t.Parallel()
 
 	server := httptest.NewTLSServer(http.HandlerFunc(func(response http.ResponseWriter, request *http.Request) {
@@ -309,10 +309,12 @@ func TestEndpointSourceDownloadCancellationRemovesPartialFile(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 	destination := filepath.Join(t.TempDir(), "update.zip")
-	err := NewEndpointSource(server.Client(), validClientIdentity()).DownloadWithProgress(ctx, coreupdate.Asset{
+	source := newTestEndpointSource(t, server.Client(), validClientIdentity())
+	asset := coreupdate.Asset{
 		Name: "update.zip", DownloadURL: server.URL, Size: 100,
 		Digest: "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
-	}, destination, func(progress coreupdate.Progress) {
+	}
+	err := source.DownloadWithProgress(ctx, asset, destination, func(progress coreupdate.Progress) {
 		if progress.DownloadedBytes > 0 {
 			cancel()
 		}
@@ -321,7 +323,15 @@ func TestEndpointSourceDownloadCancellationRemovesPartialFile(t *testing.T) {
 		t.Fatalf("expected cancellation while reading the body, got %v", err)
 	}
 	if _, err := os.Stat(destination); !os.IsNotExist(err) {
-		t.Fatalf("partial download must be removed, got %v", err)
+		t.Fatalf("installation destination must not exist, got %v", err)
+	}
+	cachePath, err := source.downloadCachePath(asset)
+	if err != nil {
+		t.Fatal(err)
+	}
+	data, err := os.ReadFile(cachePath)
+	if err != nil || string(data) != "partial" {
+		t.Fatalf("expected resumable partial data, got %q, %v", data, err)
 	}
 }
 
@@ -335,7 +345,7 @@ func TestEndpointSourceRejectsDigestMismatch(t *testing.T) {
 	defer server.Close()
 
 	destination := filepath.Join(t.TempDir(), "update.zip")
-	err := NewEndpointSource(server.Client(), validClientIdentity()).DownloadWithProgress(context.Background(), coreupdate.Asset{
+	err := newTestEndpointSource(t, server.Client(), validClientIdentity()).DownloadWithProgress(context.Background(), coreupdate.Asset{
 		Name:        "update.zip",
 		DownloadURL: server.URL,
 		Digest:      "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
@@ -358,7 +368,7 @@ func TestEndpointSourceRejectsDownloadWithoutInitializedInstallationIdentity(t *
 	}))
 	defer server.Close()
 
-	err := NewEndpointSource(server.Client(), clientIdentityStub{
+	err := newTestEndpointSource(t, server.Client(), clientIdentityStub{
 		version: "1.0.0",
 		err:     errors.New("identity unavailable"),
 	}).DownloadWithProgress(context.Background(), coreupdate.Asset{
