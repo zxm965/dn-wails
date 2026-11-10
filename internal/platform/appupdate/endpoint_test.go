@@ -13,6 +13,7 @@ import (
 	"runtime"
 	"strings"
 	"testing"
+	"time"
 
 	coreupdate "cull-pear/internal/appupdate"
 )
@@ -257,6 +258,70 @@ func TestEndpointSourceDownloadsAndVerifiesAsset(t *testing.T) {
 	}
 	if string(data) != string(payload) {
 		t.Fatalf("unexpected downloaded content %q", data)
+	}
+}
+
+func TestEndpointSourceDownloadOutlivesMetadataTimeout(t *testing.T) {
+	t.Parallel()
+
+	payload := []byte("slow verified update")
+	digest := sha256.Sum256(payload)
+	server := httptest.NewTLSServer(http.HandlerFunc(func(response http.ResponseWriter, request *http.Request) {
+		if strings.HasSuffix(request.URL.Path, "/latest") {
+			<-request.Context().Done()
+			return
+		}
+		response.Header().Set("Content-Length", fmt.Sprint(len(payload)))
+		response.Write(payload[:1])
+		response.(http.Flusher).Flush()
+		time.Sleep(300 * time.Millisecond)
+		response.Write(payload[1:])
+	}))
+	defer server.Close()
+	client := server.Client()
+	client.Timeout = 100 * time.Millisecond
+	source := NewEndpointSource(client, validClientIdentity())
+	destination := filepath.Join(t.TempDir(), "update.zip")
+	if err := source.DownloadWithProgress(context.Background(), coreupdate.Asset{
+		Name: "update.zip", DownloadURL: server.URL,
+		Digest: "sha256:" + hex.EncodeToString(digest[:]), Size: int64(len(payload)),
+	}, destination, nil); err != nil {
+		t.Fatalf("slow download must succeed: %v", err)
+	}
+	if client.Timeout != 100*time.Millisecond {
+		t.Fatal("download changed the caller's timeout")
+	}
+	if _, err := source.Latest(context.Background(), server.URL+"/github/releases", "zxm965/dn-wails"); !errors.Is(err, context.DeadlineExceeded) {
+		t.Fatalf("metadata must still time out: %v", err)
+	}
+}
+
+func TestEndpointSourceDownloadCancellationRemovesPartialFile(t *testing.T) {
+	t.Parallel()
+
+	server := httptest.NewTLSServer(http.HandlerFunc(func(response http.ResponseWriter, request *http.Request) {
+		response.Header().Set("Content-Length", "100")
+		response.Write([]byte("partial"))
+		response.(http.Flusher).Flush()
+		<-request.Context().Done()
+	}))
+	defer server.Close()
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	destination := filepath.Join(t.TempDir(), "update.zip")
+	err := NewEndpointSource(server.Client(), validClientIdentity()).DownloadWithProgress(ctx, coreupdate.Asset{
+		Name: "update.zip", DownloadURL: server.URL, Size: 100,
+		Digest: "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+	}, destination, func(progress coreupdate.Progress) {
+		if progress.DownloadedBytes > 0 {
+			cancel()
+		}
+	})
+	if !errors.Is(err, context.Canceled) {
+		t.Fatalf("expected cancellation while reading the body, got %v", err)
+	}
+	if _, err := os.Stat(destination); !os.IsNotExist(err) {
+		t.Fatalf("partial download must be removed, got %v", err)
 	}
 }
 

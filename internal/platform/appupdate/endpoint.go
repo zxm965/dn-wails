@@ -42,8 +42,9 @@ var (
 // https://nexus.i96.me/github/releases). The latest and download routes are
 // appended by the client according to their distinct responsibilities.
 type EndpointSource struct {
-	client   *http.Client
-	identity ClientIdentity
+	client         *http.Client
+	downloadClient *http.Client
+	identity       ClientIdentity
 }
 
 type ClientIdentity interface {
@@ -72,7 +73,12 @@ func NewEndpointSource(client *http.Client, identity ClientIdentity) *EndpointSo
 	if client == nil {
 		client = &http.Client{Timeout: 30 * time.Second}
 	}
-	return &EndpointSource{client: client, identity: identity}
+	// Keep metadata deadlines while allowing large downloads to finish at any speed.
+	// Copy the client to preserve its transport, redirects and cookies without
+	// changing the caller's timeout; request contexts still cancel downloads.
+	downloadClient := *client
+	downloadClient.Timeout = 0
+	return &EndpointSource{client: client, downloadClient: &downloadClient, identity: identity}
 }
 
 func (s *EndpointSource) Latest(ctx context.Context, updateEndpoint string, repository string) (coreupdate.Release, error) {
@@ -230,7 +236,7 @@ func (s *EndpointSource) DownloadWithProgress(ctx context.Context, asset coreupd
 		return fmt.Errorf("prepare update download request identity: %w", err)
 	}
 
-	response, err := s.client.Do(request)
+	response, err := s.downloadClient.Do(request)
 	if err != nil {
 		return fmt.Errorf("download update asset: %w", err)
 	}
