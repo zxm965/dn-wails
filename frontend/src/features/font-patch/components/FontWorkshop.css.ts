@@ -8,7 +8,8 @@ const page = style({
   gap: 'calc(18px * var(--layout-spacing))',
 })
 const actions = style({
-  minWidth: 64,
+  width: '100%',
+  minWidth: 0,
   display: 'flex',
   alignItems: 'center',
   justifyContent: 'flex-end',

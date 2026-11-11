@@ -19,7 +19,7 @@
 ## 依赖关系
 
 ```text
-HashRouter
+createHashRouter / RouterProvider
   → App 路由装配
   → CalendarPanel
       ├── calendar model
@@ -64,6 +64,9 @@ interface CalendarDay {
 - [2024 年部分节假日安排](https://www.gov.cn/zhengce/content/202310/content_6911527.htm)
 - [2025 年部分节假日安排](https://www.gov.cn/zhengce/zhengceku/202411/content_6986383.htm)
 - [2026 年部分节假日安排](https://www.gov.cn/zhengce/zhengceku/202511/content_7047091.htm)
+- [2027 年部分节假日安排](https://www.gov.cn/zhengce/content/202611/content_7085101.htm)（[新华网转载全文](https://www.news.cn/politics/20261105/f90cd6ad4df94ab4833b141e52ccfc13/c.html)）
+
+2027 年安排依据 2026 年 11 月 5 日发布的国办发明电〔2026〕10 号通知：元旦 1 月 1–3 日、春节 2 月 5–13 日、清明节 4 月 3–5 日、劳动节 5 月 1–5 日、端午节 6 月 9 日、中秋节 9 月 15 日、国庆节 10 月 1–7 日放假，共 29 天；1 月 31 日、2 月 14 日、5 月 8 日、9 月 26 日、10 月 9 日补班。端午节和中秋节均仅当天标记为“休”。
 
 ## 错误与边界
 

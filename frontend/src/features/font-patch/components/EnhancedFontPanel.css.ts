@@ -8,6 +8,7 @@ const root = style({
 })
 const fonts = style({
   display: 'grid',
+  alignItems: 'start',
   gridTemplateColumns: 'repeat(2, minmax(0, 1fr))',
   gap: 16,
   '@container': { 'composition (max-width: 680px)': { gridTemplateColumns: 'minmax(0, 1fr)' } },
@@ -68,6 +69,12 @@ const sample = style({
   fontSynthesis: 'none',
   fontWeight: 400,
 })
+const tabAction = style({
+  padding: '0 8px',
+  color: 'var(--text-secondary)',
+  fontSize: 'var(--font-size-caption)',
+  fontWeight: 600,
+})
 const feedback = style({
   minHeight: '1.6em',
   fontSize: 'var(--font-size-secondary)',
@@ -75,4 +82,18 @@ const feedback = style({
   overflowWrap: 'anywhere',
   margin: 0,
 })
-export const styles = { root, fonts, box, toolbar, title, hint, rule, controls, label, previews, sample, feedback }
+export const styles = {
+  root,
+  fonts,
+  box,
+  toolbar,
+  title,
+  hint,
+  rule,
+  controls,
+  label,
+  previews,
+  sample,
+  tabAction,
+  feedback,
+}

@@ -1,5 +1,7 @@
 import { keyframes, style } from '@vanilla-extract/css'
 
+export const tabActionsWidthVar = '--page-tab-actions-width'
+
 const root = style({
   minWidth: '0',
   containerName: 'page-tabs',
@@ -24,24 +26,59 @@ const list = style({
   backdropFilter: 'blur(18px)',
 })
 
+const tab = style({
+  position: 'relative',
+  minWidth: 'max-content',
+  flex: '1 0 0',
+  display: 'flex',
+  alignItems: 'center',
+  border: '1px solid transparent',
+  borderRadius: '8px',
+  selectors: {
+    '&:not([data-active]):hover': {
+      background: 'var(--surface-hover)',
+    },
+    '&[data-active]': {
+      background:
+        'linear-gradient(135deg, var(--accent-muted), color-mix(in srgb, var(--accent-muted) 35%, transparent))',
+      borderColor: 'color-mix(in srgb, var(--accent) 28%, var(--border-subtle))',
+      boxShadow: 'inset 0 0 0 1px color-mix(in srgb, var(--accent) 8%, transparent)',
+    },
+  },
+})
+
 const trigger = style({
   minWidth: '0',
-  flex: '1 0 auto',
+  flex: '1 1 auto',
   justifyContent: 'flex-start',
   gap: '10px',
   padding: '0 12px',
   color: 'var(--text-secondary)',
   textAlign: 'left',
   background: 'transparent',
-  border: '1px solid transparent',
-  borderRadius: '8px',
+  border: 0,
+  borderRadius: '7px',
   selectors: {
+    [`${tab}:not([data-active]) &`]: {
+      position: 'static',
+      overflow: 'visible',
+    },
+    [`${tab}:not([data-active]) &::after`]: {
+      content: '""',
+      position: 'absolute',
+      inset: 0,
+      borderRadius: '8px',
+    },
+    '&:hover:not(:disabled)': {
+      background: 'transparent',
+    },
+    '&:active:not(:disabled)': {
+      transform: 'none',
+    },
     '&[data-active], &[data-active]:hover': {
       color: 'var(--text-primary)',
-      background:
-        'linear-gradient(135deg, var(--accent-muted), color-mix(in srgb, var(--accent-muted) 35%, transparent))',
-      borderColor: 'color-mix(in srgb, var(--accent) 28%, var(--border-subtle))',
-      boxShadow: 'inset 0 0 0 1px color-mix(in srgb, var(--accent) 8%, transparent)',
+      background: 'transparent',
+      boxShadow: 'none',
     },
   },
   '@container': {
@@ -49,6 +86,22 @@ const trigger = style({
       gap: '6px',
       padding: '0 8px',
     },
+  },
+})
+
+const tabActions = style({
+  width: `var(${tabActionsWidthVar}, auto)`,
+  flex: '0 0 auto',
+  minWidth: 0,
+  minHeight: 'max(var(--button-height-md), var(--button-height-default))',
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'flex-end',
+  gap: 8,
+  paddingRight: 4,
+  visibility: 'hidden',
+  selectors: {
+    '&[data-active]': { visibility: 'visible' },
   },
 })
 
@@ -129,4 +182,18 @@ const actions = style({
   padding: '0 5px',
   minHeight: 32,
 })
-export const styles = { root, list, trigger, index, copy, label, description, content, toolbar, actionList, actions }
+export const styles = {
+  root,
+  list,
+  tab,
+  tabActions,
+  trigger,
+  index,
+  copy,
+  label,
+  description,
+  content,
+  toolbar,
+  actionList,
+  actions,
+}

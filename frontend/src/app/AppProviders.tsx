@@ -1,5 +1,4 @@
 import { type ReactNode } from 'react'
-import { HashRouter } from 'react-router'
 
 import { AccountProvider } from '@/features/account'
 import { AppUpdateProvider } from '@/features/app-update'
@@ -11,9 +10,7 @@ export function AppProviders({ children }: { children: ReactNode }) {
     <SettingsProvider>
       <InteractionProvider>
         <AppUpdateProvider>
-          <AccountProvider>
-            <HashRouter>{children}</HashRouter>
-          </AccountProvider>
+          <AccountProvider>{children}</AccountProvider>
         </AppUpdateProvider>
       </InteractionProvider>
     </SettingsProvider>

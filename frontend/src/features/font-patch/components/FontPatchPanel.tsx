@@ -1,8 +1,8 @@
-import { CheckCircle2, Download, FileType2, RotateCcw, Upload } from 'lucide-react'
+import { CheckCircle2, Download, FileType2, Upload } from 'lucide-react'
 import { useEffect, useEffectEvent, useRef, useState } from 'react'
-import { createPortal } from 'react-dom'
 
 import { Button, Card, CardContent, SpinnerIcon } from '@/shared/components/ui'
+import { QueryFeedback } from '@/shared/components/ui/QueryFeedback'
 import { getErrorMessage } from '@/shared/lib/errorMessage'
 import { subscribeFileDrop } from '@/shared/native-kit'
 
@@ -12,7 +12,6 @@ import {
   getFontPatchStatus,
   pickFont,
   saveFontPatch,
-  resetFontPatch,
   type FontPatchResult,
   type FontPatchDraft,
   type FontPatchOptions,
@@ -29,9 +28,11 @@ function formatBytes(bytes: number): string {
   return `${(bytes / 1024 / 1024).toFixed(1)} MiB`
 }
 
-export function FontPatchPanel({ actionsContainer }: { actionsContainer: HTMLDivElement | null }) {
+export function FontPatchPanel() {
   const [available, setAvailable] = useState(false)
   const [loading, setLoading] = useState(true)
+  const [statusError, setStatusError] = useState('')
+  const [statusRequest, setStatusRequest] = useState(0)
   const [busy, setBusy] = useState(false)
   const [building, setBuilding] = useState(false)
   const [draft, setDraft] = useState<FontPatchDraft | null>(null)
@@ -39,7 +40,6 @@ export function FontPatchPanel({ actionsContainer }: { actionsContainer: HTMLDiv
   const [failedAdjustment, setFailedAdjustment] = useState('')
   const [picking, setPicking] = useState(false)
   const [saving, setSaving] = useState(false)
-  const [resetting, setResetting] = useState(false)
   const [canceling, setCanceling] = useState(false)
   const [result, setResult] = useState<FontPatchResult | null>(null)
   const [error, setError] = useState('')
@@ -50,7 +50,7 @@ export function FontPatchPanel({ actionsContainer }: { actionsContainer: HTMLDiv
   const dirty =
     !!draft && (options.scalePercent !== draft.options.scalePercent || options.weight !== draft.options.weight)
   const adjustmentKey = draft ? `${draft.id}:${options.scalePercent}:${options.weight}` : ''
-  const disabled = loading || !available || busy || picking || saving || resetting
+  const disabled = loading || !!statusError || !available || busy || picking || saving
 
   // Recover the backend task/result when navigating away and back. Polling is
   // scoped to a pending build and is always stopped on unmount.
@@ -61,6 +61,7 @@ export function FontPatchPanel({ actionsContainer }: { actionsContainer: HTMLDiv
       try {
         const status = await getFontPatchStatus()
         if (disposed) return
+        setStatusError('')
         setAvailable(status.available)
         setBusy(status.busy)
         setBuilding(status.phase === 'build')
@@ -77,7 +78,7 @@ export function FontPatchPanel({ actionsContainer }: { actionsContainer: HTMLDiv
         }
         if (status.busy) timer = setTimeout(() => void refresh(), 1000)
       } catch (cause) {
-        if (!disposed) setError(getErrorMessage(cause, '无法读取字体工具状态。'))
+        if (!disposed) setStatusError(getErrorMessage(cause, '无法读取字体工具状态。'))
       } finally {
         if (!disposed) setLoading(false)
       }
@@ -87,7 +88,14 @@ export function FontPatchPanel({ actionsContainer }: { actionsContainer: HTMLDiv
       disposed = true
       if (timer) clearTimeout(timer)
     }
-  }, [])
+  }, [statusRequest])
+
+  function retryStatus() {
+    if (loading || operation.current) return
+    setLoading(true)
+    setStatusError('')
+    setStatusRequest((request) => request + 1)
+  }
 
   async function prepare(path: string) {
     setError('')
@@ -221,27 +229,6 @@ export function FontPatchPanel({ actionsContainer }: { actionsContainer: HTMLDiv
     }
   }
 
-  async function reset() {
-    if (disabled || operation.current) return
-    operation.current = true
-    setResetting(true)
-    try {
-      await resetFontPatch()
-      setResult(null)
-      setDraft(null)
-      setOptions({ scalePercent: 100, weight: 0 })
-      setFailedAdjustment('')
-      setError('')
-      setSavedPath('')
-      setCanceling(false)
-    } catch (cause) {
-      setError(getErrorMessage(cause, '重置失败，请稍后重试。'))
-    } finally {
-      setResetting(false)
-      operation.current = false
-    }
-  }
-
   async function cancel() {
     const task = pendingTask.current
     if (!task || task.cancelRequested) return
@@ -261,14 +248,6 @@ export function FontPatchPanel({ actionsContainer }: { actionsContainer: HTMLDiv
 
   return (
     <div className={styles.page}>
-      {actionsContainer &&
-        createPortal(
-          <Button variant='outline' disabled={disabled || (!draft && !result)} onClick={() => void reset()}>
-            <SpinnerIcon icon={RotateCcw} spinning={resetting} aria-hidden='true' />
-            {resetting ? '正在重置…' : '重置'}
-          </Button>,
-          actionsContainer,
-        )}
       <Card className={styles.card}>
         <CardContent>
           <div className={styles.upload} ref={dropArea} data-file-drop-target aria-busy={busy}>
@@ -319,7 +298,10 @@ export function FontPatchPanel({ actionsContainer }: { actionsContainer: HTMLDiv
           </div>
         </CardContent>
       </Card>
-      {!loading && !available && (
+      {statusError && (
+        <QueryFeedback loading={loading} error={statusError} hasData={!!draft || !!result} onRetry={retryStatus} />
+      )}
+      {!loading && !statusError && !available && (
         <p className={styles.notice} role='alert'>
           字体工具暂不可用，当前安装包缺少必要组件。
         </p>

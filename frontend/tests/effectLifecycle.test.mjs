@@ -436,3 +436,212 @@ test('quick notes load once per session even when render callbacks change', asyn
   assert.equal(requests, 1)
   panel.unmount()
 })
+
+function descendants(node) {
+  if (Array.isArray(node)) return node.flatMap(descendants)
+  if (!node || typeof node !== 'object' || !node.props) return []
+  return [node, ...descendants(node.props.children)]
+}
+
+function compositionState(phase = '') {
+  return {
+    status: { available: true, busy: !!phase, phase, error: '', draft: null, result: null },
+    fontA: null,
+    fontB: null,
+    composition: null,
+    stats: { replaced: 0, adjusted: 0, fallback: 0 },
+  }
+}
+async function mountComposition(getStatus, overrides = {}) {
+  return mount(
+    'features/font-patch/components/EnhancedFontPanel.tsx',
+    'EnhancedFontPanel',
+    {
+      styles: {},
+      characterTypes: [],
+      useCompositionFont: () => ({ ready: true, points: [], family: 'test' }),
+      sameComposition: () => true,
+      createPortal: (children) => children,
+      FontSourceCard: 'FontSourceCard',
+      getCompositionStatus: getStatus,
+      getErrorMessage: (error, fallback) => error.message || fallback,
+      setTimeout: () => 1,
+      clearTimeout() {},
+      ...overrides,
+    },
+    { actionsContainer: {} },
+  )
+}
+const actionButton = (instance, text) =>
+  descendants(instance.result).find((node) => node.type === 'Button' && node.props.children === text)
+
+test('composition status failures offer retry without reporting a missing runtime', async () => {
+  let fail = true
+  let requests = 0
+  const panel = await mountComposition(async () => {
+    requests++
+    if (fail) throw new Error('connection failed')
+    return compositionState()
+  })
+  assert.ok(actionButton(panel, '重试读取状态'))
+  assert.ok(!descendants(panel.result).some((node) => node.props.children === '当前安装包缺少增强字体组件。'))
+  assert.equal(actionButton(panel, '重置').props.disabled, true)
+  fail = false
+  actionButton(panel, '重试读取状态').props.onClick()
+  await panel.render()
+  assert.equal(requests, 2)
+  assert.equal(actionButton(panel, '重试读取状态'), undefined)
+  assert.equal(actionButton(panel, '重置').props.disabled, false)
+  await panel.render()
+  assert.equal(requests, 2, 'ordinary renders do not restart status loading')
+  panel.unmount()
+})
+
+test('composition recovery exposes cancellation only for supported backend phases', async () => {
+  for (const phase of ['', 'import', 'preview', 'build', 'export']) {
+    const panel = await mountComposition(async () => compositionState(phase))
+    assert.equal(Boolean(actionButton(panel, '取消处理')), ['import', 'preview', 'build'].includes(phase), phase)
+    panel.unmount()
+  }
+})
+
+test('selection is not cancellable, import is cancellable, and repeat cancellation is suppressed', async () => {
+  let choose
+  let finishImport
+  let cancellations = 0
+  const panel = await mountComposition(async () => compositionState(), {
+    chooseCompositionFont: () =>
+      new Promise((resolve) => {
+        choose = resolve
+      }),
+    importCompositionFont: () =>
+      new Promise((resolve) => {
+        finishImport = resolve
+      }),
+    cancelComposition: async () => {
+      cancellations++
+    },
+  })
+  descendants(panel.result)
+    .find((node) => node.type === 'FontSourceCard')
+    .props.onUpload()
+  await panel.render()
+  assert.equal(actionButton(panel, '取消处理'), undefined)
+  choose('/tmp/example.ttf')
+  await panel.render()
+  const cancel = actionButton(panel, '取消处理')
+  assert.ok(cancel)
+  cancel.props.onClick()
+  cancel.props.onClick()
+  await panel.render()
+  assert.equal(cancellations, 1)
+  assert.equal(actionButton(panel, '正在取消…').props.disabled, true)
+  finishImport()
+  await panel.render()
+  assert.equal(actionButton(panel, '取消处理'), undefined)
+  assert.equal(actionButton(panel, '重置').props.disabled, false)
+  panel.unmount()
+})
+
+test('reset has no cancellation and a failed status refresh can be retried', async () => {
+  let finishReset
+  let failStatus = false
+  const panel = await mountComposition(
+    async () => {
+      if (failStatus) throw new Error('refresh failed')
+      return compositionState()
+    },
+    {
+      resetComposition: () =>
+        new Promise((resolve) => {
+          finishReset = resolve
+        }),
+    },
+  )
+  actionButton(panel, '重置').props.onClick()
+  await panel.render()
+  assert.equal(actionButton(panel, '取消处理'), undefined)
+  assert.equal(actionButton(panel, '重置').props.disabled, true)
+  failStatus = true
+  finishReset()
+  await panel.render()
+  assert.ok(actionButton(panel, '重试读取状态'))
+  assert.equal(actionButton(panel, '重置').props.disabled, true)
+  failStatus = false
+  actionButton(panel, '重试读取状态').props.onClick()
+  await panel.render()
+  assert.equal(actionButton(panel, '重置').props.disabled, false)
+  panel.unmount()
+})
+
+test('composition settings require both imported fonts', async () => {
+  for (const [fontA, fontB, visible] of [
+    [null, null, false],
+    [{ id: 'a' }, null, false],
+    [null, { id: 'b' }, false],
+    [{ id: 'a' }, { id: 'b' }, true],
+  ]) {
+    const panel = await mountComposition(async () => ({ ...compositionState(), fontA, fontB }))
+    assert.equal(
+      descendants(panel.result).some((node) => node.props['aria-label'] === '字符组合设置'),
+      visible,
+    )
+    panel.unmount()
+  }
+})
+
+test('saving an enhanced patch does not expose task cancellation', async () => {
+  let finishSave
+  const snapshot = compositionState()
+  snapshot.fontA = { id: 'a' }
+  snapshot.fontB = { id: 'b' }
+  snapshot.status.draft = { id: 'd', gbkCoverage: { covered: 0, total: 1 } }
+  snapshot.status.result = { id: 'r', draftId: 'd' }
+  const panel = await mountComposition(async () => snapshot, {
+    saveComposition: () =>
+      new Promise((resolve) => {
+        finishSave = resolve
+      }),
+  })
+  const save =
+    descendants(panel.result).find(
+      (node) => node.type === 'Button' && descendants(node).some((child) => child.props.children === '下载补丁'),
+    ) ??
+    descendants(panel.result).find(
+      (node) =>
+        node.type === 'Button' && Array.isArray(node.props.children) && node.props.children.includes('下载补丁'),
+    )
+  assert.ok(save)
+  save.props.onClick()
+  await panel.render()
+  assert.equal(actionButton(panel, '取消处理'), undefined)
+  finishSave('/tmp/patch.zip')
+  await panel.render()
+  assert.ok(descendants(panel.result).some((node) => node.props.children === '已保存：/tmp/patch.zip'))
+  panel.unmount()
+})
+
+test('basic font status failures are retryable and not reported as missing components', async () => {
+  let fail = true
+  const panel = await mount('features/font-patch/components/FontPatchPanel.tsx', 'FontPatchPanel', {
+    styles: {},
+    ...errors,
+    subscribeFileDrop: () => () => {},
+    getFontPatchStatus: async () => {
+      if (fail) throw new Error('basic connection failed')
+      return compositionState().status
+    },
+    setTimeout: () => 1,
+    clearTimeout() {},
+  })
+  assert.ok(
+    !descendants(panel.result).some((node) => node.props.children === '字体工具暂不可用，当前安装包缺少必要组件。'),
+  )
+  const retry = descendants(panel.result).find((node) => node.props.error === 'basic connection failed')
+  assert.ok(retry)
+  fail = false
+  retry.props.onRetry()
+  await panel.render()
+  assert.ok(!descendants(panel.result).some((node) => node.props.error === 'basic connection failed'))
+  panel.unmount()
+})

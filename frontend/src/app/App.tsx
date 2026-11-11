@@ -1,22 +1,15 @@
-import { useEffect, useLayoutEffect, useRef, type ReactNode } from 'react'
-import { Navigate, Route, Routes, useLocation, useNavigate } from 'react-router'
+import { useEffect, useLayoutEffect, useRef } from 'react'
+import { Outlet, useLocation, useNavigate } from 'react-router'
 
-import { AccountLogin, AccountPanel, AccountTitleBarButton, useAccount } from '@/features/account'
-import { CalendarPanel } from '@/features/calendar'
-import { DevToolsPanel } from '@/features/devtools'
-import { DnRoles, DnProcessKiller, DnWeeklyPlans } from '@/features/dn-system'
-import { FontPatchPanel } from '@/features/font-patch'
-import { SettingsPanel, useSettings } from '@/features/settings'
-import { SiteMessageCenter, SiteMessageProvider, SiteMessages } from '@/features/site-messages'
+import { AccountTitleBarButton, useAccount } from '@/features/account'
+import { useSettings } from '@/features/settings'
+import { SiteMessageCenter, SiteMessageProvider } from '@/features/site-messages'
 import { TaskReminderMonitor } from '@/features/tasks'
 import { AppSidebar } from '@/shared/components/app-sidebar'
 import { TitleBar } from '@/shared/components/titlebar'
-import { ListState, ScrollArea } from '@/shared/components/ui'
+import { ScrollArea } from '@/shared/components/ui'
 import { createScopedClassNames } from '@/shared/lib/classNames'
 import {
-  APP_ROUTES,
-  APP_VIEWS,
-  appViewRequiresAuth,
   getAppViewFromPath,
   getAppViewPath,
   getAppViewTitle,
@@ -27,7 +20,6 @@ import {
 import { windowManager } from '@/shared/window'
 
 import { appConfig } from './appConfig'
-import { TaskNotesPage } from './TaskNotesPage'
 
 import { styles } from './App.css'
 
@@ -56,30 +48,6 @@ export default function App() {
 
   function navigateToView(view: AppView, replace = false) {
     navigate(getAppViewPath(view), { replace })
-  }
-
-  function renderView(view: AppView): ReactNode {
-    if (appViewRequiresAuth(view)) {
-      if (account.loading) {
-        return <ListState loading emptyText='登录状态加载失败' loadingText='正在恢复登录状态…' />
-      }
-      if (!account.user) {
-        return <AccountLogin />
-      }
-    }
-
-    if (view === 'calendar') return <CalendarPanel />
-    if (view === 'tasks') return <TaskNotesPage key={account.user?.id} />
-    if (view === 'account') return <AccountPanel key={account.user?.id} />
-    if (view === 'dn-weekly')
-      return <DnWeeklyPlans key={account.user?.id} onNavigateRoles={() => navigateToView('dn-roles')} />
-    if (view === 'dn-roles') return <DnRoles key={account.user?.id} />
-    if (view === 'dn-patches') return <FontPatchPanel />
-    if (view === 'dn-kill-process') return <DnProcessKiller />
-    if (view === 'site-messages') return <SiteMessages key={account.user?.id} onNavigate={navigateToView} />
-    if (view === 'settings') return <SettingsPanel />
-    if (view === 'devtools') return <DevToolsPanel />
-    return null
   }
 
   useEffect(() => {
@@ -123,13 +91,7 @@ export default function App() {
             viewportClassName={styles.contentViewport}
             viewportRef={contentRef}
           >
-            <Routes>
-              <Route path='/' element={<Navigate replace to={getAppViewPath(fallbackView)} />} />
-              {APP_VIEWS.map((view) => (
-                <Route key={view} path={APP_ROUTES[view].path} element={renderView(view)} />
-              ))}
-              <Route path='*' element={<Navigate replace to={getAppViewPath(fallbackView)} />} />
-            </Routes>
+            <Outlet />
           </ScrollArea>
         </div>
       </div>

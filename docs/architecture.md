@@ -60,6 +60,7 @@ main
 app
 ├── appConfig（只读全局展示配置）
 ├── AppProviders（顶层 Provider 组合与依赖顺序）
+├── AppRoutes / PageError（hash 数据路由、登录守卫与页面异常恢复）
 ├── features
 │   ├── calendar
 │   │   ├── components

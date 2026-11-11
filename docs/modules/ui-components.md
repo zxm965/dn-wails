@@ -93,4 +93,8 @@ Card 的面板内边距与 PageHeader、PageTabs 内容、Dialog 正文和操作
 - `shared/hooks/useSessionScroll.ts`：内容就绪后恢复滚动位置，滚动监听在卸载时解除；调用方为各账号、列表提供独立 key。
 - 回归检查：`node --test frontend/tests/*.test.mjs`（Node.js 24+）。
 
-`PageTabs` 的 description 可省略；可选 actions 区域位于页签列表右侧，窄宽度允许换行，不纳入页签方向键导航。工坊通过稳定容器 Portal 放置当前面板的重置和取消按钮；不提供 actions 的设置页保持原布局。
+`PageTabs` 的 description 可省略。每个 `PageTab` 可配置 `actions: ReactNode`，把按钮、文案等额外内容放在该页签视觉容器的右侧；只在该页签选中时显示，未选中时保留占位并通过 `visibility`、`inert` 和 `aria-hidden` 排除交互及辅助技术读取。`actionsWidth` 接受 CSS 宽度，为 Portal 尚未挂载或内容变化时预留稳定空间；工坊增强页按两个按钮的最长总文案及内边距配置 `calc(7 * var(--font-size-caption) + 48px)`，标准字号下预留 118px，容纳重置与取消按钮。扩展内容与页签触发器是兄弟节点，避免在按钮里嵌套按钮；方向键仍由 Base UI 管理页签，扩展按钮可通过 Tab 键访问。选中与悬停背景统一由外层页签容器绘制，触发器保持透明，避免未选中时出现局部灰块。窄内容区只在页签列表内部滚动。
+
+组件级 `PageTabs.actions` 仍用于整条页签栏右侧的公共操作，与每个 `PageTab.actions` 的内部扩展槽相互独立；原有调用方无需修改。
+
+页签内扩展按钮统一采用共享 Button 的固定 `sm`（28px）、caption 字号、600 字重和 8px 水平内边距，按钮间距为 8px；普通次要操作使用 ghost 变体和次级文字颜色，悬停时强调。预留宽度应覆盖该页签所有状态下的最大内容，并随字号缩放，不按当前加载或选中状态动态改变。

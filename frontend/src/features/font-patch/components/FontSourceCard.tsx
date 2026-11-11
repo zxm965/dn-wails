@@ -37,31 +37,33 @@ export function FontSourceCard({ label, font, busy, onUpload }: Props) {
           : '选择 TTF / 静态 OTF，单文件不超过 64 MiB。'}
       </p>
       {font && <p className={styles.hint}>来源：{font.origin}</p>}
-      <div className={styles.rows}>
-        {characterTypes.map((type) => {
-          const sample =
-            [...type.sample].filter((char) => supported.has(char.codePointAt(0)!)).join('') ||
-            preview.points
-              .filter((point) => characterKind(point) === type.key)
-              .slice(0, 12)
-              .map((point) => String.fromCodePoint(point))
-              .join('')
-          const hasSample = !!font && preview.ready && !!sample
-          return (
-            <div className={styles.row} key={type.key}>
-              <p className={styles.hint}>
-                {type.label} · {(font?.counts[type.key] ?? 0).toLocaleString()} 个字符
-              </p>
-              <p
-                className={hasSample ? styles.sample : styles.placeholder}
-                style={hasSample ? { fontFamily: preview.family } : undefined}
-              >
-                {!font ? '等待上传' : preview.ready ? sample || '此分类无字符' : preview.error || '正在加载字形…'}
-              </p>
-            </div>
-          )
-        })}
-      </div>
+      {font && (
+        <div className={styles.rows}>
+          {characterTypes.map((type) => {
+            const sample =
+              [...type.sample].filter((char) => supported.has(char.codePointAt(0)!)).join('') ||
+              preview.points
+                .filter((point) => characterKind(point) === type.key)
+                .slice(0, 12)
+                .map((point) => String.fromCodePoint(point))
+                .join('')
+            const hasSample = !!font && preview.ready && !!sample
+            return (
+              <div className={styles.row} key={type.key}>
+                <p className={styles.hint}>
+                  {type.label} · {(font?.counts[type.key] ?? 0).toLocaleString()} 个字符
+                </p>
+                <p
+                  className={hasSample ? styles.sample : styles.placeholder}
+                  style={hasSample ? { fontFamily: preview.family } : undefined}
+                >
+                  {preview.ready ? sample || '此分类无字符' : preview.error || '正在加载字形…'}
+                </p>
+              </div>
+            )
+          })}
+        </div>
+      )}
       {preview.error && (
         <Button disabled={busy} variant='outline' onClick={preview.retry}>
           重试字形预览
