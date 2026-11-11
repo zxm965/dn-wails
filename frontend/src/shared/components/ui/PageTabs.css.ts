@@ -105,4 +105,28 @@ const content = style({
   },
 })
 
-export const styles = { root, list, trigger, index, copy, label, description, content }
+const toolbar = style([
+  list,
+  { alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', overflowX: 'visible' },
+])
+const actionList = style({
+  display: 'flex',
+  gap: 5,
+  flex: '1 1 180px',
+  minWidth: 0,
+  width: 'auto',
+  padding: 0,
+  border: 0,
+  borderRadius: 0,
+  background: 'transparent',
+  overflowX: 'auto',
+})
+const actions = style({
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'flex-end',
+  marginLeft: 'auto',
+  padding: '0 5px',
+  minHeight: 32,
+})
+export const styles = { root, list, trigger, index, copy, label, description, content, toolbar, actionList, actions }

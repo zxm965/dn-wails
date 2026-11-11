@@ -19,7 +19,7 @@ interface FontPreviewProps {
   building: boolean
   confirmed: boolean
   onOptionsChange: (options: FontPatchOptions) => void
-  onConfirm: () => void
+  onGenerate: () => void
 }
 
 export function FontPreview({
@@ -32,7 +32,7 @@ export function FontPreview({
   building,
   confirmed,
   onOptionsChange,
-  onConfirm,
+  onGenerate,
 }: FontPreviewProps) {
   const textId = useId()
   const sizeId = useId()
@@ -120,9 +120,18 @@ export function FontPreview({
           onClick={() => onOptionsChange({ scalePercent: 100, weight: 0 })}
         >
           <RotateCcw aria-hidden='true' />
-          恢复原始
+          恢复原始参数
         </Button>
       </div>
+      <p className={styles.hint} role='status'>
+        {busy
+          ? building
+            ? '预览已更新，正在生成对应补丁。'
+            : '正在按所选参数更新预览…'
+          : dirty
+            ? '参数尚未应用，当前显示上一次预览；点击“更新预览并生成补丁”后生效。'
+            : '调整大小和粗细后，点击下方按钮即可一起更新预览和补丁。'}
+      </p>
       <div className={styles.editorHeader}>
         <label htmlFor={textId}>预览文字</label>
         <label className={styles.displaySize} htmlFor={sizeId}>
@@ -151,22 +160,18 @@ export function FontPreview({
         onChange={(event) => setSample(event.target.value)}
         aria-label='编辑预览文字'
       />
-      <div className={styles.sample} aria-busy={busy || (!adjustmentFailed && !loadError && (!ready || dirty))}>
-        {ready && !busy && !dirty ? (
+      <div className={styles.sample} aria-busy={busy || (!loadError && !ready)}>
+        {ready && !busy ? (
           <p className={styles.rendered} style={{ fontFamily: `"${loaded.family}"`, fontSize: displaySize }}>
             {previewText}
           </p>
         ) : (
           <p className={styles.status} role='status'>
-            {adjustmentFailed && !busy
-              ? '调整未完成，请重试调整或恢复原始效果。'
-              : loadError && !busy && !dirty
-                ? loadError
-                : '正在更新字体预览…'}
+            {loadError && !busy ? loadError : '正在更新字体预览…'}
           </p>
         )}
       </div>
-      {loadError && !busy && !dirty && (
+      {loadError && !busy && (
         <Button
           variant='outline'
           onClick={() => {
@@ -185,11 +190,19 @@ export function FontPreview({
       )}
       <div className={styles.footer}>
         <p className={styles.hint}>
-          调整只更新预览，确认后才生成补丁。预览基准字号仅用于查看；游戏内实际字号和裁切效果仍需实测。
+          点击按钮后应用参数并生成补丁。预览基准字号仅用于查看；游戏内实际字号和裁切效果仍需实测。
         </p>
-        <Button disabled={locked || busy || dirty || !ready || confirmed} onClick={onConfirm}>
-          <SpinnerIcon icon={Check} spinning={building} aria-hidden='true' />
-          {building ? '正在生成补丁…' : confirmed ? '当前预览已生成补丁' : '确认生成补丁'}
+        <Button disabled={locked || busy || !ready || (confirmed && !dirty)} onClick={onGenerate}>
+          <SpinnerIcon icon={Check} spinning={busy} aria-hidden='true' />
+          {busy
+            ? building
+              ? '正在生成补丁…'
+              : '正在更新预览…'
+            : adjustmentFailed
+              ? '重试更新并生成补丁'
+              : confirmed && !dirty
+                ? '当前预览已生成补丁'
+                : '更新预览并生成补丁'}
         </Button>
       </div>
     </div>

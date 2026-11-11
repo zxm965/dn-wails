@@ -1,7 +1,8 @@
 import { CheckCircle2, Download, FileType2, RotateCcw, Upload } from 'lucide-react'
 import { useEffect, useEffectEvent, useRef, useState } from 'react'
+import { createPortal } from 'react-dom'
 
-import { Button, Card, CardContent, PageHeader, SpinnerIcon } from '@/shared/components/ui'
+import { Button, Card, CardContent, SpinnerIcon } from '@/shared/components/ui'
 import { getErrorMessage } from '@/shared/lib/errorMessage'
 import { subscribeFileDrop } from '@/shared/native-kit'
 
@@ -28,7 +29,7 @@ function formatBytes(bytes: number): string {
   return `${(bytes / 1024 / 1024).toFixed(1)} MiB`
 }
 
-export function FontPatchPanel() {
+export function FontPatchPanel({ actionsContainer }: { actionsContainer: HTMLDivElement | null }) {
   const [available, setAvailable] = useState(false)
   const [loading, setLoading] = useState(true)
   const [busy, setBusy] = useState(false)
@@ -122,60 +123,43 @@ export function FontPatchPanel() {
     }
   }
 
-  useEffect(() => {
-    if (!draft || !dirty || busy || disabled || failedAdjustment === adjustmentKey) return
-    const timer = setTimeout(() => {
-      if (operation.current) return
-      operation.current = true
-      const task = { cancelRequested: false }
-      pendingTask.current = task
-      setBusy(true)
-      setError('')
-      setSavedPath('')
-      void adjustFontPatch(draft.id, options)
-        .then((next) => {
-          setDraft(next)
-          setFailedAdjustment('')
-          if (task.cancelRequested) setOptions(next.options)
-        })
-        .catch((cause: unknown) => {
-          if (task.cancelRequested) {
-            // Discard queued slider changes as well as the canceled adjustment.
-            setOptions(draft.options)
-            setFailedAdjustment('')
-            setError('已取消调整，已恢复上一次预览。')
-          } else {
-            setError(getErrorMessage(cause, '预览调整失败，请减小调整幅度后重试。'))
-            setFailedAdjustment(adjustmentKey)
-          }
-        })
-        .finally(() => {
-          pendingTask.current = null
-          operation.current = false
-          setBusy(false)
-          setCanceling(false)
-        })
-    }, 350)
-    return () => clearTimeout(timer)
-  }, [draft, dirty, busy, disabled, options, failedAdjustment, adjustmentKey])
-
-  async function confirm() {
-    if (!draft || dirty || disabled || operation.current) return
+  async function generate() {
+    if (!draft || disabled || operation.current || (!dirty && result?.draftId === draft.id)) return
     operation.current = true
     const task = { cancelRequested: false }
     pendingTask.current = task
+    let currentDraft = draft
+    let generating = false
     setBusy(true)
-    setBuilding(true)
     setError('')
     setSavedPath('')
     try {
-      setResult(await buildFontPatch(draft.id))
+      if (dirty) {
+        currentDraft = await adjustFontPatch(draft.id, options)
+        setDraft(currentDraft)
+        setOptions(currentDraft.options)
+        setFailedAdjustment('')
+      }
+      // A canceled adjustment may finish successfully before the cancel reaches
+      // the worker; do not start a second operation after that cancellation.
+      if (task.cancelRequested) {
+        setError('已取消生成，最新预览已保留。')
+        return
+      }
+      generating = true
+      setBuilding(true)
+      setResult(await buildFontPatch(currentDraft.id))
     } catch (cause) {
-      setError(
-        task.cancelRequested
-          ? '已取消生成，预览已保留，可重新确认生成。'
-          : getErrorMessage(cause, '补丁生成失败，请重试。'),
-      )
+      if (task.cancelRequested) {
+        setOptions(currentDraft.options)
+        setFailedAdjustment('')
+        setError('已取消处理，最近一次有效预览已保留，可重新生成。')
+      } else if (generating) {
+        setError(getErrorMessage(cause, '补丁生成失败，预览已保留，请重试。'))
+      } else {
+        setError(getErrorMessage(cause, '预览调整失败，请减小调整幅度后重试。'))
+        setFailedAdjustment(adjustmentKey)
+      }
     } finally {
       pendingTask.current = null
       operation.current = false
@@ -277,10 +261,14 @@ export function FontPatchPanel() {
 
   return (
     <div className={styles.page}>
-      <PageHeader
-        title='工坊'
-        subtitle='一次只安装一个字体补丁；更换字体不等于统一调整界面字号，游戏内的加载与排版效果仍需实测。'
-      />
+      {actionsContainer &&
+        createPortal(
+          <Button variant='outline' disabled={disabled || (!draft && !result)} onClick={() => void reset()}>
+            <SpinnerIcon icon={RotateCcw} spinning={resetting} aria-hidden='true' />
+            {resetting ? '正在重置…' : '重置'}
+          </Button>,
+          actionsContainer,
+        )}
       <Card className={styles.card}>
         <CardContent>
           <div className={styles.upload} ref={dropArea} data-file-drop-target aria-busy={busy}>
@@ -341,10 +329,6 @@ export function FontPatchPanel() {
           <CardContent>
             <div className={styles.resultHeader}>
               <h2 className={styles.title}>{getFontDisplayName(draft)}</h2>
-              <Button variant='outline' disabled={disabled} onClick={() => void reset()}>
-                <SpinnerIcon icon={RotateCcw} spinning={resetting} aria-hidden='true' />
-                {resetting ? '正在重置…' : '重置'}
-              </Button>
             </div>
             <p className={styles.filename}>
               {draft.sourceName} · {draft.glyphCount.toLocaleString()} 个字形
@@ -353,19 +337,14 @@ export function FontPatchPanel() {
               draft={draft}
               options={options}
               busy={busy}
-              locked={loading || picking || resetting || saving || building || canceling}
+              locked={disabled || canceling}
               dirty={dirty}
               adjustmentFailed={failedAdjustment === adjustmentKey}
               building={building}
               confirmed={result?.draftId === draft.id}
               onOptionsChange={setOptions}
-              onConfirm={() => void confirm()}
+              onGenerate={() => void generate()}
             />
-            {failedAdjustment === adjustmentKey && (
-              <Button variant='outline' disabled={disabled} onClick={() => setFailedAdjustment('')}>
-                重试调整预览
-              </Button>
-            )}
             <p className={styles.hint}>
               GBK 字符覆盖率 {coveragePercent(draft.gbkCoverage.covered, draft.gbkCoverage.total)}% （
               {draft.gbkCoverage.covered.toLocaleString()} / {draft.gbkCoverage.total.toLocaleString()}）， 缺失{' '}

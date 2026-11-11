@@ -16,6 +16,7 @@ from .font_metadata import describe_font, read_font
 from .build_output import publish_build
 from .font_adjustment import adjust_font, validate_options
 from .font_coverage import inspect_coverage
+from .font_composition import merge_request, matches
 
 FONT_PATH = "resource/fonts/mysh.ttf"
 
@@ -98,10 +99,29 @@ def build(source: Path, output: Path, padding_mib: int = 500, options=None, expe
             "containerVerified": True, "gameVerified": False, "gbkCoverage": coverage}
 
 
+def source_info(path):
+    data = read_font(Path(path))
+    metadata = describe_font(data)
+    coverage, points = inspect_coverage(data)
+    (Path(path).parent / 'coverage.json').write_text(json.dumps(points), encoding='utf-8')
+    counts = {name: sum(matches(cp, scope) for cp in points) for name, scope in [('numbers', 1), ('letters', 2), ('text', 4), ('symbols', 8)]}
+    counts['other'] = len(points) - sum(counts.values())
+    return {'sha256': metadata['sha256'], 'glyphCount': metadata['glyph_count'], 'gbkCoverage': coverage, 'counts': counts}
+
+
 def main():
     try:
         request = json.loads(sys.stdin.buffer.read(65537))
-        if request.get("action") == "preview":
+        action = request.get("action")
+        if action == 'import':
+            data, _ = prepare_ttf(read_font(Path(request['source'])))
+            describe_font(data)
+            with Path(request['output']).open('xb') as file:
+                file.write(data)
+            result = source_info(request['output'])
+        elif action == 'merge':
+            result = merge_request(request)
+        elif action == "preview":
             result = preview(Path(request["source"]), Path(request["output"]), request.get("options"))
         else:
             result = build(Path(request["source"]), Path(request["output"]), options=request.get("options"),

@@ -1,1 +1,1 @@
-export { FontPatchPanel } from './components/FontPatchPanel'
+export { FontWorkshop as FontPatchPanel } from './components/FontWorkshop'

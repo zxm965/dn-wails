@@ -15,7 +15,7 @@
 - `frontend/src/shared/components/ui/RadioGroup.tsx`、`RadioGroup.css.ts`：基于 Base UI 的类型化单选组，提供 segmented 和 chips 两种共享视觉形态；分段选项高度可通过局部 `--radio-segment-height` 覆盖，默认仍跟随界面密度。
 - `frontend/src/shared/components/ui/Slider.tsx`、`Slider.css.ts`：基于 Base UI 的单值滑块，统一轨道、进度、拖拽点、键盘操作和焦点状态。
 - `frontend/src/shared/components/ui/Card.tsx`、`Card.css.ts`：页面容器；Badge、Avatar、Progress、Tabs 也分别维护同名 `.css.ts`。
-- `frontend/src/shared/components/ui/PageTabs.tsx`、`PageTabs.css.ts`：设置与实验室共用的单行吸顶页签，基于 Base UI Tabs 管理选中、焦点、方向键和面板关联，触发器通过 `render` 使用共享 `Button`；空间不足时局部滚动，内容切换提供 180ms 轻微位移与淡入，reduced motion 下关闭。
+- `frontend/src/shared/components/ui/PageTabs.tsx`、`PageTabs.css.ts`：设置、实验室与工坊共用的单行吸顶页签，基于 Base UI Tabs 管理选中、焦点、方向键和面板关联，触发器通过 `render` 使用共享 `Button`；空间不足时局部滚动，内容切换提供 180ms 轻微位移与淡入，reduced motion 下关闭。
 - `frontend/src/shared/components/ui/Layout.tsx`、`Layout.css.ts`：统一渐变页头 PageHeader、Pagination、ListState 和 Skeleton。
 - `frontend/src/shared/components/ui/Spinner.tsx`、`Spinner.css.ts`：可复用的图标旋转状态和 reduced-motion 降级。
 - `frontend/src/shared/components/ui/Toaster.tsx`：Sonner Toast 主题适配，无独立样式时不创建空样式文件。
@@ -92,3 +92,5 @@ Card 的面板内边距与 PageHeader、PageTabs 内容、Dialog 正文和操作
 - `shared/hooks/useSessionState.ts`：WebView 内存中的视图状态，业务调用方为私有偏好提供包含账号 ID 的 key，并在账号切换时重新挂载。
 - `shared/hooks/useSessionScroll.ts`：内容就绪后恢复滚动位置，滚动监听在卸载时解除；调用方为各账号、列表提供独立 key。
 - 回归检查：`node --test frontend/tests/*.test.mjs`（Node.js 24+）。
+
+`PageTabs` 的 description 可省略；可选 actions 区域位于页签列表右侧，窄宽度允许换行，不纳入页签方向键导航。工坊通过稳定容器 Portal 放置当前面板的重置和取消按钮；不提供 actions 的设置页保持原布局。

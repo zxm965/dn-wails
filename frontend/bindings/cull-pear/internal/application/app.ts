@@ -51,10 +51,20 @@ export function AdjustFontPatch(id: string, options: fontpatch$0.Options): $Canc
     });
 }
 
+export function BuildFontComposition(id: string, request: fontpatch$0.CompositionRequest): $CancellablePromise<fontpatch$0.Result> {
+    return $Call.ByID(3619526547, id, request).then(($result: any) => {
+        return $$createType1($result);
+    });
+}
+
 export function BuildFontPatch(draftID: string): $CancellablePromise<fontpatch$0.Result> {
     return $Call.ByID(891495095, draftID).then(($result: any) => {
         return $$createType1($result);
     });
+}
+
+export function CancelFontComposition(): $CancellablePromise<void> {
+    return $Call.ByID(2764225977);
 }
 
 export function CancelFontPatch(): $CancellablePromise<void> {
@@ -135,69 +145,87 @@ export function GetAuthState(): $CancellablePromise<account$0.AuthState> {
     });
 }
 
+export function GetCompositionPreview(id: string): $CancellablePromise<fontpatch$0.Preview> {
+    return $Call.ByID(589105616, id).then(($result: any) => {
+        return $$createType12($result);
+    });
+}
+
+export function GetCompositionSourcePreview(id: string): $CancellablePromise<fontpatch$0.Preview> {
+    return $Call.ByID(1990218475, id).then(($result: any) => {
+        return $$createType12($result);
+    });
+}
+
 export function GetDiagnosticsInfo(): $CancellablePromise<$models.DiagnosticsInfo> {
     return $Call.ByID(1219397070).then(($result: any) => {
-        return $$createType12($result);
+        return $$createType13($result);
     });
 }
 
 export function GetDragonNestShortcutStatus(): $CancellablePromise<shortcut$0.Status> {
     return $Call.ByID(838337119).then(($result: any) => {
-        return $$createType13($result);
+        return $$createType14($result);
+    });
+}
+
+export function GetEnhancedFontPatchStatus(): $CancellablePromise<fontpatch$0.EnhancedStatus> {
+    return $Call.ByID(2582081303).then(($result: any) => {
+        return $$createType15($result);
     });
 }
 
 export function GetFontPatchPreview(id: string): $CancellablePromise<fontpatch$0.Preview> {
     return $Call.ByID(1524147517, id).then(($result: any) => {
-        return $$createType14($result);
+        return $$createType12($result);
     });
 }
 
 export function GetFontPatchStatus(): $CancellablePromise<fontpatch$0.Status> {
     return $Call.ByID(3282751741).then(($result: any) => {
-        return $$createType15($result);
+        return $$createType16($result);
     });
 }
 
 export function GetLifecycleStatus(): $CancellablePromise<$models.LifecycleStatus> {
     return $Call.ByID(3391808900).then(($result: any) => {
-        return $$createType16($result);
+        return $$createType17($result);
     });
 }
 
 export function GetProfile(): $CancellablePromise<account$0.Profile> {
     return $Call.ByID(1031557003).then(($result: any) => {
-        return $$createType17($result);
+        return $$createType18($result);
     });
 }
 
 export function GetRuntimeStatus(): $CancellablePromise<$models.RuntimeStatus> {
     return $Call.ByID(1798490416).then(($result: any) => {
-        return $$createType18($result);
+        return $$createType19($result);
     });
 }
 
 export function GetScreens(): $CancellablePromise<nativekit$0.Screen[]> {
     return $Call.ByID(978621563).then(($result: any) => {
-        return $$createType20($result);
+        return $$createType21($result);
     });
 }
 
 export function GetSettings(): $CancellablePromise<settings$0.AppSettings> {
     return $Call.ByID(2820910515).then(($result: any) => {
-        return $$createType21($result);
+        return $$createType22($result);
     });
 }
 
 export function GetSiteMessageInbox(limit: number): $CancellablePromise<dn$0.SiteMessageInbox> {
     return $Call.ByID(594247900, limit).then(($result: any) => {
-        return $$createType22($result);
+        return $$createType23($result);
     });
 }
 
 export function GetSystemNotificationStatus(): $CancellablePromise<$models.SystemNotificationStatus> {
     return $Call.ByID(1607488410).then(($result: any) => {
-        return $$createType23($result);
+        return $$createType24($result);
     });
 }
 
@@ -205,9 +233,15 @@ export function ImportAvatar(path: string): $CancellablePromise<string> {
     return $Call.ByID(1794131966, path);
 }
 
+export function ImportCompositionFont(slot: number, path: string): $CancellablePromise<fontpatch$0.SourceFont> {
+    return $Call.ByID(3176396374, slot, path).then(($result: any) => {
+        return $$createType25($result);
+    });
+}
+
 export function InitializeDnWeeklyPlans(): $CancellablePromise<dn$0.WeeklyPlanInitializationResult> {
     return $Call.ByID(3976834583).then(($result: any) => {
-        return $$createType24($result);
+        return $$createType26($result);
     });
 }
 
@@ -217,7 +251,7 @@ export function InstallApplicationUpdate(expectedVersion: string): $CancellableP
 
 export function KillDragonNestProcess(): $CancellablePromise<dnprocess$0.Info> {
     return $Call.ByID(3093591292).then(($result: any) => {
-        return $$createType25($result);
+        return $$createType27($result);
     });
 }
 
@@ -227,49 +261,49 @@ export function LaunchDragonNestProcess(): $CancellablePromise<void> {
 
 export function ListAllDnWeeklyPlans(): $CancellablePromise<dn$0.WeeklyPlan[]> {
     return $Call.ByID(3833714304).then(($result: any) => {
-        return $$createType26($result);
+        return $$createType28($result);
     });
 }
 
 export function ListDnRoleOptions(): $CancellablePromise<dn$0.RoleProfession[]> {
     return $Call.ByID(3803055926).then(($result: any) => {
-        return $$createType27($result);
+        return $$createType29($result);
     });
 }
 
 export function ListDnRoles(query: dn$0.RoleProfessionQuery): $CancellablePromise<dn$0.RoleProfessionList> {
     return $Call.ByID(1681849057, query).then(($result: any) => {
-        return $$createType28($result);
+        return $$createType30($result);
     });
 }
 
 export function ListDnWeeklyPlans(query: dn$0.WeeklyPlanQuery): $CancellablePromise<dn$0.WeeklyPlanList> {
     return $Call.ByID(3984086525, query).then(($result: any) => {
-        return $$createType29($result);
+        return $$createType31($result);
     });
 }
 
 export function ListDragonNestProcesses(): $CancellablePromise<dnprocess$0.Info[]> {
     return $Call.ByID(4218085744).then(($result: any) => {
-        return $$createType30($result);
+        return $$createType32($result);
     });
 }
 
 export function ListQuickNotes(): $CancellablePromise<quicknotes$0.Note[]> {
     return $Call.ByID(3611448438).then(($result: any) => {
-        return $$createType32($result);
+        return $$createType34($result);
     });
 }
 
 export function ListSiteMessages(query: dn$0.SiteMessageQuery): $CancellablePromise<dn$0.SiteMessageList> {
     return $Call.ByID(1907897541, query).then(($result: any) => {
-        return $$createType33($result);
+        return $$createType35($result);
     });
 }
 
 export function LoginUser(input: account$0.LoginInput): $CancellablePromise<account$0.Profile> {
     return $Call.ByID(3476684652, input).then(($result: any) => {
-        return $$createType17($result);
+        return $$createType18($result);
     });
 }
 
@@ -309,13 +343,19 @@ export function OpenExternalURL(rawURL: string): $CancellablePromise<void> {
 
 export function OpenFiles(options: nativekit$0.OpenFilesOptions): $CancellablePromise<string[]> {
     return $Call.ByID(3716198309, options).then(($result: any) => {
-        return $$createType34($result);
+        return $$createType36($result);
     });
 }
 
 export function PrepareFontPatch(source: string, options: fontpatch$0.Options): $CancellablePromise<fontpatch$0.Draft> {
     return $Call.ByID(1333981322, source, options).then(($result: any) => {
         return $$createType0($result);
+    });
+}
+
+export function PreviewFontComposition(request: fontpatch$0.CompositionRequest): $CancellablePromise<fontpatch$0.CompositionPreview> {
+    return $Call.ByID(2492588159, request).then(($result: any) => {
+        return $$createType37($result);
     });
 }
 
@@ -335,7 +375,7 @@ export function ReadClipboard(): $CancellablePromise<string> {
 
 export function RegisterUser(input: account$0.RegistrationInput): $CancellablePromise<account$0.Profile> {
     return $Call.ByID(3035054512, input).then(($result: any) => {
-        return $$createType17($result);
+        return $$createType18($result);
     });
 }
 
@@ -355,19 +395,23 @@ export function RequestWindowClose(): $CancellablePromise<void> {
     return $Call.ByID(884993677);
 }
 
+export function ResetFontComposition(): $CancellablePromise<void> {
+    return $Call.ByID(314306442);
+}
+
 export function ResetFontPatch(): $CancellablePromise<void> {
     return $Call.ByID(341085366);
 }
 
 export function ResetSettings(): $CancellablePromise<settings$0.AppSettings> {
     return $Call.ByID(3684332592).then(($result: any) => {
-        return $$createType21($result);
+        return $$createType22($result);
     });
 }
 
 export function RetryDragonNestShortcut(): $CancellablePromise<shortcut$0.Status> {
     return $Call.ByID(155526767).then(($result: any) => {
-        return $$createType13($result);
+        return $$createType14($result);
     });
 }
 
@@ -385,12 +429,16 @@ export function SaveDnWeeklyPlan(input: dn$0.WeeklyPlanInput): $CancellablePromi
 
 export function SaveDragonNestLauncherPath(input: $models.DnLauncherConfiguration): $CancellablePromise<$models.DnLauncherConfiguration> {
     return $Call.ByID(2423964149, input).then(($result: any) => {
-        return $$createType35($result);
+        return $$createType38($result);
     });
 }
 
 export function SaveFile(options: nativekit$0.SaveFileOptions): $CancellablePromise<string> {
     return $Call.ByID(960788009, options);
+}
+
+export function SaveFontComposition(id: string, destination: string): $CancellablePromise<void> {
+    return $Call.ByID(809421452, id, destination);
 }
 
 export function SaveFontPatch(id: string, destination: string): $CancellablePromise<void> {
@@ -399,7 +447,7 @@ export function SaveFontPatch(id: string, destination: string): $CancellableProm
 
 export function SaveQuickNote(input: quicknotes$0.NoteInput): $CancellablePromise<quicknotes$0.Note> {
     return $Call.ByID(542893622, input).then(($result: any) => {
-        return $$createType31($result);
+        return $$createType33($result);
     });
 }
 
@@ -411,7 +459,7 @@ export function SaveTask(input: tasks$0.TaskInput): $CancellablePromise<tasks$0.
 
 export function SaveTaskList(input: tasks$0.ListInput): $CancellablePromise<tasks$0.List> {
     return $Call.ByID(1421202346, input).then(($result: any) => {
-        return $$createType36($result);
+        return $$createType39($result);
     });
 }
 
@@ -421,7 +469,7 @@ export function SendMessageNotification(request: $models.MessageNotificationRequ
 
 export function SetTaskCompleted(id: number, completed: boolean): $CancellablePromise<tasks$0.Workspace> {
     return $Call.ByID(2424155808, id, completed).then(($result: any) => {
-        return $$createType37($result);
+        return $$createType40($result);
     });
 }
 
@@ -431,7 +479,7 @@ export function ShowMessageDialog(options: nativekit$0.MessageDialogOptions): $C
 
 export function SyncDnWeeklyPlans(): $CancellablePromise<dn$0.WeeklyPlanSyncResult> {
     return $Call.ByID(3398052580).then(($result: any) => {
-        return $$createType38($result);
+        return $$createType41($result);
     });
 }
 
@@ -443,25 +491,25 @@ export function SyncOfficialSiteMessages(): $CancellablePromise<dn$0.OfficialMes
 
 export function TaskWorkspace(): $CancellablePromise<tasks$0.Workspace> {
     return $Call.ByID(3988080412).then(($result: any) => {
-        return $$createType37($result);
+        return $$createType40($result);
     });
 }
 
 export function TerminateDragonNestProcess(target: dnprocess$0.Target): $CancellablePromise<dnprocess$0.Info> {
     return $Call.ByID(79659205, target).then(($result: any) => {
-        return $$createType25($result);
+        return $$createType27($result);
     });
 }
 
 export function UpdateProfile(input: account$0.ProfileInput): $CancellablePromise<account$0.Profile> {
     return $Call.ByID(1442719852, input).then(($result: any) => {
-        return $$createType17($result);
+        return $$createType18($result);
     });
 }
 
 export function UpdateSettings(next: settings$0.AppSettings): $CancellablePromise<settings$0.AppSettings> {
     return $Call.ByID(2350933742, next).then(($result: any) => {
-        return $$createType21($result);
+        return $$createType22($result);
     });
 }
 
@@ -488,30 +536,33 @@ const $$createType8 = dn$0.WeeklyPlan.createFrom;
 const $$createType9 = dn$0.SiteMessage.createFrom;
 const $$createType10 = appupdate$0.Info.createFrom;
 const $$createType11 = account$0.AuthState.createFrom;
-const $$createType12 = $models.DiagnosticsInfo.createFrom;
-const $$createType13 = shortcut$0.Status.createFrom;
-const $$createType14 = fontpatch$0.Preview.createFrom;
-const $$createType15 = fontpatch$0.Status.createFrom;
-const $$createType16 = $models.LifecycleStatus.createFrom;
-const $$createType17 = account$0.Profile.createFrom;
-const $$createType18 = $models.RuntimeStatus.createFrom;
-const $$createType19 = nativekit$0.Screen.createFrom;
-const $$createType20 = $Create.Array($$createType19);
-const $$createType21 = settings$0.AppSettings.createFrom;
-const $$createType22 = dn$0.SiteMessageInbox.createFrom;
-const $$createType23 = $models.SystemNotificationStatus.createFrom;
-const $$createType24 = dn$0.WeeklyPlanInitializationResult.createFrom;
-const $$createType25 = dnprocess$0.Info.createFrom;
-const $$createType26 = $Create.Array($$createType8);
-const $$createType27 = $Create.Array($$createType7);
-const $$createType28 = dn$0.RoleProfessionList.createFrom;
-const $$createType29 = dn$0.WeeklyPlanList.createFrom;
-const $$createType30 = $Create.Array($$createType25);
-const $$createType31 = quicknotes$0.Note.createFrom;
-const $$createType32 = $Create.Array($$createType31);
-const $$createType33 = dn$0.SiteMessageList.createFrom;
-const $$createType34 = $Create.Array($Create.Any);
-const $$createType35 = $models.DnLauncherConfiguration.createFrom;
-const $$createType36 = tasks$0.List.createFrom;
-const $$createType37 = tasks$0.Workspace.createFrom;
-const $$createType38 = dn$0.WeeklyPlanSyncResult.createFrom;
+const $$createType12 = fontpatch$0.Preview.createFrom;
+const $$createType13 = $models.DiagnosticsInfo.createFrom;
+const $$createType14 = shortcut$0.Status.createFrom;
+const $$createType15 = fontpatch$0.EnhancedStatus.createFrom;
+const $$createType16 = fontpatch$0.Status.createFrom;
+const $$createType17 = $models.LifecycleStatus.createFrom;
+const $$createType18 = account$0.Profile.createFrom;
+const $$createType19 = $models.RuntimeStatus.createFrom;
+const $$createType20 = nativekit$0.Screen.createFrom;
+const $$createType21 = $Create.Array($$createType20);
+const $$createType22 = settings$0.AppSettings.createFrom;
+const $$createType23 = dn$0.SiteMessageInbox.createFrom;
+const $$createType24 = $models.SystemNotificationStatus.createFrom;
+const $$createType25 = fontpatch$0.SourceFont.createFrom;
+const $$createType26 = dn$0.WeeklyPlanInitializationResult.createFrom;
+const $$createType27 = dnprocess$0.Info.createFrom;
+const $$createType28 = $Create.Array($$createType8);
+const $$createType29 = $Create.Array($$createType7);
+const $$createType30 = dn$0.RoleProfessionList.createFrom;
+const $$createType31 = dn$0.WeeklyPlanList.createFrom;
+const $$createType32 = $Create.Array($$createType27);
+const $$createType33 = quicknotes$0.Note.createFrom;
+const $$createType34 = $Create.Array($$createType33);
+const $$createType35 = dn$0.SiteMessageList.createFrom;
+const $$createType36 = $Create.Array($Create.Any);
+const $$createType37 = fontpatch$0.CompositionPreview.createFrom;
+const $$createType38 = $models.DnLauncherConfiguration.createFrom;
+const $$createType39 = tasks$0.List.createFrom;
+const $$createType40 = tasks$0.Workspace.createFrom;
+const $$createType41 = dn$0.WeeklyPlanSyncResult.createFrom;

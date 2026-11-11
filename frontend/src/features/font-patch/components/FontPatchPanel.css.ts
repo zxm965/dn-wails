@@ -4,8 +4,6 @@ const page = style({
   width: 'min(var(--page-content-max-width), 100%)',
   display: 'grid',
   gap: 'calc(18px * var(--layout-spacing))',
-  margin: '0 auto',
-  padding: 'var(--page-padding-start) var(--page-padding-inline) var(--page-padding-end)',
   minWidth: 0,
   containerName: 'font-patch-page',
   containerType: 'inline-size',

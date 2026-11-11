@@ -5,6 +5,146 @@
 // @ts-ignore: Unused imports
 import { Create as $Create } from "@wailsio/runtime";
 
+export class CharacterCounts {
+    "numbers": number;
+    "letters": number;
+    "text": number;
+    "symbols": number;
+    "other": number;
+
+    /** Creates a new CharacterCounts instance. */
+    constructor($$source: Partial<CharacterCounts> = {}) {
+        if (!("numbers" in $$source)) {
+            this["numbers"] = 0;
+        }
+        if (!("letters" in $$source)) {
+            this["letters"] = 0;
+        }
+        if (!("text" in $$source)) {
+            this["text"] = 0;
+        }
+        if (!("symbols" in $$source)) {
+            this["symbols"] = 0;
+        }
+        if (!("other" in $$source)) {
+            this["other"] = 0;
+        }
+
+        Object.assign(this, $$source);
+    }
+
+    /**
+     * Creates a new CharacterCounts instance from a string or object.
+     */
+    static createFrom($$source: any = {}): CharacterCounts {
+        let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
+        return new CharacterCounts($$parsedSource as Partial<CharacterCounts>);
+    }
+}
+
+export class CompositionPreview {
+    "draft": Draft;
+    "stats": CompositionStats;
+
+    /** Creates a new CompositionPreview instance. */
+    constructor($$source: Partial<CompositionPreview> = {}) {
+        if (!("draft" in $$source)) {
+            this["draft"] = (new Draft());
+        }
+        if (!("stats" in $$source)) {
+            this["stats"] = (new CompositionStats());
+        }
+
+        Object.assign(this, $$source);
+    }
+
+    /**
+     * Creates a new CompositionPreview instance from a string or object.
+     */
+    static createFrom($$source: any = {}): CompositionPreview {
+        const $$createField0_0 = $$createType0;
+        const $$createField1_0 = $$createType1;
+        let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
+        if ("draft" in $$parsedSource) {
+            $$parsedSource["draft"] = $$createField0_0($$parsedSource["draft"]);
+        }
+        if ("stats" in $$parsedSource) {
+            $$parsedSource["stats"] = $$createField1_0($$parsedSource["stats"]);
+        }
+        return new CompositionPreview($$parsedSource as Partial<CompositionPreview>);
+    }
+}
+
+export class CompositionRequest {
+    "fontAId": string;
+    "fontBId": string;
+    "replacementScope": number;
+    "adjustmentScope": number;
+    "options": Options;
+
+    /** Creates a new CompositionRequest instance. */
+    constructor($$source: Partial<CompositionRequest> = {}) {
+        if (!("fontAId" in $$source)) {
+            this["fontAId"] = "";
+        }
+        if (!("fontBId" in $$source)) {
+            this["fontBId"] = "";
+        }
+        if (!("replacementScope" in $$source)) {
+            this["replacementScope"] = 0;
+        }
+        if (!("adjustmentScope" in $$source)) {
+            this["adjustmentScope"] = 0;
+        }
+        if (!("options" in $$source)) {
+            this["options"] = (new Options());
+        }
+
+        Object.assign(this, $$source);
+    }
+
+    /**
+     * Creates a new CompositionRequest instance from a string or object.
+     */
+    static createFrom($$source: any = {}): CompositionRequest {
+        const $$createField4_0 = $$createType2;
+        let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
+        if ("options" in $$parsedSource) {
+            $$parsedSource["options"] = $$createField4_0($$parsedSource["options"]);
+        }
+        return new CompositionRequest($$parsedSource as Partial<CompositionRequest>);
+    }
+}
+
+export class CompositionStats {
+    "replaced": number;
+    "adjusted": number;
+    "fallback": number;
+
+    /** Creates a new CompositionStats instance. */
+    constructor($$source: Partial<CompositionStats> = {}) {
+        if (!("replaced" in $$source)) {
+            this["replaced"] = 0;
+        }
+        if (!("adjusted" in $$source)) {
+            this["adjusted"] = 0;
+        }
+        if (!("fallback" in $$source)) {
+            this["fallback"] = 0;
+        }
+
+        Object.assign(this, $$source);
+    }
+
+    /**
+     * Creates a new CompositionStats instance from a string or object.
+     */
+    static createFrom($$source: any = {}): CompositionStats {
+        let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
+        return new CompositionStats($$parsedSource as Partial<CompositionStats>);
+    }
+}
+
 export class Draft {
     "gbkCoverage": GBKCoverage;
     "id": string;
@@ -57,8 +197,8 @@ export class Draft {
      * Creates a new Draft instance from a string or object.
      */
     static createFrom($$source: any = {}): Draft {
-        const $$createField0_0 = $$createType0;
-        const $$createField9_0 = $$createType1;
+        const $$createField0_0 = $$createType3;
+        const $$createField9_0 = $$createType2;
         let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
         if ("gbkCoverage" in $$parsedSource) {
             $$parsedSource["gbkCoverage"] = $$createField0_0($$parsedSource["gbkCoverage"]);
@@ -67,6 +207,63 @@ export class Draft {
             $$parsedSource["options"] = $$createField9_0($$parsedSource["options"]);
         }
         return new Draft($$parsedSource as Partial<Draft>);
+    }
+}
+
+export class EnhancedStatus {
+    "status": Status;
+    "fontA": SourceFont | null;
+    "fontB": SourceFont | null;
+    "composition": CompositionRequest | null;
+    "stats": CompositionStats;
+
+    /** Creates a new EnhancedStatus instance. */
+    constructor($$source: Partial<EnhancedStatus> = {}) {
+        if (!("status" in $$source)) {
+            this["status"] = (new Status());
+        }
+        if (!("fontA" in $$source)) {
+            this["fontA"] = null;
+        }
+        if (!("fontB" in $$source)) {
+            this["fontB"] = null;
+        }
+        if (!("composition" in $$source)) {
+            this["composition"] = null;
+        }
+        if (!("stats" in $$source)) {
+            this["stats"] = (new CompositionStats());
+        }
+
+        Object.assign(this, $$source);
+    }
+
+    /**
+     * Creates a new EnhancedStatus instance from a string or object.
+     */
+    static createFrom($$source: any = {}): EnhancedStatus {
+        const $$createField0_0 = $$createType4;
+        const $$createField1_0 = $$createType6;
+        const $$createField2_0 = $$createType6;
+        const $$createField3_0 = $$createType8;
+        const $$createField4_0 = $$createType1;
+        let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
+        if ("status" in $$parsedSource) {
+            $$parsedSource["status"] = $$createField0_0($$parsedSource["status"]);
+        }
+        if ("fontA" in $$parsedSource) {
+            $$parsedSource["fontA"] = $$createField1_0($$parsedSource["fontA"]);
+        }
+        if ("fontB" in $$parsedSource) {
+            $$parsedSource["fontB"] = $$createField2_0($$parsedSource["fontB"]);
+        }
+        if ("composition" in $$parsedSource) {
+            $$parsedSource["composition"] = $$createField3_0($$parsedSource["composition"]);
+        }
+        if ("stats" in $$parsedSource) {
+            $$parsedSource["stats"] = $$createField4_0($$parsedSource["stats"]);
+        }
+        return new EnhancedStatus($$parsedSource as Partial<EnhancedStatus>);
     }
 }
 
@@ -148,7 +345,7 @@ export class Preview {
      * Creates a new Preview instance from a string or object.
      */
     static createFrom($$source: any = {}): Preview {
-        const $$createField0_0 = $$createType2;
+        const $$createField0_0 = $$createType9;
         let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
         if ("supportedCodepoints" in $$parsedSource) {
             $$parsedSource["supportedCodepoints"] = $$createField0_0($$parsedSource["supportedCodepoints"]);
@@ -233,8 +430,8 @@ export class Result {
      * Creates a new Result instance from a string or object.
      */
     static createFrom($$source: any = {}): Result {
-        const $$createField0_0 = $$createType0;
-        const $$createField14_0 = $$createType1;
+        const $$createField0_0 = $$createType3;
+        const $$createField14_0 = $$createType2;
         let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
         if ("gbkCoverage" in $$parsedSource) {
             $$parsedSource["gbkCoverage"] = $$createField0_0($$parsedSource["gbkCoverage"]);
@@ -243,6 +440,59 @@ export class Result {
             $$parsedSource["options"] = $$createField14_0($$parsedSource["options"]);
         }
         return new Result($$parsedSource as Partial<Result>);
+    }
+}
+
+export class SourceFont {
+    "id": string;
+    "name": string;
+    "origin": string;
+    "sha256": string;
+    "glyphCount": number;
+    "counts": CharacterCounts;
+    "gbkCoverage": GBKCoverage;
+
+    /** Creates a new SourceFont instance. */
+    constructor($$source: Partial<SourceFont> = {}) {
+        if (!("id" in $$source)) {
+            this["id"] = "";
+        }
+        if (!("name" in $$source)) {
+            this["name"] = "";
+        }
+        if (!("origin" in $$source)) {
+            this["origin"] = "";
+        }
+        if (!("sha256" in $$source)) {
+            this["sha256"] = "";
+        }
+        if (!("glyphCount" in $$source)) {
+            this["glyphCount"] = 0;
+        }
+        if (!("counts" in $$source)) {
+            this["counts"] = (new CharacterCounts());
+        }
+        if (!("gbkCoverage" in $$source)) {
+            this["gbkCoverage"] = (new GBKCoverage());
+        }
+
+        Object.assign(this, $$source);
+    }
+
+    /**
+     * Creates a new SourceFont instance from a string or object.
+     */
+    static createFrom($$source: any = {}): SourceFont {
+        const $$createField5_0 = $$createType10;
+        const $$createField6_0 = $$createType3;
+        let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
+        if ("counts" in $$parsedSource) {
+            $$parsedSource["counts"] = $$createField5_0($$parsedSource["counts"]);
+        }
+        if ("gbkCoverage" in $$parsedSource) {
+            $$parsedSource["gbkCoverage"] = $$createField6_0($$parsedSource["gbkCoverage"]);
+        }
+        return new SourceFont($$parsedSource as Partial<SourceFont>);
     }
 }
 
@@ -282,8 +532,8 @@ export class Status {
      * Creates a new Status instance from a string or object.
      */
     static createFrom($$source: any = {}): Status {
-        const $$createField2_0 = $$createType4;
-        const $$createField4_0 = $$createType6;
+        const $$createField2_0 = $$createType12;
+        const $$createField4_0 = $$createType13;
         let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
         if ("result" in $$parsedSource) {
             $$parsedSource["result"] = $$createField2_0($$parsedSource["result"]);
@@ -296,10 +546,17 @@ export class Status {
 }
 
 // Private type creation functions
-const $$createType0 = GBKCoverage.createFrom;
-const $$createType1 = Options.createFrom;
-const $$createType2 = $Create.Array($Create.Any);
-const $$createType3 = Result.createFrom;
-const $$createType4 = $Create.Nullable($$createType3);
-const $$createType5 = Draft.createFrom;
+const $$createType0 = Draft.createFrom;
+const $$createType1 = CompositionStats.createFrom;
+const $$createType2 = Options.createFrom;
+const $$createType3 = GBKCoverage.createFrom;
+const $$createType4 = Status.createFrom;
+const $$createType5 = SourceFont.createFrom;
 const $$createType6 = $Create.Nullable($$createType5);
+const $$createType7 = CompositionRequest.createFrom;
+const $$createType8 = $Create.Nullable($$createType7);
+const $$createType9 = $Create.Array($Create.Any);
+const $$createType10 = CharacterCounts.createFrom;
+const $$createType11 = Result.createFrom;
+const $$createType12 = $Create.Nullable($$createType11);
+const $$createType13 = $Create.Nullable($$createType0);

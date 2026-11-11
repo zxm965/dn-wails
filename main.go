@@ -225,6 +225,7 @@ func main() {
 		Tasks:              tasksService,
 		DnProcess:          dnProcessService,
 		FontPatch:          fontpatch.NewService(platformfontpatch.New()),
+		EnhancedFontPatch:  fontpatch.NewEnhancedService(platformfontpatch.NewEnhanced()),
 	})
 	wailsApp.RegisterService(application.NewService(facade))
 
