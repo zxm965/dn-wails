@@ -4,7 +4,6 @@ import {
   CalendarDays,
   Skull,
   Mails,
-  NotebookPen,
   ListChecks,
   Settings,
   Sparkles,
@@ -97,23 +96,13 @@ export const MENU_GROUPS = defineMenuGroups([
         },
       },
       {
-        key: 'quick-notes',
-        view: 'quick-notes',
-        label: '笔记',
-        icon: NotebookPen,
-        defaultVisible: true,
-        preference: {
-          description: '显示云端快速笔记、搜索、置顶和自动保存入口。',
-        },
-      },
-      {
         key: 'tasks',
         view: 'tasks',
-        label: '任务',
+        label: '事项',
         icon: ListChecks,
         defaultVisible: true,
         preference: {
-          description: '显示任务清单、星标、重复计划、子任务和完成记录。',
+          description: '在统一页签中管理任务清单、重复计划和云端笔记。',
         },
       },
       {

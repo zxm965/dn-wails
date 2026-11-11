@@ -17,7 +17,8 @@ Google 邮件、Calendar、Chat、Docs、Drive 的来源链接、协作分配和
 - `frontend/src/features/tasks/components/TasksPanel.tsx`：清单导航、搜索、排序、任务列表、完成区和打印入口。
 - `frontend/src/features/tasks/components/TaskEditorDialog.tsx`：任务详情、日期、截止时间、星标、清单和重复规则编辑。
 - `frontend/src/features/tasks/components/TaskReminderMonitor.tsx`：登录期间轮询已到期任务并复用系统通知模块发送提醒。
-- `frontend/src/shared/navigation/`：注册需要登录且默认显示的“任务清单”页面。
+- `frontend/src/app/TaskNotesPage.tsx`：与笔记共用“事项”页面，使用 `PageTabs` 装配。
+- `frontend/src/shared/navigation/`：注册需要登录且默认显示的“事项”入口，`/tasks?tab=tasks` 定位任务页签（未指定或未知参数也默认任务）。
 
 连接池配置复用 [PostgreSQL 基础设施](postgres.md)；任务表检查与账号隔离仍由本模块负责。
 
@@ -108,7 +109,7 @@ TaskReminderMonitor
 
 ### 提醒
 
-登录且系统通知已获授权时，根级 `TaskReminderMonitor` 每分钟领取一次已到达计划时间的任务并发送系统通知。点击通知会切换到任务页面。通知仍遵守全局“启用通知 / 显示预览 / 勿扰”设置；未授权、被禁用或平台不支持时不主动弹权限请求。
+登录且系统通知已获授权时，根级 `TaskReminderMonitor` 每分钟领取一次已到达计划时间的任务并发送系统通知。点击通知会导航到 `/tasks?tab=tasks`，即使正在笔记页签也会切换到任务。通知仍遵守全局“启用通知 / 显示预览 / 勿扰”设置；未授权、被禁用或平台不支持时不主动弹权限请求。
 
 ## 页面功能
 
@@ -177,4 +178,4 @@ TASKS_TEST_DATABASE_URL='<测试数据库连接串>' go test ./internal/tasks -r
 
 ## 会话视图记忆
 
-任务页通过共享 `useSessionState` 按账号 ID 保存所选清单、排序、搜索和已完成区展开状态，通过 `useSessionScroll` 保存清单栏和各清单内容区滚动位置；仅保存在 WebView 内存，重新启动后恢复默认。重新进入仍获取最新任务，数据就绪后恢复位置；已删除清单自动回退至首个可用清单。页面保留一个主标题，侧栏标题为“我的清单”，打印放入“更多”弹层。
+任务页通过共享 `useSessionState` 按账号 ID 保存所选清单、排序、搜索和已完成区展开状态，通过 `useSessionScroll` 保存清单栏和各清单内容区滚动位置；仅保存在 WebView 内存，重新启动后恢复默认。重新进入仍获取最新任务，数据就绪后恢复位置；已删除清单自动回退至首个可用清单。任务与笔记的外层页面统一管理留白，任务面板保留一个主标题；切换页签卸载面板并沿用上述会话恢复机制，侧栏标题为“我的清单”，打印放入“更多”弹层。

@@ -13,7 +13,8 @@
 - `frontend/src/features/quick-notes/api/`：生成绑定适配和前端类型。
 - `frontend/src/features/quick-notes/components/`：笔记列表、搜索、编辑器和自动保存状态。
 - `frontend/src/shared/components/markdown-preview/`：笔记与更新日志共用的 Markdown 展示，链接交由调用方处理。
-- `frontend/src/shared/navigation/menuConfig.ts`：注册不带分组标题的“快速笔记”入口。
+- `frontend/src/app/TaskNotesPage.tsx`：与任务共用统一 `PageTabs` 页面，通过 `/tasks?tab=notes` 定位笔记页签。
+- `frontend/src/shared/navigation/menuConfig.ts`：注册不带分组标题的“事项”入口，共用 `tasks` 菜单显隐和排序设置；不再注册独立笔记路由。
 
 连接池配置复用 [PostgreSQL 基础设施](postgres.md)；`Initialize` 在 Ping 后与 `Health` 调用同一 schema 检查，并沿用各自的请求超时。缺表统一返回包装后的 `ErrUnavailable`，查询失败保留错误链。
 
@@ -79,7 +80,7 @@ Wails 门面提供：
 ### 加载与登录
 
 ```text
-进入快速笔记路由
+进入 /tasks?tab=notes
   → App 根据 requiresAuth 检查全局账号状态
   ├── 未登录：显示登录/注册界面
   └── 已登录：ListQuickNotes
@@ -97,7 +98,7 @@ Wails 门面提供：
 ### 自动保存
 
 - 在编辑或分栏模式下，标题、正文或置顶状态变化后等待 700ms，再提交完整 `QuickNoteInput`。
-- 切换笔记、新建笔记或离开页面前会尝试保存仍未提交的草稿。
+- 切换笔记、新建笔记、切换到任务页签或离开页面前会尝试保存仍未提交的草稿；切换页签会卸载面板，待保存草稿和失败结果仍由原有账号会话队列保留。
 - 用户可使用保存按钮或 `⌘/Ctrl + S` 立即保存，使用 `⌘/Ctrl + N` 新建笔记。
 - 保存失败不会清空本地编辑状态，并通过 Toast 与编辑器状态提示错误。
 
@@ -117,7 +118,7 @@ Wails 门面提供：
 
 ## 响应式处理
 
-- 页面基于右侧内容区域使用 Container Queries。
+- 外层 `TaskNotesPage` 统一负责页面宽度和留白，笔记面板保留标题及新建操作，基于右侧内容区域使用 Container Queries。
 - 常规宽度使用“笔记列表 + 编辑器”双栏布局。
 - 右侧预览、编辑和分栏模式共用同一内容区域；分栏模式在内容宽度小于 700px 时切换为上下布局。
 - 内容宽度小于 700px 时切换为上下布局，列表限制高度并独立滚动。

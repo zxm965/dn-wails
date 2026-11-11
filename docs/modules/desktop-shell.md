@@ -9,6 +9,7 @@
 - `frontend/src/main.tsx`：创建 React 根节点，通过单个 `AppProviders` 挂载应用。
 - `frontend/src/app/AppProviders.tsx`：集中声明设置、全局交互、应用更新、账号和 React Router 的依赖顺序。
 - `frontend/src/app/App.tsx`：根据当前路由装配页面、登录守卫、菜单显隐守卫和应用壳。
+- `frontend/src/app/TaskNotesPage.tsx`：通过统一 `PageTabs` 装配任务与笔记，使用 URL 查询参数选择页签。
 - `frontend/src/app/appConfig.ts`：为标题栏、侧边栏、页面标题和左下角状态区提供全局展示配置。
 - `frontend/src/app/App.css.ts`：主工作区和右侧视图背景的局部 vanilla-extract 样式。
 - `frontend/src/shared/components/titlebar/`：Wails 自定义标题栏和窗口控制。
@@ -30,8 +31,8 @@ App
     ├── AppSidebar
     │   ├── 产品信息
     │   ├── 日历（默认入口）
-    │   ├── 笔记
-    │   ├── 任务
+    │   ├── 事项
+    │   │   └── 任务 / 笔记
     │   ├── 龙之谷（默认隐藏）
     │   │   ├── 周常
     │   │   ├── 角色
@@ -44,9 +45,8 @@ App
     │           └── 文本工具 / 桌面实验室
     │   └── 作者状态区
     └── View
-        ├── QuickNotesPanel
         ├── CalendarPanel
-        ├── TasksPanel
+        ├── TaskNotesPage（TasksPanel / QuickNotesPanel）
         ├── DnWeeklyPlans / DnRoles
         ├── SiteMessages
         ├── AccountPanel（标题栏头像进入，不显示在侧栏）
@@ -57,10 +57,12 @@ App
 ## 导航约定
 
 - 应用使用 React Router 8 的 `HashRouter` 管理页面地址；路由存放在 URL hash 中，不要求 Wails 静态资源服务处理页面路径回退。
-- 应用启动读取菜单显隐与顺序设置并进入排序后的第一个可见入口；未自定义时日历排在首位。默认配置显示日历、笔记、任务、消息和设置。需要登录的入口未认证时统一显示全局登录/注册页。
-- 设置、诊断和实验工具放在“系统设置”分组中；笔记、任务、龙之谷和消息不显示分组标题。
+- 应用启动读取菜单显隐与顺序设置并进入排序后的第一个可见入口；未自定义时日历排在首位。默认配置显示日历、事项、消息和设置。需要登录的入口未认证时统一显示全局登录/注册页。
+- 设置、诊断和实验工具放在“系统设置”分组中；事项、龙之谷和消息不显示分组标题。
 - 应用概览、运行状态和应用更新统一放在“设置 → 概览”；实验室只保留文本工具及桌面验证。
-- 菜单名称为“日历、笔记、任务、消息、龙之谷、设置、实验室”，文字保持左对齐；路由路径与菜单唯一 key 由共享导航配置定义，显隐偏好按 key 持久化。
+- 菜单名称为“日历、事项、消息、龙之谷、设置、实验室”，文字保持左对齐；路由路径与菜单唯一 key 由共享导航配置定义，显隐偏好按 key 持久化。
+- “事项”共用 `/tasks` 路由及 `tasks` 菜单显隐/排序设置，`?tab=tasks` 打开任务，`?tab=notes` 打开笔记；省略参数或传入未知值时显示任务。切换页签更新 URL 并支持浏览器前进/后退；提醒点击显式导航到任务页签。旧 `/quick-notes` 路由不再注册，旧菜单 key 按未知配置忽略。
+- 统一页签复用 `PageTabs` 的键盘焦点与 reduced motion 支持；外层负责页面宽度和留白，内部面板保留各自标题、操作、容器断点及错误状态。只挂载当前页签；离开笔记页签沿用原有卸载保存和会话草稿，返回任务页签恢复会话内清单及筛选状态并重新加载数据。
 - 测试操作不得出现在正式业务页面。
 - 菜单顺序从 `AppSettings.navigation.menuOrder` 经 `getOrderedMenuGroups` 解析；主导航、系统设置及龙之谷子菜单分别排序，未知/跨组 key 被忽略，未配置项按默认顺序补到组尾；设置入口始终保留。展开侧栏与折叠浮层使用同一结果，排序不切换当前路由。
 - 菜单位移由 `shared/hooks/useListMotion.ts` 处理，快速连续调整会从当前动画位置衔接；子菜单使用 220ms 高度与透明度过渡，关闭时 `inert` 防止隐藏项目获得焦点，页面切换使用 180ms 淡入且不额外重挂载页面。减少动态效果偏好下关闭动画。

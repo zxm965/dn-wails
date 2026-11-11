@@ -6,10 +6,9 @@ import { CalendarPanel } from '@/features/calendar'
 import { DevToolsPanel } from '@/features/devtools'
 import { DnRoles, DnProcessKiller, DnWeeklyPlans } from '@/features/dn-system'
 import { FontPatchPanel } from '@/features/font-patch'
-import { QuickNotesPanel } from '@/features/quick-notes'
 import { SettingsPanel, useSettings } from '@/features/settings'
 import { SiteMessageCenter, SiteMessageProvider, SiteMessages } from '@/features/site-messages'
-import { TaskReminderMonitor, TasksPanel } from '@/features/tasks'
+import { TaskReminderMonitor } from '@/features/tasks'
 import { AppSidebar } from '@/shared/components/app-sidebar'
 import { TitleBar } from '@/shared/components/titlebar'
 import { ListState, ScrollArea } from '@/shared/components/ui'
@@ -28,6 +27,7 @@ import {
 import { windowManager } from '@/shared/window'
 
 import { appConfig } from './appConfig'
+import { TaskNotesPage } from './TaskNotesPage'
 
 import { styles } from './App.css'
 
@@ -68,9 +68,8 @@ export default function App() {
       }
     }
 
-    if (view === 'quick-notes') return <QuickNotesPanel key={account.user?.id} />
     if (view === 'calendar') return <CalendarPanel />
-    if (view === 'tasks') return <TasksPanel key={account.user?.id} />
+    if (view === 'tasks') return <TaskNotesPage key={account.user?.id} />
     if (view === 'account') return <AccountPanel key={account.user?.id} />
     if (view === 'dn-weekly')
       return <DnWeeklyPlans key={account.user?.id} onNavigateRoles={() => navigateToView('dn-roles')} />
@@ -98,7 +97,10 @@ export default function App() {
   return (
     <SiteMessageProvider onNavigate={navigateToView}>
       <div className={cx('app-shell')}>
-        <TaskReminderMonitor enabled={Boolean(account.user)} onOpenTasks={() => navigateToView('tasks')} />
+        <TaskReminderMonitor
+          enabled={Boolean(account.user)}
+          onOpenTasks={() => navigate(`${getAppViewPath('tasks')}?tab=tasks`)}
+        />
         <TitleBar
           title={windowTitle}
           actions={

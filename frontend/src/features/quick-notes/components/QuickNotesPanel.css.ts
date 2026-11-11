@@ -8,12 +8,9 @@ const isSaving = style({})
 const isError = style({})
 
 const quickNotesPage = style({
-  width: 'min(100%, var(--page-content-max-width))',
   minWidth: '0',
   display: 'grid',
   gap: 'calc(18px * var(--layout-spacing))',
-  margin: '0 auto',
-  padding: 'var(--page-padding-start) var(--page-padding-inline) var(--page-padding-end)',
   containerName: 'quick-notes-page',
   containerType: 'inline-size',
 })
@@ -21,7 +18,7 @@ const quickNotesPage = style({
 const quickNotesWorkspace = style([
   {
     minWidth: '0',
-    height: 'clamp(460px, calc(100vh - 220px), 760px)',
+    height: 'clamp(410px, calc(100vh - 270px), 760px)',
     display: 'grid',
     gridTemplateColumns: 'minmax(250px, 0.34fr) minmax(0, 1fr)',
     overflow: 'hidden',

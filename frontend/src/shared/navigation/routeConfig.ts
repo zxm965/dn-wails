@@ -7,8 +7,7 @@ export interface AppRouteDefinition {
 
 export const APP_ROUTES = {
   calendar: { path: '/calendar', title: '日历', requiresAuth: false, navigation: 'menu' },
-  'quick-notes': { path: '/quick-notes', title: '笔记', requiresAuth: true, navigation: 'menu' },
-  tasks: { path: '/tasks', title: '任务', requiresAuth: true, navigation: 'menu' },
+  tasks: { path: '/tasks', title: '事项', requiresAuth: true, navigation: 'menu' },
   account: { path: '/account', title: '个人信息', requiresAuth: true, navigation: 'standalone' },
   'dn-weekly': { path: '/dn/weekly', title: '龙之谷 · 周常', requiresAuth: true, navigation: 'menu' },
   'dn-patches': { path: '/dn/patches', title: '龙之谷 · 工坊', requiresAuth: false, navigation: 'menu' },

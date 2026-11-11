@@ -6,12 +6,9 @@ const isStarred = style({})
 const isSubtask = style({})
 
 const tasksPage = style({
-  width: 'min(100%, var(--page-content-max-width))',
   minWidth: '0',
   display: 'grid',
   gap: 'calc(18px * var(--layout-spacing))',
-  margin: '0 auto',
-  padding: 'var(--page-padding-start) var(--page-padding-inline) var(--page-padding-end)',
   containerName: 'tasks-page',
   containerType: 'inline-size',
 })
@@ -19,7 +16,7 @@ const tasksPage = style({
 const tasksWorkspace = style([
   {
     minWidth: '0',
-    height: 'clamp(510px, calc(100vh - 220px), 780px)',
+    height: 'clamp(460px, calc(100vh - 270px), 780px)',
     display: 'grid',
     gridTemplateColumns: 'minmax(220px, 0.28fr) minmax(0, 1fr)',
     overflow: 'hidden',
